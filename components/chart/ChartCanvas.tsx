@@ -190,12 +190,12 @@ export default function ChartCanvas({ data, entries = [], timeframe, chartType }
       const mutedForegroundHsl = getCssVar('--muted-foreground');
       const primaryHsl = getCssVar('--primary');
 
-      // Convert HSL values to RGBA using the helper function
-      const backgroundColor = hslCssVarToRgba(backgroundHsl, theme === 'dark' ? '#1e1e2d' : '#ffffff');
-      const textColor = hslCssVarToRgba(foregroundHsl, theme === 'dark' ? '#d1d5db' : '#1e293b');
-      const gridColor = hslCssVarToRgba(borderHsl, theme === 'dark' ? '#2e2e3a' : '#f1f5f9');
-      const crosshairColor = hslCssVarToRgba(mutedForegroundHsl, theme === 'dark' ? '#a1a1aa' : '#71717a'); // Adjusted fallbacks
-      const primaryColor = hslCssVarToRgba(primaryHsl, theme === 'dark' ? '#3b82f6' : '#2563eb'); // Adjusted fallbacks
+      // 統一された配色スキームを使用
+      const backgroundColor = '#151924'; // テーマにあわせた背景色
+      const textColor = '#E0E3EB'; // 明るく読みやすいテキスト色
+      const gridColor = '#242838'; // グリッド線の色
+      const crosshairColor = '#6B7A98'; // クロスヘアの色
+      const primaryColor = '#2962FF'; // アクセントブルー
 
       const options = {
         ...chartOptions,
@@ -314,7 +314,7 @@ export default function ChartCanvas({ data, entries = [], timeframe, chartType }
       chart.applyOptions({
         watermark: {
           visible: true,
-          color: theme === "dark" ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)',
+          color: 'rgba(224, 227, 235, 0.15)',
           text: 'BTC/USD',
           fontSize: 36,
           horzAlign: 'left',
@@ -334,7 +334,7 @@ export default function ChartCanvas({ data, entries = [], timeframe, chartType }
         autoScale: false, // RSIは固定スケール (0-100)
         entireTextOnly: true,
         borderVisible: true,
-        borderColor: theme === "dark" ? '#363A45' : '#C3BCBC',
+        borderColor: '#2A2E39',
       });
       
       // RSIパネルにパネル名を追加
@@ -347,7 +347,7 @@ export default function ChartCanvas({ data, entries = [], timeframe, chartType }
           lineStyle: 2, // 点線
           axisLabelVisible: true,
           title: 'RSI (14)', // パネル名
-          axisLabelColor: theme === "dark" ? '#9598A1' : '#787B86',
+          axisLabelColor: '#A7B0C4',
         });
       }
 
@@ -363,7 +363,7 @@ export default function ChartCanvas({ data, entries = [], timeframe, chartType }
           },
           entireTextOnly: true,
           borderVisible: true,
-          borderColor: theme === "dark" ? '#363A45' : '#C3BCBC',
+          borderColor: '#2A2E39',
         });
         
         // MACDパネルにラベルを追加
@@ -372,12 +372,12 @@ export default function ChartCanvas({ data, entries = [], timeframe, chartType }
           // MACDパネルラベル用に横線を追加
           macdInstances.macdLineSeries.createPriceLine({
             price: 0, // ゼロライン
-            color: theme === "dark" ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.3)',
+            color: 'rgba(224, 227, 235, 0.25)',
             lineWidth: 1 as const, // as const で型エラー修正
             lineStyle: 2, // 点線
             axisLabelVisible: true,
             title: 'MACD (12,26,9)', // より詳細なパネル名（パラメーター表示）
-            axisLabelColor: theme === "dark" ? '#9598A1' : '#787B86',
+            axisLabelColor: '#A7B0C4',
           });
         }
       }

@@ -16,6 +16,7 @@ import ChatSection from "@/components/chat/ChatSection"
 import PositionHistory from "@/components/position/PositionHistory"
 import TimeframeSelector from "@/components/chart/TimeframeSelector"
 import { useStore } from "@/store/useStore"
+import { theme } from "@/styles/colors"
 
 export default function Home() {
   // Get state and actions from the store
@@ -70,17 +71,17 @@ export default function Home() {
   const openPositionsCount = entries.filter((entry) => entry.status === "open").length
 
   return (
-    <main className="flex flex-col h-screen bg-[#151924]">
-      <header className="flex justify-between items-center py-2 px-3 border-b border-[#2A2E39] bg-[#1c2030]">
+    <main className="flex flex-col h-screen" style={{ backgroundColor: theme.background.primary }}>
+      <header className="flex justify-between items-center py-2 px-3 border-b" style={{ borderColor: theme.border.light, backgroundColor: theme.background.secondary }}>
         <div className="flex items-center space-x-2">
           <div className="font-bold text-lg flex items-center">
-            <span className="text-[#2962FF]">Alpha</span>
-            <span className="text-[#E0E3EB]">Trader</span>
+            <span style={{ color: theme.accent.blue }}>Alpha</span>
+            <span style={{ color: theme.text.primary }}>Trader</span>
           </div>
         </div>
 
         <div className="flex items-center space-x-2">
-          <Button variant="outline" size="sm" className="bg-[#242838] border-[#2A2E39] hover:bg-[#2a2e3d] text-[#E0E3EB]">
+          <Button variant="outline" size="sm" className="" style={{ backgroundColor: theme.background.tertiary, borderColor: theme.border.light, color: theme.text.primary }}>
             <span className="font-mono">BTC/USD: ${ohlcData[ohlcData.length - 1].close.toLocaleString('en-US')}</span>
             <PriceChangeIndicator
               currentPrice={ohlcData[ohlcData.length - 1].close}
@@ -98,7 +99,7 @@ export default function Home() {
       </header>
 
       {/* 強制的にレイアウトをチャート表示に初期化 */}
-      <div className="flex flex-col md:flex-row h-full bg-[#151924]">
+      <div className="flex flex-col md:flex-row h-full" style={{ backgroundColor: theme.background.primary }}>
         {/* Chat Section - 常に左サイドバーとして表示、3割の幅に設定 */}
         <div 
           className="md:w-[30%] w-full h-1/2 md:h-full transition-all duration-300 ease-in-out overflow-hidden"
@@ -116,11 +117,11 @@ export default function Home() {
         <div 
           className="md:w-[70%] w-full h-1/2 md:h-full transition-all duration-300 ease-in-out overflow-hidden"
         >
-          <Card className="h-full flex flex-col border-0 rounded-none shadow-none bg-[#1E222D]">
-            <div className="flex justify-between items-center py-2 px-3 border-b border-[#2A2E39] bg-[#1c2030]">
+          <Card className="h-full flex flex-col border-0 rounded-none shadow-none" style={{ backgroundColor: theme.background.card }}>
+            <div className="flex justify-between items-center py-2 px-3 border-b" style={{ borderColor: theme.border.light, backgroundColor: theme.background.secondary }}>
               <div className="flex items-center space-x-2">
-                <h2 className="text-base font-bold text-[#E0E3EB]">BTC/USD</h2>
-                <Badge variant="outline" className="font-mono text-xs py-0.5 px-1.5 bg-[#242838] border-[#2A2E39] text-[#A7B0C4]">
+                <h2 className="text-base font-bold" style={{ color: theme.text.primary }}>BTC/USD</h2>
+                <Badge variant="outline" className="font-mono text-xs py-0.5 px-1.5" style={{ backgroundColor: theme.background.tertiary, borderColor: theme.border.light, color: theme.text.secondary }}>
                   24h Vol: 12.5K
                 </Badge>
               </div>
@@ -176,7 +177,7 @@ function PriceChangeIndicator({ currentPrice, previousPrice }: { currentPrice: n
   const isPositive = percentChange >= 0
 
   return (
-    <Badge variant={isPositive ? "success" : "destructive"} className="font-mono">
+    <Badge variant={isPositive ? "success" : "destructive"} className="font-mono bg-opacity-20 border border-opacity-50">
       {isPositive ? "+" : ""}
       {percentChange.toFixed(2)}%
     </Badge>

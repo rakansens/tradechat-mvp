@@ -11,6 +11,7 @@ import { Separator } from "@/components/ui/separator"
 import { useStore } from "@/store/useStore"
 import { useState } from "react"
 import type { Message } from "ai"
+import { theme } from "@/styles/colors"
 
 interface ChatSectionProps {
   messages: Message[]
@@ -87,11 +88,11 @@ export default function ChatSection({
 
   return (
     <div className="w-full h-full flex flex-col">
-      <Card className="flex-1 flex flex-col overflow-hidden border-0 rounded-none shadow-none bg-[#1c2030]">
+      <Card className="flex-1 flex flex-col overflow-hidden border-0 rounded-none shadow-none" style={{ backgroundColor: theme.background.secondary }}>
         {/* ヘッダー部分 */}
-        <CardHeader className="py-2 px-4 bg-[#1c2030] border-b border-[#2A2E39]">
-          <CardTitle className="text-sm font-medium flex items-center text-[#E0E3EB]">
-            <MessageSquare className="h-4 w-4 text-[#2962FF] mr-2" />
+        <CardHeader className="py-2 px-4 border-b" style={{ backgroundColor: theme.background.secondary, borderColor: theme.border.light }}>
+          <CardTitle className="text-sm font-medium flex items-center" style={{ color: theme.text.primary }}>
+            <MessageSquare className="h-4 w-4 mr-2" style={{ color: theme.accent.blue }} />
             AI Assistant
           </CardTitle>
         </CardHeader>
@@ -107,10 +108,10 @@ export default function ChatSection({
           />
         </CardContent>
 
-        <Separator className="border-[#2A2E39]" />
+        <Separator className="border" style={{ borderColor: theme.border.light }} />
 
         {/* フッター部分 - クイックコマンドと入力エリア */}
-        <CardFooter className="p-2 flex flex-col gap-2 bg-[#1c2030] border-t border-[#2A2E39]">
+        <CardFooter className="p-2 flex flex-col gap-2 border-t" style={{ backgroundColor: theme.background.secondary, borderColor: theme.border.light }}>
           {/* クイックコマンドボタン */}
           <div className="flex items-center justify-between w-full">
             <div className="flex space-x-1">
@@ -119,7 +120,12 @@ export default function ChatSection({
                   key={cmd.value}
                   size="sm"
                   variant="outline"
-                  className="text-xs h-7 bg-[#242838] border-[#2A2E39] hover:bg-[#2a2e3d] text-[#A7B0C4]"
+                  className="text-xs h-7" 
+                  style={{ 
+                    backgroundColor: theme.background.tertiary,
+                    borderColor: theme.border.light,
+                    color: theme.text.secondary,
+                  }}
                   onClick={cmd.action}
                 >
                   {cmd.icon}
@@ -133,7 +139,11 @@ export default function ChatSection({
               <Button
                 variant="success"
                 size="sm"
-                className="h-7 text-xs ml-auto bg-[#2962FF] hover:bg-[#5B8AF9]"
+                className="h-7 text-xs ml-auto"
+                style={{ 
+                  backgroundColor: theme.accent.blue,
+                  color: "white"
+                }}
                 onClick={executeEntry}
               >
                 <Send className="h-3 w-3 mr-1" />
@@ -149,12 +159,16 @@ export default function ChatSection({
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Ask about the market..."
-                className="bg-[#242838] border-[#2A2E39] text-[#E0E3EB] placeholder:text-[#6B7A98]"
+                className=""
               />
               <Button 
                 type="submit" 
                 size="icon" 
-                className="bg-[#2962FF] hover:bg-[#5B8AF9]"
+                className=""
+                style={{ 
+                  backgroundColor: theme.accent.blue,
+                  color: "white"
+                }}
               >
                 <Send className="h-4 w-4" />
               </Button>

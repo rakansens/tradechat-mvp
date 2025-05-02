@@ -18,7 +18,12 @@ export default function TimeframeSelector({ selectedTimeframe, onTimeframeChange
       onValueChange={(value) => value && onTimeframeChange(value as Timeframe)}
     >
       {availableTimeframes.map((timeframe) => (
-        <ToggleGroupItem key={timeframe} value={timeframe} size="sm" className="px-2 py-1 h-7">
+        <ToggleGroupItem 
+          key={timeframe} 
+          value={timeframe} 
+          size="sm" 
+          className="px-2 py-1 h-7 text-[#A7B0C4] data-[state=on]:bg-[#2962FF] data-[state=on]:text-white border-[#2A2E39] hover:bg-[#242838]"
+        >
           {timeframe}
         </ToggleGroupItem>
       ))}
