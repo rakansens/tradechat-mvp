@@ -1,0 +1,95 @@
+// src/mastra/agents/__tests__/index.test.ts
+// エージェントファクトリ関数のテスト
+
+import { createChatAgent, createDirectAgent } from '../index';
+import { Agent } from '@mastra/core/agent';
+import { Memory } from '@mastra/memory';
+import { mem0RememberTool, mem0MemorizeTool } from '../../tools';
+
+// 依存モジュールのモック
+jest.mock('@mastra/core/agent', () => ({
+  Agent: jest.fn().mockImplementation(() => ({
+    stream: jest.fn(),
+    generate: jest.fn(),
+  })),
+}));
+
+jest.mock('@mastra/memory', () => ({
+  Memory: jest.fn(),
+}));
+
+jest.mock('@ai-sdk/openai', () => ({
+  openai: jest.fn().mockReturnValue('mockedOpenAIModel'),
+}));
+
+jest.mock('../../tools', () => ({
+  mem0RememberTool: { id: 'mem0-remember', execute: jest.fn() },
+  mem0MemorizeTool: { id: 'mem0-memorize', execute: jest.fn() },
+}));
+
+describe('Agent Factory Functions', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  describe('createChatAgent', () => {
+    it('メモリありでエージェントを作成できること', () => {
+      // テスト用メモリインスタンスを作成
+      const memory = new Memory();
+      
+      // エージェント作成
+      const agent = createChatAgent(memory);
+      
+      // 期待される設定でAgentが呼ばれたことを確認
+      expect(Agent).toHaveBeenCalledWith({
+        name: 'TradingAssistant',
+        instructions: expect.stringContaining('trading assistant'),
+        model: 'mockedOpenAIModel',
+        memory: memory,
+        tools: {
+          'mem0-remember': mem0RememberTool,
+          'mem0-memorize': mem0MemorizeTool,
+        }
+      });
+    });
+
+    it('メモリなしでもエージェントを作成できること', () => {
+      // メモリなしでエージェント作成
+      const agent = createChatAgent();
+      
+      // 期待される設定でAgentが呼ばれたことを確認
+      expect(Agent).toHaveBeenCalledWith({
+        name: 'TradingAssistant',
+        instructions: expect.stringContaining('trading assistant'),
+        model: 'mockedOpenAIModel',
+        memory: undefined,
+        tools: {
+          'mem0-remember': mem0RememberTool,
+          'mem0-memorize': mem0MemorizeTool,
+        }
+      });
+    });
+  });
+
+  describe('createDirectAgent', () => {
+    it('メモリなしのエージェントを作成できること', () => {
+      // エージェント作成
+      const agent = createDirectAgent();
+      
+      // 期待される設定でAgentが呼ばれたことを確認
+      expect(Agent).toHaveBeenCalledWith({
+        name: 'TradingAssistant',
+        instructions: expect.stringContaining('trading assistant'),
+        model: 'mockedOpenAIModel',
+        tools: {
+          'mem0-remember': mem0RememberTool,
+          'mem0-memorize': mem0MemorizeTool,
+        }
+      });
+      
+      // memoryプロパティがないことを確認
+      const agentConstructorCall = (Agent as jest.Mock).mock.calls[0][0];
+      expect(agentConstructorCall).not.toHaveProperty('memory');
+    });
+  });
+});
