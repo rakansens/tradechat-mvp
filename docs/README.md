@@ -54,10 +54,24 @@ tradechat-mvp/
 ├── store/                  # Zustandストア
 │   └── useStore.ts         # メインストア
 ├── types/                  # 型定義
-│   └── index.ts            # 共通型定義
-└── utils/                  # ユーティリティ関数
-    ├── ohlcDummyData.ts    # チャートデータ生成
-    └── positionUtils.ts    # ポジション計算
+│   ├── chart.ts            # チャート関連の型定義
+│   ├── chat.ts             # チャット関連の型定義
+│   ├── common.ts           # 共通の基本型定義
+│   ├── common-interfaces.ts # 共通インターフェース
+│   ├── entry.ts            # エントリー関連の型定義
+│   ├── external-libs.ts    # 外部ライブラリの型定義
+│   └── ui.ts               # UI関連の型定義
+├── utils/                  # ユーティリティ関数
+│   ├── chart.ts            # チャート関連ユーティリティ
+│   ├── date.ts             # 日付処理ユーティリティ
+│   ├── format.ts           # フォーマットユーティリティ
+│   ├── indicators.ts       # 指標計算ユーティリティ
+│   ├── position.ts         # ポジション計算ユーティリティ
+│   └── price.ts            # 価格関連ユーティリティ
+└── docs/                   # ドキュメント
+    ├── README.md           # プロジェクト概要（このファイル）
+    ├── type-system.md      # 型システムの説明
+    └── components.md       # コンポーネント構造の説明
 \`\`\`
 
 ## 4. 主要コンポーネント
@@ -79,7 +93,40 @@ tradechat-mvp/
 - **PositionHistory**: ポジション履歴表示
 - **ProposalDetails**: エントリー提案の詳細表示
 
-## 5. 状態管理 (Zustand)
+## 5. 型システム
+
+TypeScriptの型システムを積極的に活用し、型安全性を高めています。詳細は `docs/type-system.md` を参照してください。
+
+### 5.1 型定義の構造
+
+- **ドメイン別の型定義**: 関連する型を論理的にグループ化
+- **共通インターフェース**: コンポーネント間で共有されるプロパティとイベントハンドラの型定義
+- **Union型とタグ付きUnion**: 状態に応じた型の厳密な定義（例: Entry型）
+- **外部ライブラリの型定義**: 一貫した型定義の提供
+
+### 5.2 主要な型定義
+
+```typescript
+// エントリー関連の型定義例
+export type Entry = OpenEntry | ClosedEntry | CanceledEntry;
+
+// チャート関連の型定義例
+export type ChartType = 'candle' | 'line' | 'bar';
+export type Timeframe = '1m' | '5m' | '15m' | '30m' | '1h' | '4h' | '1d' | '1w';
+
+// 共通インターフェース例
+export interface ChartViewProps {
+  ohlcData: OHLCData[];
+  chartType: ChartType;
+  entries?: Entry[];
+}
+```
+
+## 6. コンポーネント構造
+
+主要コンポーネントの役割と関係性については `docs/components.md` を参照してください。
+
+## 7. 状態管理 (Zustand)
 
 プロジェクトはZustandを使用して状態を一元管理しています。`store/useStore.ts`に以下の状態が定義されています：
 
