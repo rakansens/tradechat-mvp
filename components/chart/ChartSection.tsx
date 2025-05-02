@@ -20,28 +20,52 @@ export default function ChartSection({ ohlcData, entries, timeframe }: ChartSect
   const { chartType, setChartType } = useStore()
 
   return (
-    <div className="flex-1 flex flex-col">
-      <div className="flex justify-between items-center p-3">
-        <div className="flex items-center">
-          <Badge variant="outline" className="font-mono">
+    <div className="flex-1 flex flex-col overflow-hidden h-full">
+      {/* TradingView風のチャートヘッダー */}
+      <div className="flex justify-between items-center px-2 py-1 bg-[#131722] border-b border-[#2a2e39]">
+        <div className="flex items-center space-x-2">
+          {/* タイムフレームバッジ */}
+          <Badge variant="outline" className="font-mono text-xs py-0.5 px-1.5 bg-[#2a2e39] hover:bg-[#363a45] border-[#363a45] text-[#b2b5be]">
             {getTimeframeDisplayName(timeframe)}
           </Badge>
+          
+          {/* チャートタイプ選択 - TradingViewスタイル */}
+          <Tabs value={chartType} onValueChange={(v) => setChartType(v as any)} className="h-7">
+            <TabsList className="h-7 bg-[#2a2e39] p-0.5">
+              <TabsTrigger value="candles" className="h-6 px-2 data-[state=active]:bg-[#363a45]">
+                <CandlestickChart className="h-3.5 w-3.5" />
+              </TabsTrigger>
+              <TabsTrigger value="line" className="h-6 px-2 data-[state=active]:bg-[#363a45]">
+                <LineChart className="h-3.5 w-3.5" />
+              </TabsTrigger>
+              <TabsTrigger value="bar" className="h-6 px-2 data-[state=active]:bg-[#363a45]">
+                <BarChart3 className="h-3.5 w-3.5" />
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+          
+          {/* 価格情報 */}
+          <div className="hidden md:flex items-center space-x-1.5 text-xs text-[#b2b5be]">
+            <span className="font-medium">O: <span className="text-white">61,240</span></span>
+            <span className="font-medium">H: <span className="text-white">61,850</span></span>
+            <span className="font-medium">L: <span className="text-white">60,110</span></span>
+            <span className="font-medium">C: <span className="text-green-500">61,735</span></span>
+          </div>
         </div>
-        <Tabs value={chartType} onValueChange={(v) => setChartType(v as any)} className="h-8">
-          <TabsList className="h-8">
-            <TabsTrigger value="candles" className="h-7 px-2">
-              <CandlestickChart className="h-4 w-4" />
-            </TabsTrigger>
-            <TabsTrigger value="line" className="h-7 px-2">
-              <LineChart className="h-4 w-4" />
-            </TabsTrigger>
-            <TabsTrigger value="bar" className="h-7 px-2">
-              <BarChart3 className="h-4 w-4" />
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
+        
+        {/* 右側のインジケーターボタンと設定ボタン */}
+        <div className="flex items-center space-x-1">
+          <Badge variant="outline" className="text-xs py-0.5 px-1.5 bg-[#2a2e39] hover:bg-[#363a45] border-[#363a45] text-green-500">
+            +2.5%
+          </Badge>
+          <Badge variant="secondary" className="text-xs py-0.5 px-1.5 bg-[#2196f3] border-none text-white hover:bg-[#1e88e5]">
+            インジケーター
+          </Badge>
+        </div>
       </div>
-      <CardContent className="flex-1 p-0">
+      
+      {/* チャートキャンバス - 全画面表示 */}
+      <CardContent className="flex-1 p-0 overflow-hidden">
         <ChartCanvas data={ohlcData} entries={entries} timeframe={timeframe} chartType={chartType} />
       </CardContent>
     </div>

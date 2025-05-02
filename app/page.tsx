@@ -2,7 +2,7 @@
 "use client"
 
 import { useEffect, useRef } from "react"
-import { BarChart3, LineChart, CandlestickChart, Settings, Bell } from "lucide-react"
+import { Bell, CandlestickChart, BarChart3, LineChart, MessageSquare, Settings } from "lucide-react"
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
@@ -40,6 +40,7 @@ export default function Home() {
     // UI state
     activeTab,
     setActiveTab,
+    chartType,
   } = useStore()
 
   // Chat scroll ref
@@ -48,6 +49,14 @@ export default function Home() {
   // Refresh data when component mounts
   useEffect(() => {
     refreshOhlcData()
+    
+    // ウィンドウのリサイズイベントを監視してレイアウトを調整
+    const handleResize = () => {
+      // 必要に応じてレイアウトの調整ロジックを追加
+    }
+    
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
   }, [refreshOhlcData])
 
   // Scroll chat to bottom when messages update
@@ -61,23 +70,23 @@ export default function Home() {
   const openPositionsCount = entries.filter((entry) => entry.status === "open").length
 
   return (
-    <main className="flex flex-col h-screen bg-background text-foreground">
-      {/* Header */}
-      <header className="border-b bg-card px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center">
-          <CandlestickChart className="h-6 w-6 text-primary mr-2" />
-          <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-purple-500 bg-clip-text text-transparent">
-            AlphaTrader
-          </h1>
+    <main className="flex flex-col h-screen bg-[#131722]">
+      <header className="flex justify-between items-center py-2 px-3 border-b border-[#2a2e39] bg-[#0e1016]">
+        <div className="flex items-center space-x-2">
+          <div className="font-bold text-lg flex items-center">
+            <span className="text-[#2196f3]">Alpha</span>
+            <span className="text-[#b2b5be]">Trader</span>
+          </div>
         </div>
-        <div className="flex items-center space-x-4">
-          <Badge variant="outline" className="font-mono">
-            BTC/USD: ${ohlcData[ohlcData.length - 1].close.toLocaleString('en-US')}
-          </Badge>
-          <PriceChangeIndicator
-            currentPrice={ohlcData[ohlcData.length - 1].close}
-            previousPrice={ohlcData[ohlcData.length - 2].close}
-          />
+
+        <div className="flex items-center space-x-2">
+          <Button variant="outline" size="sm" className="bg-[#1e2230] border-[#2a2e39] hover:bg-[#2a2e39] text-[#b2b5be]">
+            <span className="font-mono">BTC/USD: ${ohlcData[ohlcData.length - 1].close.toLocaleString('en-US')}</span>
+            <PriceChangeIndicator
+              currentPrice={ohlcData[ohlcData.length - 1].close}
+              previousPrice={ohlcData[ohlcData.length - 2].close}
+            />
+          </Button>
           <Button variant="ghost" size="icon">
             <Bell className="h-4 w-4" />
           </Button>
@@ -88,44 +97,64 @@ export default function Home() {
         </div>
       </header>
 
-      <div className="flex flex-col md:flex-row h-full">
-        {/* Chat Section */}
-        <ChatSection
-          messages={messages}
-          isSearching={isSearching}
-          pendingEntry={pendingEntry}
-          chatEndRef={chatEndRef}
-          executeEntry={executeEntry}
-        />
+      {/* 強制的にレイアウトをチャート表示に初期化 */}
+      <div className="flex flex-col md:flex-row h-full bg-[#131722]">
+        {/* Chat Section - 常に左サイドバーとして表示、3割の幅に設定 */}
+        <div 
+          className="md:w-[30%] w-full h-1/2 md:h-full transition-all duration-300 ease-in-out overflow-hidden"
+        >
+          <ChatSection
+            messages={messages}
+            isSearching={isSearching}
+            pendingEntry={pendingEntry}
+            chatEndRef={chatEndRef as React.RefObject<HTMLDivElement>}
+            executeEntry={executeEntry}
+          />
+        </div>
 
-        {/* Chart and Position History Section */}
-        <div className="w-full md:w-2/3 h-1/2 md:h-full p-3">
-          <Card className="h-full flex flex-col">
-            <div className="flex justify-between items-center p-3 border-b">
-              <div className="flex items-center">
-                <h2 className="text-lg font-bold mr-2">BTC/USD</h2>
-                <Badge variant="outline" className="font-mono">
+        {/* Chart and Position History Section - 常に右側に大きく表示、7割の幅に設定 */}
+        <div 
+          className="md:w-[70%] w-full h-1/2 md:h-full transition-all duration-300 ease-in-out overflow-hidden"
+        >
+          <Card className="h-full flex flex-col border-0 rounded-none shadow-none bg-[#131722]">
+            <div className="flex justify-between items-center py-2 px-3 border-b border-[#2a2e39] bg-[#131722]">
+              <div className="flex items-center space-x-2">
+                <h2 className="text-base font-bold text-[#b2b5be]">BTC/USD</h2>
+                <Badge variant="outline" className="font-mono text-xs py-0.5 px-1.5 bg-[#1e2230] border-[#2a2e39] text-[#b2b5be]">
                   24h Vol: 12.5K
                 </Badge>
               </div>
 
               <div className="flex items-center space-x-2">
                 <TimeframeSelector selectedTimeframe={timeframe} onTimeframeChange={setTimeframe} />
-                <Separator orientation="vertical" className="h-6" />
-                <Tabs value={activeTab} onValueChange={setActiveTab}>
-                  <TabsList>
-                    <TabsTrigger value="chart" className="flex items-center">
-                      <BarChart3 className="h-4 w-4 mr-1" />
+                <Separator orientation="vertical" className="h-6 bg-[#2a2e39]" />
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="h-7">
+                  <TabsList className="h-7 bg-[#1e2230] border border-[#2a2e39]">
+                    <TabsTrigger 
+                      value="chart" 
+                      className="flex items-center h-6 px-2 text-xs data-[state=active]:bg-[#2a2e39] data-[state=active]:text-[#b2b5be]"
+                    >
+                      <BarChart3 className="h-3.5 w-3.5 mr-1" />
                       Chart
                     </TabsTrigger>
-                    <TabsTrigger value="positions" className="flex items-center relative">
-                      <LineChart className="h-4 w-4 mr-1" />
+                    <TabsTrigger 
+                      value="positions" 
+                      className="flex items-center relative h-6 px-2 text-xs data-[state=active]:bg-[#2a2e39] data-[state=active]:text-[#b2b5be]"
+                    >
+                      <LineChart className="h-3.5 w-3.5 mr-1" />
                       Positions
                       {openPositionsCount > 0 && (
-                        <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0">
+                        <Badge className="absolute -top-1 -right-1 h-4 w-4 flex items-center justify-center p-0 text-[10px] bg-[#2196f3]">
                           {openPositionsCount}
                         </Badge>
                       )}
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="chat" 
+                      className="flex items-center h-6 px-2 text-xs data-[state=active]:bg-[#2a2e39] data-[state=active]:text-[#b2b5be]"
+                    >
+                      <MessageSquare className="h-3.5 w-3.5 mr-1" />
+                      Chat
                     </TabsTrigger>
                   </TabsList>
                 </Tabs>
@@ -139,6 +168,17 @@ export default function Home() {
 
               <TabsContent value="positions" className="flex-1 m-0 p-0 data-[state=active]:flex flex-col">
                 <PositionHistory entries={entries} onClosePosition={closePosition} onCancelPosition={cancelPosition} />
+              </TabsContent>
+              
+              {/* モバイル用のチャットタブコンテンツ - PCでは表示されない */}
+              <TabsContent value="chat" className="flex-1 m-0 p-0 md:hidden data-[state=active]:flex flex-col">
+                <ChatSection
+                  messages={messages}
+                  isSearching={isSearching}
+                  pendingEntry={pendingEntry}
+                  chatEndRef={chatEndRef as React.RefObject<HTMLDivElement>}
+                  executeEntry={executeEntry}
+                />
               </TabsContent>
             </Tabs>
           </Card>
