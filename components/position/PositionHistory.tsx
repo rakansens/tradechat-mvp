@@ -44,15 +44,21 @@ export default function PositionHistory({ entries, onClosePosition, onCancelPosi
   )
 
   return (
-    <Card className="h-full flex flex-col">
-      <CardHeader className="py-3 px-4 flex flex-row items-center justify-between">
-        <CardTitle className="text-base font-medium">Position History</CardTitle>
+    <Card className="h-full flex flex-col border-0 rounded-none shadow-none bg-[#131722]">
+      <CardHeader className="py-2 px-4 flex flex-row items-center justify-between border-b border-[#2a2e39]">
+        <CardTitle className="text-base font-medium text-[#b2b5be]">Position History</CardTitle>
         <Tabs value={selectedTab} onValueChange={(v) => setSelectedTab(v as "open" | "closed")}>
-          <TabsList className="grid grid-cols-2 h-8">
-            <TabsTrigger value="open" className="text-xs px-3 py-1 h-8">
+          <TabsList className="grid grid-cols-2 h-7 bg-[#1e2230] border border-[#2a2e39]">
+            <TabsTrigger 
+              value="open" 
+              className="text-xs h-6 data-[state=active]:bg-[#2a2e39] data-[state=active]:text-[#b2b5be]"
+            >
               Open
             </TabsTrigger>
-            <TabsTrigger value="closed" className="text-xs px-3 py-1 h-8">
+            <TabsTrigger 
+              value="closed" 
+              className="text-xs h-6 data-[state=active]:bg-[#2a2e39] data-[state=active]:text-[#b2b5be]"
+            >
               Closed
             </TabsTrigger>
           </TabsList>
@@ -61,9 +67,13 @@ export default function PositionHistory({ entries, onClosePosition, onCancelPosi
 
       <Separator />
 
-      <CardContent className="flex-1 p-3 overflow-y-auto">
+      <CardContent className="flex-1 overflow-auto p-0 bg-[#131722]">
         {filteredEntries.length === 0 ? (
-          <EmptyState selectedTab={selectedTab} />
+          <div className="h-full flex items-center justify-center">
+            <p className="text-[#616471] text-sm">
+              {selectedTab === "open" ? "No open positions." : "No closed positions."}
+            </p>
+          </div>
         ) : (
           <PositionList
             entries={filteredEntries}
@@ -89,8 +99,10 @@ export default function PositionHistory({ entries, onClosePosition, onCancelPosi
 // Empty state component
 function EmptyState({ selectedTab }: { selectedTab: "open" | "closed" }) {
   return (
-    <div className="flex-1 flex items-center justify-center text-muted-foreground h-[200px]">
-      {selectedTab === "open" ? "No open positions" : "No closed positions"}
+    <div className="h-full flex items-center justify-center">
+      <p className="text-[#616471] text-sm">
+        {selectedTab === "open" ? "No open positions." : "No closed positions."}
+      </p>
     </div>
   )
 }
@@ -104,80 +116,85 @@ function PositionList({
 }: {
   entries: Entry[]
   handleClosePosition: (entry: Entry) => void
-  onCancelPosition: (id: string) => void
+  onCancelPosition: (entryId: string) => void
   getCurrentPrice: (price: number) => number
 }) {
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 p-3 bg-[#131722]">
       {entries.map((entry) => {
         const profit = calculateProfit(entry, getCurrentPrice)
         const profitPercentage = calculateProfitPercentage(entry, profit)
         const isProfitable = profit > 0
 
         return (
-          <Card key={`${entry.id}-${entry.time}`} className="overflow-hidden">
+          <Card key={`${entry.id}-${entry.time}`} className="overflow-hidden bg-[#1e2230] border-[#2a2e39]">
             <div className="p-3">
-              <div className="flex justify-between items-start">
-                <div>
-                  <div className="flex items-center">
-                    {entry.side === "buy" ? (
-                      <Badge variant="success" className="flex items-center mb-1">
-                        <ArrowUpRight className="h-3 w-3 mr-1" />
-                        <span className="font-bold">{entry.symbol} LONG</span>
-                      </Badge>
-                    ) : (
-                      <Badge variant="destructive" className="flex items-center mb-1">
-                        <ArrowDownRight className="h-3 w-3 mr-1" />
-                        <span className="font-bold">{entry.symbol} SHORT</span>
-                      </Badge>
-                    )}
-                  </div>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    Entry: ${entry.price.toLocaleString()} ({formatDate(entry.time)})
-                  </div>
+              <div className="flex items-center space-x-1">
+                <Badge 
+                  variant={entry.side === "buy" ? "success" : "destructive"} 
+                  className="text-xs flex items-center bg-opacity-20 border"
+                >
+                  {entry.side === "buy" ? (
+                    <ArrowUpRight className="h-3 w-3 mr-1" />
+                  ) : (
+                    <ArrowDownRight className="h-3 w-3 mr-1" />
+                  )}
+                  {entry.side === "buy" ? "LONG" : "SHORT"}
+                </Badge>
+                <div className="text-xs text-muted-foreground">
+                  <span className="font-medium text-[#b2b5be]">
+                    ${entry.price.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
                   {entry.status === "closed" && entry.exitPrice && entry.exitTime && (
-                    <div className="text-xs text-muted-foreground">
-                      Exit: ${entry.exitPrice.toLocaleString()} ({formatDate(entry.exitTime)})
+                    <div>
+                      <div className="font-medium text-[#b2b5be]">Exit Price:</div>
+                      <div className="text-sm text-[#b2b5be]">
+                        ${entry.exitPrice?.toLocaleString("en-US", {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
+                      </div>
                     </div>
                   )}
                 </div>
-
-                <div className="text-right">
-                  <div
-                    className={`font-bold ${isProfitable ? "text-green-500" : "text-red-500"} flex items-center justify-end`}
-                  >
-                    {isProfitable ? <TrendingUp className="h-3 w-3 mr-1" /> : <TrendingDown className="h-3 w-3 mr-1" />}
-                    {profit > 0 ? "+" : ""}${Math.abs(profit).toFixed(2)} ({profitPercentage.toFixed(2)}%)
+              </div>
+              <div className="text-right">
+                <div
+                  className={`font-bold ${isProfitable ? "text-green-500" : "text-red-500"} flex items-center justify-end`}
+                >
+                  {isProfitable ? <TrendingUp className="h-3 w-3 mr-1" /> : <TrendingDown className="h-3 w-3 mr-1" />}
+                  {profit > 0 ? "+" : ""}${Math.abs(profit).toFixed(2)} ({profitPercentage.toFixed(2)}%)
+                </div>
+                {entry.status === "open" && (
+                  <div className="flex mt-2 justify-end">
+                    <Button
+                      onClick={() => handleClosePosition(entry)}
+                      variant={isProfitable ? "success" : "destructive"}
+                      size="sm"
+                      className="mr-1 h-7 text-xs"
+                    >
+                      <CheckCircle className="h-3 w-3 mr-1" />
+                      Close
+                    </Button>
+                    <Button
+                      onClick={() => onCancelPosition(entry.id)}
+                      variant="outline"
+                      size="sm"
+                      className="h-7 text-xs"
+                    >
+                      <X className="h-3 w-3 mr-1" />
+                      Cancel
+                    </Button>
                   </div>
-                  {entry.status === "open" && (
-                    <div className="flex mt-2 justify-end">
-                      <Button
-                        onClick={() => handleClosePosition(entry)}
-                        variant={isProfitable ? "success" : "destructive"}
-                        size="sm"
-                        className="mr-1 h-7 text-xs"
-                      >
-                        <CheckCircle className="h-3 w-3 mr-1" />
-                        Close
-                      </Button>
-                      <Button
-                        onClick={() => onCancelPosition(entry.id)}
-                        variant="outline"
-                        size="sm"
-                        className="h-7 text-xs"
-                      >
-                        <X className="h-3 w-3 mr-1" />
-                        Cancel
-                      </Button>
-                    </div>
-                  )}
-                  {entry.status === "open" && (
-                    <div className="flex items-center text-xs text-muted-foreground mt-1 justify-end">
+                )}
+                {entry.status === "open" && (
+                  <div className="flex items-center space-x-1">
+                    <Badge variant="outline" className="text-xs bg-[#2a2e39] border-[#363a45] text-[#b2b5be]">
                       <Clock className="h-3 w-3 mr-1" />
-                      Active
-                    </div>
-                  )}
-                </div>
+                      {formatDate(entry.time)}
+                    </Badge>
+                  </div>
+                )}
               </div>
             </div>
           </Card>
