@@ -2,8 +2,8 @@
 
 import { getTimeframeDisplayName } from "@/utils/ohlcDummyData"
 import ChartCanvas from "@/components/chart/ChartCanvas"
-import type { Entry } from "@/types"
-import type { Timeframe } from "@/utils/ohlcDummyData"
+import type { Entry } from "@/types/entry"
+import type { Timeframe } from "@/types/chart"
 import { CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"

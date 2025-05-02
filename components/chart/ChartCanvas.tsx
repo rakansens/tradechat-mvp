@@ -20,7 +20,8 @@ import type {
   DeepPartial,
 } from "lightweight-charts"
 import * as LightweightCharts from "lightweight-charts"; // Import the namespace
-import type { Entry, Timeframe } from "@/types"
+import type { Entry, ClosedEntry } from "@/types/entry"
+import type { Timeframe } from "@/types/chart"
 import { theme } from "@/styles/colors"
 import { useChartConfig } from "@/hooks/useChartConfig"
 import { useTheme } from "next-themes"
@@ -690,14 +691,19 @@ function createEntryMarkers(entries: Entry[]): SeriesMarker<Time>[] {
   }))
 }
 
+// 型ガード関数: entryがClosedEntry型かどうかをチェック
+function isClosedEntry(entry: Entry): entry is ClosedEntry {
+  return entry.status === "closed";
+}
+
 // Create exit markers
 function createExitMarkers(entries: Entry[]): SeriesMarker<Time>[] {
   return entries
-    .filter((entry) => entry.status === "closed" && entry.exitTime)
+    .filter(isClosedEntry) // 型ガードを使用
     .map((entry) => ({
-      time: (new Date(entry.exitTime!).getTime() / 1000) as UTCTimestamp,
+      time: (new Date(entry.exitTime).getTime() / 1000) as UTCTimestamp,
       position: entry.side === "buy" ? "aboveBar" : "belowBar",
-      color: entry.profit && entry.profit > 0 ? theme.accent.green : theme.accent.red,
+      color: entry.profit > 0 ? theme.accent.green : theme.accent.red,
       shape: "circle",
       text: "EXIT",
       size: 2,

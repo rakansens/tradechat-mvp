@@ -1,8 +1,12 @@
+// store/useStore.ts
+// 更新: Message型をExtendedMessage型に置き換えて型エラーを修正
+
 import { create } from "zustand"
 import { devtools, persist } from "zustand/middleware"
 import { generateOHLCData } from "@/utils/ohlcDummyData"
-import type { Entry, Timeframe } from "@/types"
-import type { Message } from "ai"
+import type { Entry, OpenEntry } from "@/types/entry"
+import type { Timeframe, ChartType } from "@/types/chart"
+import type { ExtendedMessage, ProposalType } from "@/types/chat"
 
 // Chart Store Types
 interface ChartState {
@@ -19,10 +23,10 @@ interface ChartState {
 // Entry Store Types
 interface EntryState {
   entries: Entry[]
-  pendingEntry: Entry | null
+  pendingEntry: OpenEntry | null
 
   // Actions
-  setPendingEntry: (entry: Entry | null) => void
+  setPendingEntry: (entry: OpenEntry | null) => void
   executeEntry: () => void
   closePosition: (entryId: string, exitPrice: number) => void
   cancelPosition: (entryId: string) => void
@@ -30,12 +34,12 @@ interface EntryState {
 
 // Chat Store Types
 interface ChatState {
-  messages: Message[]
+  messages: ExtendedMessage[]
   isSearching: boolean
 
   // Actions
-  setMessages: (messages: Message[]) => void
-  addMessage: (message: Message) => void
+  setMessages: (messages: ExtendedMessage[]) => void
+  addMessage: (message: ExtendedMessage) => void
   setIsSearching: (isSearching: boolean) => void
   handleEntryPointQuery: () => void
   handleNewsQuery: () => void
@@ -50,26 +54,26 @@ interface UIState {
   setActiveTab: (tab: string) => void
 }
 
-// Combined Store Type
+// Combined Store State
 interface StoreState extends ChartState, EntryState, ChatState, UIState {}
 
-// Helper function to get data points for timeframe
-const getDataPointsForTimeframe = (timeframe: Timeframe): number => {
+// Helper function to determine data points based on timeframe
+function getDataPointsForTimeframe(timeframe: Timeframe): number {
   switch (timeframe) {
-    case "1d":
-      return 30
-    case "4h":
-      return 48
-    case "1h":
-      return 48
-    case "15m":
-      return 96
-    case "5m":
-      return 96
     case "1m":
-      return 60
+      return 60 * 24 // 1 day of minute data
+    case "5m":
+      return 12 * 24 // 1 day of 5-minute data
+    case "15m":
+      return 4 * 24 // 1 day of 15-minute data
+    case "1h":
+      return 24 * 7 // 1 week of hourly data
+    case "4h":
+      return 6 * 7 // 1 week of 4-hour data
+    case "1d":
+      return 30 // 1 month of daily data
     default:
-      return 30
+      return 100
   }
 }
 
@@ -83,7 +87,7 @@ export const useStore = create<StoreState>()(
         const initialOhlcData = generateOHLCData(getDataPointsForTimeframe(initialTimeframe), initialTimeframe)
 
         // Initial messages
-        const initialMessages: Message[] = [
+        const initialMessages: ExtendedMessage[] = [
           {
             id: "welcome",
             role: "assistant",
@@ -101,9 +105,9 @@ Technical Analysis:
 • Volume is trending upward
 
 Would you like to enter a long position at the current price of $60,500?`,
-            isProposal: true as any,
-            proposalType: "buy" as any,
-            price: 60500 as any,
+            isProposal: true,
+            proposalType: "buy",
+            price: 60500,
           },
         ]
 
@@ -113,52 +117,83 @@ Would you like to enter a long position at the current price of $60,500?`,
           chartType: "candles",
           ohlcData: initialOhlcData,
 
+          // Entry State
+          entries: [
+            {
+              id: "1",
+              side: "buy",
+              symbol: "BTC/USD",
+              price: 58750,
+              time: "2023-05-01T10:30:00Z",
+              status: "closed",
+              exitPrice: 61200,
+              exitTime: "2023-05-02T14:45:00Z",
+              profit: 2450,
+            },
+            {
+              id: "2",
+              side: "sell",
+              symbol: "BTC/USD",
+              price: 62500,
+              time: "2023-05-03T09:15:00Z",
+              status: "closed",
+              exitPrice: 59800,
+              exitTime: "2023-05-04T16:20:00Z",
+              profit: 2700,
+            },
+            {
+              id: "3",
+              side: "buy",
+              symbol: "BTC/USD",
+              price: 59200,
+              time: "2023-05-05T11:00:00Z",
+              status: "open",
+            },
+          ],
+          pendingEntry: null,
+
+          // Chat State
+          messages: initialMessages,
+          isSearching: false,
+
+          // UI State
+          activeTab: "chart",
+
+          // Chart Actions
           setTimeframe: (timeframe) => {
-            set({ timeframe })
-            get().refreshOhlcData()
+            const dataPoints = getDataPointsForTimeframe(timeframe)
+            set({
+              timeframe,
+              ohlcData: generateOHLCData(dataPoints, timeframe),
+            })
           },
-
           setChartType: (chartType) => set({ chartType }),
-
           refreshOhlcData: () => {
             const { timeframe } = get()
-            const newData = generateOHLCData(getDataPointsForTimeframe(timeframe), timeframe)
-            set({ ohlcData: newData })
+            const dataPoints = getDataPointsForTimeframe(timeframe)
+            set({ ohlcData: generateOHLCData(dataPoints, timeframe) })
           },
 
-          // Entry State
-          entries: [],
-          pendingEntry: {
-            id: `entry-${Date.now()}`,
-            side: "buy",
-            symbol: "BTC/USD",
-            price: 60500,
-            time: new Date().toISOString(),
-            status: "open",
-          },
-
+          // Entry Actions
           setPendingEntry: (pendingEntry) => set({ pendingEntry }),
-
           executeEntry: () => {
             const { pendingEntry, entries } = get()
             if (pendingEntry) {
-              const newEntry = {
-                ...pendingEntry,
-                id: pendingEntry.id || `entry-${Date.now()}`,
-                status: "open" as const,
-              }
-              set({ entries: [...entries, newEntry], pendingEntry: null })
+              set({
+                entries: [...entries, pendingEntry],
+                pendingEntry: null,
+              })
             }
           },
-
           closePosition: (entryId, exitPrice) => {
             const { entries } = get()
             const updatedEntries = entries.map((entry) => {
-              if (entry.id === entryId) {
-                const profit = entry.side === "buy" ? exitPrice - entry.price : entry.price - exitPrice
+              if (entry.id === entryId && entry.status === "open") {
+                const profit =
+                  entry.side === "buy" ? exitPrice - entry.price : entry.price - exitPrice
                 return {
                   ...entry,
-                  status: "closed" as const,
+                  status: "closed",
                   exitPrice,
                   exitTime: new Date().toISOString(),
                   profit,
@@ -168,14 +203,13 @@ Would you like to enter a long position at the current price of $60,500?`,
             })
             set({ entries: updatedEntries })
           },
-
           cancelPosition: (entryId) => {
             const { entries } = get()
             const updatedEntries = entries.map((entry) => {
-              if (entry.id === entryId) {
+              if (entry.id === entryId && entry.status === "open") {
                 return {
                   ...entry,
-                  status: "canceled" as const,
+                  status: "canceled",
                 }
               }
               return entry
@@ -183,54 +217,57 @@ Would you like to enter a long position at the current price of $60,500?`,
             set({ entries: updatedEntries })
           },
 
-          // Chat State
-          messages: initialMessages,
-          isSearching: false,
-
+          // Chat Actions
           setMessages: (messages) => set({ messages }),
-
           addMessage: (message) => {
             const { messages } = get()
             set({ messages: [...messages, message] })
           },
-
           setIsSearching: (isSearching) => set({ isSearching }),
 
+          // Sample chat responses for demo
           handleEntryPointQuery: () => {
-            const { messages, ohlcData } = get()
-            const currentPrice = ohlcData[ohlcData.length - 1].close
+            const { messages } = get()
 
-            const userMessage: Message = {
+            const userMessage: ExtendedMessage = {
               id: Date.now().toString(),
               role: "user",
               content: "Entry Point",
             }
 
-            const aiResponse: Message = {
+            const aiResponse: ExtendedMessage = {
               id: Date.now().toString() + "-response",
               role: "assistant",
               content: `Based on my analysis of the current chart, Bitcoin is in a short-term uptrend.
 
 Technical Analysis:
 • Price is above the 50-day moving average, a bullish indicator
-• Recent high: $${(currentPrice * 1.02).toFixed(0)}, recent low: $${(currentPrice * 0.98).toFixed(0)}
+• Recent high: $61,500, recent low: $59,500
 • Volume is average with no significant selling pressure
 
-Would you like to enter a long position at the current price of $${currentPrice.toLocaleString()}? Target: $${(currentPrice * 1.05).toFixed(0)}, Stop loss: $${(currentPrice * 0.98).toFixed(0)}.`,
-              isProposal: true as any,
-              proposalType: "buy" as any,
-              price: currentPrice as any,
+Would you like to enter a long position at the current price of $60,500? Target: $62,000, Stop loss: $59,000.`,
+              isProposal: true,
+              proposalType: "buy",
+              price: 60500,
             }
 
+            // Update messages
             set({
               messages: [...messages, userMessage, aiResponse],
+              isSearching: false,
+            })
+
+            // Set entry information
+            set({
               pendingEntry: {
                 id: Date.now().toString(),
                 side: "buy",
                 symbol: "BTC/USD",
-                price: currentPrice,
+                price: 60500,
                 time: new Date().toISOString(),
                 status: "open",
+                takeProfit: 62000,
+                stopLoss: 59000,
               },
             })
           },
@@ -238,98 +275,103 @@ Would you like to enter a long position at the current price of $${currentPrice.
           handleNewsQuery: () => {
             const { messages } = get()
 
-            const userMessage: Message = {
+            const userMessage: ExtendedMessage = {
               id: Date.now().toString(),
               role: "user",
-              content: "Market News",
+              content: "Latest News",
             }
 
-            set({ isSearching: true })
+            const aiResponse: ExtendedMessage = {
+              id: Date.now().toString() + "-response",
+              role: "assistant",
+              content: `Here are the latest Bitcoin news headlines:
 
-            // Simulate API delay
-            setTimeout(() => {
-              const aiResponse: Message = {
-                id: Date.now().toString() + "-response",
-                role: "assistant",
-                content: `Here's the latest Bitcoin market news:
+1. Bitcoin price surges 5% in the last 24 hours, reaching $60,500
+2. Major institutional investor announces $100M Bitcoin purchase
+3. New regulatory framework for cryptocurrencies proposed in the US
+4. Bitcoin mining difficulty increases by 3.4% after latest adjustment
 
-1. Bitcoin price has risen 5% in the last 24 hours, currently trading around $61,200.
-2. U.S. regulators are considering a new regulatory framework for crypto assets.
-3. Major institutional investors have increased their Bitcoin positions.
-4. Technical analysis shows Bitcoin trading above its 50-day moving average, indicating a bullish signal.
-5. Market volatility has decreased by 20% compared to last week.
+Would you like to enter a long position based on this positive news sentiment?`,
+              isProposal: true,
+              proposalType: "buy",
+              price: 60500,
+            }
 
-Based on these developments, the short-term trend appears bullish, but watch for regulatory news that could impact the market.`,
-              }
+            // Update messages
+            set({
+              messages: [...get().messages, userMessage, aiResponse],
+              isSearching: false,
+            })
 
-              set({
-                messages: [...get().messages, userMessage, aiResponse],
-                isSearching: false,
-              })
-            }, 1500)
+            // Set entry information
+            set({
+              pendingEntry: {
+                id: Date.now().toString(),
+                side: "buy",
+                symbol: "BTC/USD",
+                price: 60500,
+                time: new Date().toISOString(),
+                status: "open",
+              },
+            })
           },
 
           handleAIProposalQuery: () => {
-            const { messages, ohlcData } = get()
-            const currentPrice = ohlcData[ohlcData.length - 1].close
-            const randomPrice = Math.floor(currentPrice * (0.98 + Math.random() * 0.04))
-            const isBuy = Math.random() > 0.5
+            const { messages } = get()
 
-            const userMessage: Message = {
+            // Generate a random proposal
+            const isBuy = Math.random() > 0.5
+            const price = get().ohlcData[get().ohlcData.length - 1].close
+            const proposalType: ProposalType = isBuy ? "buy" : "sell"
+
+            const userMessage: ExtendedMessage = {
               id: Date.now().toString(),
               role: "user",
-              content: "AI Signal",
+              content: "AI Proposal",
             }
 
-            // Simulate API delay
-            setTimeout(() => {
-              const aiResponse: Message = {
-                id: Date.now().toString() + "-proposal",
-                role: "assistant",
-                content: `I've detected a ${isBuy ? "BUY" : "SELL"} signal!
+            const aiResponse: ExtendedMessage = {
+              id: Date.now().toString() + "-response",
+              role: "assistant",
+              content: `Based on my analysis, I recommend a ${isBuy ? "buy" : "sell"} position at the current price of $${price}.
 
 Technical Analysis:
-• ${isBuy ? "Uptrend forming" : "Downtrend forming"}
-• ${isBuy ? "RSI rising but not yet overbought" : "RSI falling but not yet oversold"}
-• ${isBuy ? "Price bouncing off support level" : "Price rejecting at resistance level"}
+• ${isBuy ? "Price is above the 50-day moving average" : "Price has broken below support"}
+• ${isBuy ? "RSI indicates oversold conditions" : "MACD shows a bearish crossover"}
+• ${isBuy ? "Volume is increasing on up days" : "Volume is increasing on down days"}
 
-Would you like to enter a ${isBuy ? "long" : "short"} position at the current price of $${randomPrice.toLocaleString()}?`,
-                isProposal: true as any,
-                proposalType: isBuy ? ("buy" as any) : ("sell" as any),
-                price: randomPrice as any,
-              }
+Would you like to enter this ${isBuy ? "long" : "short"} position?`,
+              isProposal: true,
+              proposalType,
+              price,
+            }
 
-              set({
-                messages: [...get().messages, userMessage, aiResponse],
-                pendingEntry: {
-                  id: Date.now().toString(),
-                  side: isBuy ? "buy" : "sell",
-                  symbol: "BTC/USD",
-                  price: randomPrice,
-                  time: new Date().toISOString(),
-                  status: "open",
-                },
-              })
-            }, 1000)
+            // Update messages
+            set({
+              messages: [...get().messages, userMessage, aiResponse],
+              isSearching: false,
+            })
+
+            // Set entry information
+            set({
+              pendingEntry: {
+                id: Date.now().toString(),
+                side: proposalType,
+                symbol: "BTC/USD",
+                price,
+                time: new Date().toISOString(),
+                status: "open",
+              },
+            })
           },
 
-          // UI State
-          activeTab: "chart",
-
+          // UI Actions
           setActiveTab: (activeTab) => set({ activeTab }),
         }
       },
       {
-        name: "alpha-trader-storage",
-        partialize: (state) => ({
-          // Only persist these states
-          entries: state.entries,
-          activeTab: state.activeTab,
-          timeframe: state.timeframe,
-          chartType: state.chartType,
-        }),
-      },
-    ),
-    { name: "alpha-trader-store" },
-  ),
+        name: "tradechat-store",
+      }
+    )
+  )
 )

@@ -1,3 +1,4 @@
+
 import type { NextRequest } from "next/server"
 
 // Allow responses up to 5 minutes
@@ -72,3 +73,17 @@ export async function POST(req: NextRequest) {
       { status: 200, headers: { "Content-Type": "application/json" } },
     )
   }
+
+  // デフォルトのレスポンス
+  return new Response(
+    JSON.stringify({
+      id: "default-response",
+      role: "assistant",
+      content: `申し訳ありませんが、現在その質問に対する適切な回答を用意できていません。
+
+チャート分析やトレード提案、または最新の市場情報についてお聞きいただければ、お答えできます。`
+    }),
+    { status: 200, headers: { "Content-Type": "application/json" } },
+  )
+}
+

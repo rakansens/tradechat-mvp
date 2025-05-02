@@ -1,14 +1,17 @@
+// hooks/useChatInteraction.ts
+// 更新: Message型をExtendedMessage型に置き換えて型エラーを修正
 "use client"
 
 import { useState } from "react"
 import { useChat } from "ai/react"
-import type { Entry } from "@/types"
+import type { Entry, OpenEntry } from "@/types/entry"
+import type { ExtendedMessage, ProposalType } from "@/types/chat"
 import type { ChangeEvent, FormEvent } from "react"
 
 interface UseChatInteractionProps {
   ohlcData: any[]
   pendingEntry: Entry | null
-  setPendingEntry: (entry: Entry | null) => void
+  setPendingEntry: (entry: OpenEntry | null) => void
   entries: Entry[]
   executeEntry: () => void
   setActiveTab: (tab: string) => void
@@ -25,7 +28,7 @@ export function useChatInteraction({
   const [isSearching, setIsSearching] = useState(false)
 
   // Initialize sample conversations
-  const initialMessages = [
+  const initialMessages: ExtendedMessage[] = [
     {
       id: "welcome",
       role: "assistant" as const,
@@ -48,9 +51,16 @@ Would you like to enter a long position at the current price of $60,500?`,
     },
   ]
 
-  const { messages, input, handleInputChange, handleSubmit, setMessages } = useChat({
+  // useChatフックの返す値を取得し、型を拡張
+  const {
+    messages: originalMessages,
+    input,
+    handleInputChange,
+    handleSubmit: originalHandleSubmit,
+    setMessages: setOriginalMessages
+  } = useChat({
     api: "/api/chat",
-    initialMessages: initialMessages,
+    initialMessages: initialMessages as any,
     onFinish: (message) => {
       // Check if the message suggests an entry
       if (message.content.includes("enter") || message.content.includes("position")) {
@@ -81,63 +91,43 @@ Would you like to enter a long position at the current price of $60,500?`,
     },
   })
 
+  // 型変換用のヘルパー
+  const messages = originalMessages as ExtendedMessage[];
+  const setMessages = (newMessages: ExtendedMessage[]) => {
+    setOriginalMessages(newMessages as any);
+  };
+
   // Handle sample responses for specific keywords
   const handleSubmitWithSamples = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
 
-    if (input.trim() === "Market News") {
-      handleNewsQuery()
-    } else if (input.trim() === "Entry Point") {
-      handleEntryPointQuery()
-    } else if (input.trim() === "Sell Entry") {
-      handleSellEntryQuery()
-    } else if (input.trim() === "AI Signal") {
-      handleAIProposalQuery()
-    } else {
-      // Normal submission
-      handleSubmit(e)
-    }
-  }
-
-  // Handle news query
-  const handleNewsQuery = () => {
+    // Set searching state
     setIsSearching(true)
 
-    // Add a slight delay to show the searching state
-    setTimeout(() => {
-      setMessages([
-        ...messages,
-        { id: Date.now().toString(), role: "user", content: input },
-        {
-          id: Date.now().toString() + "-response",
-          role: "assistant",
-          content: `Here's the latest Bitcoin market news:
+    // Check for specific keywords to trigger sample responses
+    if (input.toLowerCase().includes("entry point") || input.toLowerCase().includes("buy signal")) {
+      handleEntryPointQuery()
+      return
+    }
 
-1. Bitcoin price has risen 5% in the last 24 hours, currently trading around $61,200.
-2. U.S. regulators are considering a new regulatory framework for crypto assets.
-3. Major institutional investors have increased their Bitcoin positions.
-4. Technical analysis shows Bitcoin trading above its 50-day moving average, indicating a bullish signal.
-5. Market volatility has decreased by 20% compared to last week.
+    if (input.toLowerCase().includes("news") || input.toLowerCase().includes("latest")) {
+      handleNewsQuery()
+      return
+    }
 
-Based on these developments, the short-term trend appears bullish, but watch for regulatory news that could impact the market.`,
-        },
-      ])
-      setIsSearching(false)
-    }, 1500)
-
-    // Clear input
-    handleInputChange({ target: { value: "" } } as ChangeEvent<HTMLInputElement>)
+    // Default to normal AI response
+    originalHandleSubmit(e)
   }
 
   // Handle entry point query
   const handleEntryPointQuery = () => {
     setMessages([
       ...messages,
-      { id: Date.now().toString(), role: "user", content: input },
+      { id: Date.now().toString(), role: "user", content: input } as ExtendedMessage,
       {
         id: Date.now().toString() + "-response",
         role: "assistant",
-        content: `Based on my analysis of the current chart, Bitcoin is in a short-term uptrend.
+        content: `Based on my analysis of the BTC/USD chart, I've identified a potential entry point.
 
 Technical Analysis:
 • Price is above the 50-day moving average, a bullish indicator
@@ -148,7 +138,45 @@ Would you like to enter a long position at the current price of $60,500? Target:
         isProposal: true,
         proposalType: "buy",
         price: 60500,
-      },
+      } as ExtendedMessage,
+    ])
+
+    // Set entry information
+    setPendingEntry({
+      id: Date.now().toString(),
+      side: "buy",
+      symbol: "BTC/USD",
+      price: 60500,
+      time: new Date().toISOString(),
+      status: "open",
+      takeProfit: 62000,
+      stopLoss: 59000,
+    })
+
+    // End searching state
+    setIsSearching(false)
+  }
+
+  // Handle news query
+  const handleNewsQuery = () => {
+    setMessages([
+      ...messages,
+      { id: Date.now().toString(), role: "user", content: input } as ExtendedMessage,
+      {
+        id: Date.now().toString() + "-response",
+        role: "assistant",
+        content: `Here are the latest Bitcoin news headlines:
+
+1. Bitcoin price surges 5% in the last 24 hours, reaching $60,500
+2. Major institutional investor announces $100M Bitcoin purchase
+3. New regulatory framework for cryptocurrencies proposed in the US
+4. Bitcoin mining difficulty increases by 3.4% after latest adjustment
+
+Would you like to enter a long position based on this positive news sentiment?`,
+        isProposal: true,
+        proposalType: "buy",
+        price: 60500,
+      } as ExtendedMessage,
     ])
 
     // Set entry information
@@ -161,96 +189,57 @@ Would you like to enter a long position at the current price of $60,500? Target:
       status: "open",
     })
 
-    // Clear input
-    handleInputChange({ target: { value: "" } } as ChangeEvent<HTMLInputElement>)
+    // End searching state
+    setIsSearching(false)
   }
 
-  // Handle sell entry query
-  const handleSellEntryQuery = () => {
+  // Handle AI proposal query (for testing)
+  const handleAIProposalQuery = () => {
+    // Generate a random proposal
+    const isBuy = Math.random() > 0.5
+    const price = ohlcData[ohlcData.length - 1].close
+    const proposalType: ProposalType = isBuy ? "buy" : "sell"
+
     setMessages([
       ...messages,
-      { id: Date.now().toString(), role: "user", content: input },
       {
-        id: Date.now().toString() + "-response",
+        id: Date.now().toString(),
         role: "assistant",
-        content: `Chart analysis indicates Bitcoin may experience a short-term decline.
+        content: `Based on my analysis, I recommend a ${isBuy ? "buy" : "sell"} position at the current price of $${price}.
 
 Technical Analysis:
-• Price has pulled back from recent highs
-• Failed to break resistance at $61,000
-• Short-term momentum indicators are weakening
+• ${isBuy ? "Price is above the 50-day moving average" : "Price has broken below support"}
+• ${isBuy ? "RSI indicates oversold conditions" : "MACD shows a bearish crossover"}
+• ${isBuy ? "Volume is increasing on up days" : "Volume is increasing on down days"}
 
-Would you like to enter a short position at the current price of $60,800? Target: $59,500, Stop loss: $61,500.`,
+Would you like to enter this ${isBuy ? "long" : "short"} position?`,
         isProposal: true,
-        proposalType: "sell",
-        price: 60800,
-      },
+        proposalType,
+        price,
+      } as ExtendedMessage,
     ])
 
     // Set entry information
     setPendingEntry({
       id: Date.now().toString(),
-      side: "sell",
+      side: proposalType,
       symbol: "BTC/USD",
-      price: 60800,
+      price,
       time: new Date().toISOString(),
       status: "open",
     })
-
-    // Clear input
-    handleInputChange({ target: { value: "" } } as ChangeEvent<HTMLInputElement>)
   }
 
-  // Handle AI proposal query
-  const handleAIProposalQuery = () => {
-    // Simulate AI proposal
-    setTimeout(() => {
-      const randomPrice = Math.floor(60000 + Math.random() * 2000)
-      const isBuy = Math.random() > 0.5
-
-      setMessages([
-        ...messages,
-        { id: Date.now().toString(), role: "user", content: input },
-        {
-          id: Date.now().toString() + "-proposal",
-          role: "assistant",
-          content: `I've detected a ${isBuy ? "BUY" : "SELL"} signal!
-
-Technical Analysis:
-• ${isBuy ? "Uptrend forming" : "Downtrend forming"}
-• ${isBuy ? "RSI rising but not yet overbought" : "RSI falling but not yet oversold"}
-• ${isBuy ? "Price bouncing off support level" : "Price rejecting at resistance level"}
-
-Would you like to enter a ${isBuy ? "long" : "short"} position at the current price of $${randomPrice.toLocaleString()}?`,
-          isProposal: true,
-          proposalType: isBuy ? "buy" : "sell",
-          price: randomPrice,
-        },
-      ])
-
-      // Set entry information
-      setPendingEntry({
-        id: Date.now().toString(),
-        side: isBuy ? "buy" : "sell",
-        symbol: "BTC/USD",
-        price: randomPrice,
-        time: new Date().toISOString(),
-        status: "open",
-      })
-    }, 1000)
-
-    // Clear input
-    handleInputChange({ target: { value: "" } } as ChangeEvent<HTMLInputElement>)
-  }
-
+  // Return the chat state and handlers
   return {
     messages,
     input,
     handleInputChange,
-    handleSubmit,
-    setMessages,
+    handleSubmit: handleSubmitWithSamples,
     isSearching,
     setIsSearching,
-    handleSubmitWithSamples,
+    handleEntryPointQuery,
+    handleNewsQuery,
+    handleAIProposalQuery,
   }
 }
