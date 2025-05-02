@@ -149,13 +149,6 @@ export default function Home() {
                         </Badge>
                       )}
                     </TabsTrigger>
-                    <TabsTrigger 
-                      value="chat" 
-                      className="flex items-center h-6 px-2 text-xs data-[state=active]:bg-[#2a2e39] data-[state=active]:text-[#b2b5be]"
-                    >
-                      <MessageSquare className="h-3.5 w-3.5 mr-1" />
-                      Chat
-                    </TabsTrigger>
                   </TabsList>
                 </Tabs>
               </div>
@@ -168,17 +161,6 @@ export default function Home() {
 
               <TabsContent value="positions" className="flex-1 m-0 p-0 data-[state=active]:flex flex-col">
                 <PositionHistory entries={entries} onClosePosition={closePosition} onCancelPosition={cancelPosition} />
-              </TabsContent>
-              
-              {/* モバイル用のチャットタブコンテンツ - PCでは表示されない */}
-              <TabsContent value="chat" className="flex-1 m-0 p-0 md:hidden data-[state=active]:flex flex-col">
-                <ChatSection
-                  messages={messages}
-                  isSearching={isSearching}
-                  pendingEntry={pendingEntry}
-                  chatEndRef={chatEndRef as React.RefObject<HTMLDivElement>}
-                  executeEntry={executeEntry}
-                />
               </TabsContent>
             </Tabs>
           </Card>
