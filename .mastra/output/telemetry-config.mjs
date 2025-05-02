@@ -1,5 +1,8 @@
+import path from 'path';
 import { Agent } from '@mastra/core/agent';
 import { openai } from '@ai-sdk/openai';
+import { Memory } from '@mastra/memory';
+import { LibSQLVector } from '@mastra/libsql';
 import { createTool } from '@mastra/core/tools';
 import { z } from 'zod';
 import { Mem0Integration } from '@mastra/mem0';
@@ -48,7 +51,28 @@ const mem0MemorizeTool = createTool({
   }
 });
 
+const dbPath = path.resolve(process.cwd(), "memory.db");
+const dbConnectionUrl = `file:${dbPath}`;
+console.log(`Using LibSQL database at: ${dbConnectionUrl}`);
 function createChatAgent(memory) {
+  if (!memory) {
+    memory = new Memory({
+      // Add explicit vector store configuration
+      vector: new LibSQLVector({
+        // Use the constructed path
+        connectionUrl: dbConnectionUrl
+      }),
+      // Set explicit options matching old defaults to maintain behavior
+      options: {
+        lastMessages: 40,
+        semanticRecall: false,
+        // Disable embeddings during tests
+        threads: {
+          generateTitle: true
+        }
+      }
+    });
+  }
   return new Agent({
     name: "TradingAssistant",
     instructions: `
@@ -69,7 +93,6 @@ function createChatAgent(memory) {
     `,
     model: openai(process.env.OPENAI_API_KEY ? "gpt-4o" : "gpt-3.5-turbo"),
     memory,
-    // オプショナル - 提供されれば使用
     tools: {
       "mem0-remember": mem0RememberTool,
       "mem0-memorize": mem0MemorizeTool
@@ -77,6 +100,23 @@ function createChatAgent(memory) {
   });
 }
 function createDirectAgent() {
+  console.log("Inside createDirectAgent - Checking OPENAI_API_KEY:", process.env.OPENAI_API_KEY ? "Exists" : "MISSING");
+  const memory = new Memory({
+    // Add explicit vector store configuration
+    vector: new LibSQLVector({
+      // Use the constructed path
+      connectionUrl: dbConnectionUrl
+    }),
+    // Set explicit options matching old defaults to maintain behavior
+    options: {
+      lastMessages: 40,
+      semanticRecall: false,
+      // Disable embeddings during tests
+      threads: {
+        generateTitle: true
+      }
+    }
+  });
   return new Agent({
     name: "TradingAssistant",
     instructions: `
@@ -96,6 +136,7 @@ function createDirectAgent() {
       Be friendly and helpful.
     `,
     model: openai(process.env.OPENAI_API_KEY ? "gpt-4o" : "gpt-3.5-turbo"),
+    memory,
     tools: {
       "mem0-remember": mem0RememberTool,
       "mem0-memorize": mem0MemorizeTool
@@ -103,4 +144,6 @@ function createDirectAgent() {
   });
 }
 
-export { createChatAgent, createDirectAgent, mem0MemorizeTool, mem0RememberTool };
+const telemetry = {};
+
+export { createChatAgent, createDirectAgent, mem0MemorizeTool, mem0RememberTool, telemetry };
