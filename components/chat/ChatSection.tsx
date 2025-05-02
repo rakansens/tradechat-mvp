@@ -87,11 +87,11 @@ export default function ChatSection({
 
   return (
     <div className="w-full h-full flex flex-col">
-      <Card className="flex-1 flex flex-col overflow-hidden border-0 rounded-none shadow-none bg-[#0e1016]">
+      <Card className="flex-1 flex flex-col overflow-hidden border-0 rounded-none shadow-none bg-[#1c2030]">
         {/* ヘッダー部分 */}
-        <CardHeader className="py-2 px-4 bg-[#0e1016] border-b border-[#2a2e39]">
-          <CardTitle className="text-sm font-medium flex items-center text-[#b2b5be]">
-            <MessageSquare className="h-4 w-4 text-[#5090ea] mr-2" />
+        <CardHeader className="py-2 px-4 bg-[#1c2030] border-b border-[#2A2E39]">
+          <CardTitle className="text-sm font-medium flex items-center text-[#E0E3EB]">
+            <MessageSquare className="h-4 w-4 text-[#2962FF] mr-2" />
             AI Assistant
           </CardTitle>
         </CardHeader>
@@ -107,10 +107,10 @@ export default function ChatSection({
           />
         </CardContent>
 
-        <Separator className="border-[#2a2e39]" />
+        <Separator className="border-[#2A2E39]" />
 
         {/* フッター部分 - クイックコマンドと入力エリア */}
-        <CardFooter className="p-2 flex flex-col gap-2 bg-[#0e1016] border-t border-[#2a2e39]">
+        <CardFooter className="p-2 flex flex-col gap-2 bg-[#1c2030] border-t border-[#2A2E39]">
           {/* クイックコマンドボタン */}
           <div className="flex items-center justify-between w-full">
             <div className="flex space-x-1">
@@ -119,7 +119,7 @@ export default function ChatSection({
                   key={cmd.value}
                   size="sm"
                   variant="outline"
-                  className="text-xs h-7 bg-[#1e2230] border-[#2a2e39] hover:bg-[#2a2e39] text-[#b2b5be]"
+                  className="text-xs h-7 bg-[#242838] border-[#2A2E39] hover:bg-[#2a2e3d] text-[#A7B0C4]"
                   onClick={cmd.action}
                 >
                   {cmd.icon}
@@ -133,7 +133,7 @@ export default function ChatSection({
               <Button
                 variant="success"
                 size="sm"
-                className="h-7 text-xs ml-auto bg-[#2196f3] hover:bg-[#1e88e5]"
+                className="h-7 text-xs ml-auto bg-[#2962FF] hover:bg-[#5B8AF9]"
                 onClick={executeEntry}
               >
                 <Send className="h-3 w-3 mr-1" />
@@ -149,12 +149,12 @@ export default function ChatSection({
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Ask about the market..."
-                className="bg-[#1e2230] border-[#2a2e39] text-[#b2b5be] placeholder:text-[#616471]"
+                className="bg-[#242838] border-[#2A2E39] text-[#E0E3EB] placeholder:text-[#6B7A98]"
               />
               <Button 
                 type="submit" 
                 size="icon" 
-                className="bg-[#2196f3] hover:bg-[#1e88e5]"
+                className="bg-[#2962FF] hover:bg-[#5B8AF9]"
               >
                 <Send className="h-4 w-4" />
               </Button>

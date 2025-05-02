@@ -70,17 +70,17 @@ export default function Home() {
   const openPositionsCount = entries.filter((entry) => entry.status === "open").length
 
   return (
-    <main className="flex flex-col h-screen bg-[#131722]">
-      <header className="flex justify-between items-center py-2 px-3 border-b border-[#2a2e39] bg-[#0e1016]">
+    <main className="flex flex-col h-screen bg-[#151924]">
+      <header className="flex justify-between items-center py-2 px-3 border-b border-[#2A2E39] bg-[#1c2030]">
         <div className="flex items-center space-x-2">
           <div className="font-bold text-lg flex items-center">
-            <span className="text-[#2196f3]">Alpha</span>
-            <span className="text-[#b2b5be]">Trader</span>
+            <span className="text-[#2962FF]">Alpha</span>
+            <span className="text-[#E0E3EB]">Trader</span>
           </div>
         </div>
 
         <div className="flex items-center space-x-2">
-          <Button variant="outline" size="sm" className="bg-[#1e2230] border-[#2a2e39] hover:bg-[#2a2e39] text-[#b2b5be]">
+          <Button variant="outline" size="sm" className="bg-[#242838] border-[#2A2E39] hover:bg-[#2a2e3d] text-[#E0E3EB]">
             <span className="font-mono">BTC/USD: ${ohlcData[ohlcData.length - 1].close.toLocaleString('en-US')}</span>
             <PriceChangeIndicator
               currentPrice={ohlcData[ohlcData.length - 1].close}
@@ -98,7 +98,7 @@ export default function Home() {
       </header>
 
       {/* 強制的にレイアウトをチャート表示に初期化 */}
-      <div className="flex flex-col md:flex-row h-full bg-[#131722]">
+      <div className="flex flex-col md:flex-row h-full bg-[#151924]">
         {/* Chat Section - 常に左サイドバーとして表示、3割の幅に設定 */}
         <div 
           className="md:w-[30%] w-full h-1/2 md:h-full transition-all duration-300 ease-in-out overflow-hidden"
@@ -116,23 +116,23 @@ export default function Home() {
         <div 
           className="md:w-[70%] w-full h-1/2 md:h-full transition-all duration-300 ease-in-out overflow-hidden"
         >
-          <Card className="h-full flex flex-col border-0 rounded-none shadow-none bg-[#131722]">
-            <div className="flex justify-between items-center py-2 px-3 border-b border-[#2a2e39] bg-[#131722]">
+          <Card className="h-full flex flex-col border-0 rounded-none shadow-none bg-[#1E222D]">
+            <div className="flex justify-between items-center py-2 px-3 border-b border-[#2A2E39] bg-[#1c2030]">
               <div className="flex items-center space-x-2">
-                <h2 className="text-base font-bold text-[#b2b5be]">BTC/USD</h2>
-                <Badge variant="outline" className="font-mono text-xs py-0.5 px-1.5 bg-[#1e2230] border-[#2a2e39] text-[#b2b5be]">
+                <h2 className="text-base font-bold text-[#E0E3EB]">BTC/USD</h2>
+                <Badge variant="outline" className="font-mono text-xs py-0.5 px-1.5 bg-[#242838] border-[#2A2E39] text-[#A7B0C4]">
                   24h Vol: 12.5K
                 </Badge>
               </div>
 
               <div className="flex items-center space-x-2">
                 <TimeframeSelector selectedTimeframe={timeframe} onTimeframeChange={setTimeframe} />
-                <Separator orientation="vertical" className="h-6 bg-[#2a2e39]" />
+                <Separator orientation="vertical" className="h-6 bg-[#374151]" />
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="h-7">
-                  <TabsList className="h-7 bg-[#1e2230] border border-[#2a2e39]">
+                  <TabsList className="h-7 bg-[#242838] border border-[#2A2E39]">
                     <TabsTrigger 
                       value="chart" 
-                      className="flex items-center h-6 px-2 text-xs data-[state=active]:bg-[#2a2e39] data-[state=active]:text-[#b2b5be]"
+                      className="flex items-center h-6 px-2 text-xs data-[state=active]:bg-[#2a2e3d] data-[state=active]:text-[#E0E3EB]"
                     >
                       <BarChart3 className="h-3.5 w-3.5 mr-1" />
                       Chart
