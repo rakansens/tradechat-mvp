@@ -1,7 +1,7 @@
 // Fixed hydration error by explicitly specifying the locale 'en-US' in toLocaleString() for the price badge.
 "use client"
 
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useCallback } from "react"
 import { Bell, CandlestickChart, BarChart3, LineChart, MessageSquare, Settings } from "lucide-react"
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { ThemeToggle } from "@/components/theme-toggle"
+// import { ThemeToggle } from "@/components/theme-toggle"
 
 import ChartSection from "@/components/chart/ChartSection"
 import ChatSection from "@/components/chat/ChatSection"
@@ -18,56 +18,75 @@ import TimeframeSelector from "@/components/chart/TimeframeSelector"
 import { useStore } from "@/store/useStore"
 import { theme } from "@/styles/colors"
 
+import { MastraClient } from '@mastra/client-js'; 
+import { useChat } from 'ai/react'; 
+
+const mastraClient = new MastraClient({ 
+  baseUrl: '/api/mastra', 
+});
+
 export default function Home() {
-  // Get state and actions from the store
-  const {
-    // Chart state
-    timeframe,
-    setTimeframe,
-    ohlcData,
-    refreshOhlcData,
+  // --- Zustand Store (using individual selectors) ---
+  const entries = useStore((state) => state.entries);
+  const pendingEntry = useStore((state) => state.pendingEntry);
+  const setPendingEntry = useStore((state) => state.setPendingEntry);
+  const executeStoreEntry = useStore((state) => state.executeEntry);
+  const ohlcData = useStore((state) => state.ohlcData);
+  const timeframe = useStore((state) => state.timeframe);
+  const chartType = useStore((state) => state.chartType);
+  const refreshOhlcData = useStore((state) => state.refreshOhlcData);
+  const setTimeframe = useStore((state) => state.setTimeframe);
+  const setChartType = useStore((state) => state.setChartType);
+  const closePosition = useStore((state) => state.closePosition);
+  const cancelPosition = useStore((state) => state.cancelPosition);
+  const activeTab = useStore((state) => state.activeTab);
+  const setActiveTab = useStore((state) => state.setActiveTab);
 
-    // Entry state
-    entries,
-    pendingEntry,
-    executeEntry,
-    closePosition,
-    cancelPosition,
+  // --- AI SDK useChat Hook for Chat State and API Interaction ---
+  const { 
+    messages, 
+    input, 
+    handleInputChange, 
+    handleSubmit, 
+    isLoading 
+  } = useChat({
+    api: '/api/mastra/chat', 
+    // Add other useChat options if needed (e.g., initialMessages, body, etc.)
+  });
 
-    // Chat state
-    messages,
-    isSearching,
+  const chatEndRef = useRef<HTMLDivElement>(null);
 
-    // UI state
-    activeTab,
-    setActiveTab,
-    chartType,
-  } = useStore()
+  // --- Wrappers for Store Actions passed to ChatSection ---
+  const handleExecuteTrade = useCallback((entry: any) => {
+    console.log('Executing trade:', entry);
+    executeStoreEntry(); 
+    // TODO: Notify Mastra agent about executed trade (might need custom API call via mastraClient)
+  }, [executeStoreEntry]);
 
-  // Chat scroll ref
-  const chatEndRef = useRef<HTMLDivElement>(null)
+  const handleEditSubmit = useCallback((updatedEntry: any) => {
+    console.log('Updating pending entry:', updatedEntry);
+    setPendingEntry(updatedEntry); 
+    // TODO: Notify Mastra agent about edited trade proposal?
+  }, [setPendingEntry]);
 
-  // Refresh data when component mounts
+  const handleCancelPendingEntry = useCallback(() => {
+      console.log('Cancelling pending entry');
+      setPendingEntry(null); 
+      // TODO: Notify Mastra agent about cancellation?
+  }, [setPendingEntry]);
+
+  // --- Effects ---
   useEffect(() => {
-    refreshOhlcData()
-    
-    // ウィンドウのリサイズイベントを監視してレイアウトを調整
-    const handleResize = () => {
-      // 必要に応じてレイアウトの調整ロジックを追加
-    }
-    
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
-  }, [refreshOhlcData])
-
-  // Scroll chat to bottom when messages update
-  useEffect(() => {
+    // Scroll chat to bottom when messages update (from useChat)
     if (chatEndRef.current) {
-      chatEndRef.current.scrollIntoView({ behavior: "smooth" })
+      chatEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
-  }, [messages])
+  }, [messages]); 
+  
+  useEffect(() => {
+    refreshOhlcData();
+  }, [refreshOhlcData]);
 
-  // Count open positions
   const openPositionsCount = entries.filter((entry) => entry.status === "open").length
 
   return (
@@ -94,7 +113,7 @@ export default function Home() {
           <Button variant="ghost" size="icon">
             <Settings className="h-4 w-4" />
           </Button>
-          <ThemeToggle />
+          {/* <ThemeToggle /> */}
         </div>
       </header>
 
@@ -106,10 +125,15 @@ export default function Home() {
         >
           <ChatSection
             messages={messages}
-            isSearching={isSearching}
+            input={input}
+            handleInputChange={handleInputChange}
+            handleSubmit={handleSubmit}
+            isLoading={isLoading}
             pendingEntry={pendingEntry}
             chatEndRef={chatEndRef as React.RefObject<HTMLDivElement>}
-            executeEntry={executeEntry}
+            executeEntry={handleExecuteTrade}
+            editPendingEntry={handleEditSubmit}
+            cancelPendingEntry={handleCancelPendingEntry}
           />
         </div>
 
@@ -161,7 +185,7 @@ export default function Home() {
               </TabsContent>
 
               <TabsContent value="positions" className="flex-1 m-0 p-0 data-[state=active]:flex flex-col">
-                <PositionHistory entries={entries} onClosePosition={closePosition} onCancelPosition={cancelPosition} />
+                <PositionHistory entries={entries} onClosePosition={cancelPosition} onCancelPosition={cancelPosition} />
               </TabsContent>
             </Tabs>
           </Card>

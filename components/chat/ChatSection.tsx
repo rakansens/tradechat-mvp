@@ -8,83 +8,50 @@ import type { RefObject, FormEvent } from "react"
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
-import { useStore } from "@/store/useStore"
-import { useState } from "react"
-import type { Message } from "ai"
 import { theme } from "@/styles/colors"
+import type { Message } from "@/app/page"
 
 interface ChatSectionProps {
   messages: Message[]
-  isSearching: boolean
+  input: string
+  handleInputChange: (e: React.ChangeEvent<HTMLInputElement> | React.ChangeEvent<HTMLTextAreaElement>) => void
+  handleSubmit: (e: React.FormEvent<HTMLFormElement>) => void
+  isLoading: boolean
   pendingEntry: Entry | null
   chatEndRef: RefObject<HTMLDivElement>
-  executeEntry: () => void
+  executeEntry: (entry: Entry) => void
+  editPendingEntry: (updatedEntry: Entry) => void
+  cancelPendingEntry: () => void
 }
 
 export default function ChatSection({
   messages,
-  isSearching,
+  input,
+  handleInputChange,
+  handleSubmit,
+  isLoading,
   pendingEntry,
   chatEndRef,
   executeEntry,
+  editPendingEntry,
+  cancelPendingEntry
 }: ChatSectionProps) {
-  // Local input state
-  const [input, setInput] = useState("")
-
-  // Get actions from store
-  const { handleEntryPointQuery, handleNewsQuery, handleAIProposalQuery, addMessage } = useStore()
-
   // Quick commands
   const quickCommands = [
     {
       label: "Entry Point",
       value: "Entry Point",
       icon: <TrendingUp className="h-3 w-3 mr-1" />,
-      action: handleEntryPointQuery,
+      action: () => console.log("Entry Point"),
     },
     {
       label: "Market News",
       value: "Market News",
       icon: <BarChart2 className="h-3 w-3 mr-1" />,
-      action: handleNewsQuery,
+      action: () => console.log("Market News"),
     },
-    { label: "AI Signal", value: "AI Signal", icon: <Zap className="h-3 w-3 mr-1" />, action: handleAIProposalQuery },
+    { label: "AI Signal", value: "AI Signal", icon: <Zap className="h-3 w-3 mr-1" />, action: () => console.log("AI Signal") },
   ]
-
-  // Handle form submission
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-
-    if (!input.trim()) return
-
-    // Check if input matches any quick command
-    const matchedCommand = quickCommands.find((cmd) => cmd.value === input.trim())
-    if (matchedCommand) {
-      matchedCommand.action()
-    } else {
-      // Handle regular message
-      const userMessage: Message = {
-        id: Date.now().toString(),
-        role: "user",
-        content: input,
-      }
-      addMessage(userMessage)
-
-      // Here you would typically call an API for AI response
-      // For now, just echo back
-      setTimeout(() => {
-        const aiResponse: Message = {
-          id: Date.now().toString() + "-response",
-          role: "assistant",
-          content: `You said: "${input}". This is a placeholder response. In a real app, this would be processed by an AI model.`,
-        }
-        addMessage(aiResponse)
-      }, 500)
-    }
-
-    // Clear input
-    setInput("")
-  }
 
   return (
     <div className="w-full h-full flex flex-col">
@@ -102,8 +69,8 @@ export default function ChatSection({
           <ChatWindow
             messages={messages}
             ref={chatEndRef}
-            isSearching={isSearching}
-            onExecuteEntry={executeEntry}
+            isSearching={isLoading}
+            onExecuteEntry={() => executeEntry(pendingEntry as Entry)}
             pendingEntry={pendingEntry}
           />
         </CardContent>
@@ -144,7 +111,7 @@ export default function ChatSection({
                   backgroundColor: theme.accent.blue,
                   color: "white"
                 }}
-                onClick={executeEntry}
+                onClick={() => executeEntry(pendingEntry as Entry)}
               >
                 <Send className="h-3 w-3 mr-1" />
                 Execute Entry
@@ -157,7 +124,7 @@ export default function ChatSection({
             <div className="flex gap-2">
               <InputBox
                 value={input}
-                onChange={(e) => setInput(e.target.value)}
+                onChange={handleInputChange}
                 placeholder="Ask about the market..."
                 className=""
               />
