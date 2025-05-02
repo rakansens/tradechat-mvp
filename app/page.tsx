@@ -1,4 +1,5 @@
-// Fixed hydration error by explicitly specifying the locale 'en-US' in toLocaleString() for the price badge.
+// app/page.tsx
+// 更新: any型を排除し、正しい型を使用するように修正
 "use client"
 
 import { useEffect, useRef, useCallback } from "react"
@@ -15,8 +16,11 @@ import ChartSection from "@/components/chart/ChartSection"
 import ChatSection from "@/components/chat/ChatSection"
 import PositionHistory from "@/components/position/PositionHistory"
 import TimeframeSelector from "@/components/chart/TimeframeSelector"
+// import PriceChangeIndicator from "@/components/ui/PriceChangeIndicator"
 import { useChartStore, useEntryStore, useChatStore, useUIStore } from "@/store"
 import { theme } from "@/styles/colors"
+
+import type { OpenEntry } from "@/types/entry"
 
 import { MastraClient } from '@mastra/client-js'; 
 import { useChat } from 'ai/react'; 
@@ -62,22 +66,22 @@ export default function Home() {
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   // --- Wrappers for Store Actions passed to ChatSection ---
-  const handleExecuteTrade = useCallback((entry: any) => {
-    console.log('Executing trade:', entry);
+  const handleExecuteTrade = useCallback(() => {
+    console.log('Executing trade:', pendingEntry);
     executeStoreEntry(); 
     // TODO: Notify Mastra agent about executed trade (might need custom API call via mastraClient)
-  }, [executeStoreEntry]);
+  }, [executeStoreEntry, pendingEntry]);
 
-  const handleEditSubmit = useCallback((updatedEntry: any) => {
+  const handleEditSubmit = useCallback((updatedEntry: OpenEntry) => {
     console.log('Updating pending entry:', updatedEntry);
     setPendingEntry(updatedEntry); 
     // TODO: Notify Mastra agent about edited trade proposal?
   }, [setPendingEntry]);
 
   const handleCancelPendingEntry = useCallback(() => {
-      console.log('Cancelling pending entry');
-      setPendingEntry(null); 
-      // TODO: Notify Mastra agent about cancellation?
+    console.log('Cancelling pending entry');
+    setPendingEntry(null); 
+    // TODO: Notify Mastra agent about cancellation?
   }, [setPendingEntry]);
 
   // --- Effects ---
@@ -190,7 +194,7 @@ export default function Home() {
               </TabsContent>
 
               <TabsContent value="positions" className="flex-1 m-0 p-0 data-[state=active]:flex flex-col">
-                <PositionHistory entries={entries} onClosePosition={cancelPosition} onCancelPosition={cancelPosition} />
+                <PositionHistory entries={entries} onClosePosition={closePosition} onCancelPosition={cancelPosition} />
               </TabsContent>
             </Tabs>
           </Card>

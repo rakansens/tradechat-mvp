@@ -1,15 +1,19 @@
+// components/chat/ChatSection.tsx
+// 更新: 型定義を修正して、app/page.tsxとの型の不一致を解決
 "use client"
 
 import { MessageSquare, Send, Zap, TrendingUp, BarChart2 } from "lucide-react"
 import ChatWindow from "@/components/chat/ChatWindow"
 import InputBox from "@/components/chat/InputBox"
-import type { Entry } from "@/types"
+import type { Entry, OpenEntry } from "@/types/entry"
 import type { RefObject, FormEvent } from "react"
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { theme } from "@/styles/colors"
-import type { Message } from "@/app/page"
+
+// ai/reactパッケージからMessage型をインポート
+import type { Message } from "ai"
 
 interface ChatSectionProps {
   messages: Message[]
@@ -17,10 +21,10 @@ interface ChatSectionProps {
   handleInputChange: (e: React.ChangeEvent<HTMLInputElement> | React.ChangeEvent<HTMLTextAreaElement>) => void
   handleSubmit: (e: React.FormEvent<HTMLFormElement>) => void
   isLoading: boolean
-  pendingEntry: Entry | null
+  pendingEntry: OpenEntry | null
   chatEndRef: RefObject<HTMLDivElement>
-  executeEntry: (entry: Entry) => void
-  editPendingEntry: (updatedEntry: Entry) => void
+  executeEntry: () => void
+  editPendingEntry: (updatedEntry: OpenEntry) => void
   cancelPendingEntry: () => void
 }
 
@@ -70,7 +74,7 @@ export default function ChatSection({
             messages={messages}
             ref={chatEndRef}
             isSearching={isLoading}
-            onExecuteEntry={() => executeEntry(pendingEntry as Entry)}
+            onExecuteEntry={() => executeEntry()}
             pendingEntry={pendingEntry}
           />
         </CardContent>
@@ -111,7 +115,7 @@ export default function ChatSection({
                   backgroundColor: theme.accent.blue,
                   color: "white"
                 }}
-                onClick={() => executeEntry(pendingEntry as Entry)}
+                onClick={() => executeEntry()}
               >
                 <Send className="h-3 w-3 mr-1" />
                 Execute Entry
