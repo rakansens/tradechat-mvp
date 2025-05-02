@@ -86,17 +86,17 @@ export default function ChatSection({
   }
 
   return (
-    <div className="w-full md:w-1/3 h-1/2 md:h-full p-3 flex flex-col">
-      <Card className="flex-1 flex flex-col overflow-hidden">
-        <CardHeader className="py-3 px-4">
-          <CardTitle className="text-sm font-medium flex items-center">
-            <MessageSquare className="h-4 w-4 text-primary mr-2" />
+    <div className="w-full h-full flex flex-col">
+      <Card className="flex-1 flex flex-col overflow-hidden border-0 rounded-none shadow-none bg-[#0e1016]">
+        {/* ヘッダー部分 */}
+        <CardHeader className="py-2 px-4 bg-[#0e1016] border-b border-[#2a2e39]">
+          <CardTitle className="text-sm font-medium flex items-center text-[#b2b5be]">
+            <MessageSquare className="h-4 w-4 text-[#5090ea] mr-2" />
             AI Assistant
           </CardTitle>
         </CardHeader>
 
-        <Separator />
-
+        {/* チャットウィンドウ */}
         <CardContent className="p-0 flex-1 overflow-hidden">
           <ChatWindow
             messages={messages}
@@ -107,37 +107,57 @@ export default function ChatSection({
           />
         </CardContent>
 
-        <Separator />
+        <Separator className="border-[#2a2e39]" />
 
-        <CardFooter className="p-3">
-          <form onSubmit={handleSubmit} className="w-full space-y-2">
+        {/* フッター部分 - クイックコマンドと入力エリア */}
+        <CardFooter className="p-2 flex flex-col gap-2 bg-[#0e1016] border-t border-[#2a2e39]">
+          {/* クイックコマンドボタン */}
+          <div className="flex items-center justify-between w-full">
+            <div className="flex space-x-1">
+              {quickCommands.map((cmd) => (
+                <Button
+                  key={cmd.value}
+                  size="sm"
+                  variant="outline"
+                  className="text-xs h-7 bg-[#1e2230] border-[#2a2e39] hover:bg-[#2a2e39] text-[#b2b5be]"
+                  onClick={cmd.action}
+                >
+                  {cmd.icon}
+                  {cmd.label}
+                </Button>
+              ))}
+            </div>
+
+            {/* エントリー実行ボタン */}
+            {pendingEntry && (
+              <Button
+                variant="success"
+                size="sm"
+                className="h-7 text-xs ml-auto bg-[#2196f3] hover:bg-[#1e88e5]"
+                onClick={executeEntry}
+              >
+                <Send className="h-3 w-3 mr-1" />
+                Execute Entry
+              </Button>
+            )}
+          </div>
+
+          {/* 入力フォーム */}
+          <form onSubmit={handleSubmit} className="w-full">
             <div className="flex gap-2">
               <InputBox
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Ask about the market..."
+                className="bg-[#1e2230] border-[#2a2e39] text-[#b2b5be] placeholder:text-[#616471]"
               />
-              <Button type="submit" size="icon">
+              <Button 
+                type="submit" 
+                size="icon" 
+                className="bg-[#2196f3] hover:bg-[#1e88e5]"
+              >
                 <Send className="h-4 w-4" />
               </Button>
-            </div>
-
-            <div className="flex gap-2">
-              {quickCommands.map((command) => (
-                <Button
-                  key={command.value}
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setInput(command.value)
-                    command.action()
-                  }}
-                  className="flex items-center text-xs h-7"
-                >
-                  {command.icon}
-                  {command.label}
-                </Button>
-              ))}
             </div>
           </form>
         </CardFooter>
