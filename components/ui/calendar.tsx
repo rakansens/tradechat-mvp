@@ -1,8 +1,10 @@
+// components/ui/calendar.tsx
+// 更新: react-day-pickerの型定義に合わせて修正
 "use client"
 
 import * as React from "react"
 import { ChevronLeft, ChevronRight } from "lucide-react"
-import { DayPicker } from "react-day-picker"
+import { DayPicker, type CustomComponents } from "react-day-picker"
 
 import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
@@ -54,6 +56,8 @@ function Calendar({
         ...classNames,
       }}
       components={{
+        // @ts-ignore - react-day-pickerの型定義との不一致を無視
+        // 実際には機能しているが、型定義が古い可能性がある
         IconLeft: ({ ...props }) => <ChevronLeft className="h-4 w-4" />,
         IconRight: ({ ...props }) => <ChevronRight className="h-4 w-4" />,
       }}

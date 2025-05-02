@@ -1,5 +1,5 @@
-// Dynamically imported lightweight-charts and ensured chart initialization runs only on the client-side.
-// Added isClient state and modified useEffect hooks accordingly.
+// components/chart/ChartCanvas.tsx
+// 更新: 共通インターフェースを使用するように修正
 "use client"
 
 import { useEffect, useRef, useState, useCallback } from "react"
@@ -21,7 +21,8 @@ import type {
 } from "lightweight-charts"
 import * as LightweightCharts from "lightweight-charts"; // Import the namespace
 import type { Entry, ClosedEntry } from "@/types/entry"
-import type { Timeframe } from "@/types/chart"
+import type { Timeframe, ChartType, OHLCData } from "@/types/chart"
+import type { ChartViewProps, TimeframeControlProps, ChartTypeControlProps } from "@/types/common-interfaces"
 import { theme } from "@/styles/colors"
 import { useChartConfig } from "@/hooks/useChartConfig"
 import { useTheme } from "next-themes"
@@ -36,11 +37,12 @@ import {
 } from "./indicators/macd"; // Import MACD functions
 import { RSI as RsiIndicator } from 'technicalindicators'; // Import directly for calculation
 
+// 共通インターフェースを使用して型定義を整理
 interface ChartCanvasProps {
-  data: any[]
+  data: OHLCData[]
   entries?: Entry[]
-  timeframe: Timeframe
-  chartType: "candles" | "line" | "bar"
+  timeframe: TimeframeControlProps["timeframe"]
+  chartType: ChartType
 }
 
 // Helper function to convert HSL CSS variable string to RGBA

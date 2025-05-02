@@ -1,22 +1,22 @@
 // components/chat/ChatSection.tsx
-// 更新: 型定義を修正して、app/page.tsxとの型の不一致を解決
+// 更新: ExtendedMessage型と共通インターフェースを使用するように修正
 "use client"
 
 import { MessageSquare, Send, Zap, TrendingUp, BarChart2 } from "lucide-react"
 import ChatWindow from "@/components/chat/ChatWindow"
 import InputBox from "@/components/chat/InputBox"
-import type { Entry, OpenEntry } from "@/types/entry"
+import type { OpenEntry } from "@/types/entry"
+import type { ExtendedMessage } from "@/types/chat"
+import type { MessageDisplayProps, TradeActionProps } from "@/types/common-interfaces"
 import type { RefObject, FormEvent } from "react"
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { theme } from "@/styles/colors"
 
-// ai/reactパッケージからMessage型をインポート
-import type { Message } from "ai"
-
+// 共通インターフェースを使用して型定義を整理
 interface ChatSectionProps {
-  messages: Message[]
+  messages: ExtendedMessage[]
   input: string
   handleInputChange: (e: React.ChangeEvent<HTMLInputElement> | React.ChangeEvent<HTMLTextAreaElement>) => void
   handleSubmit: (e: React.FormEvent<HTMLFormElement>) => void

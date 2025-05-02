@@ -1,4 +1,20 @@
-import type { ChatCompletionTool } from "openai/resources/chat"
+// lib/tools/browserSearch.ts
+// 更新: 独自の型定義を使用するように修正
+
+// OpenAIのインポートが利用できないため、独自の型定義を使用
+// 必要なプロパティのみを定義したシンプルな型
+type ChatCompletionTool = {
+  type: "function";
+  function: {
+    name: string;
+    description: string;
+    parameters: {
+      type: "object";
+      properties: Record<string, any>;
+      required?: string[];
+    };
+  };
+};
 
 export const browserSearchTool: ChatCompletionTool = {
   type: "function",
