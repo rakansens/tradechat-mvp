@@ -129,7 +129,7 @@ Would you like to enter a long position at the current price of $60,500?`,
           // Entry State
           entries: [],
           pendingEntry: {
-            id: "initial-entry",
+            id: `entry-${Date.now()}`,
             side: "buy",
             symbol: "BTC/USD",
             price: 60500,
@@ -144,6 +144,7 @@ Would you like to enter a long position at the current price of $60,500?`,
             if (pendingEntry) {
               const newEntry = {
                 ...pendingEntry,
+                id: pendingEntry.id || `entry-${Date.now()}`,
                 status: "open" as const,
               }
               set({ entries: [...entries, newEntry], pendingEntry: null })

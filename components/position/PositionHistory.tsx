@@ -20,8 +20,14 @@ export default function PositionHistory({ entries, onClosePosition, onCancelPosi
   const [selectedTab, setSelectedTab] = useState<"open" | "closed">("open")
 
   // Simulate current price (in a real app, would use market price)
+  // IMPORTANT: Avoid Math.random() during SSR to prevent hydration mismatch.
   const getCurrentPrice = (entryPrice: number) => {
-    // Simulate random price movement (±5%)
+    if (typeof window === "undefined") {
+      // On the server, return the entry price so markup is deterministic
+      return entryPrice
+    }
+
+    // Client-side only: random change ±5%
     const randomChange = (Math.random() - 0.5) * 0.1
     return entryPrice * (1 + randomChange)
   }
@@ -109,7 +115,7 @@ function PositionList({
         const isProfitable = profit > 0
 
         return (
-          <Card key={entry.id} className="overflow-hidden">
+          <Card key={`${entry.id}-${entry.time}`} className="overflow-hidden">
             <div className="p-3">
               <div className="flex justify-between items-start">
                 <div>

@@ -5,14 +5,7 @@ import type { Entry } from "@/types"
 
 export function useEntries(ohlcData: any[]) {
   const [entries, setEntries] = useState<Entry[]>([])
-  const [pendingEntry, setPendingEntry] = useState<Entry | null>({
-    id: "initial-entry",
-    side: "buy",
-    symbol: "BTC/USD",
-    price: 60500,
-    time: new Date().toISOString(),
-    status: "open",
-  })
+  const [pendingEntry, setPendingEntry] = useState<Entry | null>(null)
 
   // エントリーを実行
   const executeEntry = () => {
@@ -20,6 +13,7 @@ export function useEntries(ohlcData: any[]) {
       // Add entry to the list with status
       const newEntry = {
         ...pendingEntry,
+        id: pendingEntry.id || `entry-${Date.now()}`,
         status: "open" as const,
       }
 
