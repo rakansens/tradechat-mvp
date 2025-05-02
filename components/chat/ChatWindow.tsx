@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
+import { theme } from "@/styles/colors"
 
 interface ChatWindowProps {
   messages: Message[]
@@ -131,11 +132,11 @@ function ProposalDetails({
   }
 
   return (
-    <Card className="mt-3 bg-card/70 dark:bg-card/50 border border-border/50 shadow-sm">
+    <Card className="mt-3 border shadow-sm" style={{ backgroundColor: `${theme.background.card}80`, borderColor: `${theme.border.light}80` }}>
       <CardHeader className="flex flex-row items-center justify-between pb-2 pt-3 px-4">
-        <CardTitle className="text-sm font-medium">Trade Details</CardTitle>
+        <CardTitle className="text-sm font-medium" style={{ color: theme.text.primary }}>Trade Details</CardTitle>
         {!isEditing && (
-          <Button variant="ghost" size="sm" className="h-7 text-xs text-muted-foreground" onClick={() => setIsEditing(true)}>
+          <Button variant="ghost" size="sm" className="h-7 text-xs" style={{ color: theme.text.muted }} onClick={() => setIsEditing(true)}>
             <Pencil className="h-3 w-3 mr-1" />
             Edit
           </Button>
@@ -145,31 +146,31 @@ function ProposalDetails({
         {!isEditing ? (
           <div className="space-y-2">
             <div className="grid grid-cols-2 gap-2 text-xs mb-3">
-              <div className="font-medium text-muted-foreground">Entry Price:</div>
-              <div className="font-mono text-right text-foreground">${entryPrice.toLocaleString()}</div>
+              <div className="font-medium" style={{ color: theme.text.secondary }}>Entry Price:</div>
+              <div className="font-mono text-right" style={{ color: theme.text.primary }}>${entryPrice.toLocaleString()}</div>
 
-              <div className="font-medium text-muted-foreground">Take Profit:</div>
-              <div className="font-mono text-right text-success">${takeProfitPrice.toLocaleString()}</div>
+              <div className="font-medium" style={{ color: theme.text.secondary }}>Take Profit:</div>
+              <div className="font-mono text-right" style={{ color: theme.accent.green }}>${takeProfitPrice.toLocaleString()}</div>
 
-              <div className="font-medium text-muted-foreground">Stop Loss:</div>
-              <div className="font-mono text-right text-destructive">${stopLossPrice.toLocaleString()}</div>
+              <div className="font-medium" style={{ color: theme.text.secondary }}>Stop Loss:</div>
+              <div className="font-mono text-right" style={{ color: theme.accent.red }}>${stopLossPrice.toLocaleString()}</div>
 
-              <div className="font-medium text-muted-foreground">Type:</div>
-              <div className={cn("text-right font-medium", proposalType === "buy" ? "text-success" : "text-destructive")}>
+              <div className="font-medium" style={{ color: theme.text.secondary }}>Type:</div>
+              <div className="text-right font-medium" style={{ color: proposalType === "buy" ? theme.accent.green : theme.accent.red }}>
                 {proposalType === "buy" ? "LONG" : "SHORT"}
               </div>
 
-              <div className="font-medium text-muted-foreground">Symbol:</div>
-              <div className="text-right text-foreground">{symbol}</div>
+              <div className="font-medium" style={{ color: theme.text.secondary }}>Symbol:</div>
+              <div className="text-right" style={{ color: theme.text.primary }}>{symbol}</div>
 
-              <div className="font-medium text-muted-foreground">Potential Profit:</div>
-              <div className="font-mono text-right text-success">
+              <div className="font-medium" style={{ color: theme.text.secondary }}>Potential Profit:</div>
+              <div className="font-mono text-right" style={{ color: theme.accent.green }}>
                 ${potentialProfit > 0 ? potentialProfit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'}
                 {profitPercentage !== "N/A" && ` (${profitPercentage}%)`}
               </div>
 
-              <div className="font-medium text-muted-foreground">Risk/Reward:</div>
-              <div className="font-mono text-right text-foreground">
+              <div className="font-medium" style={{ color: theme.text.secondary }}>Risk/Reward:</div>
+              <div className="font-mono text-right" style={{ color: theme.text.primary }}>
                 {riskRewardRatio !== "N/A" ? `1:${riskRewardRatio}` : "N/A"}
               </div>
             </div>
@@ -192,11 +193,11 @@ function ProposalDetails({
               <Input id="stop-loss" type="number" value={stopLossPrice} onChange={(e) => setStopLossPrice(Number(e.target.value))} className="h-8 text-xs" />
             </div>
             <div className="flex justify-end space-x-2">
-              <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setIsEditing(false)}>
+              <Button variant="ghost" size="sm" className="h-7 text-xs" style={{ color: theme.text.secondary }} onClick={() => setIsEditing(false)}>
                 Cancel
               </Button>
               {/* TODO: Implement actual save logic that updates pendingEntry state */}
-              <Button size="sm" className="h-7 text-xs" onClick={handleSaveChanges}>
+              <Button size="sm" className="h-7 text-xs" style={{ backgroundColor: theme.accent.blue, color: "white" }} onClick={handleSaveChanges}>
                 Save Changes
               </Button>
             </div>
@@ -215,8 +216,8 @@ function SearchingIndicator() {
         <AvatarFallback>AI</AvatarFallback>
         <AvatarImage src="/abstract-ai-network.png" />
       </Avatar>
-      <Card className="p-3">
-        <div className="flex items-center text-muted-foreground">
+      <Card className="p-3" style={{ backgroundColor: theme.background.card, borderColor: theme.border.light }}>
+        <div className="flex items-center" style={{ color: theme.text.secondary }}>
           <Loader2 className="h-4 w-4 mr-2 animate-spin" />
           Searching market data...
         </div>

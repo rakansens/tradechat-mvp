@@ -21,6 +21,7 @@ import type {
 } from "lightweight-charts"
 import * as LightweightCharts from "lightweight-charts"; // Import the namespace
 import type { Entry, Timeframe } from "@/types"
+import { theme } from "@/styles/colors"
 import { useChartConfig } from "@/hooks/useChartConfig"
 import { useTheme } from "next-themes"
 // import { calculateMaData } from "lib/chartUtils/indicatorUtils"; // MA calculation needs implementation
@@ -682,7 +683,7 @@ function createEntryMarkers(entries: Entry[]): SeriesMarker<Time>[] {
   return entries.map((entry) => ({
     time: (new Date(entry.time).getTime() / 1000) as UTCTimestamp,
     position: entry.side === "buy" ? "belowBar" : "aboveBar",
-    color: entry.side === "buy" ? "#10b981" : "#ef4444",
+    color: entry.side === "buy" ? theme.accent.green : theme.accent.red,
     shape: entry.side === "buy" ? "arrowUp" : "arrowDown",
     text: entry.side === "buy" ? "BUY" : "SELL",
     size: 2,
@@ -696,7 +697,7 @@ function createExitMarkers(entries: Entry[]): SeriesMarker<Time>[] {
     .map((entry) => ({
       time: (new Date(entry.exitTime!).getTime() / 1000) as UTCTimestamp,
       position: entry.side === "buy" ? "aboveBar" : "belowBar",
-      color: entry.profit && entry.profit > 0 ? "#10b981" : "#ef4444",
+      color: entry.profit && entry.profit > 0 ? theme.accent.green : theme.accent.red,
       shape: "circle",
       text: "EXIT",
       size: 2,
