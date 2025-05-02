@@ -1,12 +1,15 @@
 // components/chart/TimeframeSelector.tsx
-// 更新: Timeframe型のインポートパスを修正
+// 更新: 共通インターフェースを使用するように修正
 "use client"
 import type { Timeframe } from "@/types/chart"
+import type { TimeframeControlProps } from "@/types/common-interfaces"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 
-interface TimeframeSelectorProps {
-  selectedTimeframe: Timeframe
-  onTimeframeChange: (timeframe: Timeframe) => void
+// TimeframeControlPropsを拡張して使用
+type TimeframeSelectorProps = {
+  // selectedTimeframeはTimeframeControlPropsのtimeframeにマッピングされる
+  selectedTimeframe: TimeframeControlProps["timeframe"]
+  onTimeframeChange: TimeframeControlProps["onTimeframeChange"]
 }
 
 export default function TimeframeSelector({ selectedTimeframe, onTimeframeChange }: TimeframeSelectorProps) {

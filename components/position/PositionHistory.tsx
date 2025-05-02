@@ -1,8 +1,9 @@
 // components/position/PositionHistory.tsx
-// 更新: Entry型のインポートパスを修正し、型安全なアクセスを実装
+// 更新: 共通インターフェースを使用するように修正
 "use client"
 
 import type { Entry, OpenEntry, ClosedEntry } from "@/types/entry"
+import type { PositionActionProps } from "@/types/common-interfaces"
 import { ArrowUpRight, ArrowDownRight, X, Clock, CheckCircle, TrendingUp, TrendingDown } from "lucide-react"
 import { formatDate } from "@/utils/date"
 import { calculateProfit, calculateProfitPercentage } from "@/utils/position"
@@ -14,10 +15,9 @@ import { Separator } from "@/components/ui/separator"
 import { useState } from "react"
 import { theme } from "@/styles/colors"
 
-interface PositionHistoryProps {
+// 共通インターフェースを組み合わせて使用
+interface PositionHistoryProps extends PositionActionProps {
   entries: Entry[]
-  onClosePosition: (entryId: string, exitPrice: number) => void
-  onCancelPosition: (entryId: string) => void
 }
 
 export default function PositionHistory({ entries, onClosePosition, onCancelPosition }: PositionHistoryProps) {

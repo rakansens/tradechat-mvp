@@ -1,11 +1,12 @@
 // components/chart/ChartSection.tsx
-// 更新: ChartType型を明示的に使用するように修正
+// 更新: 共通インターフェースを使用するように修正
 "use client"
 
 import { getTimeframeDisplayName } from "@/utils/ohlcDummyData"
 import ChartCanvas from "@/components/chart/ChartCanvas"
 import type { Entry } from "@/types/entry"
-import type { Timeframe, ChartType, OHLCData } from "@/types/chart"
+import type { Timeframe, ChartType } from "@/types/chart"
+import type { ChartViewProps, TimeframeControlProps, ChartTypeControlProps } from "@/types/common-interfaces"
 import { CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -13,10 +14,9 @@ import { BarChart3, CandlestickChart, LineChart } from "lucide-react"
 import { useChartStore } from "@/store"
 import { theme } from "@/styles/colors"
 
-interface ChartSectionProps {
-  ohlcData: OHLCData[]
-  entries: Entry[]
-  timeframe: Timeframe
+// 共通インターフェースを組み合わせて使用
+interface ChartSectionProps extends ChartViewProps, Pick<TimeframeControlProps, 'timeframe'> {
+  // 追加のプロパティがあればここに定義
 }
 
 export default function ChartSection({ ohlcData, entries, timeframe }: ChartSectionProps) {

@@ -1,12 +1,13 @@
 // components/chat/ChatWindow.tsx
-// 更新: Message型をExtendedMessage型に置き換え、Entry型のインポートパスを修正
+// 更新: 共通インターフェースを使用するように修正
 "use client"
 
 import { useState } from "react"
 import { forwardRef } from "react"
 import { Loader2, ArrowUp, ArrowDown, Pencil, Check } from "lucide-react"
-import type { Entry, OpenEntry } from "@/types/entry"
-import type { ExtendedMessage, ProposalType } from "@/types/chat"
+import type { OpenEntry } from "@/types/entry"
+import type { ProposalType } from "@/types/chat"
+import type { MessageDisplayProps, TradeActionProps } from "@/types/common-interfaces"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -15,10 +16,8 @@ import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 import { theme } from "@/styles/colors"
 
-interface ChatWindowProps {
-  messages: ExtendedMessage[]
-  isSearching?: boolean
-  onExecuteEntry?: () => void
+// 共通インターフェースを組み合わせて使用
+interface ChatWindowProps extends MessageDisplayProps, Pick<TradeActionProps, 'onExecuteEntry'> {
   pendingEntry?: OpenEntry | null
 }
 
