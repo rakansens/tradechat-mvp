@@ -1,10 +1,12 @@
+// components/chat/ChatWindow.tsx
+// 更新: Message型をExtendedMessage型に置き換え、Entry型のインポートパスを修正
 "use client"
 
 import { useState } from "react"
 import { forwardRef } from "react"
-import type { Message } from "ai"
 import { Loader2, ArrowUp, ArrowDown, Pencil, Check } from "lucide-react"
-import type { Entry } from "@/types"
+import type { Entry, OpenEntry } from "@/types/entry"
+import type { ExtendedMessage, ProposalType } from "@/types/chat"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -14,10 +16,10 @@ import { cn } from "@/lib/utils"
 import { theme } from "@/styles/colors"
 
 interface ChatWindowProps {
-  messages: Message[]
+  messages: ExtendedMessage[]
   isSearching?: boolean
   onExecuteEntry?: () => void
-  pendingEntry?: Entry | null
+  pendingEntry?: OpenEntry | null
 }
 
 const ChatWindow = forwardRef<HTMLDivElement, ChatWindowProps>(
@@ -25,9 +27,10 @@ const ChatWindow = forwardRef<HTMLDivElement, ChatWindowProps>(
     return (
       <div className="flex-1 overflow-y-auto p-3">
         {messages.map((message, index) => {
-          const isProposal = (message as any).isProposal
-          const proposalType = (message as any).proposalType
-          const price = (message as any).price
+          // ExtendedMessage型を使用して型安全にアクセス
+          const isProposal = message.isProposal
+          const proposalType = message.proposalType
+          const price = message.price
 
           return (
             <div
@@ -75,10 +78,12 @@ ChatWindow.displayName = "ChatWindow"
 export default ChatWindow
 
 // Proposal type indicator component
-function ProposalTypeIndicator({ type }: { type: string }) {
+function ProposalTypeIndicator({ type }: { type: ProposalType | undefined }) {
+  // typeが未定義の場合はデフォルトでbuyとして扱う
+  const proposalType = type || "buy"
   return (
     <div className="mb-2 flex items-center">
-      {type === "buy" ? (
+      {proposalType === "buy" ? (
         <Badge variant="success" className="flex items-center mb-2">
           <ArrowUp className="h-3 w-3 mr-1" />
           BUY SIGNAL
@@ -102,9 +107,9 @@ function ProposalDetails({
   onExecuteEntry,
 }: {
   price: number
-  proposalType: string
+  proposalType: ProposalType | undefined
   isLastMessage: boolean
-  pendingEntry: Entry | null
+  pendingEntry: OpenEntry | null
   onExecuteEntry?: () => void
 }) {
   const [isEditing, setIsEditing] = useState(false)

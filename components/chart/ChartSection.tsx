@@ -1,9 +1,11 @@
+// components/chart/ChartSection.tsx
+// 更新: ChartType型を明示的に使用するように修正
 "use client"
 
 import { getTimeframeDisplayName } from "@/utils/ohlcDummyData"
 import ChartCanvas from "@/components/chart/ChartCanvas"
 import type { Entry } from "@/types/entry"
-import type { Timeframe } from "@/types/chart"
+import type { Timeframe, ChartType, OHLCData } from "@/types/chart"
 import { CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -12,7 +14,7 @@ import { useChartStore } from "@/store"
 import { theme } from "@/styles/colors"
 
 interface ChartSectionProps {
-  ohlcData: any[]
+  ohlcData: OHLCData[]
   entries: Entry[]
   timeframe: Timeframe
 }
@@ -31,7 +33,7 @@ export default function ChartSection({ ohlcData, entries, timeframe }: ChartSect
           </Badge>
           
           {/* チャートタイプ選択 - TradingViewスタイル */}
-          <Tabs value={chartType} onValueChange={(v) => setChartType(v as any)} className="h-7">
+          <Tabs value={chartType} onValueChange={(v) => setChartType(v as ChartType)} className="h-7">
             <TabsList className="h-7 p-0.5 border" style={{ backgroundColor: theme.background.tertiary, borderColor: theme.border.light }}>
               <TabsTrigger 
                 value="candles" 

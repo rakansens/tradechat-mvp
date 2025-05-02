@@ -1,6 +1,8 @@
+// components/position/PositionHistory.tsx
+// 更新: Entry型のインポートパスを修正し、型安全なアクセスを実装
 "use client"
 
-import type { Entry } from "@/types"
+import type { Entry, OpenEntry, ClosedEntry } from "@/types/entry"
 import { ArrowUpRight, ArrowDownRight, X, Clock, CheckCircle, TrendingUp, TrendingDown } from "lucide-react"
 import { formatDate } from "@/utils/date"
 import { calculateProfit, calculateProfitPercentage } from "@/utils/position"
@@ -42,7 +44,7 @@ export default function PositionHistory({ entries, onClosePosition, onCancelPosi
 
   // Filter entries based on selected tab
   const filteredEntries = entries.filter((entry) =>
-    selectedTab === "open" ? entry.status === "open" : entry.status === "closed",
+    selectedTab === "open" ? entry.status === "open" : entry.status === "closed"
   )
 
   return (
@@ -109,6 +111,12 @@ function EmptyState({ selectedTab }: { selectedTab: "open" | "closed" }) {
   )
 }
 
+// 型ガード関数
+// 共通で使用できるようにコンポーネント外に定義
+const isClosedEntry = (entry: Entry): entry is ClosedEntry => {
+  return entry.status === "closed";
+};
+
 // Position list component
 function PositionList({
   entries,
@@ -147,11 +155,11 @@ function PositionList({
                   <span className="font-medium" style={{ color: theme.text.primary }}>
                     ${entry.price.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </span>
-                  {entry.status === "closed" && entry.exitPrice && entry.exitTime && (
+                  {isClosedEntry(entry) && (
                     <div>
                       <div className="font-medium" style={{ color: theme.text.secondary }}>Exit Price:</div>
                       <div className="text-sm" style={{ color: theme.text.primary }}>
-                        ${entry.exitPrice?.toLocaleString("en-US", {
+                        ${entry.exitPrice.toLocaleString("en-US", {
                           minimumFractionDigits: 2,
                           maximumFractionDigits: 2,
                         })}

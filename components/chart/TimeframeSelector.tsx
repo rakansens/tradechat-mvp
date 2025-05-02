@@ -1,5 +1,7 @@
+// components/chart/TimeframeSelector.tsx
+// 更新: Timeframe型のインポートパスを修正
 "use client"
-import type { Timeframe } from "@/types"
+import type { Timeframe } from "@/types/chart"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 
 interface TimeframeSelectorProps {
