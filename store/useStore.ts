@@ -191,13 +191,15 @@ Would you like to enter a long position at the current price of $60,500?`,
               if (entry.id === entryId && entry.status === "open") {
                 const profit =
                   entry.side === "buy" ? exitPrice - entry.price : entry.price - exitPrice
-                return {
+                // 型安全な変換を行う
+                const closedEntry: Entry = {
                   ...entry,
-                  status: "closed",
+                  status: "closed" as const,
                   exitPrice,
                   exitTime: new Date().toISOString(),
                   profit,
                 }
+                return closedEntry
               }
               return entry
             })
@@ -207,10 +209,12 @@ Would you like to enter a long position at the current price of $60,500?`,
             const { entries } = get()
             const updatedEntries = entries.map((entry) => {
               if (entry.id === entryId && entry.status === "open") {
-                return {
+                // 型安全な変換を行う
+                const canceledEntry: Entry = {
                   ...entry,
-                  status: "canceled",
+                  status: "canceled" as const,
                 }
+                return canceledEntry
               }
               return entry
             })
