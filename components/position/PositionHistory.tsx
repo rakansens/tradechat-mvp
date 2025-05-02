@@ -2,7 +2,8 @@
 
 import type { Entry } from "@/types"
 import { ArrowUpRight, ArrowDownRight, X, Clock, CheckCircle, TrendingUp, TrendingDown } from "lucide-react"
-import { formatDate, calculateProfit, calculateProfitPercentage } from "@/utils/positionUtils"
+import { formatDate } from "@/utils/date"
+import { calculateProfit, calculateProfitPercentage } from "@/utils/position"
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -242,7 +243,8 @@ function PositionSummary({ entries }: { entries: Entry[] }) {
 // Calculate total profit
 function calculateTotalProfit(entries: Entry[]): number {
   return entries.reduce((total, entry) => {
-    if (entry.profit !== undefined) {
+    // profitプロパティはclosedステータスのエントリーにのみ存在する
+    if (entry.status === "closed" && 'profit' in entry) {
       return total + entry.profit
     }
     return total
@@ -253,6 +255,16 @@ function calculateTotalProfit(entries: Entry[]): number {
 function calculateWinRate(entries: Entry[]): number {
   if (entries.length === 0) return 0
 
-  const winningTrades = entries.filter((entry) => entry.profit !== undefined && entry.profit > 0).length
-  return Math.round((winningTrades / entries.length) * 100)
+  // 利益がプラスのトレードをカウント
+  const winningTrades = entries.filter((entry) => {
+    return entry.status === "closed" && 'profit' in entry && entry.profit > 0
+  }).length
+  
+  // 完了したトレードのみを対象とする
+  const closedTrades = entries.filter(entry => entry.status === "closed").length
+  
+  // 完了したトレードがない場合は0を返す
+  if (closedTrades === 0) return 0
+  
+  return Math.round((winningTrades / closedTrades) * 100)
 }

@@ -15,7 +15,7 @@ import ChartSection from "@/components/chart/ChartSection"
 import ChatSection from "@/components/chat/ChatSection"
 import PositionHistory from "@/components/position/PositionHistory"
 import TimeframeSelector from "@/components/chart/TimeframeSelector"
-import { useStore } from "@/store/useStore"
+import { useChartStore, useEntryStore, useChatStore, useUIStore } from "@/store"
 import { theme } from "@/styles/colors"
 
 import { MastraClient } from '@mastra/client-js'; 
@@ -26,21 +26,26 @@ const mastraClient = new MastraClient({
 });
 
 export default function Home() {
-  // --- Zustand Store (using individual selectors) ---
-  const entries = useStore((state) => state.entries);
-  const pendingEntry = useStore((state) => state.pendingEntry);
-  const setPendingEntry = useStore((state) => state.setPendingEntry);
-  const executeStoreEntry = useStore((state) => state.executeEntry);
-  const ohlcData = useStore((state) => state.ohlcData);
-  const timeframe = useStore((state) => state.timeframe);
-  const chartType = useStore((state) => state.chartType);
-  const refreshOhlcData = useStore((state) => state.refreshOhlcData);
-  const setTimeframe = useStore((state) => state.setTimeframe);
-  const setChartType = useStore((state) => state.setChartType);
-  const closePosition = useStore((state) => state.closePosition);
-  const cancelPosition = useStore((state) => state.cancelPosition);
-  const activeTab = useStore((state) => state.activeTab);
-  const setActiveTab = useStore((state) => state.setActiveTab);
+  // --- Zustand Stores (using individual selectors from separate stores) ---
+  // エントリーストアから状態とアクションを取得
+  const entries = useEntryStore((state) => state.entries);
+  const pendingEntry = useEntryStore((state) => state.pendingEntry);
+  const setPendingEntry = useEntryStore((state) => state.setPendingEntry);
+  const executeStoreEntry = useEntryStore((state) => state.executeEntry);
+  const closePosition = useEntryStore((state) => state.closePosition);
+  const cancelPosition = useEntryStore((state) => state.cancelPosition);
+  
+  // チャートストアから状態とアクションを取得
+  const ohlcData = useChartStore((state) => state.ohlcData);
+  const timeframe = useChartStore((state) => state.timeframe);
+  const chartType = useChartStore((state) => state.chartType);
+  const refreshOhlcData = useChartStore((state) => state.refreshOhlcData);
+  const setTimeframe = useChartStore((state) => state.setTimeframe);
+  const setChartType = useChartStore((state) => state.setChartType);
+  
+  // UIストアから状態とアクションを取得
+  const activeTab = useUIStore((state) => state.activeTab);
+  const setActiveTab = useUIStore((state) => state.setActiveTab);
 
   // --- AI SDK useChat Hook for Chat State and API Interaction ---
   const { 
@@ -153,7 +158,7 @@ export default function Home() {
               <div className="flex items-center space-x-2">
                 <TimeframeSelector selectedTimeframe={timeframe} onTimeframeChange={setTimeframe} />
                 <Separator orientation="vertical" className="h-6 bg-[#374151]" />
-                <Tabs value={activeTab} onValueChange={setActiveTab} className="h-7">
+                <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)} className="h-7">
                   <TabsList className="h-7 bg-[#242838] border border-[#2A2E39]">
                     <TabsTrigger 
                       value="chart" 
@@ -179,7 +184,7 @@ export default function Home() {
               </div>
             </div>
 
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
+            <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)} className="flex-1 flex flex-col">
               <TabsContent value="chart" className="flex-1 m-0 p-0 data-[state=active]:flex flex-col">
                 <ChartSection ohlcData={ohlcData} entries={entries} timeframe={timeframe} />
               </TabsContent>

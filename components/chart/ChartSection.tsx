@@ -8,7 +8,7 @@ import { CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { BarChart3, CandlestickChart, LineChart } from "lucide-react"
-import { useStore } from "@/store/useStore"
+import { useChartStore } from "@/store"
 import { theme } from "@/styles/colors"
 
 interface ChartSectionProps {
@@ -18,7 +18,7 @@ interface ChartSectionProps {
 }
 
 export default function ChartSection({ ohlcData, entries, timeframe }: ChartSectionProps) {
-  const { chartType, setChartType } = useStore()
+  const { chartType, setChartType } = useChartStore()
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden h-full">
