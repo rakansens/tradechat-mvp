@@ -1,33 +1,12 @@
-export interface OHLCData {
-  time: string
-  open: number
-  high: number
-  low: number
-  close: number
-  volume?: number
-}
+// types/index.ts
+// 更新: 分割された型定義ファイルからの再エクスポート
 
-export interface Entry {
-  id: string
-  side: "buy" | "sell"
-  symbol: string
-  price: number
-  time: string
-  takeProfit?: number
-  stopLoss?: number
-  status?: "open" | "closed" | "canceled"
-  exitPrice?: number
-  exitTime?: string
-  profit?: number
-}
+// 各ドメイン別の型をエクスポート
+export * from './chart';
+export * from './entry';
+export * from './chat';
+export * from './ui';
+export * from './common';
 
-export interface ChartMarker {
-  time: number
-  position: "aboveBar" | "belowBar" | "inBar"
-  color: string
-  shape: "circle" | "square" | "arrowUp" | "arrowDown"
-  text: string
-  size: number
-}
-
-export type Timeframe = "1m" | "5m" | "15m" | "1h" | "4h" | "1d"
+// 後方互換性のために元の型定義も残しておく
+// 注: これらは将来的に削除され、ドメイン別の型に完全に置き換えられる予定
