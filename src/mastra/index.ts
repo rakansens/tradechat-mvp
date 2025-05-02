@@ -1,38 +1,28 @@
 // src/mastra/index.ts
-// 更新：メインエントリポイント
-// Mastra標準プロジェクト構造に準拠したエクスポート
-// 警告修正：LibSQLStoreを追加してストレージ設定を明示的に指定
-
+// 変更：Mastraインスタンスを作成し、エージェントとLibSQLStoreでストレージを設定してエクスポート (マージコンフリクト解消)
 import { Mastra } from '@mastra/core';
 import { LibSQLStore } from '@mastra/libsql';
-import { mem0 } from './integrations';
-import { createChatAgent } from './agents';
+import { createChatAgent } from './agents'; // エージェント設定のためにインポート
 import path from 'path';
 
-// エージェントインスタンスを作成する
-// メモリはパラメータとして渡さずにエージェント内部で作成されるようにする
-export const chatAgent = createChatAgent();
+// LibSQLStoreの設定 (環境変数などから取得するのが望ましい)
+const libsqlConfig = {
+  url: process.env.LIBSQL_DB_URL || `file:${path.resolve(process.cwd(), 'mastra.db')}`, // 環境変数またはデフォルト値
+  authToken: process.env.LIBSQL_AUTH_TOKEN, // 環境変数から
+};
 
-// データベースパスをプロジェクトルートからの相対パスで指定
-const dbPath = path.resolve(process.cwd(), 'mastra.db');
-const dbUrl = `file:${dbPath}`;
+// エージェントインスタンスを作成
+const chatAgent = createChatAgent(); // ここでインスタンス化
 
-// Mastraインスタンスを作成してエクスポート
+// Mastraインスタンスを作成し、エージェントとストレージを設定
 export const mastra = new Mastra({
-  agents: {
+  agents: { // エージェントを登録
     tradingAssistant: chatAgent
   },
-  // 明示的にストレージを設定して警告を解消
-  storage: new LibSQLStore({
-    url: dbUrl
-  })
+  storage: new LibSQLStore(libsqlConfig),
 });
 
-// エージェント
+// 既存のエクスポート (main ブランチのまま)
 export * from './agents';
-
-// ツール
 export * from './tools';
-
-// 統合
 export { mem0 } from './integrations';
