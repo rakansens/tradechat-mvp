@@ -2,7 +2,7 @@
 // Added isClient state and modified useEffect hooks accordingly.
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState, useCallback } from "react"
 import type {
   IChartApi,
   ISeriesApi,
@@ -19,9 +19,20 @@ import type {
   CandlestickSeriesOptions,
   DeepPartial,
 } from "lightweight-charts"
+import * as LightweightCharts from "lightweight-charts"; // Import the namespace
 import type { Entry, Timeframe } from "@/types"
 import { useChartConfig } from "@/hooks/useChartConfig"
 import { useTheme } from "next-themes"
+// import { calculateMaData } from "lib/chartUtils/indicatorUtils"; // MA calculation needs implementation
+import { addOrUpdateRsiSeries } from "./indicators/rsi"; // Import RSI functions
+import {
+  calculateMacdValues,
+  alignMacdData,
+  addOrUpdateMacdSeries,
+  removeMacdSeries, // Import remove function
+  MacdSeriesInstances, // Import the new interface
+} from "./indicators/macd"; // Import MACD functions
+import { RSI as RsiIndicator } from 'technicalindicators'; // Import directly for calculation
 
 interface ChartCanvasProps {
   data: any[]
@@ -30,6 +41,32 @@ interface ChartCanvasProps {
   chartType: "candles" | "line" | "bar"
 }
 
+// Helper function to convert HSL CSS variable string to RGBA
+// Ensures it runs only on the client-side where document is available
+const hslCssVarToRgba = (hslVarValue: string, fallbackColor: string): string => {
+  if (typeof document === 'undefined' || !hslVarValue) {
+    return fallbackColor; // Return fallback if not in browser or value is empty
+  }
+  try {
+    const el = document.createElement('div');
+    // IMPORTANT: Set style directly to hsl() format CSS expects
+    el.style.color = `hsl(${hslVarValue})`;
+    document.body.appendChild(el); // Needs to be in the DOM to compute style
+    const rgbaColor = window.getComputedStyle(el).color;
+    document.body.removeChild(el);
+
+    // lightweight-charts accepts rgb/rgba strings
+    if (rgbaColor && rgbaColor.startsWith('rgb')) {
+      return rgbaColor;
+    }
+    console.warn(`Failed to convert HSL value 'hsl(${hslVarValue})' to RGBA/RGB. Computed value: ${rgbaColor}. Using fallback: ${fallbackColor}`);
+    return fallbackColor;
+  } catch (error) {
+    console.error(`Error converting HSL value 'hsl(${hslVarValue})':`, error);
+    return fallbackColor; // Return fallback on error
+  }
+};
+
 export default function ChartCanvas({ data, entries = [], timeframe, chartType }: ChartCanvasProps) {
   const chartContainerRef = useRef<HTMLDivElement>(null)
   const chartRef = useRef<IChartApi | null>(null)
@@ -37,9 +74,17 @@ export default function ChartCanvas({ data, entries = [], timeframe, chartType }
   const lineSeriesRef = useRef<ISeriesApi<"Line"> | null>(null)
   const barSeriesRef = useRef<ISeriesApi<"Bar"> | null>(null)
   const maSeriesRef = useRef<ISeriesApi<"Line"> | null>(null)
+  const rsiSeriesRef = useRef<ISeriesApi<"Line"> | null>(null) // Ref for RSI series
+  // Ref to hold the actual series instances for MACD
+  const macdSeriesInstancesRef = useRef<MacdSeriesInstances>({
+    macdLineSeries: null,
+    signalLineSeries: null,
+    histogramSeries: null,
+  });
   const markersRef = useRef<any[]>([])
   const { theme } = useTheme()
   const [isClient, setIsClient] = useState(false)
+  const [logicalRange, setLogicalRange] = useState<any>(null); // State to hold logical range
 
   // Helper function to get CSS variable value
   const getCssVar = (name: string): string => {
@@ -48,71 +93,125 @@ export default function ChartCanvas({ data, entries = [], timeframe, chartType }
   }
 
   // Get chart configuration
-  const { chartOptions, candleSeriesOptions, maSeriesOptions } = useChartConfig()
-
-  // Define lineSeriesOptions and barSeriesOptions
-  const lineSeriesOptions = {
-    color: "#2962FF",
-    lineWidth: 2,
-    title: "Price",
-  }
-
-  const barSeriesOptions = {
-    upColor: "#10b981",
-    downColor: "#ef4444",
-    thinBars: false,
-    title: "Price",
-  }
+  const { chartOptions, candleSeriesOptions, maSeriesOptions, lineSeriesOptions, barSeriesOptions } = useChartConfig()
 
   // Set isClient to true on mount
   useEffect(() => {
     setIsClient(true)
   }, [])
 
+  // Function to handle crosshair movement
+  const handleCrosshairMove = useCallback((param: LightweightCharts.MouseEventParams<Time>) => {
+    // TODO: Implement crosshair logic if needed, e.g., update external UI
+    // Example: console.log(param.point); // Logs the coordinate
+    // Example: console.log(param.time); // Logs the time
+    // Example: console.log(param.seriesPrices); // Logs prices for all series at that point
+  }, []); // Dependencies should be external values used, not the function itself
+
+  // Function to handle chart resize
+  const handleResize = useCallback(() => {
+    if (chartRef.current && chartContainerRef.current) {
+        chartRef.current.applyOptions({ width: chartContainerRef.current.clientWidth });
+    }
+  }, []); // No external dependencies needed for this simple resize
+
+  // Memoized cleanup function
+  const cleanupChart = useCallback(() => {
+    console.log("Running cleanup...");
+    window.removeEventListener("resize", handleResize);
+
+    const currentChart = chartRef.current;
+    const currentMacdInstances = macdSeriesInstancesRef.current;
+
+    if (currentChart) {
+      console.log("Cleaning up chart references...");
+      // Unsubscribe inside the check
+      currentChart.unsubscribeCrosshairMove(handleCrosshairMove);
+      // currentChart.timeScale().unsubscribeVisibleLogicalRangeChange(setLogicalRange);
+
+      // Remove series *before* removing the chart
+      // removeRsiSeries(currentChart, rsiSeriesRef); // Assuming implementation
+      if (currentMacdInstances) {
+          removeMacdSeries(currentChart, macdSeriesInstancesRef); // Pass the ref itself
+      }
+
+      console.log("Removing chart...");
+      currentChart.remove();
+    }
+
+    // Nullify refs *after* potential cleanup operations
+    console.log("Nullifying refs...");
+    chartRef.current = null;
+    candleSeriesRef.current = null;
+    lineSeriesRef.current = null;
+    barSeriesRef.current = null;
+    maSeriesRef.current = null;
+    rsiSeriesRef.current = null;
+    macdSeriesInstancesRef.current = { macdLineSeries: null, signalLineSeries: null, histogramSeries: null };
+    markersRef.current = []; // Clear markers ref as well
+
+  }, [handleCrosshairMove, removeMacdSeries, handleResize]); // Add handleResize dependency
+
   // Chart initialization - only run once on client-side
   useEffect(() => {
-    if (!chartContainerRef.current || !isClient) return
+    if (!isClient || !chartContainerRef.current) return;
 
-    // Avoid duplicate initialization
-    if (chartRef.current) return
-
-    const container = chartContainerRef.current // capture current for async safety
+    // Clean up previous chart and ensure we don't recreate chart if already exists
+    if (chartRef.current) {
+      console.log("Chart already exists, cleaning up...");
+      cleanupChart();
+    }
+    
+    // Set optimal container height for multiple panels
+    if (chartContainerRef.current) {
+      // 親コンテナの高さを継承し、全画面表示を実現
+      chartContainerRef.current.style.height = '100%';
+      chartContainerRef.current.style.width = '100%';
+    }
 
     import('lightweight-charts').then(LightweightCharts => {
       const {
         createChart,
-        CandlestickSeries,
-        LineSeries,
-        BarSeries,
-      } = LightweightCharts as any;
+      } = LightweightCharts;
 
-      // Container might be null if component unmounted before import resolves
-      if (!container) return
+      // Null チェックを再実行（非同期処理のため）
+      if (!chartContainerRef.current) {
+        console.log("Container is no longer available");
+        return;
+      }
 
-      // Get theme colors from CSS variables
-      const backgroundColor = `hsl(${getCssVar('--background')})`
-      const textColor = `hsl(${getCssVar('--foreground')})`
-      const gridColor = `hsl(${getCssVar('--border')})`
-      const crosshairColor = `hsl(${getCssVar('--muted-foreground')})` // Or use --foreground
-      const primaryColor = `hsl(${getCssVar('--primary')})`
+      // Get theme colors from CSS variables (raw HSL values without hsl() wrapper)
+      const backgroundHsl = getCssVar('--background');
+      const foregroundHsl = getCssVar('--foreground');
+      
+      // コンテナ要素を安全に取得
+      const container = chartContainerRef.current;
+      const borderHsl = getCssVar('--border');
+      const mutedForegroundHsl = getCssVar('--muted-foreground');
+      const primaryHsl = getCssVar('--primary');
+
+      // Convert HSL values to RGBA using the helper function
+      const backgroundColor = hslCssVarToRgba(backgroundHsl, theme === 'dark' ? '#1e1e2d' : '#ffffff');
+      const textColor = hslCssVarToRgba(foregroundHsl, theme === 'dark' ? '#d1d5db' : '#1e293b');
+      const gridColor = hslCssVarToRgba(borderHsl, theme === 'dark' ? '#2e2e3a' : '#f1f5f9');
+      const crosshairColor = hslCssVarToRgba(mutedForegroundHsl, theme === 'dark' ? '#a1a1aa' : '#71717a'); // Adjusted fallbacks
+      const primaryColor = hslCssVarToRgba(primaryHsl, theme === 'dark' ? '#3b82f6' : '#2563eb'); // Adjusted fallbacks
 
       const options = {
         ...chartOptions,
         layout: {
           ...chartOptions.layout,
-          background: {
-            color: backgroundColor || (theme === "dark" ? "#1e1e2d" : "#ffffff"), // Fallback
-          },
-          textColor: textColor || (theme === "dark" ? "#d1d5db" : "#1e293b"), // Fallback
+          background: { color: backgroundColor }, // Use converted color
+          textColor: textColor, // Use converted color
         },
         grid: {
           ...chartOptions.grid,
           vertLines: {
-            color: gridColor || (theme === "dark" ? "#2e2e3a" : "#f1f5f9"), // Fallback
+            color: gridColor, // Use converted color
             style: chartOptions.grid.vertLines.style,
           },
           horzLines: {
-            color: gridColor || (theme === "dark" ? "#2e2e3a" : "#f1f5f9"), // Fallback
+            color: gridColor, // Use converted color
             style: chartOptions.grid.horzLines.style,
           },
         },
@@ -131,11 +230,11 @@ export default function ChartCanvas({ data, entries = [], timeframe, chartType }
         },
         timeScale: {
           ...chartOptions.timeScale,
-          borderColor: gridColor, // Use grid/border color
+          borderColor: gridColor, // Use converted color
         },
         rightPriceScale: {
           ...chartOptions.rightPriceScale,
-          borderColor: gridColor, // Use grid/border color
+          borderColor: gridColor, // Use converted color
         },
         width: container.clientWidth,
         height: container.clientHeight,
@@ -145,26 +244,143 @@ export default function ChartCanvas({ data, entries = [], timeframe, chartType }
       const chart = createChart(container, options);
       chartRef.current = chart;
 
-      // Add series
-      candleSeriesRef.current = chart.addSeries(CandlestickSeries, {
+      // Add series using specific methods
+      candleSeriesRef.current = chart.addCandlestickSeries({
         ...candleSeriesOptions,
         visible: chartType === "candles",
-      })
+      });
 
-      lineSeriesRef.current = chart.addSeries(LineSeries, {
+      lineSeriesRef.current = chart.addLineSeries({
         ...lineSeriesOptions,
         visible: chartType === "line",
-      })
+      });
 
-      barSeriesRef.current = chart.addSeries(BarSeries, {
+      barSeriesRef.current = chart.addBarSeries({
         ...barSeriesOptions,
         visible: chartType === "bar",
-      })
+      });
 
-      maSeriesRef.current = chart.addSeries(LineSeries, {
+      // MA is a LineSeries
+      maSeriesRef.current = chart.addLineSeries({
         ...maSeriesOptions,
         visible: true,
-      })
+      });
+
+      // Calculate RSI data
+      const closePrices = data.map(d => d.close);
+      const rsiPeriod = 14;
+      const rsiValuesRaw = RsiIndicator.calculate({ values: closePrices, period: rsiPeriod });
+      const rsiDataAligned: LineData<Time>[] = [];
+      if (data.length >= rsiPeriod) {
+        data.slice(rsiPeriod -1).forEach((d, index) => {
+          if (rsiValuesRaw[index] !== undefined) { // Ensure value exists
+             rsiDataAligned.push({
+               time: (new Date(d.time).getTime() / 1000) as UTCTimestamp,
+               value: rsiValuesRaw[index],
+             });
+          }
+        });
+      }
+
+      // Calculate MACD data
+      const macdValuesRaw = calculateMacdValues(closePrices);
+      const alignedMacdData = alignMacdData(data, macdValuesRaw);
+
+      // TradingView風のパネル設定
+      // パネル1（メインチャート）の比率設定
+      chart.applyOptions({
+        watermark: {
+          visible: false,
+        },
+        leftPriceScale: {
+          visible: false,
+        },
+        rightPriceScale: {
+          visible: true,
+        },
+      });
+      
+      // メインチャートパネルのプライススケール設定
+      chart.priceScale('right').applyOptions({
+        scaleMargins: {
+          top: 0.05, // メインチャートの上部マージン
+          bottom: 0.35, // メインチャートの下部マージン - インジケーター用に十分なスペース確保
+        },
+        borderVisible: true,
+        borderColor: theme === "dark" ? '#363A45' : '#C3BCBC',
+      });
+      
+      // メインチャートにラベルを追加
+      chart.applyOptions({
+        watermark: {
+          visible: true,
+          color: theme === "dark" ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)',
+          text: 'BTC/USD',
+          fontSize: 36,
+          horzAlign: 'left',
+          vertAlign: 'top',
+        },
+      });
+
+      // RSIパネル（1）を設定 - メインチャートとは別のパネルに配置
+      addOrUpdateRsiSeries(chart, rsiDataAligned, 1, rsiSeriesRef);
+      
+      // RSIパネルの比率設定 - メインチャートの下に配置（全体の15%の高さ）
+      chart.priceScale(`rsi_price_scale_1`).applyOptions({
+        scaleMargins: {
+          top: 0.65, // RSIパネルの上部マージン - メインチャートの下
+          bottom: 0.25, // RSIパネルの下部マージン
+        },
+        autoScale: false, // RSIは固定スケール (0-100)
+        entireTextOnly: true,
+        borderVisible: true,
+        borderColor: theme === "dark" ? '#363A45' : '#C3BCBC',
+      });
+      
+      // RSIパネルにパネル名を追加
+      if (rsiSeriesRef.current) {
+        // RSIパネルラベルを追加
+        rsiSeriesRef.current.createPriceLine({
+          price: 50, // RSIの中間値
+          color: theme === "dark" ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
+          lineWidth: 1 as const, // as const で型エラー修正
+          lineStyle: 2, // 点線
+          axisLabelVisible: true,
+          title: 'RSI (14)', // パネル名
+          axisLabelColor: theme === "dark" ? '#9598A1' : '#787B86',
+        });
+      }
+
+      // MACDパネル（2）を設定 - RSIの下に配置
+      if (chartRef.current) {
+        addOrUpdateMacdSeries(chart, alignedMacdData, 2, macdSeriesInstancesRef);
+        
+        // MACDパネルの比率設定 - RSIの下に配置（全体の15%の高さ）
+        chart.priceScale(`macd_price_scale_2`).applyOptions({
+          scaleMargins: {
+            top: 0.75, // MACDパネルの上部マージン - RSIの下に配置
+            bottom: 0.0, // MACDパネルの下部マージン
+          },
+          entireTextOnly: true,
+          borderVisible: true,
+          borderColor: theme === "dark" ? '#363A45' : '#C3BCBC',
+        });
+        
+        // MACDパネルにラベルを追加
+        const macdInstances = macdSeriesInstancesRef.current;
+        if (macdInstances.macdLineSeries) {
+          // MACDパネルラベル用に横線を追加
+          macdInstances.macdLineSeries.createPriceLine({
+            price: 0, // ゼロライン
+            color: theme === "dark" ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.3)',
+            lineWidth: 1 as const, // as const で型エラー修正
+            lineStyle: 2, // 点線
+            axisLabelVisible: true,
+            title: 'MACD (12,26,9)', // より詳細なパネル名（パラメーター表示）
+            axisLabelColor: theme === "dark" ? '#9598A1' : '#787B86',
+          });
+        }
+      }
 
       // Set initial data
       if (data.length) {
@@ -214,34 +430,38 @@ export default function ChartCanvas({ data, entries = [], timeframe, chartType }
         }
       }
 
-      // Handle resize
-      const handleResize = () => {
-        if (chartContainerRef.current && chartRef.current) {
-          chartRef.current.applyOptions({
-            width: chartContainerRef.current.clientWidth,
-            height: chartContainerRef.current.clientHeight,
-          })
-        }
-      }
+      // Add resize listener *after* chart is created
+      window.addEventListener("resize", handleResize);
 
-      window.addEventListener("resize", handleResize)
+      // Return the memoized cleanup function
+      return cleanupChart;
+    }).catch(err => {
+      console.error("Failed to load lightweight-charts or initialize chart", err);
+      // Ensure cleanup runs even if initialization fails mid-way
+      cleanupChart();
+    });
 
-      // Cleanup function
-      return () => {
-        window.removeEventListener("resize", handleResize)
-
-        if (chartRef.current) {
-          chartRef.current.remove()
-          chartRef.current = null
-          candleSeriesRef.current = null
-          lineSeriesRef.current = null
-          barSeriesRef.current = null
-          maSeriesRef.current = null
-        }
-      }
-    }).catch(err => console.error("Failed to load lightweight-charts", err));
-
-  }, [isClient, theme, chartOptions, candleSeriesOptions, maSeriesOptions, lineSeriesOptions, barSeriesOptions, chartType])
+  }, [
+    // Core dependencies for initialization
+    isClient,
+    theme,
+    chartOptions,
+    candleSeriesOptions,
+    maSeriesOptions,
+    lineSeriesOptions,
+    barSeriesOptions,
+    chartType,
+    // Data and indicators (needed for initial setup inside)
+    data, // data is used to calculate indicators initially
+    entries, // entries are used for markers initially
+    addOrUpdateRsiSeries,
+    addOrUpdateMacdSeries,
+    createEntryMarkers,
+    // Functions needed by the effect or cleanup
+    handleResize,
+    handleCrosshairMove,
+    cleanupChart,
+  ])
 
   // Update theme
   useEffect(() => {
@@ -250,16 +470,16 @@ export default function ChartCanvas({ data, entries = [], timeframe, chartType }
     chartRef.current.applyOptions({
       layout: {
         background: {
-          color: `hsl(${getCssVar('--background')})`,
+          color: hslCssVarToRgba(getCssVar('--background'), theme === 'dark' ? '#1e1e2d' : '#ffffff'),
         },
-        textColor: `hsl(${getCssVar('--foreground')})`,
+        textColor: hslCssVarToRgba(getCssVar('--foreground'), theme === 'dark' ? '#d1d5db' : '#1e293b'),
       },
       grid: {
         vertLines: {
-          color: `hsl(${getCssVar('--border')})`,
+          color: hslCssVarToRgba(getCssVar('--border'), theme === 'dark' ? '#2e2e3a' : '#f1f5f9'),
         },
         horzLines: {
-          color: `hsl(${getCssVar('--border')})`,
+          color: hslCssVarToRgba(getCssVar('--border'), theme === 'dark' ? '#2e2e3a' : '#f1f5f9'),
         },
       },
     })
@@ -306,6 +526,12 @@ export default function ChartCanvas({ data, entries = [], timeframe, chartType }
       if (lineSeriesRef.current) lineSeriesRef.current.setData([]);
       if (barSeriesRef.current) barSeriesRef.current.setData([]);
       if (maSeriesRef.current) maSeriesRef.current.setData([]);
+      if (rsiSeriesRef.current) rsiSeriesRef.current.setData([]);
+      if (macdSeriesInstancesRef.current) {
+        macdSeriesInstancesRef.current.macdLineSeries?.setData([]);
+        macdSeriesInstancesRef.current.signalLineSeries?.setData([]);
+        macdSeriesInstancesRef.current.histogramSeries?.setData([]);
+      }
       return;
     }
 
@@ -349,6 +575,33 @@ export default function ChartCanvas({ data, entries = [], timeframe, chartType }
           })
         }
         if (maSeriesRef.current) maSeriesRef.current.setData(maData)
+      }
+
+      // Calculate RSI data
+      const closePrices = data.map(d => d.close);
+      const rsiPeriod = 14;
+      const rsiValuesRaw = RsiIndicator.calculate({ values: closePrices, period: rsiPeriod });
+      const rsiDataAligned: LineData<Time>[] = [];
+      if (data.length >= rsiPeriod) {
+        data.slice(rsiPeriod -1).forEach((d, index) => {
+          if (rsiValuesRaw[index] !== undefined) { // Ensure value exists
+             rsiDataAligned.push({
+               time: (new Date(d.time).getTime() / 1000) as UTCTimestamp,
+               value: rsiValuesRaw[index],
+             });
+          }
+        });
+      }
+
+      if (rsiSeriesRef.current) rsiSeriesRef.current.setData(rsiDataAligned);
+
+      // Calculate MACD data
+      const macdValuesRaw = calculateMacdValues(closePrices);
+      const alignedMacdData = alignMacdData(data, macdValuesRaw);
+
+      // Add null check for chartRef.current here as well
+      if (chartRef.current && macdSeriesInstancesRef.current) {
+          addOrUpdateMacdSeries(chartRef.current, alignedMacdData, 2, macdSeriesInstancesRef);
       }
 
       // Fit content
