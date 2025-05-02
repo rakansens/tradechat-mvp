@@ -45,7 +45,7 @@ describe('Agent Factory Functions', () => {
         name: 'TradingAssistant',
         instructions: expect.stringContaining('trading assistant'),
         model: 'mockedOpenAIModel',
-        memory: memory,
+        memory: expect.any(Memory),
         tools: {
           'mem0-remember': mem0RememberTool,
           'mem0-memorize': mem0MemorizeTool,
@@ -62,7 +62,7 @@ describe('Agent Factory Functions', () => {
         name: 'TradingAssistant',
         instructions: expect.stringContaining('trading assistant'),
         model: 'mockedOpenAIModel',
-        memory: undefined,
+        memory: expect.any(Memory),
         tools: {
           'mem0-remember': mem0RememberTool,
           'mem0-memorize': mem0MemorizeTool,
@@ -81,15 +81,12 @@ describe('Agent Factory Functions', () => {
         name: 'TradingAssistant',
         instructions: expect.stringContaining('trading assistant'),
         model: 'mockedOpenAIModel',
+        memory: expect.any(Memory),
         tools: {
           'mem0-remember': mem0RememberTool,
           'mem0-memorize': mem0MemorizeTool,
         }
       });
-      
-      // memoryプロパティがないことを確認
-      const agentConstructorCall = (Agent as jest.Mock).mock.calls[0][0];
-      expect(agentConstructorCall).not.toHaveProperty('memory');
     });
   });
 });

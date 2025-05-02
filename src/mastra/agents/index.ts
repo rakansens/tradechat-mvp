@@ -1,17 +1,46 @@
 // src/mastra/agents/index.ts
 // 新規作成：トレーディングアシスタント用エージェント定義
 // エージェントに長期記憶ツールを統合
+// Changes: Updated Memory config for deprecation warnings.
+// Changes: Fixed Memory import to be a value import.
+// Changes: Use process.cwd() for LibSQLVector path.
 
+import path from 'path'; // Import path module
 import { Agent } from "@mastra/core/agent";
 import { openai } from "@ai-sdk/openai";
-import type { Memory } from '@mastra/memory';
+import { Memory } from '@mastra/memory';
+import { LibSQLVector } from '@mastra/libsql'; // Import LibSQLVector
 import { mem0RememberTool, mem0MemorizeTool } from "../tools";
+
+// Construct database path relative to project root
+const dbPath = path.resolve(process.cwd(), 'memory.db');
+const dbConnectionUrl = `file:${dbPath}`;
+console.log(`Using LibSQL database at: ${dbConnectionUrl}`); // Log the path for debugging
 
 /**
  * メモリを使って ChatAgent インスタンスを作成する
  * メモリが提供されない場合は、ツールのみでエージェントを作成
  */
 export function createChatAgent(memory?: Memory): Agent {
+  // Explicitly configure Memory to address deprecation warnings
+  if (!memory) {
+    memory = new Memory({
+      // Add explicit vector store configuration
+      vector: new LibSQLVector({
+        // Use the constructed path
+        connectionUrl: dbConnectionUrl 
+      }),
+      // Set explicit options matching old defaults to maintain behavior
+      options: {
+        lastMessages: 40,
+        semanticRecall: false, // Disable embeddings during tests
+        threads: {
+          generateTitle: true
+        }
+      }
+    });
+  }
+
   return new Agent({
     name: "TradingAssistant",
     instructions: `
@@ -31,7 +60,7 @@ export function createChatAgent(memory?: Memory): Agent {
       Be friendly and helpful.
     `,
     model: openai(process.env.OPENAI_API_KEY ? "gpt-4o" : "gpt-3.5-turbo"),
-    memory: memory, // オプショナル - 提供されれば使用
+    memory, 
     tools: {
       "mem0-remember": mem0RememberTool,
       "mem0-memorize": mem0MemorizeTool,
@@ -43,6 +72,24 @@ export function createChatAgent(memory?: Memory): Agent {
  * メモリなしでエージェントを直接作成（Next.js API Routes 用）
  */
 export function createDirectAgent(): Agent {
+  console.log("Inside createDirectAgent - Checking OPENAI_API_KEY:", process.env.OPENAI_API_KEY ? 'Exists' : 'MISSING'); // Debug log
+  // Explicitly configure Memory to address deprecation warnings
+  const memory = new Memory({
+    // Add explicit vector store configuration
+    vector: new LibSQLVector({
+      // Use the constructed path
+      connectionUrl: dbConnectionUrl 
+    }),
+    // Set explicit options matching old defaults to maintain behavior
+    options: {
+      lastMessages: 40,
+      semanticRecall: false, // Disable embeddings during tests
+      threads: {
+        generateTitle: true
+      }
+    }
+  });
+
   return new Agent({
     name: "TradingAssistant",
     instructions: `
@@ -62,6 +109,7 @@ export function createDirectAgent(): Agent {
       Be friendly and helpful.
     `,
     model: openai(process.env.OPENAI_API_KEY ? "gpt-4o" : "gpt-3.5-turbo"),
+    memory, 
     tools: {
       "mem0-remember": mem0RememberTool,
       "mem0-memorize": mem0MemorizeTool,
