@@ -1,20 +1,11 @@
 // lib/tools/browserSearch.ts
-// 更新: 独自の型定義を使用するように修正
+// 更新: 共通の型定義ファイルを使用するように修正
 
-// OpenAIのインポートが利用できないため、独自の型定義を使用
-// 必要なプロパティのみを定義したシンプルな型
-type ChatCompletionTool = {
-  type: "function";
-  function: {
-    name: string;
-    description: string;
-    parameters: {
-      type: "object";
-      properties: Record<string, any>;
-      required?: string[];
-    };
-  };
-};
+// 共通の型定義ファイルからOpenAIの型をインポート
+import { OpenAI } from "@/types/external-libs";
+
+// 型のエイリアスを使用してコードの可読性を向上
+type ChatCompletionTool = OpenAI.ChatCompletionTool;
 
 export const browserSearchTool: ChatCompletionTool = {
   type: "function",
