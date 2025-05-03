@@ -3,7 +3,17 @@
 "use client"
 
 import React from 'react';
-import { useChartStore, useUIStore, useEntryStore } from '@/store';
+import { 
+  // 分割されたチャートストア
+  useChartDataStore,
+  useChartConfigStore,
+  useIndicatorStore,
+  useDrawingToolStore,
+  useRealTimeStore,
+  // その他のストア
+  useUIStore, 
+  useEntryStore 
+} from '@/store';
 import { Wifi, WifiOff, TrendingUp, Landmark, BarChart2, LineChart, Layers, BarChart3 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -35,26 +45,47 @@ const drawingTools = [
 ];
 
 export default function ChartToolbar({}: ChartToolbarProps) {
-  // チャートストアから状態とアクションを取得
+  // 分割されたチャートストアから状態とアクションを取得
+  
+  // チャートデータ関連
   const {
     currentSymbol,
     currentTimeFrame,
-    chartType,
     data,
-    updateTimeFrame,
-    updateSymbol,
-    setChartType,
-    useRealTimeData,
-    toggleRealTimeData,
     error,
+    updateTimeFrame,
+    updateSymbol
+  } = useChartDataStore();
+  
+  // チャート設定関連
+  const {
+    chartType,
     exchangeType,
-    setExchangeType,
+    setChartType,
+    setExchangeType
+  } = useChartConfigStore();
+  
+  // インジケーター関連
+  const {
     activeIndicators,
-    activeDrawingTools,
     toggleIndicator,
+    clearAllIndicators
+  } = useIndicatorStore();
+  
+  // 描画ツール関連
+  const {
+    activeDrawingTools,
     toggleDrawingTool,
     clearAllDrawingTools
-  } = useChartStore();
+  } = useDrawingToolStore();
+  
+  // リアルタイム更新関連
+  const {
+    useRealTimeData,
+    toggleRealTimeData
+  } = useRealTimeStore();
+  
+  // ストアからのアクションはすべて取得済み
   
   // UIストアから状態とアクションを取得
   const activeTab = useUIStore((state) => state.activeTab);

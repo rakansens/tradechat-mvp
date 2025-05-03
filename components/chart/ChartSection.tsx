@@ -12,7 +12,12 @@ import { CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { BarChart3, CandlestickChart, LineChart } from "lucide-react"
-import { useChartStore } from "@/store"
+import { 
+  // 分割されたチャートストア
+  useChartDataStore,
+  useChartConfigStore,
+  useRealTimeStore
+} from "@/store"
 import { theme } from "@/styles/colors"
 import ChartToolbar from "./ChartToolbar"
 
@@ -22,28 +27,47 @@ interface ChartSectionProps extends ChartViewProps, Pick<TimeframeControlProps, 
 }
 
 export default function ChartSection() {
+  // チャートデータ関連の状態とアクション
   const { 
     currentSymbol, 
-    currentTimeFrame, 
-    chartType, 
-    initializeChart, 
+    currentTimeFrame,
     updateTimeFrame, 
-    updateSymbol, 
+    updateSymbol,
+    fetchData
+  } = useChartDataStore();
+  
+  // チャート設定関連の状態とアクション
+  const { 
+    chartType,
     setChartType 
-  } = useChartStore();
+  } = useChartConfigStore();
+  
+  // リアルタイム更新関連のアクション
+  const {
+    stopRealTimeUpdates
+  } = useRealTimeStore();
 
   // コンポーネントのマウント時にチャートを初期化
   useEffect(() => {
-    initializeChart(currentSymbol, currentTimeFrame);
+    // 新しいストアを使用
+    fetchData(currentSymbol, currentTimeFrame);
     
     // コンポーネントのアンマウント時にWebSocketを切断
     return () => {
-      useChartStore.getState().stopRealTimeUpdates();
+      stopRealTimeUpdates();
     };
   }, []);
 
   const handleTimeframeChange = (timeframe: string) => {
-    updateTimeFrame(timeframe as any);
+    // 型安全な実装に変更
+    if (isValidTimeframe(timeframe)) {
+      updateTimeFrame(timeframe);
+    }
+  };
+  
+  // 型安全性を確保するためのヘルパー関数
+  const isValidTimeframe = (timeframe: string): timeframe is Timeframe => {
+    return ['1m', '5m', '15m', '30m', '1h', '4h', '1d', '1w'].includes(timeframe);
   };
 
   const handleSymbolChange = (symbol: string) => {

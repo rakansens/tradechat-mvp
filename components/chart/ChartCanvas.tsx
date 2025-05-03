@@ -46,7 +46,14 @@ import {
   FibonacciLineHandles
 } from "./drawing-tools/fibonacci"; // Import Fibonacci functions
 import { RSI as RsiIndicator } from 'technicalindicators'; // Import directly for calculation
-import { useChartStore } from "../../store/useChartStore";
+// 分割されたストアをインポート
+import { 
+  useChartDataStore,
+  useChartConfigStore,
+  useIndicatorStore,
+  useDrawingToolStore,
+  useRealTimeStore
+} from "../../store";
 import { createChart, ColorType } from "lightweight-charts";
 
 // 共通インターフェースを使用して型定義を整理
@@ -103,23 +110,36 @@ export default function ChartCanvas() {
   // フィボナッチリトレースメントのライン参照
   const [fibonacciLines, setFibonacciLines] = useState<FibonacciLineHandles>({});
   
-  // チャートストアから状態を取得
+  // 分割されたチャートストアから状態を取得
+  // データ関連の状態とアクション
   const { 
     data, 
-    chartType, 
     currentSymbol, 
     currentTimeFrame,
-    initializeChart,
-    activeIndicators,
-    activeDrawingTools
-  } = useChartStore();
+    fetchData
+  } = useChartDataStore();
+  
+  // 設定関連の状態
+  const { 
+    chartType 
+  } = useChartConfigStore();
+  
+  // インジケーター関連の状態
+  const { 
+    activeIndicators 
+  } = useIndicatorStore();
+  
+  // 描画ツール関連の状態
+  const { 
+    activeDrawingTools 
+  } = useDrawingToolStore();
 
   // チャートの初期化と更新
   useEffect(() => {
     if (!chartRef.current) return;
 
     // 初期チャートデータを取得
-    initializeChart(currentSymbol, currentTimeFrame);
+    fetchData(currentSymbol, currentTimeFrame);
 
     // チャートコンテナのサイズを取得
     const chartContainer = chartRef.current;

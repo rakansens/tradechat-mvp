@@ -3,7 +3,8 @@
 
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
-import { useChartStore } from "./useChartStore";
+// 分割されたチャートストアをインポート
+import { useChartDataStore } from "./chart";
 import { useEntryStore } from "./useEntryStore";
 import type { ChatState, ExtendedMessage, ProposalType } from "@/types/chat";
 import type { OpenEntry } from "@/types/entry";
@@ -54,9 +55,9 @@ export const useChatStore = create<ChatState>()(
 
       handleEntryPointQuery: () => {
         const { messages } = get();
-        // チャートストアからデータを取得
-        const ohlcData = useChartStore.getState().ohlcData;
-        const currentPrice = ohlcData[ohlcData.length - 1].close;
+        // チャートデータストアからデータを取得
+        const data = useChartDataStore.getState().data;
+        const currentPrice = data[data.length - 1].close;
 
         const userMessage: ExtendedMessage = {
           id: Date.now().toString(),
@@ -131,9 +132,9 @@ Based on these developments, the short-term trend appears bullish, but watch for
 
       handleAIProposalQuery: () => {
         const { messages } = get();
-        // チャートストアからデータを取得
-        const ohlcData = useChartStore.getState().ohlcData;
-        const currentPrice = ohlcData[ohlcData.length - 1].close;
+        // チャートデータストアからデータを取得
+        const data = useChartDataStore.getState().data;
+        const currentPrice = data[data.length - 1].close;
         const randomPrice = Math.floor(currentPrice * (0.98 + Math.random() * 0.04));
         const isBuy = Math.random() > 0.5;
 

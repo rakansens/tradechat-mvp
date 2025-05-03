@@ -17,7 +17,16 @@ import ChatSection from "@/components/chat/ChatSection"
 import PositionHistory from "@/components/position/PositionHistory"
 import TimeframeSelector from "@/components/chart/TimeframeSelector"
 // import PriceChangeIndicator from "@/components/ui/PriceChangeIndicator"
-import { useChartStore, useEntryStore, useChatStore, useUIStore } from "@/store"
+import { 
+  // 分割されたチャートストア
+  useChartDataStore,
+  useChartConfigStore,
+  useRealTimeStore,
+  // その他のストア
+  useEntryStore, 
+  useChatStore, 
+  useUIStore 
+} from "@/store"
 import { theme } from "@/styles/colors"
 
 import type { OpenEntry } from "@/types/entry"
@@ -39,13 +48,17 @@ export default function Home() {
   const closePosition = useEntryStore((state) => state.closePosition);
   const cancelPosition = useEntryStore((state) => state.cancelPosition);
   
-  // チャートストアから状態とアクションを取得
-  const data = useChartStore((state) => state.data);
-  const currentTimeFrame = useChartStore((state) => state.currentTimeFrame);
-  const chartType = useChartStore((state) => state.chartType);
-  const initializeChart = useChartStore((state) => state.initializeChart);
-  const updateTimeFrame = useChartStore((state) => state.updateTimeFrame);
-  const setChartType = useChartStore((state) => state.setChartType);
+  // 分割されたチャートストアから状態とアクションを取得
+  
+  // チャートデータ関連
+  const data = useChartDataStore((state) => state.data);
+  const currentTimeFrame = useChartDataStore((state) => state.currentTimeFrame);
+  const updateTimeFrame = useChartDataStore((state) => state.updateTimeFrame);
+  const fetchData = useChartDataStore((state) => state.fetchData);
+  
+  // チャート設定関連
+  const chartType = useChartConfigStore((state) => state.chartType);
+  const setChartType = useChartConfigStore((state) => state.setChartType);
   
   // UIストアから状態とアクションを取得
   const activeTab = useUIStore((state) => state.activeTab);
@@ -93,8 +106,9 @@ export default function Home() {
   }, [messages]); 
   
   useEffect(() => {
-    initializeChart('BTC/USDT', currentTimeFrame);
-  }, [initializeChart, currentTimeFrame]);
+    // 新しいストアを使用してチャートデータを取得
+    fetchData('BTC/USDT', currentTimeFrame);
+  }, [fetchData, currentTimeFrame]);
 
   const openPositionsCount = entries.filter((entry) => entry.status === "open").length
 

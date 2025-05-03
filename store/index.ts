@@ -1,12 +1,19 @@
 // store/index.ts
-// 作成: 各ストアを一元的にエクスポートするインデックスファイル
+// 更新: 分割されたチャートストアのみをエクスポートするように更新
 
-// 各機能別ストアをエクスポート
-export { useChartStore } from './useChartStore';
+// 分割されたチャートストアをエクスポート
+export { 
+  useChartDataStore,
+  useChartConfigStore,
+  useRealTimeStore,
+  useIndicatorStore,
+  useDrawingToolStore 
+} from './chart';
+
+// その他のストアをエクスポート
 export { useEntryStore } from './useEntryStore';
 export { useChatStore } from './useChatStore';
 export { useUIStore } from './useUIStore';
 export { default as useMarketStore } from './useMarketStore';
 
-// 旧ストアもエクスポート（互換性のため、後で削除予定）
-export { useStore } from './useStore';
+// 全てのストアが新しい構造に移行完了
