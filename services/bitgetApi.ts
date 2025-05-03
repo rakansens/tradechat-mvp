@@ -12,6 +12,8 @@ const ENABLE_DEMO_MODE_ON_ERROR = true; // エラー時のデモモード有効
 
 // 環境判定
 const isBrowser = typeof window !== 'undefined';
+// true when running in dev; used to silence verbose logs in production
+const IS_DEV = process.env.NODE_ENV === 'development';
 
 // 環境に応じたWebSocketの作成
 const createWebSocket = (url: string) => {
@@ -44,6 +46,8 @@ export const TIMEFRAME_MAP_SPOT: Record<string, string> = {
   '30m': '30m',
   '1h': '1H',
   '4h': '4H',
+  '6h': '6H',
+  '12h': '12H',
   '1d': '1D',
   '1w': '1W',
 };
@@ -56,6 +60,8 @@ export const TIMEFRAME_MAP_FUTURES: Record<string, string> = {
   '30m': '30m',
   '1h': '1H',
   '4h': '4H',
+  '6h': '6H',
+  '12h': '12H',
   '1d': '1D',
   '1w': '1W',
 };
@@ -73,6 +79,7 @@ export class BitgetApiClient {
   private onKlineUpdateCallbacks: ((data: OHLCData) => void)[] = [];
   private exchangeType: ExchangeType = 'spot'; // デフォルトはスポット取引
   private isInDemoMode: boolean = false; // デモモードフラグ
+  private currentSubscription: { instType: string; channel: string; instId: string } | null = null;
 
   constructor(credentials: BitgetCredentials = {}, exchangeType: ExchangeType = 'spot') {
     this.credentials = credentials;
@@ -376,7 +383,6 @@ export class BitgetApiClient {
     this.cleanup();
     
     // 取引種別を更新
-    // *WebSocket subscribe では sp / mc (lowercase) を要求*
     this.exchangeType = exchangeType;
     
     // デモモードを無効化
@@ -394,14 +400,10 @@ export class BitgetApiClient {
       }
 
       this.ws.onopen = () => {
-        console.log('BitgetWS: Connection established');
+        if (IS_DEV) console.log('BitgetWS: Connection established');
         this.sendPing();
-        this.pingInterval = setInterval(() => this.sendPing(), 20000);
+        this.pingInterval = setInterval(() => this.sendPing(), 15000);
         this.isInDemoMode = false; // 接続成功したらデモモードをオフ
-        // 自動再購読
-        if (this.lastSymbol && this.lastTimeframe) {
-          this.subscribeToKline(this.lastSymbol, this.lastTimeframe);
-        }
       };
 
       this.ws.onmessage = (event) => {
@@ -432,8 +434,8 @@ export class BitgetApiClient {
         this.reconnect();
       };
 
-      this.ws.onclose = () => {
-        console.log('BitgetWS: Connection closed');
+      this.ws.onclose = (ev) => {
+        console.log(`BitgetWS: Connection closed (code=${ev.code}, reason=${ev.reason})`);
         this.cleanup();
         this.reconnect();
       };
@@ -455,36 +457,91 @@ export class BitgetApiClient {
 
     // シンボルとタイムフレームを適切な形式に変換
     const formattedSymbol = symbol.replace('/', '').toUpperCase();
-    const bitgetTimeframe = this.exchangeType === 'spot' 
-      ? TIMEFRAME_MAP_SPOT[timeframe] || '1m'
-      : TIMEFRAME_MAP_FUTURES[timeframe] || '1m';
+    const bitgetTimeframe = this.exchangeType === 'spot'
+      ? TIMEFRAME_MAP_SPOT[timeframe]
+      : TIMEFRAME_MAP_FUTURES[timeframe];
+
+    // ガード: 未対応のtimeframeならエラーを投げて早期リターン
+    if (!bitgetTimeframe) {
+      console.error(`Unsupported timeframe "${timeframe}" for ${this.exchangeType}`);
+      return;
+    }
 
     // --- instType / instId (v2 spec) ---
-    // instType must be UPPERCASE ('SP' for spot, 'MC' for futures)
-    // futures instId requires the contract suffix `_UMCBL`
-    const instType = this.exchangeType === 'spot' ? 'SPOT' : 'USDT-FUTURES';
+    // Official docs: 'SP' (spot), 'MC' (USDT‑M perpetual)
+    const instType = this.exchangeType === 'spot' ? 'SP' : 'MC';
     const instId   = this.exchangeType === 'spot'
       ? formattedSymbol
       : `${formattedSymbol}_UMCBL`;
 
-    // V2 WebSocket API形式のサブスクリプションメッセージ
+    const channelName = `candle${bitgetTimeframe}`;
+
+    // 以前のサブスクリプションがある場合は解除（ただし WS が OPEN の時だけ）
+    if (this.currentSubscription) {
+      const prev = this.currentSubscription;
+      // 同じチャンネルへ再購読ならスキップ
+      if (
+        prev.instType === instType &&
+        prev.channel === channelName &&
+        prev.instId === instId
+      ) {
+        console.log('BitgetWS: Same channel already subscribed, skip');
+        return;
+      }
+
+      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+        const unsubscribeMsg = {
+          op: 'unsubscribe',
+          args: [
+            {
+              instType: prev.instType,
+              channel: prev.channel,
+              instId: prev.instId
+            }
+          ]
+        };
+        this.safeSend(unsubscribeMsg);
+        if (IS_DEV) console.log('BitgetWS: Unsubscribed previous channel');
+      }
+    }
+
     const subscriptionMessage = {
       op: 'subscribe',
       args: [
         {
           instType: instType,
-          channel: `candle${bitgetTimeframe}`,
+          channel: channelName,
           instId: instId
         }
       ]
     };
 
+    // 現在の購読情報を保存
+    this.currentSubscription = { instType, channel: channelName, instId };
+
+    // 重複送信を避けるため、CONNECTING 状態で既に同一メッセージがキューされていれば送信しない
+    if (this.ws && this.ws.readyState !== WebSocket.OPEN) {
+      // open イベントに登録されている sendAction の数をチェック
+      // @ts-ignore: accessing private listener list (browser only)
+      const listeners = this.ws._listeners?.open || [];
+      const alreadyQueued = listeners.some((l:any) =>
+        l.toString().includes(JSON.stringify(subscriptionMessage))
+      );
+      if (alreadyQueued) {
+        if (IS_DEV) console.log('BitgetWS: Subscription already queued, skip duplicate');
+        return;
+      }
+    }
+
     console.log('BitgetWS: Sending subscription message:', JSON.stringify(subscriptionMessage));
 
-    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-      this.safeSend(subscriptionMessage);
+    // メッセージを送信（接続済みなら即送信、CONNECTING なら safeSend が onopen で発火）
+    this.safeSend(subscriptionMessage);
+    if (this.ws?.readyState === WebSocket.OPEN) {
       console.log(`Subscribed to ${this.exchangeType} ${formattedSymbol} ${timeframe} candles`);
-    } // 接続中(OPENでない)の場合は onopen で再購読される
+    } else {
+      console.log(`Queued subscription for ${formattedSymbol} ${timeframe} — will send on WebSocket open`);
+    }
   }
 
   // 取引種別を切り替える
@@ -502,7 +559,7 @@ export class BitgetApiClient {
     // V2 APIのpingメッセージやpongレスポンスの処理
     if (typeof message === 'string') {
       if (message === 'pong') {
-        console.log('BitgetWS: pong handled');
+        if (IS_DEV) console.log('BitgetWS: pong handled');
         return;
       }
     }
@@ -558,7 +615,7 @@ export class BitgetApiClient {
   private sendPing() {
     try {
       this.safeSend('ping');
-      console.log('BitgetWS: Ping sent');
+      if (IS_DEV) console.log('BitgetWS: Ping sent');
     } catch (error) {
       console.error('BitgetWS: Error sending ping:', error);
       this.reconnect();
