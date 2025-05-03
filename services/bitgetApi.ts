@@ -461,15 +461,12 @@ export class BitgetApiClient {
     }
     
     // V2 WebSocket API形式のサブスクリプションメッセージ
+    // 形式は 'instType/channel:instId' の文字列をargs配列に指定
+    const channelString = `${instType}/candle${bitgetTimeframe}:${instId}`;
+    
     const subscriptionMessage = {
       op: 'subscribe',
-      args: [
-        {
-          instType: instType,
-          channel: `candle${bitgetTimeframe}`,
-          instId: instId
-        }
-      ]
+      args: [channelString]
     };
     
     console.log('BitgetWS: Sending subscription message:', JSON.stringify(subscriptionMessage));
