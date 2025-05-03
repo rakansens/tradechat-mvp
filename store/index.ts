@@ -6,6 +6,7 @@ export { useChartStore } from './useChartStore';
 export { useEntryStore } from './useEntryStore';
 export { useChatStore } from './useChatStore';
 export { useUIStore } from './useUIStore';
+export { default as useMarketStore } from './useMarketStore';
 
 // 旧ストアもエクスポート（互換性のため、後で削除予定）
 export { useStore } from './useStore';

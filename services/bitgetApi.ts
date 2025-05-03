@@ -1,6 +1,7 @@
 import axios from 'axios';
 import CryptoJS from 'crypto-js';
 import { OHLCData } from '../types/chart';
+import { OrderBookData, OrderBookEntry, BitgetOrderBookResponse } from '../types/market';
 
 // API設定
 const BITGET_API_BASE_URL = 'https://api.bitget.com';
@@ -158,6 +159,84 @@ export class BitgetApiClient {
       console.error('Error fetching historical candles:', error);
       // エラーを伝播
       throw error;
+    }
+  }
+
+  // オーダーブック取得関数を追加
+  async getOrderBook(
+    symbol: string,
+    exchangeType: ExchangeType = this.exchangeType
+  ): Promise<OrderBookData> {
+    try {
+      // シンボルを正しい形式に変換（スラッシュを削除）
+      const formattedSymbol = symbol.replace('/', '').toUpperCase();
+      let response;
+
+      if (isBrowser) {
+        // ブラウザ環境ではNext.jsのAPIルートを使用
+        const params = new URLSearchParams({
+          symbol: formattedSymbol,
+          type: exchangeType,
+        });
+
+        const url = `/api/bitget/orderbook?${params.toString()}`;
+        console.log(`Browser API Request (OrderBook): ${url}`);
+        response = await axios.get(url);
+      } else {
+        // サーバーサイド環境では直接BitgetのAPIを呼び出す
+        let endpoint: string;
+        let params: Record<string, string>;
+
+        if (exchangeType === 'spot') {
+          // スポット取引用のエンドポイント
+          endpoint = '/api/spot/v1/market/orderbook';
+          params = {
+            symbol: formattedSymbol,
+            limit: '150', // デフォルトの深さ
+          };
+        } else {
+          // 先物取引用のエンドポイント
+          endpoint = '/api/mix/v1/market/orderbook';
+          params = {
+            symbol: `${formattedSymbol}_UMCBL`, // 先物シンボル形式
+            limit: '150',
+          };
+        }
+
+        console.log(`Server API Request (OrderBook):`, endpoint, params);
+        const url = `${BITGET_API_BASE_URL}${endpoint}`;
+        response = await axios.get(url, { params });
+      }
+
+      // レスポンスのバリデーション
+      if (!response.data) {
+        throw new Error('Empty API response');
+      }
+
+      // エラー応答の処理
+      if (response.data.code !== '00000') {
+        throw new Error(`Bitget API Error: ${response.data.msg || 'Unknown error'}`);
+      }
+
+      // レスポンスデータの変換
+      const data = response.data as BitgetOrderBookResponse;
+      
+      // OrderBookDataに変換
+      return {
+        symbol: symbol,
+        timestamp: parseInt(data.data.timestamp),
+        asks: data.data.asks.map((ask: string[]) => ({
+          price: parseFloat(ask[0]),
+          amount: parseFloat(ask[1])
+        })),
+        bids: data.data.bids.map((bid: string[]) => ({
+          price: parseFloat(bid[0]),
+          amount: parseFloat(bid[1])
+        }))
+      };
+    } catch (error: any) {
+      console.error('Error fetching order book:', error);
+      throw new Error(`Failed to fetch order book: ${error.message}`);
     }
   }
 
