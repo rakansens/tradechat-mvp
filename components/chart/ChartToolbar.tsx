@@ -1,17 +1,20 @@
-import React, { useState } from 'react';
-import { useChartStore } from '@/store';
-import { Wifi, WifiOff, TrendingUp, Landmark, BarChart2, LineChart, Layers } from 'lucide-react';
+// components/chart/ChartToolbar.tsx
+// 更新: Homeコンポーネントのヘッダー機能を統合
+"use client"
+
+import React from 'react';
+import { useChartStore, useUIStore, useEntryStore } from '@/store';
+import { Wifi, WifiOff, TrendingUp, Landmark, BarChart2, LineChart, Layers, BarChart3 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Separator } from '@/components/ui/separator';
+import { theme } from '@/styles/colors';
 
 interface ChartToolbarProps {
-  timeframe: string;
-  onTimeframeChange: (timeframe: string) => void;
-  symbol: string;
-  onSymbolChange: (symbol: string) => void;
-  chartType: string;
-  onChartTypeChange: (type: string) => void;
+  // 必要に応じて追加のプロパティを定義
 }
 
 const availableTimeframes = ['1m', '5m', '15m', '30m', '1h', '4h', '1d', '1w'];
@@ -31,31 +34,38 @@ const drawingTools = [
   { id: 'rectangle', name: '矩形', icon: Landmark },
 ];
 
-export default function ChartToolbar({
-  timeframe,
-  onTimeframeChange,
-  symbol,
-  onSymbolChange,
-  chartType,
-  onChartTypeChange
-}: ChartToolbarProps) {
-  // リアルタイムデータの使用状態と切替関数を取得
-  const useRealTimeData = useChartStore((state) => state.useRealTimeData);
-  const toggleRealTimeData = useChartStore((state) => state.toggleRealTimeData);
-  const error = useChartStore((state) => state.error);
-  // 取引種別の状態と設定関数を取得
-  const exchangeType = useChartStore((state) => state.exchangeType);
-  const setExchangeType = useChartStore((state) => state.setExchangeType);
+export default function ChartToolbar({}: ChartToolbarProps) {
+  // チャートストアから状態とアクションを取得
+  const {
+    currentSymbol,
+    currentTimeFrame,
+    chartType,
+    data,
+    updateTimeFrame,
+    updateSymbol,
+    setChartType,
+    useRealTimeData,
+    toggleRealTimeData,
+    error,
+    exchangeType,
+    setExchangeType,
+    activeIndicators,
+    activeDrawingTools,
+    toggleIndicator,
+    toggleDrawingTool,
+    clearAllDrawingTools
+  } = useChartStore();
   
-  // インジケーターと描画ツールの状態を取得
-  const activeIndicators = useChartStore((state) => state.activeIndicators);
-  const activeDrawingTools = useChartStore((state) => state.activeDrawingTools);
-  const toggleIndicator = useChartStore((state) => state.toggleIndicator);
-  const toggleDrawingTool = useChartStore((state) => state.toggleDrawingTool);
-  const clearAllDrawingTools = useChartStore((state) => state.clearAllDrawingTools);
+  // UIストアから状態とアクションを取得
+  const activeTab = useUIStore((state) => state.activeTab);
+  const setActiveTab = useUIStore((state) => state.setActiveTab);
+  
+  // エントリーストアから状態を取得
+  const entries = useEntryStore((state) => state.entries);
+  const openPositionsCount = entries.filter((entry) => entry.status === "open").length;
 
   return (
-    <div className="flex flex-col w-full bg-dark-900 border-b border-gray-800">
+    <div className="flex flex-col w-full" style={{ backgroundColor: theme.background.card }}>
       {/* エラーメッセージ表示エリア */}
       {error && (
         <div className="w-full px-4 py-1 bg-red-900/20 text-red-300 text-xs">
@@ -63,14 +73,15 @@ export default function ChartToolbar({
         </div>
       )}
       
-      <div className="flex items-center justify-between px-4 py-2">
-        <div className="flex items-center space-x-4">
+      <div className="flex justify-between items-center py-2 px-3 border-b" style={{ borderColor: theme.border.light, backgroundColor: theme.background.secondary }}>
+        <div className="flex items-center space-x-2">
           {/* シンボル選択 */}
           <div className="flex items-center">
             <select
-              value={symbol}
-              onChange={(e) => onSymbolChange(e.target.value)}
-              className="bg-dark-800 text-white border border-gray-700 rounded px-2 py-1 text-sm"
+              value={currentSymbol}
+              onChange={(e) => updateSymbol(e.target.value)}
+              className="bg-transparent text-sm font-bold px-1 border-none focus:outline-none"
+              style={{ color: theme.text.primary }}
             >
               {availableSymbols.map((sym) => (
                 <option key={sym} value={sym}>
@@ -79,23 +90,142 @@ export default function ChartToolbar({
               ))}
             </select>
           </div>
+          
+          <Badge variant="outline" className="font-mono text-xs py-0.5 px-1.5" style={{ backgroundColor: theme.background.tertiary, borderColor: theme.border.light, color: theme.text.secondary }}>
+            24h Vol: 12.5K
+          </Badge>
+          
+          {/* 最新価格表示 */}
+          {data && data.length > 0 && (
+            <Badge variant="outline" className="font-mono text-xs py-0.5 px-1.5 ml-2" style={{ backgroundColor: theme.background.tertiary, borderColor: theme.border.light, color: theme.text.primary }}>
+              ${data[data.length - 1].close.toLocaleString('en-US')}
+            </Badge>
+          )}
+        </div>
 
+        <div className="flex items-center space-x-2">
           {/* タイムフレーム選択 */}
-          <div className="flex items-center space-x-1">
+          <div className="flex items-center space-x-1" role="group">
             {availableTimeframes.map((tf) => (
               <button
                 key={tf}
-                onClick={() => onTimeframeChange(tf)}
-                className={`px-2 py-1 text-xs rounded ${
-                  timeframe === tf
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-dark-800 text-gray-300 hover:bg-dark-700'
+                onClick={() => updateTimeFrame(tf as any)}
+                className={`inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors hover:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-transparent px-2 py-1 h-7 text-[#A7B0C4] data-[state=on]:bg-[#2962FF] data-[state=on]:text-white border-[#2A2E39] hover:bg-[#242838] ${
+                  currentTimeFrame === tf ? 'bg-[#2962FF] text-white' : ''
                 }`}
               >
                 {tf}
               </button>
             ))}
           </div>
+          
+          <Separator orientation="vertical" className="h-6 bg-[#374151]" />
+          
+          {/* チャート/ポジション切替タブ */}
+          <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)} className="h-7">
+            <TabsList className="h-7 bg-[#242838] border border-[#2A2E39]">
+              <TabsTrigger 
+                value="chart" 
+                className="flex items-center h-6 px-2 text-xs data-[state=active]:bg-[#2a2e3d] data-[state=active]:text-[#E0E3EB]"
+              >
+                <BarChart3 className="h-3.5 w-3.5 mr-1" />
+                Chart
+              </TabsTrigger>
+              <TabsTrigger 
+                value="positions" 
+                className="flex items-center relative h-6 px-2 text-xs data-[state=active]:bg-[#2a2e39] data-[state=active]:text-[#b2b5be]"
+              >
+                <LineChart className="h-3.5 w-3.5 mr-1" />
+                Positions
+                {openPositionsCount > 0 && (
+                  <Badge className="absolute -top-1 -right-1 h-4 w-4 flex items-center justify-center p-0 text-[10px] bg-[#2196f3]">
+                    {openPositionsCount}
+                  </Badge>
+                )}
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
+      </div>
+      
+      {/* 拡張ツールバー - チャートタイプ、インジケーター、取引種別など */}
+      <div className="flex items-center justify-between px-4 py-1 border-b" style={{ borderColor: theme.border.light, backgroundColor: theme.background.tertiary }}>
+        <div className="flex items-center space-x-4">
+          {/* チャートタイプ選択 */}
+          <div className="flex items-center space-x-1">
+            {chartTypes.map((type) => (
+              <button
+                key={type}
+                onClick={() => setChartType(type as any)}
+                className={`px-3 py-1 text-xs rounded ${
+                  chartType === type
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-dark-800 text-gray-300 hover:bg-dark-700'
+                }`}
+              >
+                {type.charAt(0).toUpperCase() + type.slice(1)}
+              </button>
+            ))}
+          </div>
+          
+          {/* インジケーター選択ポップオーバー */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <button
+                className="flex items-center px-2 py-1 text-xs rounded bg-dark-800 text-gray-300 hover:bg-dark-700"
+                title="インジケーター設定"
+              >
+                <LineChart className="w-3.5 h-3.5 mr-1" />
+                <span>インジケーター</span>
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-56 p-2 bg-dark-800 border border-gray-700 text-white">
+              <div className="space-y-2">
+                <h3 className="text-xs font-semibold text-gray-300">インジケーター</h3>
+                {indicators.map((indicator) => (
+                  <div key={indicator.id} className="flex items-center space-x-2">
+                    <Checkbox 
+                      id={`indicator-${indicator.id}`} 
+                      checked={activeIndicators.includes(indicator.id as any)}
+                      onCheckedChange={() => toggleIndicator(indicator.id as any)}
+                    />
+                    <Label 
+                      htmlFor={`indicator-${indicator.id}`}
+                      className="text-xs text-gray-300 cursor-pointer"
+                    >
+                      {indicator.name}
+                    </Label>
+                  </div>
+                ))}
+                
+                <h3 className="text-xs font-semibold text-gray-300 pt-2">描画ツール</h3>
+                {drawingTools.map((tool) => (
+                  <div key={tool.id} className="flex items-center space-x-2">
+                    <Checkbox 
+                      id={`tool-${tool.id}`} 
+                      checked={activeDrawingTools.includes(tool.id as any)}
+                      onCheckedChange={() => toggleDrawingTool(tool.id as any)}
+                    />
+                    <Label 
+                      htmlFor={`tool-${tool.id}`}
+                      className="text-xs text-gray-300 cursor-pointer"
+                    >
+                      {tool.name}
+                    </Label>
+                  </div>
+                ))}
+                
+                <div className="pt-2">
+                  <button 
+                    onClick={clearAllDrawingTools}
+                    className="text-xs text-red-400 hover:text-red-300"
+                  >
+                    すべての描画をクリア
+                  </button>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
 
         <div className="flex items-center space-x-2">
@@ -149,73 +279,6 @@ export default function ChartToolbar({
               </>
             )}
           </button>
-
-          {/* チャートタイプ選択 */}
-          <div className="flex items-center space-x-1">
-            {chartTypes.map((type) => (
-              <button
-                key={type}
-                onClick={() => onChartTypeChange(type)}
-                className={`px-3 py-1 text-xs rounded ${
-                  chartType === type
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-dark-800 text-gray-300 hover:bg-dark-700'
-                }`}
-              >
-                {type.charAt(0).toUpperCase() + type.slice(1)}
-              </button>
-            ))}
-          </div>
-          
-          {/* インジケーター選択ポップオーバー */}
-          <Popover>
-            <PopoverTrigger asChild>
-              <button
-                className="flex items-center px-2 py-1 text-xs rounded bg-dark-800 text-gray-300 hover:bg-dark-700"
-                title="インジケーター設定"
-              >
-                <LineChart className="w-3 h-3 mr-1" />
-                <span>インジケーター</span>
-              </button>
-            </PopoverTrigger>
-            <PopoverContent className="w-56 p-2 bg-dark-800 border border-gray-700 text-white">
-              <div className="space-y-2">
-                <h3 className="text-xs font-semibold text-gray-300">インジケーター</h3>
-                {indicators.map((indicator) => (
-                  <div key={indicator.id} className="flex items-center space-x-2">
-                    <Checkbox 
-                      id={`indicator-${indicator.id}`} 
-                      checked={activeIndicators.includes(indicator.id as any)}
-                      onCheckedChange={() => toggleIndicator(indicator.id as any)}
-                    />
-                    <Label 
-                      htmlFor={`indicator-${indicator.id}`}
-                      className="text-xs text-gray-300 cursor-pointer"
-                    >
-                      {indicator.name}
-                    </Label>
-                  </div>
-                ))}
-                
-                <h3 className="text-xs font-semibold text-gray-300 pt-2">描画ツール</h3>
-                {drawingTools.map((tool) => (
-                  <div key={tool.id} className="flex items-center space-x-2">
-                    <Checkbox 
-                      id={`tool-${tool.id}`} 
-                      checked={activeDrawingTools.includes(tool.id as any)}
-                      onCheckedChange={() => toggleDrawingTool(tool.id as any)}
-                    />
-                    <Label 
-                      htmlFor={`tool-${tool.id}`}
-                      className="text-xs text-gray-300 cursor-pointer"
-                    >
-                      {tool.name}
-                    </Label>
-                  </div>
-                ))}
-              </div>
-            </PopoverContent>
-          </Popover>
         </div>
       </div>
     </div>

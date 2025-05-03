@@ -109,19 +109,6 @@ export default function Home() {
         </div>
 
         <div className="flex items-center space-x-2">
-          <Button variant="outline" size="sm" className="" style={{ backgroundColor: theme.background.tertiary, borderColor: theme.border.light, color: theme.text.primary }}>
-            <span className="font-mono">
-              {data && data.length > 0 
-                ? `BTC/USD: $${data[data.length - 1].close.toLocaleString('en-US')}` 
-                : "BTC/USD: Loading..."}
-            </span>
-            {data && data.length > 1 && (
-              <PriceChangeIndicator
-                currentPrice={data[data.length - 1].close}
-                previousPrice={data[data.length - 2].close}
-              />
-            )}
-          </Button>
           <Button variant="ghost" size="icon">
             <Bell className="h-4 w-4" />
           </Button>
@@ -157,42 +144,7 @@ export default function Home() {
           className="md:w-[70%] w-full h-1/2 md:h-full transition-all duration-300 ease-in-out overflow-hidden"
         >
           <Card className="h-full flex flex-col border-0 rounded-none shadow-none" style={{ backgroundColor: theme.background.card }}>
-            <div className="flex justify-between items-center py-2 px-3 border-b" style={{ borderColor: theme.border.light, backgroundColor: theme.background.secondary }}>
-              <div className="flex items-center space-x-2">
-                <h2 className="text-base font-bold" style={{ color: theme.text.primary }}>BTC/USD</h2>
-                <Badge variant="outline" className="font-mono text-xs py-0.5 px-1.5" style={{ backgroundColor: theme.background.tertiary, borderColor: theme.border.light, color: theme.text.secondary }}>
-                  24h Vol: 12.5K
-                </Badge>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <TimeframeSelector selectedTimeframe={currentTimeFrame} onTimeframeChange={updateTimeFrame} />
-                <Separator orientation="vertical" className="h-6 bg-[#374151]" />
-                <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)} className="h-7">
-                  <TabsList className="h-7 bg-[#242838] border border-[#2A2E39]">
-                    <TabsTrigger 
-                      value="chart" 
-                      className="flex items-center h-6 px-2 text-xs data-[state=active]:bg-[#2a2e3d] data-[state=active]:text-[#E0E3EB]"
-                    >
-                      <BarChart3 className="h-3.5 w-3.5 mr-1" />
-                      Chart
-                    </TabsTrigger>
-                    <TabsTrigger 
-                      value="positions" 
-                      className="flex items-center relative h-6 px-2 text-xs data-[state=active]:bg-[#2a2e39] data-[state=active]:text-[#b2b5be]"
-                    >
-                      <LineChart className="h-3.5 w-3.5 mr-1" />
-                      Positions
-                      {openPositionsCount > 0 && (
-                        <Badge className="absolute -top-1 -right-1 h-4 w-4 flex items-center justify-center p-0 text-[10px] bg-[#2196f3]">
-                          {openPositionsCount}
-                        </Badge>
-                      )}
-                    </TabsTrigger>
-                  </TabsList>
-                </Tabs>
-              </div>
-            </div>
+            {/* ヘッダーはChartToolbarに統合されました */}
 
             <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)} className="flex-1 flex flex-col">
               <TabsContent value="chart" className="flex-1 m-0 p-0 data-[state=active]:flex flex-col">
