@@ -5,8 +5,8 @@ import { OrderBookData, OrderBookEntry, BitgetOrderBookResponse } from '../types
 
 // API設定
 const BITGET_API_BASE_URL = 'https://api.bitget.com';
-// V2 WebSocketエンドポイントに更新
-const BITGET_WS_URL = 'wss://ws.bitget.com/v2/ws';
+// V2 WebSocketエンドポイント（Public）に更新
+const BITGET_WS_URL = 'wss://ws.bitget.com/v2/ws/public';
 
 // デモモード設定
 const ENABLE_DEMO_MODE_ON_ERROR = true; // エラー時のデモモード有効
@@ -39,14 +39,14 @@ export interface BitgetCredentials {
 
 // タイムフレームマッピング（スポット取引用）
 export const TIMEFRAME_MAP_SPOT: Record<string, string> = {
-  '1m': '1min',
-  '5m': '5min',
-  '15m': '15min',
-  '30m': '30min',
-  '1h': '1h',
-  '4h': '4h',
-  '1d': '1day',
-  '1w': '1week',
+  '1m': '1m',
+  '5m': '5m',
+  '15m': '15m',
+  '30m': '30m',
+  '1h': '1H',
+  '4h': '4H',
+  '1d': '1D',
+  '1w': '1W',
 };
 
 // タイムフレームマッピング（先物取引用）
@@ -368,10 +368,15 @@ export class BitgetApiClient {
   }
 
   // WebSocketコネクションの開始
-  connectWebSocket() {
-    if (this.ws) {
-      this.ws.close();
-    }
+  connectWebSocket(symbol: string = 'BTC/USDT', timeframe: string = '1m', exchangeType: ExchangeType = this.exchangeType) {
+    // 既存のWebSocketをクリーンアップ
+    this.cleanup();
+    
+    // 取引種別を更新
+    this.exchangeType = exchangeType;
+    
+    // デモモードを無効化
+    this.isInDemoMode = false;
 
     try {
       // WebSocket作成関数を使用
@@ -379,7 +384,7 @@ export class BitgetApiClient {
 
       // Null安全性のためのチェック
       if (!this.ws) {
-        console.error('WebSocket creation failed, switching to demo mode');
+        console.error('BitgetWS: WebSocket creation failed, switching to demo mode');
         this.isInDemoMode = true;
         return;
       }
@@ -392,6 +397,11 @@ export class BitgetApiClient {
       };
 
       this.ws.onmessage = (event) => {
+        // Heartbeat response is plain text 'pong'
+        if (event.data === 'pong') {
+          console.log('BitgetWS: pong received');
+          return;
+        }
         try {
           const message = JSON.parse(event.data as string);
           this.handleWebSocketMessage(message);
@@ -402,7 +412,15 @@ export class BitgetApiClient {
 
       this.ws.onerror = (error) => {
         console.error('BitgetWS: Error:', error);
-        this.isInDemoMode = true; // エラー発生時はデモモードに
+        
+        // エラーオブジェクトの詳細をログに出力
+        try {
+          console.error('BitgetWS: Error details:', JSON.stringify(error));
+        } catch (e) {
+          console.error('BitgetWS: Error details could not be stringified');
+        }
+        
+        // 再接続を試みる
         this.reconnect();
       };
 
@@ -420,34 +438,15 @@ export class BitgetApiClient {
 
   // ローソク足データの購読
   subscribeToKline(symbol: string, timeframe: string) {
+    // WebSocketが接続されていない場合は接続する
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
-      this.connectWebSocket();
-    }
-
-    // デモモードの場合、デモデータを生成して15秒ごとにコールバックを呼び出す
-    if (this.isInDemoMode) {
-      console.log('WebSocket in demo mode, simulating kline updates');
-      const interval = setInterval(() => {
-        const demoCandles = this.generateDemoCandles(1);
-        if (demoCandles.length > 0) {
-          this.onKlineUpdateCallbacks.forEach(callback => callback(demoCandles[0]));
-        }
-      }, 15000);
-      
-      // クリーンアップ関数を保存
-      const oldCleanup = this.cleanup;
-      this.cleanup = () => {
-        oldCleanup.call(this);
-        clearInterval(interval);
-      };
-      
-      return;
+      this.connectWebSocket(symbol, timeframe, this.exchangeType);
     }
 
     // シンボルとタイムフレームを適切な形式に変換
     const formattedSymbol = symbol.replace('/', '').toUpperCase();
     const bitgetTimeframe = this.exchangeType === 'spot' 
-      ? TIMEFRAME_MAP_SPOT[timeframe] || '1min'
+      ? TIMEFRAME_MAP_SPOT[timeframe] || '1m'
       : TIMEFRAME_MAP_FUTURES[timeframe] || '1m';
     
     // V2 WebSocket API形式に合わせてサブスクリプションメッセージを構築
@@ -467,11 +466,13 @@ export class BitgetApiClient {
       args: [
         {
           instType: instType,
-          channel: 'candle' + bitgetTimeframe,
+          channel: `candle${bitgetTimeframe}`,
           instId: instId
         }
       ]
     };
+    
+    console.log('BitgetWS: Sending subscription message:', JSON.stringify(subscriptionMessage));
 
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify(subscriptionMessage));
@@ -506,17 +507,35 @@ export class BitgetApiClient {
 
   // WebSocketメッセージのハンドリング
   private handleWebSocketMessage(message: any) {
-    // V2 APIのpingメッセージに対するpongレスポンス
-    if (message.op === 'ping') {
-      this.sendPong(message.ts || Date.now());
+    // V2 APIのpingメッセージやpongレスポンスの処理
+    if (typeof message === 'string') {
+      if (message === 'pong') {
+        console.log('BitgetWS: pong handled');
+        return;
+      }
+    }
+    
+    // 接続成功メッセージの処理
+    if (message.event === 'subscribe' && message.code === '0') {
+      console.log(`BitgetWS: Successfully subscribed to ${message.arg?.channel || 'unknown channel'}`);
+      return;
+    }
+
+    // エラーメッセージの処理
+    if (message.code && message.code !== '0') {
+      console.error(`BitgetWS: Error code ${message.code}, message: ${message.msg}`);
       return;
     }
 
     // V2 APIのローソク足データの処理
     if (message.data && message.arg && message.arg.channel && message.arg.channel.startsWith('candle')) {
-      const klineData = this.parseKlineData(message);
-      if (klineData) {
-        this.onKlineUpdateCallbacks.forEach(callback => callback(klineData));
+      try {
+        const klineData = this.parseKlineData(message);
+        if (klineData) {
+          this.onKlineUpdateCallbacks.forEach(callback => callback(klineData));
+        }
+      } catch (error) {
+        console.error('BitgetWS: Error parsing kline data:', error);
       }
     }
   }
@@ -546,22 +565,13 @@ export class BitgetApiClient {
   // WebSocketにpingメッセージを送信 (V2 API形式)
   private sendPing() {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-      const pingMessage = {
-        op: 'ping',
-        ts: Date.now(),
-      };
-      this.ws.send(JSON.stringify(pingMessage));
-    }
-  }
-
-  // pingメッセージに対するpongレスポンス (V2 API形式)
-  private sendPong(ts: string | number) {
-    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-      const pongMessage = {
-        op: 'pong',
-        ts,
-      };
-      this.ws.send(JSON.stringify(pongMessage));
+      try {
+        this.ws.send('ping');
+        console.log('BitgetWS: Ping sent');
+      } catch (error) {
+        console.error('BitgetWS: Error sending ping:', error);
+        this.reconnect();
+      }
     }
   }
 

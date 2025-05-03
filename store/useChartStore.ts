@@ -1,5 +1,6 @@
 // store/useChartStore.ts
 // 更新: 新しい型定義を使用するチャート関連の状態管理ストア
+// 更新: 一目均衡表とフィボナッチリトレースメントのサポートを追加
 
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
@@ -16,6 +17,12 @@ const initialOhlcData: OHLCData[] = generateOHLCData(
   initialTimeframe
 );
 
+// インジケーターの種類を定義
+type IndicatorType = 'rsi' | 'macd' | 'ichimoku';
+
+// 描画ツールの種類を定義
+type DrawingToolType = 'fibonacci' | 'rectangle';
+
 interface ChartStoreState {
   data: OHLCData[];
   isLoading: boolean;
@@ -26,6 +33,8 @@ interface ChartStoreState {
   chartType: ChartType;
   useRealTimeData: boolean; // リアルタイムデータを使用するかのフラグ
   exchangeType: ExchangeType; // 取引種別（スポットまたは先物）
+  activeIndicators: IndicatorType[]; // アクティブなインジケーター
+  activeDrawingTools: DrawingToolType[]; // アクティブな描画ツール
   
   // アクション
   initializeChart: (symbol: string, timeFrame: Timeframe) => Promise<void>;
@@ -37,6 +46,9 @@ interface ChartStoreState {
   setChartType: (chartType: ChartType) => void;
   toggleRealTimeData: () => void; // リアルタイムデータの使用を切り替える
   setExchangeType: (type: ExchangeType) => void; // 取引種別を設定
+  toggleIndicator: (indicator: IndicatorType) => void; // インジケーターの表示切替
+  toggleDrawingTool: (tool: DrawingToolType) => void; // 描画ツールの表示切替
+  clearAllDrawingTools: () => void; // すべての描画ツールをクリア
 }
 
 // チャートストアの作成
@@ -53,6 +65,8 @@ export const useChartStore = create<ChartStoreState>()(
         chartType: "candles" as ChartType,
         useRealTimeData: true, // リアルタイムデータをデフォルトで有効に設定
         exchangeType: 'spot', // デフォルトはスポット取引
+        activeIndicators: [], // アクティブなインジケーターの初期値は空配列
+        activeDrawingTools: [], // アクティブな描画ツールの初期値は空配列
 
         initializeChart: async (symbol: string, timeFrame: Timeframe) => {
           set({ isLoading: true, error: null, currentSymbol: symbol, currentTimeFrame: timeFrame });
@@ -302,6 +316,47 @@ export const useChartStore = create<ChartStoreState>()(
           
           // 取引種別変更後にチャートを再初期化
           get().initializeChart(currentSymbol, currentTimeFrame);
+        },
+        
+        // インジケーターの表示切替
+        toggleIndicator: (indicator: IndicatorType) => {
+          const { activeIndicators } = get();
+          const isActive = activeIndicators.includes(indicator);
+          
+          if (isActive) {
+            // インジケーターが既にアクティブな場合は削除
+            set({
+              activeIndicators: activeIndicators.filter(i => i !== indicator)
+            });
+          } else {
+            // インジケーターがアクティブでない場合は追加
+            set({
+              activeIndicators: [...activeIndicators, indicator]
+            });
+          }
+        },
+        
+        // 描画ツールの表示切替
+        toggleDrawingTool: (tool: DrawingToolType) => {
+          const { activeDrawingTools } = get();
+          const isActive = activeDrawingTools.includes(tool);
+          
+          if (isActive) {
+            // 描画ツールが既にアクティブな場合は削除
+            set({
+              activeDrawingTools: activeDrawingTools.filter(t => t !== tool)
+            });
+          } else {
+            // 描画ツールがアクティブでない場合は追加
+            set({
+              activeDrawingTools: [...activeDrawingTools, tool]
+            });
+          }
+        },
+        
+        // すべての描画ツールをクリア
+        clearAllDrawingTools: () => {
+          set({ activeDrawingTools: [] });
         }
       }),
       {

@@ -34,10 +34,20 @@ import {
   removeMacdSeries, // Import remove function
   MacdSeriesInstances, // Import the new interface
 } from "./indicators/macd"; // Import MACD functions
+import {
+  calculateIchimokuData,
+  addOrUpdateIchimokuSeries,
+  removeIchimokuSeries
+} from "./indicators/ichimoku"; // Import Ichimoku functions
+import {
+  calculateFibonacciLevels,
+  drawFibonacciRetracement,
+  removeFibonacciRetracement,
+  FibonacciLineHandles
+} from "./drawing-tools/fibonacci"; // Import Fibonacci functions
 import { RSI as RsiIndicator } from 'technicalindicators'; // Import directly for calculation
 import { useChartStore } from "../../store/useChartStore";
 import { createChart, ColorType } from "lightweight-charts";
-import { getGradientFill } from "@/utils/chart";
 
 // 共通インターフェースを使用して型定義を整理
 interface ChartCanvasProps {
@@ -80,13 +90,28 @@ export default function ChartCanvas() {
   const lineSeries = useRef<ISeriesApi<"Line"> | null>(null);
   const areaSeries = useRef<ISeriesApi<"Area"> | null>(null);
   
+  // インジケーターのシリーズ参照
+  const rsiSeries = useRef<ISeriesApi<"Line"> | null>(null);
+  const macdSeries = useRef<MacdSeriesInstances | null>(null);
+  
+  // 一目均衡表のシリーズ参照
+  const tenkanSeries = useRef<ISeriesApi<"Line"> | null>(null);
+  const kijunSeries = useRef<ISeriesApi<"Line"> | null>(null);
+  const chikouSeries = useRef<ISeriesApi<"Line"> | null>(null);
+  const cloudSeries = useRef<ISeriesApi<"Area"> | null>(null);
+  
+  // フィボナッチリトレースメントのライン参照
+  const [fibonacciLines, setFibonacciLines] = useState<FibonacciLineHandles>({});
+  
   // チャートストアから状態を取得
   const { 
     data, 
     chartType, 
     currentSymbol, 
     currentTimeFrame,
-    initializeChart 
+    initializeChart,
+    activeIndicators,
+    activeDrawingTools
   } = useChartStore();
 
   // チャートの初期化と更新
@@ -248,6 +273,146 @@ export default function ChartCanvas() {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+  
+  // インジケーターの表示切替を監視
+  useEffect(() => {
+    if (!chartInstanceRef.current || !data || data.length === 0) return;
+    
+    const chart = chartInstanceRef.current;
+    const mainSeries = candleSeries.current || lineSeries.current || areaSeries.current;
+    if (!mainSeries) return;
+    
+    // データを時間順（昇順）にソート
+    const sortedData = [...data].sort((a, b) => a.time - b.time);
+    
+    // RSIインジケーターの表示切替
+    if (activeIndicators.includes('rsi')) {
+      // RSIを表示
+      const prices = sortedData.map(item => item.close);
+      const times = sortedData.map(item => (item.time / 1000) as UTCTimestamp);
+      const rsiValues = RsiIndicator.calculate({ values: prices, period: 14 });
+      
+      // RSIデータを時間と結合
+      const rsiData = times.slice(prices.length - rsiValues.length).map((time, i) => ({
+        time,
+        value: rsiValues[i]
+      }));
+      
+      // パネルインデックスを指定して1を渡す（メインチャートの下に表示）
+      addOrUpdateRsiSeries(chart, rsiData, 1, rsiSeries);
+    } else if (rsiSeries.current) {
+      // RSIを非表示
+      chart.removeSeries(rsiSeries.current);
+      rsiSeries.current = null;
+    }
+    
+    // MACDインジケーターの表示切替
+    if (activeIndicators.includes('macd')) {
+      // MACDを表示
+      const prices = sortedData.map(item => item.close);
+      const times = sortedData.map(item => (item.time / 1000) as UTCTimestamp);
+      const macdData = calculateMacdValues(prices, 12, 26, 9); // パラメータを個別に渡す
+      
+      // 時間データとMACDデータを結合
+      const alignedData = alignMacdData(
+        sortedData.map(item => ({ 
+          time: (item.time / 1000) as UTCTimestamp, 
+          close: item.close 
+        })),
+        macdData
+      );
+      
+      // MACDシリーズの初期化
+      if (!macdSeries.current) {
+        macdSeries.current = {
+          macdLineSeries: null,
+          signalLineSeries: null,
+          histogramSeries: null
+        };
+      }
+      
+      // パネルインデックスを指定して2を渡す（RSIの下に表示）
+      if (macdSeries.current) {
+        addOrUpdateMacdSeries(chart, alignedData, 2, { current: macdSeries.current });
+      }
+    } else if (macdSeries.current) {
+      // MACDを非表示
+      removeMacdSeries(chart, { current: macdSeries.current });
+      macdSeries.current = null;
+    }
+    
+    // 一目均衡表インジケーターの表示切替
+    if (activeIndicators.includes('ichimoku')) {
+      // 一目均衡表を表示
+      addOrUpdateIchimokuSeries(
+        chart,
+        sortedData,
+        { tenkan: 9, kijun: 26, senkou: 52 },
+        {
+          tenkan: tenkanSeries,
+          kijun: kijunSeries,
+          chikou: chikouSeries,
+          cloud: cloudSeries
+        }
+      );
+    } else {
+      // 一目均衡表を非表示
+      if (tenkanSeries.current || kijunSeries.current || chikouSeries.current || cloudSeries.current) {
+        removeIchimokuSeries(chart, {
+          tenkan: tenkanSeries,
+          kijun: kijunSeries,
+          chikou: chikouSeries,
+          cloud: cloudSeries
+        });
+      }
+    }
+  }, [data, activeIndicators, chartType]);
+  
+  // 描画ツールの表示切替を監視
+  useEffect(() => {
+    if (!chartInstanceRef.current || !data || data.length === 0) return;
+    
+    const chart = chartInstanceRef.current;
+    const mainSeries = candleSeries.current || lineSeries.current || areaSeries.current;
+    if (!mainSeries) return;
+    
+    // フィボナッチリトレースメントの表示切替
+    if (activeDrawingTools.includes('fibonacci')) {
+      // データから高値と安値を取得
+      const sortedData = [...data].sort((a, b) => a.time - b.time);
+      const last30Data = sortedData.slice(-30); // 直近30本のデータを使用
+      
+      if (last30Data.length > 0) {
+        const highPrice = Math.max(...last30Data.map(d => d.high));
+        const lowPrice = Math.min(...last30Data.map(d => d.low));
+        
+        // 現在のトレンド方向を判断（簡易的な判断）
+        const isDowntrend = sortedData[sortedData.length - 1].close < sortedData[sortedData.length - 10].close;
+        
+        // 既存のフィボナッチラインを削除
+        if (Object.keys(fibonacciLines).length > 0) {
+          removeFibonacciRetracement(mainSeries, fibonacciLines);
+        }
+        
+        // 新しいフィボナッチラインを描画
+        const newLines = drawFibonacciRetracement(
+          chart,
+          mainSeries,
+          highPrice,
+          lowPrice,
+          isDowntrend ? 'down' : 'up'
+        );
+        
+        setFibonacciLines(newLines);
+      }
+    } else {
+      // フィボナッチを非表示
+      if (Object.keys(fibonacciLines).length > 0) {
+        removeFibonacciRetracement(mainSeries, fibonacciLines);
+        setFibonacciLines({});
+      }
+    }
+  }, [data, activeDrawingTools, chartType]);
 
   return (
     <div
