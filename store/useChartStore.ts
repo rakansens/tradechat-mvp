@@ -6,7 +6,7 @@
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
 import { generateOHLCData } from "../utils/ohlcDummyData";
-import { getDataPointsForTimeframe } from "../utils/chart";
+import { getDataPointsForTimeframe } from "../utils/chartUtils";
 import type { ChartType, OHLCData, Timeframe } from "../types/chart";
 import { BitgetApiClient } from '../services/bitgetApi';
 import { ExchangeType } from '../types/api';
