@@ -1,15 +1,23 @@
 // services/api.ts
 // 追加: API通信の共通化と型安全性の向上
+// 更新: 型定義をtypes/api.tsに移動
 
-import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
+import axios from 'axios';
 import { handleApiError } from './errorHandler';
+import {
+  ApiResponse,
+  ApiRequestConfig,
+  ApiEnvironmentConfig,
+  AdaptiveApiRequestConfig,
+  CancellableRequest
+} from '../types/api';
 
 // 環境判定
 export const IS_DEV = process.env.NODE_ENV === 'development';
 export const IS_BROWSER = typeof window !== 'undefined';
 
 // API設定
-export const API_CONFIG = {
+export const API_CONFIG: Record<string, ApiEnvironmentConfig> = {
   bitget: {
     baseUrl: process.env.NEXT_PUBLIC_BITGET_API_URL || 'https://api.bitget.com',
     wsUrl: process.env.NEXT_PUBLIC_BITGET_WS_URL || 'wss://ws.bitget.com/v2/ws/public',
@@ -17,32 +25,12 @@ export const API_CONFIG = {
   }
 };
 
-// API応答の基本型
-export interface ApiResponse<T = any> {
-  code?: string;
-  msg?: string;
-  data?: T;
-  success?: boolean;
-  error?: string;
-}
-
 /**
  * 共通APIリクエスト関数
  * @param config リクエスト設定
  * @returns レスポンスデータ
  */
-export async function apiRequest<T = any>(config: {
-  url: string;
-  method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
-  params?: Record<string, any>;
-  data?: any;
-  headers?: Record<string, string>;
-  errorTitle?: string;
-  errorDescription?: string;
-  showToast?: boolean;
-  fallbackData?: T | null;
-  signal?: AbortSignal;
-}): Promise<T> {
+export async function apiRequest<T = any>(config: ApiRequestConfig): Promise<T> {
   const {
     url,
     method = 'GET',
@@ -164,13 +152,7 @@ export async function serverApiRequest<T = any>(
  * @param config リクエスト設定
  * @returns レスポンスデータ
  */
-export async function adaptiveApiRequest<T = any>(config: {
-  browserEndpoint: string;
-  serverBaseUrl: string;
-  serverEndpoint: string;
-  params: Record<string, any>;
-  options?: Omit<Parameters<typeof apiRequest>[0], 'url' | 'params'>;
-}): Promise<T> {
+export async function adaptiveApiRequest<T = any>(config: AdaptiveApiRequestConfig<T>): Promise<T> {
   const { browserEndpoint, serverBaseUrl, serverEndpoint, params, options = {} } = config;
 
   if (IS_BROWSER) {
@@ -184,7 +166,7 @@ export async function adaptiveApiRequest<T = any>(config: {
  * APIリクエストのキャンセル機能を提供
  * @returns コントローラーとシグナル
  */
-export function createCancellableRequest() {
+export function createCancellableRequest(): CancellableRequest {
   const controller = new AbortController();
   return {
     signal: controller.signal,

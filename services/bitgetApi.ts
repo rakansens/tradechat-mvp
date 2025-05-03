@@ -212,7 +212,6 @@ export class BitgetApiClient {
               
               result = {
                 time: timestamp, // lightweight-chartsの要件に合わせてtimeとして設定
-                timestamp,
                 open: parseFloat(String(candle[1])),
                 high: parseFloat(String(candle[2])),
                 low: parseFloat(String(candle[3])),
@@ -235,7 +234,6 @@ export class BitgetApiClient {
               
               result = {
                 time: timestamp, // lightweight-chartsの要件に合わせてtimeとして設定
-                timestamp,
                 open: parseFloat(String(candle.open)),
                 high: parseFloat(String(candle.high)),
                 low: parseFloat(String(candle.low)),
@@ -256,8 +254,8 @@ export class BitgetApiClient {
             return null;
           }
         })
-        .filter((candle): candle is OHLCData => candle !== null) // nullを除外
-        .sort((a, b) => a.timestamp - b.timestamp); // 時間順にソート
+        .filter((candle: any): candle is OHLCData => candle !== null) // nullを除外
+        .sort((a: OHLCData, b: OHLCData) => a.time - b.time); // 時間順にソート
       
       if (processedData.length === 0) {
         throw new Error('No valid candle data found');

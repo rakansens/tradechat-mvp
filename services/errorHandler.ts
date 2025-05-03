@@ -1,8 +1,10 @@
 // services/errorHandler.ts
 // 追加: グローバルなエラーハンドリング機能
+// 更新: 型定義をtypes/api.tsに移動
 
 import { toast } from 'sonner';
 import { AxiosError } from 'axios';
+import { ApiErrorHandlerOptions, WebSocketErrorHandlerOptions } from '../types/api';
 
 // 環境判定
 const IS_DEV = process.env.NODE_ENV === 'development';
@@ -18,6 +20,19 @@ interface ErrorNotifyOptions {
   description?: string;
   showToast?: boolean;
   logToConsole?: boolean;
+}
+
+/**
+ * APIエラーハンドラー
+ * @param error エラーオブジェクト
+ * @param options オプション
+ */
+export function handleApiError(error: any, options: ApiErrorHandlerOptions = {}) {
+  handleError(error, {
+    source: 'api',
+    title: 'APIエラー',
+    ...options
+  });
 }
 
 /**
@@ -88,34 +103,11 @@ export function handleError(error: unknown, options: ErrorNotifyOptions) {
 }
 
 /**
- * API呼び出しエラーを処理し、フォールバックデータを返す
- * @param error 発生したエラー
- * @param fallbackData エラー時に返すフォールバックデータ
- * @param options 通知オプション
+ * WebSocketエラーハンドラー
+ * @param error エラーオブジェクト
+ * @param options オプション
  */
-export function handleApiError<T>(
-  error: unknown, 
-  fallbackData: T | null = null,
-  options: Omit<ErrorNotifyOptions, 'source'> = {}
-): T | null {
-  handleError(error, {
-    source: 'api',
-    title: 'APIエラー',
-    ...options
-  });
-  
-  return fallbackData;
-}
-
-/**
- * WebSocketエラーを処理する
- * @param error 発生したエラー
- * @param options 通知オプション
- */
-export function handleWebSocketError(
-  error: unknown,
-  options: Omit<ErrorNotifyOptions, 'source'> = {}
-): void {
+export function handleWebSocketError(error: any, options: WebSocketErrorHandlerOptions = {}) {
   handleError(error, {
     source: 'websocket',
     title: 'WebSocket接続エラー',
