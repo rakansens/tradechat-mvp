@@ -474,24 +474,9 @@ export class BitgetApiClient {
     
     console.log('BitgetWS: Sending subscription message:', JSON.stringify(subscriptionMessage));
 
-    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-      this.ws.send(JSON.stringify(subscriptionMessage));
+    if (this.ws) {
+      this.safeSend(subscriptionMessage);
       console.log(`Subscribed to ${this.exchangeType} ${formattedSymbol} ${timeframe} candles`);
-    } else {
-      // WebSocketが接続していない場合は、接続後にサブスクライブする
-      const previousOnOpen = this.ws?.onopen;
-      if (this.ws) {
-        this.ws.onopen = (event) => {
-          // TypeScriptのNull安全性エラーを修正
-          if (previousOnOpen && this.ws) {
-            previousOnOpen.call(this.ws, event);
-          }
-          if (this.ws) {
-            this.ws.send(JSON.stringify(subscriptionMessage));
-            console.log(`Subscribed to ${this.exchangeType} ${formattedSymbol} ${timeframe} candles`);
-          }
-        };
-      }
     }
   }
 
@@ -564,14 +549,31 @@ export class BitgetApiClient {
 
   // WebSocketにpingメッセージを送信 (V2 API形式)
   private sendPing() {
-    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-      try {
-        this.ws.send('ping');
-        console.log('BitgetWS: Ping sent');
-      } catch (error) {
-        console.error('BitgetWS: Error sending ping:', error);
-        this.reconnect();
+    try {
+      this.safeSend('ping');
+      console.log('BitgetWS: Ping sent');
+    } catch (error) {
+      console.error('BitgetWS: Error sending ping:', error);
+      this.reconnect();
+    }
+  }
+
+  // メッセージを安全に送信するヘルパーメソッド
+  private safeSend(msg: object | string) {
+    if (!this.ws) return;
+    
+    const sendData = typeof msg === 'string' ? msg : JSON.stringify(msg);
+    const sendAction = () => {
+      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+        this.ws.send(sendData);
       }
+    };
+
+    if (this.ws.readyState === WebSocket.OPEN) {
+      sendAction();
+    } else {
+      // 一度だけ実行されるリスナーを追加（既存のonopen上書きなし）
+      this.ws.addEventListener('open', sendAction, { once: true });
     }
   }
 
