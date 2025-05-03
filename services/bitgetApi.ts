@@ -1,5 +1,4 @@
 import axios from 'axios';
-import CryptoJS from 'crypto-js';
 import { OHLCData } from '../types/chart';
 import { OrderBookData, OrderBookEntry, BitgetOrderBookResponse } from '../types/market';
 
@@ -22,8 +21,8 @@ const createWebSocket = (url: string) => {
   } else {
     // Node.js環境ではwsライブラリを使用（サーバーサイドのみ）
     try {
-      const WebSocketServer = require('ws');
-      return new WebSocketServer(url);
+      const WebSocketImpl = require('ws');
+      return new WebSocketImpl(url);
     } catch (e) {
       console.error('Failed to create WebSocket in Node.js environment:', e);
       return null;
@@ -49,7 +48,7 @@ export const TIMEFRAME_MAP_SPOT: Record<string, string> = {
   '1w': '1W',
 };
 
-// タイムフレームマッピング（先物取引用）
+// タイムフレームマッピング（先物取引用・WebSocket/REST 共通）
 export const TIMEFRAME_MAP_FUTURES: Record<string, string> = {
   '1m': '1m',
   '5m': '5m',
@@ -69,6 +68,8 @@ export class BitgetApiClient {
   private ws: WebSocket | null = null;
   private pingInterval: ReturnType<typeof setInterval> | null = null;
   private reconnectInterval: ReturnType<typeof setTimeout> | null = null;
+  private lastSymbol: string | null = null;
+  private lastTimeframe: string | null = null;
   private onKlineUpdateCallbacks: ((data: OHLCData) => void)[] = [];
   private exchangeType: ExchangeType = 'spot'; // デフォルトはスポット取引
   private isInDemoMode: boolean = false; // デモモードフラグ
@@ -369,10 +370,13 @@ export class BitgetApiClient {
 
   // WebSocketコネクションの開始
   connectWebSocket(symbol: string = 'BTC/USDT', timeframe: string = '1m', exchangeType: ExchangeType = this.exchangeType) {
+    this.lastSymbol = symbol;
+    this.lastTimeframe = timeframe;
     // 既存のWebSocketをクリーンアップ
     this.cleanup();
     
     // 取引種別を更新
+    // *WebSocket subscribe では sp / mc (lowercase) を要求*
     this.exchangeType = exchangeType;
     
     // デモモードを無効化
@@ -394,6 +398,10 @@ export class BitgetApiClient {
         this.sendPing();
         this.pingInterval = setInterval(() => this.sendPing(), 20000);
         this.isInDemoMode = false; // 接続成功したらデモモードをオフ
+        // 自動再購読
+        if (this.lastSymbol && this.lastTimeframe) {
+          this.subscribeToKline(this.lastSymbol, this.lastTimeframe);
+        }
       };
 
       this.ws.onmessage = (event) => {
@@ -438,6 +446,8 @@ export class BitgetApiClient {
 
   // ローソク足データの購読
   subscribeToKline(symbol: string, timeframe: string) {
+    this.lastSymbol = symbol;
+    this.lastTimeframe = timeframe;
     // WebSocketが接続されていない場合は接続する
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
       this.connectWebSocket(symbol, timeframe, this.exchangeType);
@@ -448,33 +458,33 @@ export class BitgetApiClient {
     const bitgetTimeframe = this.exchangeType === 'spot' 
       ? TIMEFRAME_MAP_SPOT[timeframe] || '1m'
       : TIMEFRAME_MAP_FUTURES[timeframe] || '1m';
-    
-    // V2 WebSocket API形式に合わせてサブスクリプションメッセージを構築
-    let instType, instId;
-    
-    if (this.exchangeType === 'spot') {
-      instType = 'SP'; // V2では大文字に変更
-      instId = formattedSymbol;
-    } else {
-      instType = 'MC'; // V2では大文字に変更
-      instId = `${formattedSymbol}_UMCBL`;
-    }
-    
+
+    // --- instType / instId (v2 spec) ---
+    // instType must be UPPERCASE ('SP' for spot, 'MC' for futures)
+    // futures instId requires the contract suffix `_UMCBL`
+    const instType = this.exchangeType === 'spot' ? 'SPOT' : 'USDT-FUTURES';
+    const instId   = this.exchangeType === 'spot'
+      ? formattedSymbol
+      : `${formattedSymbol}_UMCBL`;
+
     // V2 WebSocket API形式のサブスクリプションメッセージ
-    // 形式は 'instType/channel:instId' の文字列をargs配列に指定
-    const channelString = `${instType}/candle${bitgetTimeframe}:${instId}`;
-    
     const subscriptionMessage = {
       op: 'subscribe',
-      args: [channelString]
+      args: [
+        {
+          instType: instType,
+          channel: `candle${bitgetTimeframe}`,
+          instId: instId
+        }
+      ]
     };
-    
+
     console.log('BitgetWS: Sending subscription message:', JSON.stringify(subscriptionMessage));
 
-    if (this.ws) {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.safeSend(subscriptionMessage);
       console.log(`Subscribed to ${this.exchangeType} ${formattedSymbol} ${timeframe} candles`);
-    }
+    } // 接続中(OPENでない)の場合は onopen で再購読される
   }
 
   // 取引種別を切り替える
