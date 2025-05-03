@@ -22,6 +22,12 @@ import {
   useChartDataStore,
   useChartConfigStore,
   useRealTimeStore,
+  // メモ化されたセレクター
+  selectCurrentPrice,
+  selectPriceChangePercent,
+  selectHighPrice,
+  selectLowPrice,
+  selectDateRange,
   // その他のストア
   useEntryStore, 
   useChatStore, 
@@ -50,15 +56,25 @@ export default function Home() {
   
   // 分割されたチャートストアから状態とアクションを取得
   
-  // チャートデータ関連
-  const data = useChartDataStore((state) => state.data);
-  const currentTimeFrame = useChartDataStore((state) => state.currentTimeFrame);
-  const updateTimeFrame = useChartDataStore((state) => state.updateTimeFrame);
-  const fetchData = useChartDataStore((state) => state.fetchData);
+  // チャートデータ関連（メモ化されたセレクターを使用）
+  const { 
+    currentSymbol,
+    currentTimeFrame,
+    updateTimeFrame,
+    fetchData,
+    isLoading: chartLoading,
+    error: chartError
+  } = useChartDataStore();
+  
+  // メモ化されたセレクターを使用してデータを取得
+  const currentPrice = useChartDataStore(selectCurrentPrice);
+  const priceChangePercent = useChartDataStore(selectPriceChangePercent);
+  const highPrice = useChartDataStore(selectHighPrice);
+  const lowPrice = useChartDataStore(selectLowPrice);
+  const dateRange = useChartDataStore(selectDateRange);
   
   // チャート設定関連
-  const chartType = useChartConfigStore((state) => state.chartType);
-  const setChartType = useChartConfigStore((state) => state.setChartType);
+  const { chartType, setChartType } = useChartConfigStore();
   
   // UIストアから状態とアクションを取得
   const activeTab = useUIStore((state) => state.activeTab);
@@ -115,11 +131,21 @@ export default function Home() {
   return (
     <main className="flex flex-col h-screen" style={{ backgroundColor: theme.background.primary }}>
       <header className="flex justify-between items-center py-2 px-3 border-b" style={{ borderColor: theme.border.light, backgroundColor: theme.background.secondary }}>
-        <div className="flex items-center space-x-2">
-          <div className="font-bold text-lg flex items-center">
-            <span style={{ color: theme.accent.blue }}>Alpha</span>
-            <span style={{ color: theme.text.primary }}>Trader</span>
-          </div>
+        <div className="flex items-center space-x-4">
+          <h1 className="text-xl font-bold">TradeChat Exchange</h1>
+          <Badge variant="outline" className="text-xs">BETA</Badge>
+          {currentPrice > 0 && (
+            <div className="flex items-center space-x-2">
+              <Badge variant="outline" className="font-mono text-xs">
+                {currentSymbol}: ${currentPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </Badge>
+              {priceChangePercent !== 0 && (
+                <Badge variant={priceChangePercent >= 0 ? "success" : "destructive"} className="text-xs">
+                  {priceChangePercent >= 0 ? '+' : ''}{priceChangePercent.toFixed(2)}%
+                </Badge>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="flex items-center space-x-2">

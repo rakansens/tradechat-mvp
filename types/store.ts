@@ -1,8 +1,9 @@
 // types/store.ts
-// 作成: ストア関連の型定義
+// 更新: ストア関連の型定義
 // 
 // このファイルはZustandストアの型定義を集約しています。
 // 各ストアの状態とアクションの型を定義し、型安全性を確保します。
+// リアルタイム更新用のメソッドも含みます。
 
 import { OHLCData, Timeframe, ChartType } from './chart';
 import { ExchangeType } from './api';
@@ -34,6 +35,9 @@ export interface ChartDataState {
   updateData: (data: OHLCData) => void;
   updateTimeFrame: (timeFrame: Timeframe) => Promise<void>;
   updateSymbol: (symbol: string) => Promise<void>;
+  
+  // リアルタイム更新用のアクション
+  updateLastCandle: (newCandle: OHLCData) => void;
 }
 
 /**

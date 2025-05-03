@@ -16,7 +16,11 @@ import {
   // 分割されたチャートストア
   useChartDataStore,
   useChartConfigStore,
-  useRealTimeStore
+  useRealTimeStore,
+  // メモ化されたセレクター
+  selectCurrentPrice,
+  selectPriceChangePercent,
+  selectDateRange
 } from "@/store"
 import { theme } from "@/styles/colors"
 import ChartToolbar from "./ChartToolbar"
@@ -33,8 +37,15 @@ export default function ChartSection() {
     currentTimeFrame,
     updateTimeFrame, 
     updateSymbol,
-    fetchData
+    fetchData,
+    isLoading,
+    error
   } = useChartDataStore();
+  
+  // メモ化されたセレクターを使用してデータを取得
+  const currentPrice = useChartDataStore(selectCurrentPrice);
+  const priceChangePercent = useChartDataStore(selectPriceChangePercent);
+  const dateRange = useChartDataStore(selectDateRange);
   
   // チャート設定関連の状態とアクション
   const { 
@@ -48,15 +59,18 @@ export default function ChartSection() {
   } = useRealTimeStore();
 
   // コンポーネントのマウント時にチャートを初期化
+  // 初期化とクリーンアップを分離して最適化
   useEffect(() => {
-    // 新しいストアを使用
+    // 初期データの取得
     fetchData(currentSymbol, currentTimeFrame);
-    
-    // コンポーネントのアンマウント時にWebSocketを切断
+  }, []);
+  
+  // クリーンアップロジックを別のエフェクトに分離
+  useEffect(() => {
     return () => {
       stopRealTimeUpdates();
     };
-  }, []);
+  }, [stopRealTimeUpdates]);
 
   const handleTimeframeChange = (timeframe: string) => {
     // 型安全な実装に変更
@@ -74,12 +88,44 @@ export default function ChartSection() {
     updateSymbol(symbol);
   };
 
+  // 型安全な実装に変更
   const handleChartTypeChange = (type: string) => {
-    setChartType(type as any);
+    if (isValidChartType(type)) {
+      setChartType(type);
+    }
+  };
+  
+  // 型安全性を確保するためのヘルパー関数
+  const isValidChartType = (type: string): type is ChartType => {
+    return ['candle', 'line', 'area'].includes(type);
   };
 
   return (
     <div className="relative flex flex-col w-full h-full">
+      {/* メタ情報を表示するヘッダーセクション */}
+      <div className="px-4 py-2 bg-[#131722] border-b border-[#2A2E39]">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <h2 className="text-lg font-semibold text-white">{currentSymbol}</h2>
+            {currentPrice > 0 && (
+              <span className="ml-2 text-lg font-mono">
+                ${currentPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </span>
+            )}
+            {priceChangePercent !== 0 && (
+              <Badge className="ml-2" variant={priceChangePercent >= 0 ? "success" : "destructive"}>
+                {priceChangePercent >= 0 ? '+' : ''}{priceChangePercent.toFixed(2)}%
+              </Badge>
+            )}
+          </div>
+          {dateRange && (
+            <div className="text-xs text-[#9CA3AF]">
+              {new Date(dateRange[0]).toLocaleDateString()} - {new Date(dateRange[1]).toLocaleDateString()}
+            </div>
+          )}
+        </div>
+      </div>
+      
       <ChartToolbar 
         timeframe={currentTimeFrame}
         onTimeframeChange={handleTimeframeChange}
@@ -88,8 +134,28 @@ export default function ChartSection() {
         chartType={chartType}
         onChartTypeChange={handleChartTypeChange}
       />
+      
       <div className="relative flex-grow">
-        <ChartCanvas />
+        {isLoading ? (
+          <div className="absolute inset-0 flex items-center justify-center bg-[#131722] bg-opacity-80">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#2962FF]"></div>
+          </div>
+        ) : error ? (
+          <div className="absolute inset-0 flex items-center justify-center bg-[#131722] bg-opacity-80">
+            <div className="text-red-500 text-center p-4">
+              <p className="text-lg font-semibold">Error loading chart data</p>
+              <p className="text-sm">{error}</p>
+              <button 
+                className="mt-2 px-4 py-2 bg-[#2962FF] text-white rounded"
+                onClick={() => fetchData(currentSymbol, currentTimeFrame)}
+              >
+                Retry
+              </button>
+            </div>
+          </div>
+        ) : (
+          <ChartCanvas />
+        )}
       </div>
     </div>
   );

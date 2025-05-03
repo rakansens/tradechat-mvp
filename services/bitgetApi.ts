@@ -79,6 +79,7 @@ export class BitgetApiClient {
       
       // パラメータの準備
       const browserParams = {
+        type: this.exchangeType, // 取引タイプを追加（spotまたはfutures）
         symbol: formattedSymbol,
         timeframe,
         limit: limit.toString(),

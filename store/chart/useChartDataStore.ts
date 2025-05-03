@@ -1,7 +1,8 @@
 // store/chart/useChartDataStore.ts
-// 作成: チャートデータ関連の状態管理ストア
+// 更新: チャートデータ関連の状態管理ストア
 // 
 // このストアはチャートのデータ（OHLC）と、データの取得状態を管理します。
+// リアルタイム更新用のメソッドも提供します。
 
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
@@ -9,6 +10,7 @@ import { generateOHLCData } from "../../utils/ohlcDummyData";
 import { getDataPointsForTimeframe } from "../../utils/chartUtils";
 import type { OHLCData, Timeframe } from "../../types/chart";
 import type { ChartDataState } from "../../types/store";
+import { produce } from "immer";
 import { BitgetApiClient } from '../../services/bitgetApi';
 
 // 初期値の設定
@@ -97,6 +99,32 @@ export const useChartDataStore = create<ChartDataState>()(
         updateSymbol: async (symbol: string) => {
           // 新しいシンボルと現在のタイムフレームでデータを取得
           await get().fetchData(symbol, get().currentTimeFrame);
+        },
+        
+        // リアルタイム更新用のメソッド
+        updateLastCandle: (newCandle: OHLCData) => {
+          // データのパフォーマンスを最適化するためにimmerを使用
+          set(produce((state) => {
+            const data = state.data;
+            
+            // 最後のローソク足を探す
+            const lastIndex = data.length - 1;
+            const lastCandle = data[lastIndex];
+            
+            // 同じタイムスタンプのローソク足を更新
+            if (lastCandle && lastCandle.time === newCandle.time) {
+              data[lastIndex] = newCandle;
+            } 
+            // 新しいタイムスタンプのローソク足を追加
+            else {
+              data.push(newCandle);
+              
+              // 古いデータを削除してパフォーマンスを維持
+              if (data.length > 1000) {
+                data.shift();
+              }
+            }
+          }));
         }
       }),
       {

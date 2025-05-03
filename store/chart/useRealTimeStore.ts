@@ -1,14 +1,17 @@
 // store/chart/useRealTimeStore.ts
-// 作成: リアルタイム更新関連の状態管理ストア
+// 更新: リアルタイム更新関連の状態管理ストアを最適化
 // 
 // このストアはリアルタイムデータの更新設定とWebSocket接続を管理します。
+// メモ化されたセレクターを使用してパフォーマンスを向上させます。
 
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
 import type { RealTimeState } from "../../types/store";
 import { BitgetApiClient } from "../../services/bitgetApi";
 import { ExchangeType } from "../../types/api";
+import { OHLCData } from "../../types/chart";
 import { useChartDataStore } from "./useChartDataStore";
+import { selectCurrentPrice } from "../chart/selectors";
 
 // リアルタイム更新ストアの作成
 export const useRealTimeStore = create<RealTimeState>()(
@@ -46,13 +49,25 @@ export const useRealTimeStore = create<RealTimeState>()(
           
           // チャートデータストアから現在のシンボルとタイムフレームを取得
           const chartDataStore = useChartDataStore.getState();
-          const { currentSymbol, currentTimeFrame } = chartDataStore;
+          const { currentSymbol, currentTimeFrame, updateLastCandle } = chartDataStore;
+          
+          // 現在の価格をメモ化されたセレクターで取得
+          const lastPrice = selectCurrentPrice(chartDataStore);
           
           // WebSocket接続を開始
           api.subscribeToKline(currentSymbol, currentTimeFrame);
           
-          // TODO: Bitgetからの新しいデータを受信したらチャートデータストアを更新する
-          // 実際の実装では、BitgetApiClientにコールバック登録メカニズムを追加する必要があります
+          // WebSocketからのデータ受信時のコールバックを設定
+          api.onKlineUpdate((data: OHLCData) => {
+            // メモ化されたセレクターを使用して最適化
+            const newChartDataStore = useChartDataStore.getState();
+            const currentLastPrice = selectCurrentPrice(newChartDataStore);
+            
+            // 価格が変化した場合のみ更新を実行
+            if (data.close !== currentLastPrice) {
+              updateLastCandle(data);
+            }
+          });
         },
         
         stopRealTimeUpdates: () => {
