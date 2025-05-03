@@ -1,27 +1,30 @@
 // services/bitgetApi.ts
 // 更新: エラーハンドリングの強化と型安全性の向上
 
-import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
+// services/bitgetApi.ts
+// 更新: 共通API関数を使用するように変更
+
+import { AxiosRequestConfig, AxiosResponse } from 'axios';
 import { OHLCData } from '../types/chart';
 import { OrderBookData, OrderBookEntry, BitgetOrderBookResponse } from '../types/market';
 import { handleApiError, handleWebSocketError } from './errorHandler';
+import { 
+  apiRequest, 
+  adaptiveApiRequest, 
+  createCancellableRequest,
+  API_CONFIG,
+  IS_DEV,
+  IS_BROWSER 
+} from './api';
 
-// API設定
-const BITGET_API_BASE_URL = 'https://api.bitget.com';
-// V2 WebSocketエンドポイント（Public）に更新
-const BITGET_WS_URL = 'wss://ws.bitget.com/v2/ws/public';
-
-// デモモード設定
-const ENABLE_DEMO_MODE_ON_ERROR = true; // エラー時のデモモード有効
-
-// 環境判定
-const isBrowser = typeof window !== 'undefined';
-// true when running in dev; used to silence verbose logs in production
-const IS_DEV = process.env.NODE_ENV === 'development';
+// API設定は共通モジュールから取得
+const BITGET_API_BASE_URL = API_CONFIG.bitget.baseUrl;
+const BITGET_WS_URL = API_CONFIG.bitget.wsUrl;
+const ENABLE_DEMO_MODE_ON_ERROR = API_CONFIG.bitget.enableDemoMode;
 
 // 環境に応じたWebSocketの作成
 const createWebSocket = (url: string) => {
-  if (isBrowser) {
+  if (IS_BROWSER) {
     // ブラウザ環境ではnativeのWebSocketを使用
     return new WebSocket(url);
   } else {
@@ -92,112 +95,178 @@ export class BitgetApiClient {
 
   // REST APIを使用して過去のローソク足データを取得
   /**
-   * 過去のローソク足データを取得する
+   * 過去のキャンドルデータを取得する
    * @param symbol 通貨ペア (例: 'BTC/USDT')
-   * @param timeframe タイムフレーム (例: '1m', '1h')
-   * @param limit 取得件数
-   * @param endTime 終了時間 (オプション)
-   * @returns ローソク足データの配列
+   * @param timeframe タイムフレーム (例: '1m', '5m', '1h', '1d')
+   * @param limit 取得するキャンドル数
+   * @param endTime 取得終了時間 (Unixタイムスタンプミリ秒)
+   * @returns キャンドルデータの配列
    */
-  async getHistoricalCandles(
-    symbol: string,
-    timeframe: string,
-    limit: number = 100,
-    endTime?: number
-  ): Promise<OHLCData[]> {
+  async getHistoricalCandles(symbol: string, timeframe: string, limit: number = 100, endTime?: number) {
     try {
       // シンボルを正しい形式に変換（スラッシュを削除）
       const formattedSymbol = symbol.replace('/', '').toUpperCase();
-      let response: AxiosResponse;
-
-      if (isBrowser) {
-        // ブラウザ環境ではNext.jsのAPIルートを使用
-        const params = new URLSearchParams({
-          type: this.exchangeType,
-          symbol: formattedSymbol,
-          timeframe,
-          limit: limit.toString(),
-          ...(endTime ? { endTime: endTime.toString() } : {})
-        });
-
-        const url = `/api/bitget/candles?${params.toString()}`;
-        if (IS_DEV) console.log(`Browser API Request (Candles): ${url}`);
-        response = await axios.get(url);
-      } else {
-        // サーバーサイド環境では直接BitgetのAPIを呼び出す
-        let endpoint: string;
-        let params: Record<string, string>;
-
-        // V2 APIを使用
-        if (this.exchangeType === 'spot') {
-          // スポット取引用のV2エンドポイント
-          endpoint = '/api/v2/spot/market/candles';
-          
-          // タイムフレームをBitget V2 API形式に変換
-          const granularity = this.convertTimeframeToBitgetV2Format(timeframe);
-          
-          params = {
-            symbol: formattedSymbol,
-            granularity,
-            limit: limit.toString(),
-            ...(endTime ? { endTime: endTime.toString() } : {}),
-          };
-        } else {
-          // 先物取引用のV2エンドポイント
-          endpoint = '/api/v2/mix/market/candles';
-          
-          // タイムフレームをBitget V2 API形式に変換
-          const granularity = this.convertTimeframeToBitgetV2Format(timeframe);
-          
-          params = {
-            symbol: `${formattedSymbol}_UMCBL`, // 先物シンボル形式に変換
-            granularity,
-            limit: limit.toString(),
-            ...(endTime ? { endTime: endTime.toString() } : {}),
-          };
-        }
-
-        if (IS_DEV) console.log(`Server API Request (${this.exchangeType} Candles):`, endpoint, params);
-        const url = `${BITGET_API_BASE_URL}${endpoint}`;
-        response = await axios.get(url, { params });
-      }
-
-      if (IS_DEV) console.log('API response:', response.data);
-
-      // V2 APIのレスポンス形式に合わせて処理
-      if (response.data?.data && Array.isArray(response.data.data)) {
-        // Bitget V2 APIレスポンスからOHLCデータを変換
-        return response.data.data.map((candle: string[]) => ({
-          time: parseInt(candle[0]), // タイムスタンプ (ミリ秒)
-          open: parseFloat(candle[1]),
-          high: parseFloat(candle[2]),
-          low: parseFloat(candle[3]),
-          close: parseFloat(candle[4]),
-          volume: parseFloat(candle[5]),
-        }));
-      }
-
-      // レスポンスが期待した形式でない場合
-      const errorMsg = response.data?.msg || 'Invalid API response format';
-      throw new Error(errorMsg);
       
-    } catch (error) {
-      // グローバルエラーハンドラーを使用
-      handleApiError(error, {
-        title: 'チャートデータ取得エラー',
-        description: `${symbol} ${timeframe}のデータ取得に失敗しました`,
-        // 本番環境ではトースト通知を抑制（オプション）
-        showToast: IS_DEV
+      // パラメータの準備
+      const browserParams = {
+        symbol: formattedSymbol,
+        timeframe,
+        limit: limit.toString(),
+        ...(endTime ? { endTime: endTime.toString() } : {})
+      };
+      
+      // サーバー側用のパラメータ
+      const serverParams = {
+        ...(this.exchangeType === 'spot'
+          ? { symbol: formattedSymbol }
+          : { symbol: `${formattedSymbol}_UMCBL` }), // 先物シンボル形式
+        granularity: this.convertTimeframeToBitgetV2Format(timeframe),
+        limit: limit.toString(),
+        ...(endTime ? { endTime: endTime.toString() } : {})
+      };
+      
+      // エンドポイントの準備
+      const serverEndpoint = this.exchangeType === 'spot'
+        ? '/api/v2/spot/market/candles'
+        : '/api/v2/mix/market/candles';
+      
+      // キャンセル可能なリクエストを作成
+      const { signal } = createCancellableRequest();
+      
+      // 共通API関数を使用してデータを取得
+      const response = await adaptiveApiRequest({
+        browserEndpoint: '/api/bitget/candles',
+        serverBaseUrl: BITGET_API_BASE_URL,
+        serverEndpoint,
+        params: IS_BROWSER ? browserParams : serverParams,
+        options: {
+          method: 'GET',
+          errorTitle: 'チャートデータ取得エラー',
+          errorDescription: `${symbol} ${timeframe} のチャートデータ取得に失敗しました`,
+          showToast: IS_DEV,
+          signal,
+          fallbackData: null
+        }
       });
       
-      // エラー時にデモデータを返す
-      if (ENABLE_DEMO_MODE_ON_ERROR) {
-        if (IS_DEV) console.log('Falling back to demo candle data due to error');
-        this.isInDemoMode = true;
-        return this.generateDemoCandles(limit);
+      // レスポンスの構造を査定して適切に処理
+      if (IS_DEV) console.log('API Response:', response);
+      
+      // レスポンスデータの変換
+      let responseData;
+      
+      // 様々なレスポンス構造に対応
+      if (response?.data?.data) {
+        // { data: { data: [...] } } 形式
+        responseData = response.data.data;
+      } else if (response?.data) {
+        // { data: [...] } 形式
+        responseData = response.data;
+      } else {
+        // 直接データが返される場合
+        responseData = response;
       }
       
-      // デモモードが無効な場合はエラーを伝播
+      if (!responseData) {
+        if (IS_DEV) console.error('Empty API response');
+        throw new Error('Empty API response');
+      }
+      
+      // 配列でない場合は配列に変換を試みる
+      if (!Array.isArray(responseData)) {
+        if (IS_DEV) console.log('Response is not an array, trying to extract array data');
+        // 各種プロパティから配列を探す
+        if (Array.isArray(responseData.candles)) {
+          responseData = responseData.candles;
+        } else if (Array.isArray(responseData.items)) {
+          responseData = responseData.items;
+        } else if (Array.isArray(responseData.list)) {
+          responseData = responseData.list;
+        } else {
+          if (IS_DEV) console.error('Could not find array data in response', responseData);
+          throw new Error('Invalid candle data format');
+        }
+      }
+
+      if (IS_DEV) console.log('Candle data before processing:', responseData);
+      
+      // キャンドルデータを正規化して返す
+      const processedData = responseData
+        .map((candle: any) => {
+          try {
+            let result;
+            // Bitget V2 APIのレスポンス形式に合わせて処理
+            // [タイムスタンプ, 始値, 高値, 安値, 終値, 出来高, 出来安]
+            if (Array.isArray(candle)) {
+              // 必要なデータが存在するか確認
+              if (!candle[0] || !candle[1] || !candle[2] || !candle[3] || !candle[4]) {
+                if (IS_DEV) console.warn('Skipping invalid candle array data:', candle);
+                return null;
+              }
+              
+              const timestamp = parseInt(String(candle[0]));
+              if (isNaN(timestamp) || timestamp <= 0) {
+                if (IS_DEV) console.warn('Invalid timestamp in candle array data:', candle[0]);
+                return null;
+              }
+              
+              result = {
+                time: timestamp, // lightweight-chartsの要件に合わせてtimeとして設定
+                timestamp,
+                open: parseFloat(String(candle[1])),
+                high: parseFloat(String(candle[2])),
+                low: parseFloat(String(candle[3])),
+                close: parseFloat(String(candle[4])),
+                volume: parseFloat(String(candle[5] || candle[6] || '0'))
+              };
+            } else {
+              // オブジェクト形式の場合
+              // 必要なデータが存在するか確認
+              if (!candle.open || !candle.high || !candle.low || !candle.close) {
+                if (IS_DEV) console.warn('Skipping invalid candle object data:', candle);
+                return null;
+              }
+              
+              const timestamp = parseInt(String(candle.timestamp || candle.ts || candle.time || Date.now()));
+              if (isNaN(timestamp) || timestamp <= 0) {
+                if (IS_DEV) console.warn('Invalid timestamp in candle object data:', candle.timestamp || candle.ts || candle.time);
+                return null;
+              }
+              
+              result = {
+                time: timestamp, // lightweight-chartsの要件に合わせてtimeとして設定
+                timestamp,
+                open: parseFloat(String(candle.open)),
+                high: parseFloat(String(candle.high)),
+                low: parseFloat(String(candle.low)),
+                close: parseFloat(String(candle.close)),
+                volume: parseFloat(String(candle.volume || candle.vol || '0'))
+              };
+            }
+            
+            // 全ての値が有効か確認
+            if (isNaN(result.open) || isNaN(result.high) || isNaN(result.low) || isNaN(result.close)) {
+              if (IS_DEV) console.warn('Skipping candle with NaN values:', result);
+              return null;
+            }
+            
+            return result;
+          } catch (err) {
+            if (IS_DEV) console.error('Error processing candle data:', err, candle);
+            return null;
+          }
+        })
+        .filter((candle): candle is OHLCData => candle !== null) // nullを除外
+        .sort((a, b) => a.timestamp - b.timestamp); // 時間順にソート
+      
+      if (processedData.length === 0) {
+        throw new Error('No valid candle data found');
+      }
+      
+      if (IS_DEV) console.log('Processed candle data:', processedData);
+      return processedData;
+    } catch (error) {
+      // エラーを伝播
       throw error;
     }
   }
@@ -268,88 +337,97 @@ export class BitgetApiClient {
     try {
       // シンボルを正しい形式に変換（スラッシュを削除）
       const formattedSymbol = symbol.replace('/', '').toUpperCase();
-      let response: AxiosResponse;
-
-      if (isBrowser) {
-        // ブラウザ環境ではNext.jsのAPIルートを使用
-        const params = new URLSearchParams({
-          symbol: formattedSymbol,
-          type: exchangeType,
-        });
-
-        const url = `/api/bitget/orderbook?${params.toString()}`;
-        if (IS_DEV) console.log(`Browser API Request (OrderBook): ${url}`);
-        response = await axios.get(url);
-      } else {
-        // サーバーサイド環境では直接BitgetのAPIを呼び出す
-        let endpoint: string;
-        let params: Record<string, string>;
-
-        // 最新のBitgetAPI V2を使用
-        if (exchangeType === 'spot') {
-          // スポット取引用の最新エンドポイント (V2 API)
-          endpoint = '/api/v2/spot/market/orderbook';
-          params = {
-            symbol: formattedSymbol,
-            limit: '150', // デフォルトの深さ
-          };
-        } else {
-          // 先物取引用の最新エンドポイント (V2 API)
-          endpoint = '/api/v2/mix/market/orderbook';
-          params = {
-            symbol: `${formattedSymbol}_UMCBL`, // 先物シンボル形式
-            limit: '150',
-          };
-        }
-
-        if (IS_DEV) console.log(`Server API Request (OrderBook):`, endpoint, params);
-        const url = `${BITGET_API_BASE_URL}${endpoint}`;
-        response = await axios.get(url, { params });
-      }
-
-      // V2 APIのレスポンス形式に合わせて処理
-      // エラー応答の処理
-      if (response.data?.code && response.data.code !== '00000') {
-        const errorMsg = response.data.msg || 'Unknown API error';
-        throw new Error(`Bitget API Error: ${errorMsg}`);
-      }
-
-      // レスポンスデータの変換
-      const responseData = response.data?.data || response.data;
       
-      if (!responseData || !responseData.asks || !responseData.bids) {
+      // パラメータの準備
+      const browserParams = {
+        symbol: formattedSymbol,
+        type: exchangeType,
+      };
+      
+      // サーバー側用のパラメータ
+      const serverParams = exchangeType === 'spot'
+        ? { symbol: formattedSymbol, limit: '150' }
+        : { symbol: `${formattedSymbol}_UMCBL`, limit: '150' };
+      
+      // エンドポイントの準備
+      const serverEndpoint = exchangeType === 'spot'
+        ? '/api/v2/spot/market/orderbook'
+        : '/api/v2/mix/market/orderbook';
+      
+      // キャンセル可能なリクエストを作成
+      const { signal } = createCancellableRequest();
+      
+      // 共通API関数を使用してデータを取得
+      const responseData = await adaptiveApiRequest({
+        browserEndpoint: '/api/bitget/orderbook',
+        serverBaseUrl: BITGET_API_BASE_URL,
+        serverEndpoint,
+        params: IS_BROWSER ? browserParams : serverParams,
+        options: {
+          method: 'GET',
+          errorTitle: 'オーダーブック取得エラー',
+          errorDescription: `${symbol} のオーダーブック取得に失敗しました`,
+          showToast: IS_DEV,
+          signal,
+          fallbackData: null
+        }
+      });
+      
+      // レスポンスの構造を査定して適切に処理
+      if (IS_DEV) console.log('OrderBook API Response:', responseData);
+      
+      // レスポンスデータの変換
+      let orderBookData;
+      
+      // 様々なレスポンス構造に対応
+      if (responseData?.data?.data) {
+        // { data: { data: {...} } } 形式
+        orderBookData = responseData.data.data;
+      } else if (responseData?.data) {
+        // { data: {...} } 形式
+        orderBookData = responseData.data;
+      } else {
+        // 直接データが返される場合
+        orderBookData = responseData;
+      }
+      
+      if (!orderBookData) {
+        if (IS_DEV) console.error('Empty OrderBook API response');
+        throw new Error('Empty OrderBook API response');
+      }
+      
+      // asksとbidsが存在するか確認
+      // 様々なプロパティ名に対応
+      const asks = orderBookData.asks || orderBookData.askList || orderBookData.sellOrders || [];
+      const bids = orderBookData.bids || orderBookData.bidList || orderBookData.buyOrders || [];
+      
+      if (!asks.length || !bids.length) {
+        if (IS_DEV) console.error('Invalid orderbook data format', orderBookData);
         throw new Error('Invalid orderbook data format');
       }
+      
+      // データを正規化
+      orderBookData = {
+        ...orderBookData,
+        asks,
+        bids
+      };
       
       // OrderBookDataに変換
       return {
         symbol: symbol,
-        timestamp: parseInt(responseData.timestamp || Date.now().toString()),
-        asks: (responseData.asks || []).map((ask: string[]) => ({
+        timestamp: parseInt(orderBookData.timestamp || Date.now().toString()),
+        asks: (orderBookData.asks || []).map((ask: string[]) => ({
           price: parseFloat(ask[0]),
           amount: parseFloat(ask[1])
         })),
-        bids: (responseData.bids || []).map((bid: string[]) => ({
+        bids: (orderBookData.bids || []).map((bid: string[]) => ({
           price: parseFloat(bid[0]),
           amount: parseFloat(bid[1])
         }))
       };
     } catch (error) {
-      // グローバルエラーハンドラーを使用
-      handleApiError(error, {
-        title: 'オーダーブック取得エラー',
-        description: `${symbol} のオーダーブック取得に失敗しました`,
-        // 本番環境ではトースト通知を抑制（オプション）
-        showToast: IS_DEV
-      });
-      
-      // エラー時にデモデータを返す
-      if (ENABLE_DEMO_MODE_ON_ERROR) {
-        this.isInDemoMode = true;
-        return this.generateDemoOrderBook(symbol);
-      }
-      
-      // デモモードが無効な場合はエラーを伝播
+      // エラーを伝播
       throw error;
     }
   }
