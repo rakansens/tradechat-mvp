@@ -40,11 +40,11 @@ export default function Home() {
   const cancelPosition = useEntryStore((state) => state.cancelPosition);
   
   // チャートストアから状態とアクションを取得
-  const ohlcData = useChartStore((state) => state.ohlcData);
-  const timeframe = useChartStore((state) => state.timeframe);
+  const data = useChartStore((state) => state.data);
+  const currentTimeFrame = useChartStore((state) => state.currentTimeFrame);
   const chartType = useChartStore((state) => state.chartType);
-  const refreshOhlcData = useChartStore((state) => state.refreshOhlcData);
-  const setTimeframe = useChartStore((state) => state.setTimeframe);
+  const initializeChart = useChartStore((state) => state.initializeChart);
+  const updateTimeFrame = useChartStore((state) => state.updateTimeFrame);
   const setChartType = useChartStore((state) => state.setChartType);
   
   // UIストアから状態とアクションを取得
@@ -93,8 +93,8 @@ export default function Home() {
   }, [messages]); 
   
   useEffect(() => {
-    refreshOhlcData();
-  }, [refreshOhlcData]);
+    initializeChart('BTC/USDT', currentTimeFrame);
+  }, [initializeChart, currentTimeFrame]);
 
   const openPositionsCount = entries.filter((entry) => entry.status === "open").length
 
@@ -110,11 +110,17 @@ export default function Home() {
 
         <div className="flex items-center space-x-2">
           <Button variant="outline" size="sm" className="" style={{ backgroundColor: theme.background.tertiary, borderColor: theme.border.light, color: theme.text.primary }}>
-            <span className="font-mono">BTC/USD: ${ohlcData[ohlcData.length - 1].close.toLocaleString('en-US')}</span>
-            <PriceChangeIndicator
-              currentPrice={ohlcData[ohlcData.length - 1].close}
-              previousPrice={ohlcData[ohlcData.length - 2].close}
-            />
+            <span className="font-mono">
+              {data && data.length > 0 
+                ? `BTC/USD: $${data[data.length - 1].close.toLocaleString('en-US')}` 
+                : "BTC/USD: Loading..."}
+            </span>
+            {data && data.length > 1 && (
+              <PriceChangeIndicator
+                currentPrice={data[data.length - 1].close}
+                previousPrice={data[data.length - 2].close}
+              />
+            )}
           </Button>
           <Button variant="ghost" size="icon">
             <Bell className="h-4 w-4" />
@@ -160,7 +166,7 @@ export default function Home() {
               </div>
 
               <div className="flex items-center space-x-2">
-                <TimeframeSelector selectedTimeframe={timeframe} onTimeframeChange={setTimeframe} />
+                <TimeframeSelector selectedTimeframe={currentTimeFrame} onTimeframeChange={updateTimeFrame} />
                 <Separator orientation="vertical" className="h-6 bg-[#374151]" />
                 <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)} className="h-7">
                   <TabsList className="h-7 bg-[#242838] border border-[#2A2E39]">
@@ -190,7 +196,7 @@ export default function Home() {
 
             <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)} className="flex-1 flex flex-col">
               <TabsContent value="chart" className="flex-1 m-0 p-0 data-[state=active]:flex flex-col">
-                <ChartSection ohlcData={ohlcData} entries={entries} timeframe={timeframe} />
+                <ChartSection />
               </TabsContent>
 
               <TabsContent value="positions" className="flex-1 m-0 p-0 data-[state=active]:flex flex-col">

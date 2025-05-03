@@ -16,3 +16,25 @@ global.console = {
   // error: jest.fn(),
   // log: jest.fn(),
 };
+
+import '@testing-library/jest-dom';
+
+// WebSocketのモック
+global.WebSocket = class {
+  constructor() {
+    this.readyState = 0; // CONNECTING
+    setTimeout(() => {
+      this.readyState = 1; // OPEN
+      if (this.onopen) this.onopen();
+    }, 0);
+  }
+  
+  send() {}
+  close() {}
+};
+
+// WebSocketの定数
+WebSocket.CONNECTING = 0;
+WebSocket.OPEN = 1;
+WebSocket.CLOSING = 2;
+WebSocket.CLOSED = 3;

@@ -4,9 +4,9 @@
 
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
-import { generateOHLCData } from "@/utils/ohlcDummyData";
-import { getDataPointsForTimeframe } from "@/utils/chart";
-import type { ChartType, OHLCData, Timeframe, TechnicalIndicator } from "@/types/chart";
+import { generateOHLCData } from "../utils/ohlcDummyData";
+import { getDataPointsForTimeframe } from "../utils/chart";
+import type { ChartType, OHLCData, Timeframe } from "../types/chart";
 import { BitgetApiClient, ExchangeType } from '../services/bitgetApi';
 
 
@@ -16,16 +16,6 @@ const initialOhlcData: OHLCData[] = generateOHLCData(
   getDataPointsForTimeframe(initialTimeframe),
   initialTimeframe
 );
-
-// デフォルトのインジケーター設定
-const initialIndicators: TechnicalIndicator[] = [
-  { type: "ma", params: { period: 20 }, visible: true },
-  { type: "bollinger", params: { period: 20, stdDev: 2 }, visible: true },
-  { type: "rsi", params: { period: 14 }, visible: true },
-  { type: "macd", params: { fast: 12, slow: 26, signal: 9 }, visible: true },
-  { type: "ichimoku", params: { tenkan: 9, kijun: 26, senkou: 52 }, visible: false },
-  { type: "fibonacci", params: { auto: 1 }, visible: false }
-];
 
 interface ChartStoreState {
   data: OHLCData[];
@@ -37,7 +27,6 @@ interface ChartStoreState {
   chartType: ChartType;
   useRealTimeData: boolean; // リアルタイムデータを使用するかのフラグ
   exchangeType: ExchangeType; // 取引種別（スポットまたは先物）
-  indicators: TechnicalIndicator[]; // テクニカル指標の設定
   
   // アクション
   initializeChart: (symbol: string, timeFrame: Timeframe) => Promise<void>;
@@ -49,8 +38,6 @@ interface ChartStoreState {
   setChartType: (chartType: ChartType) => void;
   toggleRealTimeData: () => void; // リアルタイムデータの使用を切り替える
   setExchangeType: (type: ExchangeType) => void; // 取引種別を設定
-  toggleIndicator: (type: TechnicalIndicator["type"]) => void; // インジケーターの表示/非表示を切り替え
-  updateIndicatorParams: (type: TechnicalIndicator["type"], params: Record<string, number>) => void; // インジケーターのパラメータを更新
 }
 
 // チャートストアの作成
@@ -65,67 +52,257 @@ export const useChartStore = create<ChartStoreState>()(
         currentTimeFrame: initialTimeframe,
         bitgetApi: null,
         chartType: "candles" as ChartType,
-        useRealTimeData: true, // リアルタイムデータをデフォルトで有効に変更
+        useRealTimeData: true, // リアルタイムデータをデフォルトで有効に設定
         exchangeType: 'spot', // デフォルトはスポット取引
-        indicators: initialIndicators, // インジケーター設定を初期化
 
-        // アクション
         initializeChart: async (symbol: string, timeFrame: Timeframe) => {
-          // Implementation of initializeChart
+          set({ isLoading: true, error: null, currentSymbol: symbol, currentTimeFrame: timeFrame });
+          
+          try {
+            // BitgetAPIクライアントの初期化（取引種別を設定）
+            const api = new BitgetApiClient({}, get().exchangeType);
+            set({ bitgetApi: api });
+            
+            // 初期データの取得
+            let historicalData: OHLCData[] = [];
+            
+            if (get().useRealTimeData) {
+              try {
+                console.log(`Fetching historical data for ${symbol} with timeframe ${timeFrame} (${get().exchangeType})`);
+                // Bitget APIから過去のローソク足データを取得
+                historicalData = await api.getHistoricalCandles(symbol, timeFrame, 100);
+                console.log('Successfully fetched historical data:', historicalData.length);
+              } catch (error) {
+                console.error('Failed to fetch data from Bitget API, using dummy data instead:', error);
+                // APIが失敗した場合はダミーデータを使用
+                historicalData = generateOHLCData(100, timeFrame);
+                // エラーメッセージを設定
+                set({ 
+                  error: error instanceof Error 
+                    ? `API error: ${error.message}` 
+                    : 'Failed to fetch data from Bitget API'
+                });
+              }
+            } else {
+              // リアルタイムデータを使用しない場合は常にダミーデータを使用
+              console.log('Using dummy data (real-time data disabled)');
+              historicalData = generateOHLCData(100, timeFrame);
+            }
+            
+            set({ data: historicalData, isLoading: false });
+            
+            // リアルタイム更新を開始（リアルタイムデータが有効な場合のみ）
+            if (get().useRealTimeData) {
+              get().startRealTimeUpdates();
+            }
+          } catch (error) {
+            console.error('Error initializing chart:', error);
+            set({ 
+              error: error instanceof Error ? error.message : 'Failed to initialize chart',
+              isLoading: false,
+              // エラー時もダミーデータを設定してUIを表示可能にする
+              data: generateOHLCData(100, timeFrame)
+            });
+          }
         },
 
         updateTimeFrame: async (timeFrame: Timeframe) => {
-          // Implementation of updateTimeFrame
+          const { currentSymbol, bitgetApi, useRealTimeData, exchangeType } = get();
+          
+          set({ isLoading: true, currentTimeFrame: timeFrame });
+          
+          try {
+            // WebSocketの購読を停止
+            get().stopRealTimeUpdates();
+            
+            // 新しいタイムフレームでデータを再取得
+            let historicalData: OHLCData[] = [];
+            
+            if (useRealTimeData && bitgetApi) {
+              try {
+                console.log(`Updating timeframe to ${timeFrame} for ${currentSymbol} (${exchangeType})`);
+                historicalData = await bitgetApi.getHistoricalCandles(currentSymbol, timeFrame, 100);
+              } catch (error) {
+                console.error('Failed to fetch data from Bitget API, using dummy data instead:', error);
+                historicalData = generateOHLCData(100, timeFrame);
+                // エラーメッセージを設定
+                set({ 
+                  error: error instanceof Error 
+                    ? `API error: ${error.message}` 
+                    : 'Failed to fetch data from Bitget API'
+                });
+              }
+            } else {
+              // リアルタイムデータを使用しない場合は常にダミーデータを使用
+              historicalData = generateOHLCData(100, timeFrame);
+            }
+            
+            set({ data: historicalData, isLoading: false });
+            
+            // 新しいタイムフレームでリアルタイム更新を再開（リアルタイムデータが有効な場合のみ）
+            if (useRealTimeData) {
+              get().startRealTimeUpdates();
+            }
+          } catch (error) {
+            console.error('Error updating time frame:', error);
+            set({ 
+              error: error instanceof Error ? error.message : 'Failed to update time frame',
+              isLoading: false,
+              // エラー時もダミーデータを設定してUIを表示可能にする
+              data: generateOHLCData(100, timeFrame)
+            });
+          }
         },
 
         updateSymbol: async (symbol: string) => {
-          // Implementation of updateSymbol
+          const { currentTimeFrame, bitgetApi, useRealTimeData, exchangeType } = get();
+          
+          set({ isLoading: true, currentSymbol: symbol });
+          
+          try {
+            // WebSocketの購読を停止
+            get().stopRealTimeUpdates();
+            
+            // 新しいシンボルでデータを再取得
+            let historicalData: OHLCData[] = [];
+            
+            if (useRealTimeData && bitgetApi) {
+              try {
+                console.log(`Updating symbol to ${symbol} with timeframe ${currentTimeFrame} (${exchangeType})`);
+                historicalData = await bitgetApi.getHistoricalCandles(symbol, currentTimeFrame, 100);
+              } catch (error) {
+                console.error('Failed to fetch data from Bitget API, using dummy data instead:', error);
+                historicalData = generateOHLCData(100, currentTimeFrame);
+                // エラーメッセージを設定
+                set({ 
+                  error: error instanceof Error 
+                    ? `API error: ${error.message}` 
+                    : 'Failed to fetch data from Bitget API'
+                });
+              }
+            } else {
+              // リアルタイムデータを使用しない場合は常にダミーデータを使用
+              historicalData = generateOHLCData(100, currentTimeFrame);
+            }
+            
+            set({ data: historicalData, isLoading: false });
+            
+            // 新しいシンボルでリアルタイム更新を再開（リアルタイムデータが有効な場合のみ）
+            if (useRealTimeData) {
+              get().startRealTimeUpdates();
+            }
+          } catch (error) {
+            console.error('Error updating symbol:', error);
+            set({ 
+              error: error instanceof Error ? error.message : 'Failed to update symbol',
+              isLoading: false,
+              // エラー時もダミーデータを設定してUIを表示可能にする
+              data: generateOHLCData(100, currentTimeFrame)
+            });
+          }
         },
 
-        updateData: (data: OHLCData) => {
-          // Implementation of updateData
+        updateData: (newCandle: OHLCData) => {
+          set((state) => {
+            const existingData = [...state.data];
+            const lastCandleIndex = existingData.findIndex(candle => candle.time === newCandle.time);
+            
+            if (lastCandleIndex !== -1) {
+              // 既存のローソク足を更新
+              existingData[lastCandleIndex] = newCandle;
+            } else {
+              // 新しいローソク足を追加
+              existingData.push(newCandle);
+              // 表示するデータ量を制限（最新の100件のみ表示）
+              if (existingData.length > 100) {
+                existingData.shift();
+              }
+            }
+            
+            return { data: existingData };
+          });
         },
 
         startRealTimeUpdates: () => {
-          // Implementation of startRealTimeUpdates
+          const { bitgetApi, currentSymbol, currentTimeFrame, useRealTimeData } = get();
+          
+          if (!useRealTimeData) {
+            console.log('Real-time updates are disabled');
+            return;
+          }
+          
+          if (!bitgetApi) {
+            console.warn('BitgetAPI client not initialized');
+            return;
+          }
+          
+          // WebSocketを使ってリアルタイムデータの購読を開始
+          try {
+            // ブラウザでのWebSocket接続エラーを回避
+            if (typeof window !== 'undefined') {
+              // リアルタイムデータの受信ハンドラを登録
+              bitgetApi.onKlineUpdate((newCandle) => {
+                get().updateData(newCandle);
+              });
+              
+              // ローソク足データの購読を開始
+              bitgetApi.subscribeToKline(currentSymbol, currentTimeFrame);
+            } else {
+              console.log('WebSocket not supported in current environment');
+            }
+          } catch (error) {
+            console.error('Error starting real-time updates:', error);
+            set({ 
+              error: error instanceof Error ? error.message : 'Failed to start real-time updates'
+            });
+          }
         },
 
         stopRealTimeUpdates: () => {
-          // Implementation of stopRealTimeUpdates
+          const { bitgetApi } = get();
+          
+          if (bitgetApi) {
+            // WebSocketコネクションを切断
+            bitgetApi.disconnectWebSocket();
+          }
         },
 
-        setChartType: (chartType: ChartType) => {
-          set({ chartType });
-        },
-
+        setChartType: (chartType: ChartType) => set({ chartType }),
+        
         toggleRealTimeData: () => {
-          set(state => ({ useRealTimeData: !state.useRealTimeData }));
+          const { useRealTimeData, currentSymbol, currentTimeFrame } = get();
+          
+          // リアルタイムデータの使用を切り替え
+          set({ useRealTimeData: !useRealTimeData });
+          
+          // 切り替え後に再初期化
+          if (!useRealTimeData) {
+            // オンに切り替えた場合、チャートを初期化
+            get().initializeChart(currentSymbol, currentTimeFrame);
+          } else {
+            // オフに切り替えた場合、WebSocketを切断してダミーデータを使用
+            get().stopRealTimeUpdates();
+            const dummyData = generateOHLCData(100, currentTimeFrame);
+            set({ data: dummyData });
+          }
         },
 
+        // 取引種別を設定するアクション
         setExchangeType: (type: ExchangeType) => {
+          const { bitgetApi, currentSymbol, currentTimeFrame } = get();
+          
+          // 現在と同じ取引種別の場合は何もしない
+          if (get().exchangeType === type) return;
+          
           set({ exchangeType: type });
-        },
-
-        // インジケーターの表示/非表示を切り替え
-        toggleIndicator: (type) => {
-          const { indicators = [] } = get();
-          const newIndicators = indicators.map(ind => 
-            ind.type === type 
-              ? { ...ind, visible: !ind.visible } 
-              : ind
-          );
-          set({ indicators: newIndicators });
-        },
-
-        // インジケーターのパラメータを更新
-        updateIndicatorParams: (type, params) => {
-          const { indicators = [] } = get();
-          const newIndicators = indicators.map(ind => 
-            ind.type === type 
-              ? { ...ind, params: { ...ind.params, ...params } } 
-              : ind
-          );
-          set({ indicators: newIndicators });
+          
+          // 既存のAPIクライアントがある場合、取引種別を更新
+          if (bitgetApi) {
+            bitgetApi.setExchangeType(type);
+          }
+          
+          // 取引種別変更後にチャートを再初期化
+          get().initializeChart(currentSymbol, currentTimeFrame);
         }
       }),
       {
@@ -136,12 +313,7 @@ export const useChartStore = create<ChartStoreState>()(
           currentTimeFrame: state.currentTimeFrame,
           chartType: state.chartType,
           useRealTimeData: state.useRealTimeData,
-          exchangeType: state.exchangeType,
-          indicators: state.indicators?.map(ind => ({ 
-            type: ind.type, 
-            visible: ind.visible,
-            params: ind.params
-          }))
+          exchangeType: state.exchangeType
         }),
       }
     ),

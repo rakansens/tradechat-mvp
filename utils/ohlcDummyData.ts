@@ -61,7 +61,7 @@ export function generateOHLCData(count: number, timeframe: Timeframe = "1d") {
     const volumeBase = timeframe === "1d" ? 10000 : timeframe === "4h" ? 5000 : timeframe === "1h" ? 2000 : 1000
 
     data.push({
-      time: date.toISOString(),
+      time: date.getTime(), // ISO文字列ではなくUNIXタイムスタンプ（ミリ秒）を使用
       open,
       high,
       low,
