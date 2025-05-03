@@ -12,16 +12,19 @@ import {
   CancellableRequest
 } from '../types/api';
 
+// 環境変数のインポート
+import { env } from '../config/env';
+
 // 環境判定
-export const IS_DEV = process.env.NODE_ENV === 'development';
+export const IS_DEV = env.environment.isDevelopment;
 export const IS_BROWSER = typeof window !== 'undefined';
 
 // API設定
 export const API_CONFIG: Record<string, ApiEnvironmentConfig> = {
   bitget: {
-    baseUrl: process.env.NEXT_PUBLIC_BITGET_API_URL || 'https://api.bitget.com',
-    wsUrl: process.env.NEXT_PUBLIC_BITGET_WS_URL || 'wss://ws.bitget.com/v2/ws/public',
-    enableDemoMode: false // デモモード無効
+    baseUrl: env.api.bitget.baseUrl,
+    wsUrl: env.api.bitget.wsUrl,
+    enableDemoMode: env.api.bitget.enableDemoMode
   }
 };
 
