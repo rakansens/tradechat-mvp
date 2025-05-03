@@ -5,9 +5,15 @@
  * - APIレスポンスの基本型
  * - APIリクエスト設定
  * - エラーハンドリング関連の型
+ * - 取引所関連の型
  */
 
 import { AxiosRequestConfig, AxiosResponse } from 'axios';
+
+/**
+ * 取引所タイプ
+ */
+export type ExchangeType = 'spot' | 'futures';
 
 /**
  * API応答の基本型

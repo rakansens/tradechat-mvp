@@ -1,9 +1,11 @@
 // store/useMarketStore.ts
 // オーダーブックと市場データを管理するZustandストア
+// 更新: 共通型定義を使用するように変更
 
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import { BitgetApiClient, ExchangeType } from '../services/bitgetApi';
+import { BitgetApiClient } from '../services/bitgetApi';
+import { ExchangeType } from '../types/api';
 import { OrderBookData, TradeData, MarketStatsData, SymbolInfo } from '../types/market';
 
 // APIクライアントインスタンス

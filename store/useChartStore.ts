@@ -1,13 +1,15 @@
 // store/useChartStore.ts
 // 更新: 新しい型定義を使用するチャート関連の状態管理ストア
 // 更新: 一目均衡表とフィボナッチリトレースメントのサポートを追加
+// 更新: 共通型定義を使用するように変更
 
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
 import { generateOHLCData } from "../utils/ohlcDummyData";
 import { getDataPointsForTimeframe } from "../utils/chart";
 import type { ChartType, OHLCData, Timeframe } from "../types/chart";
-import { BitgetApiClient, ExchangeType } from '../services/bitgetApi';
+import { BitgetApiClient } from '../services/bitgetApi';
+import { ExchangeType } from '../types/api';
 
 
 // 初期値の設定

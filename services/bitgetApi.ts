@@ -16,6 +16,7 @@ import {
   IS_DEV,
   IS_BROWSER 
 } from './api';
+import { ExchangeType } from '../types/api';
 
 // API設定は共通モジュールから取得
 const BITGET_API_BASE_URL = API_CONFIG.bitget.baseUrl;
@@ -73,8 +74,7 @@ export const TIMEFRAME_MAP_FUTURES: Record<string, string> = {
   '1w': '1W',
 };
 
-// 取引所タイプ
-export type ExchangeType = 'spot' | 'futures';
+// 取引所タイプは types/api.ts に移動しました
 
 export class BitgetApiClient {
   private credentials: BitgetCredentials;
