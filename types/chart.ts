@@ -82,6 +82,38 @@ export interface FibonacciOptions {
 /**
  * チャートストアの状態型
  */
+/**
+ * タイムフレームマッピング（スポット取引用）
+ */
+export const TIMEFRAME_MAP_SPOT: Record<string, string> = {
+  '1m': '1m',
+  '5m': '5m',
+  '15m': '15m',
+  '30m': '30m',
+  '1h': '1H',
+  '4h': '4H',
+  '6h': '6H',
+  '12h': '12H',
+  '1d': '1D',
+  '1w': '1W',
+};
+
+/**
+ * タイムフレームマッピング（先物取引用・WebSocket/REST 共通）
+ */
+export const TIMEFRAME_MAP_FUTURES: Record<string, string> = {
+  '1m': '1m',
+  '5m': '5m',
+  '15m': '15m',
+  '30m': '30m',
+  '1h': '1H',
+  '4h': '4H',
+  '6h': '6H',
+  '12h': '12H',
+  '1d': '1D',
+  '1w': '1W',
+};
+
 export interface ChartState {
   // 状態
   timeframe: Timeframe;

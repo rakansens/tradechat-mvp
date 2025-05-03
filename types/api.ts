@@ -16,6 +16,15 @@ import { AxiosRequestConfig, AxiosResponse } from 'axios';
 export type ExchangeType = 'spot' | 'futures';
 
 /**
+ * Bitget API認証情報
+ */
+export interface BitgetCredentials {
+  apiKey?: string;
+  secretKey?: string;
+  passphrase?: string;
+}
+
+/**
  * API応答の基本型
  */
 export interface ApiResponse<T = any> {

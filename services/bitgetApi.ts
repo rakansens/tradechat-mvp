@@ -5,7 +5,7 @@
 // 更新: 共通API関数を使用するように変更
 
 import { AxiosRequestConfig, AxiosResponse } from 'axios';
-import { OHLCData } from '../types/chart';
+import { OHLCData, TIMEFRAME_MAP_SPOT, TIMEFRAME_MAP_FUTURES } from '../types/chart';
 import { OrderBookData, OrderBookEntry, BitgetOrderBookResponse } from '../types/market';
 import { handleApiError, handleWebSocketError } from './errorHandler';
 import { 
@@ -16,7 +16,7 @@ import {
   IS_DEV,
   IS_BROWSER 
 } from './api';
-import { ExchangeType } from '../types/api';
+import { ExchangeType, BitgetCredentials } from '../types/api';
 
 // API設定は共通モジュールから取得
 const BITGET_API_BASE_URL = API_CONFIG.bitget.baseUrl;
@@ -40,39 +40,9 @@ const createWebSocket = (url: string) => {
   }
 };
 
-export interface BitgetCredentials {
-  apiKey?: string;
-  secretKey?: string;
-  passphrase?: string;
-}
+// BitgetCredentialsは types/api.ts に移動しました
 
-// タイムフレームマッピング（スポット取引用）
-export const TIMEFRAME_MAP_SPOT: Record<string, string> = {
-  '1m': '1m',
-  '5m': '5m',
-  '15m': '15m',
-  '30m': '30m',
-  '1h': '1H',
-  '4h': '4H',
-  '6h': '6H',
-  '12h': '12H',
-  '1d': '1D',
-  '1w': '1W',
-};
-
-// タイムフレームマッピング（先物取引用・WebSocket/REST 共通）
-export const TIMEFRAME_MAP_FUTURES: Record<string, string> = {
-  '1m': '1m',
-  '5m': '5m',
-  '15m': '15m',
-  '30m': '30m',
-  '1h': '1H',
-  '4h': '4H',
-  '6h': '6H',
-  '12h': '12H',
-  '1d': '1D',
-  '1w': '1W',
-};
+// タイムフレームマッピングは types/chart.ts に移動しました
 
 // 取引所タイプは types/api.ts に移動しました
 
