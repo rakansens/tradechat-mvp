@@ -35,11 +35,15 @@ interface MarketState {
   isLoadingSymbols: boolean;
   symbolsError: string | null;
   
+  // デモモード状態
+  isDemoMode: boolean;
+  
   // アクション
   setCurrentSymbol: (symbol: string) => void;
   setExchangeType: (type: ExchangeType) => void;
   fetchOrderBook: () => Promise<void>;
   clearOrderBook: () => void;
+  setDemoMode: (isDemo: boolean) => void;
 }
 
 // Zustandストア作成
@@ -69,6 +73,9 @@ const useMarketStore = create<MarketState>()(
       symbols: [],
       isLoadingSymbols: false,
       symbolsError: null,
+      
+      // デモモード初期状態
+      isDemoMode: false,
       
       // 現在のシンボルを設定
       setCurrentSymbol: (symbol: string) => {
@@ -118,20 +125,40 @@ const useMarketStore = create<MarketState>()(
           // 取得したデータを状態に設定
           set({
             orderBook,
-            isLoadingOrderBook: false
+            isLoadingOrderBook: false,
+            isDemoMode: false // 正常取得の場合はデモモードをオフ
           });
         } catch (error: any) {
           console.error('Failed to fetch order book:', error);
-          set({
-            orderBookError: error.message || 'オーダーブックの取得に失敗しました',
-            isLoadingOrderBook: false
-          });
+          
+          // デモモードの生成されたデータを使用
+          try {
+            const demoOrderBook = await api.getOrderBook(currentSymbol, exchangeType);
+            set({
+              orderBook: demoOrderBook,
+              orderBookError: `${error.message} (デモデータを表示中)`,
+              isLoadingOrderBook: false,
+              isDemoMode: true // デモモードをオン
+            });
+          } catch (demoError) {
+            // デモデータの取得も失敗した場合
+            set({
+              orderBookError: `${error.message} (データ取得に失敗しました)`,
+              isLoadingOrderBook: false,
+              isDemoMode: true
+            });
+          }
         }
       },
       
       // オーダーブックデータをクリア
       clearOrderBook: () => {
         set({ orderBook: null });
+      },
+      
+      // デモモード設定
+      setDemoMode: (isDemo: boolean) => {
+        set({ isDemoMode: isDemo });
       }
     }),
     { name: 'market-store' }
