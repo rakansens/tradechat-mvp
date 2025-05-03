@@ -15,7 +15,7 @@ export type ChartType = "candles" | "line" | "bar";
  * OHLC（始値・高値・安値・終値）データの型
  */
 export interface OHLCData {
-  time: string;        // ISO形式の時間文字列
+  time: number;        // UNIXタイムスタンプ (ミリ秒)
   open: number;        // 始値
   high: number;        // 高値
   low: number;         // 安値
