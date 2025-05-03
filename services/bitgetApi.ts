@@ -1,6 +1,10 @@
-import axios from 'axios';
+// services/bitgetApi.ts
+// 更新: エラーハンドリングの強化と型安全性の向上
+
+import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
 import { OHLCData } from '../types/chart';
 import { OrderBookData, OrderBookEntry, BitgetOrderBookResponse } from '../types/market';
+import { handleApiError, handleWebSocketError } from './errorHandler';
 
 // API設定
 const BITGET_API_BASE_URL = 'https://api.bitget.com';
@@ -87,6 +91,14 @@ export class BitgetApiClient {
   }
 
   // REST APIを使用して過去のローソク足データを取得
+  /**
+   * 過去のローソク足データを取得する
+   * @param symbol 通貨ペア (例: 'BTC/USDT')
+   * @param timeframe タイムフレーム (例: '1m', '1h')
+   * @param limit 取得件数
+   * @param endTime 終了時間 (オプション)
+   * @returns ローソク足データの配列
+   */
   async getHistoricalCandles(
     symbol: string,
     timeframe: string,
@@ -96,7 +108,7 @@ export class BitgetApiClient {
     try {
       // シンボルを正しい形式に変換（スラッシュを削除）
       const formattedSymbol = symbol.replace('/', '').toUpperCase();
-      let response;
+      let response: AxiosResponse;
 
       if (isBrowser) {
         // ブラウザ環境ではNext.jsのAPIルートを使用
@@ -109,7 +121,7 @@ export class BitgetApiClient {
         });
 
         const url = `/api/bitget/candles?${params.toString()}`;
-        console.log(`Browser API Request (Candles): ${url}`);
+        if (IS_DEV) console.log(`Browser API Request (Candles): ${url}`);
         response = await axios.get(url);
       } else {
         // サーバーサイド環境では直接BitgetのAPIを呼び出す
@@ -145,26 +157,17 @@ export class BitgetApiClient {
           };
         }
 
-        console.log(`Server API Request (${this.exchangeType} Candles):`, endpoint, params);
+        if (IS_DEV) console.log(`Server API Request (${this.exchangeType} Candles):`, endpoint, params);
         const url = `${BITGET_API_BASE_URL}${endpoint}`;
         response = await axios.get(url, { params });
       }
 
-      console.log('API response:', response.data);
-
-      // エラーハンドリングを強化
-      if (!response.data) {
-        console.error('Empty API response');
-        if (ENABLE_DEMO_MODE_ON_ERROR) {
-          return this.generateDemoCandles(limit);
-        }
-        throw new Error('Empty API response');
-      }
+      if (IS_DEV) console.log('API response:', response.data);
 
       // V2 APIのレスポンス形式に合わせて処理
-      if (response.data.data && Array.isArray(response.data.data)) {
+      if (response.data?.data && Array.isArray(response.data.data)) {
         // Bitget V2 APIレスポンスからOHLCデータを変換
-        return response.data.data.map((candle: any) => ({
+        return response.data.data.map((candle: string[]) => ({
           time: parseInt(candle[0]), // タイムスタンプ (ミリ秒)
           open: parseFloat(candle[1]),
           high: parseFloat(candle[2]),
@@ -174,25 +177,27 @@ export class BitgetApiClient {
         }));
       }
 
-      // エラーの場合、デモデータを返す
-      if (ENABLE_DEMO_MODE_ON_ERROR) {
-        console.log('Falling back to demo candle data');
-        return this.generateDemoCandles(limit);
-      }
-
-      const errorMsg = response.data.msg || 'Unknown error';
-      console.error(`API error: ${errorMsg}`, response.data);
-      throw new Error(`API error: ${errorMsg}`);
+      // レスポンスが期待した形式でない場合
+      const errorMsg = response.data?.msg || 'Invalid API response format';
+      throw new Error(errorMsg);
+      
     } catch (error) {
-      console.error('Error fetching historical candles:', error);
+      // グローバルエラーハンドラーを使用
+      handleApiError(error, {
+        title: 'チャートデータ取得エラー',
+        description: `${symbol} ${timeframe}のデータ取得に失敗しました`,
+        // 本番環境ではトースト通知を抑制（オプション）
+        showToast: IS_DEV
+      });
       
       // エラー時にデモデータを返す
       if (ENABLE_DEMO_MODE_ON_ERROR) {
-        console.log('Falling back to demo candle data due to error');
+        if (IS_DEV) console.log('Falling back to demo candle data due to error');
+        this.isInDemoMode = true;
         return this.generateDemoCandles(limit);
       }
       
-      // エラーを伝播
+      // デモモードが無効な場合はエラーを伝播
       throw error;
     }
   }
@@ -250,6 +255,12 @@ export class BitgetApiClient {
   }
 
   // オーダーブック取得関数を追加
+  /**
+   * オーダーブックデータを取得する
+   * @param symbol 通貨ペア (例: 'BTC/USDT')
+   * @param exchangeType 取引種別 (デフォルトはインスタンスの設定値)
+   * @returns オーダーブックデータ
+   */
   async getOrderBook(
     symbol: string,
     exchangeType: ExchangeType = this.exchangeType
@@ -257,7 +268,7 @@ export class BitgetApiClient {
     try {
       // シンボルを正しい形式に変換（スラッシュを削除）
       const formattedSymbol = symbol.replace('/', '').toUpperCase();
-      let response;
+      let response: AxiosResponse;
 
       if (isBrowser) {
         // ブラウザ環境ではNext.jsのAPIルートを使用
@@ -266,9 +277,8 @@ export class BitgetApiClient {
           type: exchangeType,
         });
 
-        // URLのパスを修正（最後にスラッシュを追加）
         const url = `/api/bitget/orderbook?${params.toString()}`;
-        console.log(`Browser API Request (OrderBook): ${url}`);
+        if (IS_DEV) console.log(`Browser API Request (OrderBook): ${url}`);
         response = await axios.get(url);
       } else {
         // サーバーサイド環境では直接BitgetのAPIを呼び出す
@@ -292,31 +302,24 @@ export class BitgetApiClient {
           };
         }
 
-        console.log(`Server API Request (OrderBook):`, endpoint, params);
+        if (IS_DEV) console.log(`Server API Request (OrderBook):`, endpoint, params);
         const url = `${BITGET_API_BASE_URL}${endpoint}`;
         response = await axios.get(url, { params });
       }
 
-      // レスポンスのバリデーション
-      if (!response.data) {
-        if (ENABLE_DEMO_MODE_ON_ERROR) {
-          return this.generateDemoOrderBook(symbol);
-        }
-        throw new Error('Empty API response');
-      }
-
       // V2 APIのレスポンス形式に合わせて処理
       // エラー応答の処理
-      if (response.data.code && response.data.code !== '00000') {
-        console.error(`Bitget API Error: ${response.data.msg || 'Unknown error'}`);
-        if (ENABLE_DEMO_MODE_ON_ERROR) {
-          return this.generateDemoOrderBook(symbol);
-        }
-        throw new Error(`Bitget API Error: ${response.data.msg || 'Unknown error'}`);
+      if (response.data?.code && response.data.code !== '00000') {
+        const errorMsg = response.data.msg || 'Unknown API error';
+        throw new Error(`Bitget API Error: ${errorMsg}`);
       }
 
       // レスポンスデータの変換
-      const responseData = response.data.data || response.data;
+      const responseData = response.data?.data || response.data;
+      
+      if (!responseData || !responseData.asks || !responseData.bids) {
+        throw new Error('Invalid orderbook data format');
+      }
       
       // OrderBookDataに変換
       return {
@@ -331,15 +334,23 @@ export class BitgetApiClient {
           amount: parseFloat(bid[1])
         }))
       };
-    } catch (error: any) {
-      console.error('Error fetching order book:', error);
+    } catch (error) {
+      // グローバルエラーハンドラーを使用
+      handleApiError(error, {
+        title: 'オーダーブック取得エラー',
+        description: `${symbol} のオーダーブック取得に失敗しました`,
+        // 本番環境ではトースト通知を抑制（オプション）
+        showToast: IS_DEV
+      });
       
       // エラー時にデモデータを返す
       if (ENABLE_DEMO_MODE_ON_ERROR) {
+        this.isInDemoMode = true;
         return this.generateDemoOrderBook(symbol);
       }
       
-      throw new Error(`Failed to fetch order book: ${error.message}`);
+      // デモモードが無効な場合はエラーを伝播
+      throw error;
     }
   }
 
@@ -420,24 +431,35 @@ export class BitgetApiClient {
         }
       };
 
-      this.ws.onerror = (error) => {
-        console.error('BitgetWS: Error:', error);
-        
-        // エラーオブジェクトの詳細をログに出力
-        try {
-          console.error('BitgetWS: Error details:', JSON.stringify(error));
-        } catch (e) {
-          console.error('BitgetWS: Error details could not be stringified');
-        }
-        
-        // 再接続を試みる
-        this.reconnect();
+      // --- onerror ---
+      // ブラウザは接続断時などに中身のない ErrorEvent を投げるだけなので、
+      // ここでは詳細ログを出さず onclose に任せる。
+      this.ws.onerror = (ev) => {
+        // グローバルエラーハンドラーを使用
+        handleWebSocketError(ev, {
+          title: 'WebSocket接続エラー',
+          // 本番環境ではトースト通知を抑制
+          showToast: false,
+          // 開発環境のみコンソールに出力
+          logToConsole: IS_DEV
+        });
+        // oncloseイベントが発火するので、ここでは何もしない
       };
 
       this.ws.onclose = (ev) => {
-        console.log(`BitgetWS: Connection closed (code=${ev.code}, reason=${ev.reason})`);
+        // 正常終了（コード1000）の場合は警告しない
+        const isNormalClosure = ev.code === 1000;
+        
+        if (IS_DEV || !isNormalClosure) {
+          console.log(`BitgetWS: Connection closed (code=${ev.code}, reason=${ev.reason})`);
+        }
+        
         this.cleanup();
-        this.reconnect();
+        
+        // 異常終了の場合のみ再接続を試みる
+        if (!isNormalClosure) {
+          this.reconnect();
+        }
       };
     } catch (error) {
       console.error('Error connecting to WebSocket:', error);
@@ -572,7 +594,8 @@ export class BitgetApiClient {
 
     // エラーメッセージの処理
     if (message.code && message.code !== '0') {
-      console.error(`BitgetWS: Error code ${message.code}, message: ${message.msg}`);
+      // 30016 や 30015 は購読パラメータ重複などの軽微エラーなので warn に落とす
+      console.warn(`BitgetWS: code=${message.code}, msg=${message.msg}`);
       return;
     }
 
@@ -641,14 +664,22 @@ export class BitgetApiClient {
     }
   }
 
-  // WebSocketの再接続
-  private reconnect() {
+  /**
+   * WebSocketの再接続を試みる
+   * @param delay 再接続までの待機時間（ミリ秒）
+   */
+  private reconnect(delay: number = 5000) {
     if (!this.reconnectInterval) {
+      if (IS_DEV) console.log(`BitgetWS: Attempting to reconnect in ${delay/1000}s...`);
+      
       this.reconnectInterval = setTimeout(() => {
-        console.log('BitgetWS: Attempting to reconnect...');
-        this.connectWebSocket();
+        // 最後に使用していたシンボルとタイムフレームで再接続
+        const symbol = this.lastSymbol || 'BTC/USDT';
+        const timeframe = this.lastTimeframe || '1m';
+        
+        this.connectWebSocket(symbol, timeframe, this.exchangeType);
         this.reconnectInterval = null;
-      }, 5000);
+      }, delay);
     }
   }
 
