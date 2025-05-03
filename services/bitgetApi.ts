@@ -5,7 +5,8 @@ import { OrderBookData, OrderBookEntry, BitgetOrderBookResponse } from '../types
 
 // API設定
 const BITGET_API_BASE_URL = 'https://api.bitget.com';
-const BITGET_WS_URL = 'wss://ws.bitget.com/spot/v1/stream';
+// V2 WebSocketエンドポイントに更新
+const BITGET_WS_URL = 'wss://ws.bitget.com/v2/ws';
 
 // デモモード設定
 const ENABLE_DEMO_MODE_ON_ERROR = true; // エラー時のデモモード有効
@@ -449,32 +450,28 @@ export class BitgetApiClient {
       ? TIMEFRAME_MAP_SPOT[timeframe] || '1min'
       : TIMEFRAME_MAP_FUTURES[timeframe] || '1m';
     
-    // WebSocketのサブスクリプションメッセージを構築
-    let subscriptionMessage;
+    // V2 WebSocket API形式に合わせてサブスクリプションメッセージを構築
+    let instType, instId;
     
     if (this.exchangeType === 'spot') {
-      subscriptionMessage = {
-        op: 'subscribe',
-        args: [
-          {
-            instType: 'sp',
-            channel: 'candle' + bitgetTimeframe,
-            instId: formattedSymbol,
-          },
-        ],
-      };
+      instType = 'SP'; // V2では大文字に変更
+      instId = formattedSymbol;
     } else {
-      subscriptionMessage = {
-        op: 'subscribe',
-        args: [
-          {
-            instType: 'mc',
-            channel: 'candle' + bitgetTimeframe,
-            instId: `${formattedSymbol}_UMCBL`,
-          },
-        ],
-      };
+      instType = 'MC'; // V2では大文字に変更
+      instId = `${formattedSymbol}_UMCBL`;
     }
+    
+    // V2 WebSocket API形式のサブスクリプションメッセージ
+    const subscriptionMessage = {
+      op: 'subscribe',
+      args: [
+        {
+          instType: instType,
+          channel: 'candle' + bitgetTimeframe,
+          instId: instId
+        }
+      ]
+    };
 
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify(subscriptionMessage));
@@ -509,13 +506,13 @@ export class BitgetApiClient {
 
   // WebSocketメッセージのハンドリング
   private handleWebSocketMessage(message: any) {
-    // pingメッセージに対するpongレスポンス
-    if (message.event === 'ping') {
-      this.sendPong(message.ts);
+    // V2 APIのpingメッセージに対するpongレスポンス
+    if (message.op === 'ping') {
+      this.sendPong(message.ts || Date.now());
       return;
     }
 
-    // ローソク足データの処理
+    // V2 APIのローソク足データの処理
     if (message.data && message.arg && message.arg.channel && message.arg.channel.startsWith('candle')) {
       const klineData = this.parseKlineData(message);
       if (klineData) {
@@ -546,7 +543,7 @@ export class BitgetApiClient {
     }
   }
 
-  // WebSocketにpingメッセージを送信
+  // WebSocketにpingメッセージを送信 (V2 API形式)
   private sendPing() {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       const pingMessage = {
@@ -557,7 +554,7 @@ export class BitgetApiClient {
     }
   }
 
-  // pingメッセージに対するpongレスポンス
+  // pingメッセージに対するpongレスポンス (V2 API形式)
   private sendPong(ts: string | number) {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       const pongMessage = {

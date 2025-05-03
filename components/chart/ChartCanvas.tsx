@@ -194,10 +194,24 @@ export default function ChartCanvas() {
   // データの更新を監視
   useEffect(() => {
     if (!chartInstanceRef.current) return;
+    
+    // データを時間順（昇順）にソート
+    const sortedData = [...data].sort((a, b) => a.time - b.time);
+    
+    // データが空でないことを確認
+    if (sortedData.length === 0) return;
+    
+    // データが時間順に並んでいるか検証（デバッグ用）
+    for (let i = 1; i < sortedData.length; i++) {
+      if (sortedData[i].time < sortedData[i-1].time) {
+        console.warn('データが時間順になっていません:', sortedData[i-1].time, sortedData[i].time);
+        break;
+      }
+    }
 
     if (chartType === "candles" && candleSeries.current) {
       candleSeries.current.setData(
-        data.map((item) => ({
+        sortedData.map((item) => ({
           time: (item.time / 1000) as UTCTimestamp,
           open: item.open,
           high: item.high,
@@ -207,14 +221,14 @@ export default function ChartCanvas() {
       );
     } else if (chartType === "line" && lineSeries.current) {
       lineSeries.current.setData(
-        data.map((item) => ({
+        sortedData.map((item) => ({
           time: (item.time / 1000) as UTCTimestamp,
           value: item.close,
         }))
       );
     } else if (chartType === "area" && areaSeries.current) {
       areaSeries.current.setData(
-        data.map((item) => ({
+        sortedData.map((item) => ({
           time: (item.time / 1000) as UTCTimestamp,
           value: item.close,
         }))

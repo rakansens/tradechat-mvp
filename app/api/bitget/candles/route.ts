@@ -52,7 +52,8 @@ export async function GET(req: NextRequest) {
       // 先物取引用V2 API
       endpoint = '/api/v2/mix/market/candles';
       // 先物取引の場合、シンボルに_UMCBLを追加（BitgetのAPI仕様）
-      const futuresSymbol = symbol.endsWith('_UMCBL') ? symbol : `${symbol}_UMCBL`;
+      // 注意: Bitget APIはシンボル名が大文字小文字を区別する
+      const futuresSymbol = `${symbol}_UMCBL`;
       params = {
         symbol: futuresSymbol,
         granularity: convertTimeframeForBitgetV2(timeframe),
@@ -64,19 +65,19 @@ export async function GET(req: NextRequest) {
     const apiUrl = `${BITGET_API_BASE_URL}${endpoint}`;
     console.log('Calling Bitget API:', apiUrl, params);
 
-    // スタブデータ（テスト用）- 時間順でソートされていることを確認
+    // スタブデータ（テスト用）- 時間順で昇順（古い順）にソートされていることを確認
     const currentTime = Date.now();
     const stubData = {
       code: '00000',
       msg: 'success',
       requestTime: currentTime,
       data: [
-        // 時間が新しい順（降順）で並べる
-        [currentTime, 96500, 96600, 96400, 96550, 100.5],  // [timestamp, open, high, low, close, volume]
-        [currentTime - 86400000, 96400, 96500, 96300, 96400, 95.2], // 1日前
-        [currentTime - 86400000 * 2, 96300, 96450, 96200, 96350, 88.7], // 2日前
-        [currentTime - 86400000 * 3, 96250, 96400, 96100, 96300, 90.3], // 3日前
-        [currentTime - 86400000 * 4, 96200, 96300, 96000, 96250, 85.1]  // 4日前
+        // 時間が古い順（昇順）で並べる
+        [currentTime - 86400000 * 4, 96200, 96300, 96000, 96250, 85.1],  // 4日前
+        [currentTime - 86400000 * 3, 96250, 96400, 96100, 96300, 90.3],  // 3日前
+        [currentTime - 86400000 * 2, 96300, 96450, 96200, 96350, 88.7],  // 2日前
+        [currentTime - 86400000, 96400, 96500, 96300, 96400, 95.2],      // 1日前
+        [currentTime, 96500, 96600, 96400, 96550, 100.5]                 // 最新
       ]
     };
 
