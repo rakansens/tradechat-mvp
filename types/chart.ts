@@ -10,7 +10,7 @@ export type Timeframe = "1m" | "5m" | "15m" | "1h" | "4h" | "1d";
 /**
  * チャートの表示タイプ
  */
-export type ChartType = "candles" | "line" | "bar";
+export type ChartType = "candles" | "line" | "bar" | "area";
 
 /**
  * OHLC（始値・高値・安値・終値）データの型

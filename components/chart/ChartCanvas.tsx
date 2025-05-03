@@ -122,8 +122,7 @@ export default function ChartCanvas() {
   const { 
     data, 
     currentSymbol, 
-    currentTimeFrame,
-    fetchData
+    currentTimeFrame
   } = useChartDataStore();
   
   // 設定関連の状態
@@ -156,9 +155,6 @@ export default function ChartCanvas() {
   // チャートの初期化と更新
   useEffect(() => {
     if (!chartRef.current) return;
-
-    // 初期チャートデータを取得
-    fetchData(currentSymbol, currentTimeFrame);
 
     // チャートコンテナのサイズを取得
     const chartContainer = chartRef.current;
@@ -210,7 +206,7 @@ export default function ChartCanvas() {
           }))
         );
       }
-    } else if (chartType === "line") {
+    } else if (chartType === "line" as ChartType) {
       lineSeries.current = chart.addLineSeries({
         color: "#2962FF",
         lineWidth: 2,
@@ -224,7 +220,7 @@ export default function ChartCanvas() {
           }))
         );
       }
-    } else if (chartType === "area") {
+    } else if (chartType === "area" as ChartType) {
       areaSeries.current = chart.addAreaSeries({
         lineColor: "#2962FF",
         topColor: "rgba(41, 98, 255, 0.28)",
@@ -283,14 +279,14 @@ export default function ChartCanvas() {
           close: item.close,
         }))
       );
-    } else if (chartType === "line" && lineSeries.current) {
+    } else if (chartType === "line" as ChartType && lineSeries.current) {
       lineSeries.current.setData(
         sortedData.map((item) => ({
           time: (item.time / 1000) as UTCTimestamp,
           value: item.close,
         }))
       );
-    } else if (chartType === "area" && areaSeries.current) {
+    } else if (chartType === "area" as ChartType && areaSeries.current) {
       areaSeries.current.setData(
         sortedData.map((item) => ({
           time: (item.time / 1000) as UTCTimestamp,

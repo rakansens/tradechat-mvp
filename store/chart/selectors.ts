@@ -1,11 +1,16 @@
 // store/chart/selectors.ts
-// 作成: メモ化されたセレクター関数
+// 更新: メモ化されたセレクター関数
 // 
 // このファイルはZustandストアのパフォーマンスを向上させるためのメモ化されたセレクター関数を提供します。
 
+// reselectパッケージからcreateSelectorをインポート
 import { createSelector } from 'reselect';
+
+// チャートデータの型定義
 import { OHLCData } from '@/types/chart';
-import { calculateSMA, calculateRSI, calculateMACD } from '@/utils/chartUtils';
+
+// チャートユーティリティ関数をインポート
+import * as chartUtils from '@/utils/chartUtils';
 
 // チャートデータセレクター
 export const selectChartData = (state: { data: OHLCData[] }) => state.data;
@@ -41,7 +46,7 @@ export const selectSMA = (period: number) =>
     [selectChartData],
     (data: OHLCData[]): number[] => {
       if (!data || data.length === 0) return [];
-      return calculateSMA(data.map(d => d.close), period);
+      return chartUtils.calculateSMA(data.map(d => d.close), period);
     }
   );
 
@@ -51,7 +56,7 @@ export const selectRSI = (period: number = 14) =>
     [selectChartData],
     (data: OHLCData[]): number[] => {
       if (!data || data.length < period + 1) return [];
-      return calculateRSI(data.map(d => d.close), period);
+      return chartUtils.calculateRSI(data.map(d => d.close), period);
     }
   );
 
@@ -61,7 +66,7 @@ export const selectMACD = (fastPeriod: number = 12, slowPeriod: number = 26, sig
     [selectChartData],
     (data: OHLCData[]) => {
       if (!data || data.length < slowPeriod + signalPeriod) return { macd: [], signal: [], histogram: [] };
-      return calculateMACD(data.map(d => d.close), fastPeriod, slowPeriod, signalPeriod);
+      return chartUtils.calculateMACD(data.map(d => d.close), fastPeriod, slowPeriod, signalPeriod);
     }
   );
 
