@@ -1,5 +1,5 @@
 // store/index.ts
-// 更新: 分割されたチャートストアのみをエクスポートするように更新
+// 更新: 分割されたチャートストアとセレクターをエクスポートするように更新
 
 // 分割されたチャートストアをエクスポート
 export { 
@@ -9,6 +9,20 @@ export {
   useIndicatorStore,
   useDrawingToolStore 
 } from './chart';
+
+// メモ化されたセレクターをエクスポート
+export {
+  selectChartData,
+  selectCurrentPrice,
+  selectPriceChangePercent,
+  selectSMA,
+  selectRSI,
+  selectMACD,
+  selectVolume,
+  selectHighPrice,
+  selectLowPrice,
+  selectDateRange
+} from './chart/selectors';
 
 // その他のストアをエクスポート
 export { useEntryStore } from './useEntryStore';

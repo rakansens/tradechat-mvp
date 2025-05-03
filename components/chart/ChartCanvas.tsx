@@ -46,13 +46,20 @@ import {
   FibonacciLineHandles
 } from "./drawing-tools/fibonacci"; // Import Fibonacci functions
 import { RSI as RsiIndicator } from 'technicalindicators'; // Import directly for calculation
-// 分割されたストアをインポート
+// 分割されたストアとセレクターをインポート
 import { 
   useChartDataStore,
   useChartConfigStore,
   useIndicatorStore,
   useDrawingToolStore,
-  useRealTimeStore
+  useRealTimeStore,
+  // メモ化されたセレクター
+  selectCurrentPrice,
+  selectHighPrice,
+  selectLowPrice,
+  selectRSI,
+  selectMACD,
+  selectSMA
 } from "../../store";
 import { createChart, ColorType } from "lightweight-charts";
 
@@ -134,6 +141,18 @@ export default function ChartCanvas() {
     activeDrawingTools 
   } = useDrawingToolStore();
 
+  // メモ化されたセレクターを使用して価格データを取得
+  const currentPrice = useChartDataStore(selectCurrentPrice);
+  const highPrice = useChartDataStore(selectHighPrice);
+  const lowPrice = useChartDataStore(selectLowPrice);
+  
+  // MACDデータを取得
+  const macdData = useChartDataStore(selectMACD());
+  
+  // SMAデータを取得
+  const sma20Data = useChartDataStore(selectSMA(20));
+  const sma50Data = useChartDataStore(selectSMA(50));
+  
   // チャートの初期化と更新
   useEffect(() => {
     if (!chartRef.current) return;
@@ -307,19 +326,18 @@ export default function ChartCanvas() {
     
     // RSIインジケーターの表示切替
     if (activeIndicators.includes('rsi')) {
-      // RSIを表示
-      const prices = sortedData.map(item => item.close);
+      // メモ化されたRSIセレクターを使用
       const times = sortedData.map(item => (item.time / 1000) as UTCTimestamp);
-      const rsiValues = RsiIndicator.calculate({ values: prices, period: 14 });
+      const rsiValues = useChartDataStore(selectRSI(14));
       
       // RSIデータを時間と結合
-      const rsiData = times.slice(prices.length - rsiValues.length).map((time, i) => ({
+      const formattedRsiData = times.slice(times.length - rsiValues.length).map((time, i) => ({
         time,
-        value: rsiValues[i]
+        value: rsiValues[i] || 0
       }));
       
       // パネルインデックスを指定して1を渡す（メインチャートの下に表示）
-      addOrUpdateRsiSeries(chart, rsiData, 1, rsiSeries);
+      addOrUpdateRsiSeries(chart, formattedRsiData, 1, rsiSeries);
     } else if (rsiSeries.current) {
       // RSIを非表示
       chart.removeSeries(rsiSeries.current);
@@ -328,10 +346,19 @@ export default function ChartCanvas() {
     
     // MACDインジケーターの表示切替
     if (activeIndicators.includes('macd')) {
-      // MACDを表示
-      const prices = sortedData.map(item => item.close);
+      // メモ化されたMACDセレクターを使用
       const times = sortedData.map(item => (item.time / 1000) as UTCTimestamp);
-      const macdData = calculateMacdValues(prices, 12, 26, 9); // パラメータを個別に渡す
+      const macdValues = useChartDataStore(selectMACD());
+      
+      // MACDデータを正しい形式に変換
+      const convertedMacdData = [];
+      for (let i = 0; i < macdValues.macd.length; i++) {
+        convertedMacdData.push({
+          macd: macdValues.macd[i],
+          signal: macdValues.signal[i],
+          histogram: macdValues.histogram[i]
+        });
+      }
       
       // 時間データとMACDデータを結合
       const alignedData = alignMacdData(
@@ -339,7 +366,7 @@ export default function ChartCanvas() {
           time: (item.time / 1000) as UTCTimestamp, 
           close: item.close 
         })),
-        macdData
+        convertedMacdData
       );
       
       // MACDシリーズの初期化

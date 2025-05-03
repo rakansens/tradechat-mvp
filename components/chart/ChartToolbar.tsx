@@ -10,6 +10,9 @@ import {
   useIndicatorStore,
   useDrawingToolStore,
   useRealTimeStore,
+  // メモ化されたセレクター
+  selectCurrentPrice,
+  selectPriceChangePercent,
   // その他のストア
   useUIStore, 
   useEntryStore 
@@ -51,11 +54,14 @@ export default function ChartToolbar({}: ChartToolbarProps) {
   const {
     currentSymbol,
     currentTimeFrame,
-    data,
     error,
     updateTimeFrame,
     updateSymbol
   } = useChartDataStore();
+  
+  // メモ化されたセレクターを使用
+  const currentPrice = useChartDataStore(selectCurrentPrice);
+  const priceChangePercent = useChartDataStore(selectPriceChangePercent);
   
   // チャート設定関連
   const {
@@ -127,9 +133,20 @@ export default function ChartToolbar({}: ChartToolbarProps) {
           </Badge>
           
           {/* 最新価格表示 */}
-          {data && data.length > 0 && (
+          {currentPrice > 0 && (
             <Badge variant="outline" className="font-mono text-xs py-0.5 px-1.5 ml-2" style={{ backgroundColor: theme.background.tertiary, borderColor: theme.border.light, color: theme.text.primary }}>
-              ${data[data.length - 1].close.toLocaleString('en-US')}
+              ${currentPrice.toLocaleString('en-US')}
+            </Badge>
+          )}
+          
+          {/* 価格変化率表示 */}
+          {priceChangePercent !== 0 && (
+            <Badge variant="outline" className="font-mono text-xs py-0.5 px-1.5 ml-2" style={{ 
+              backgroundColor: theme.background.tertiary, 
+              borderColor: theme.border.light, 
+              color: priceChangePercent >= 0 ? theme.accent.green : theme.accent.red 
+            }}>
+              {priceChangePercent >= 0 ? '+' : ''}{priceChangePercent.toFixed(2)}%
             </Badge>
           )}
         </div>
