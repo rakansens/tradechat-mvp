@@ -1,11 +1,12 @@
 // store/useChartStore.ts
 // 更新: 新しい型定義を使用するチャート関連の状態管理ストア
+// 更新: 一目均衡表とフィボナッチリトレースメントのサポートを追加
 
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
 import { generateOHLCData } from "@/utils/ohlcDummyData";
 import { getDataPointsForTimeframe } from "@/utils/chart";
-import type { ChartType, OHLCData, Timeframe } from "@/types/chart";
+import type { ChartType, OHLCData, Timeframe, TechnicalIndicator } from "@/types/chart";
 import { BitgetApiClient, ExchangeType } from '../services/bitgetApi';
 
 
@@ -15,6 +16,16 @@ const initialOhlcData: OHLCData[] = generateOHLCData(
   getDataPointsForTimeframe(initialTimeframe),
   initialTimeframe
 );
+
+// デフォルトのインジケーター設定
+const initialIndicators: TechnicalIndicator[] = [
+  { type: "ma", params: { period: 20 }, visible: true },
+  { type: "bollinger", params: { period: 20, stdDev: 2 }, visible: true },
+  { type: "rsi", params: { period: 14 }, visible: true },
+  { type: "macd", params: { fast: 12, slow: 26, signal: 9 }, visible: true },
+  { type: "ichimoku", params: { tenkan: 9, kijun: 26, senkou: 52 }, visible: false },
+  { type: "fibonacci", params: { auto: 1 }, visible: false }
+];
 
 interface ChartStoreState {
   data: OHLCData[];
@@ -26,6 +37,7 @@ interface ChartStoreState {
   chartType: ChartType;
   useRealTimeData: boolean; // リアルタイムデータを使用するかのフラグ
   exchangeType: ExchangeType; // 取引種別（スポットまたは先物）
+  indicators: TechnicalIndicator[]; // テクニカル指標の設定
   
   // アクション
   initializeChart: (symbol: string, timeFrame: Timeframe) => Promise<void>;
@@ -37,6 +49,8 @@ interface ChartStoreState {
   setChartType: (chartType: ChartType) => void;
   toggleRealTimeData: () => void; // リアルタイムデータの使用を切り替える
   setExchangeType: (type: ExchangeType) => void; // 取引種別を設定
+  toggleIndicator: (type: TechnicalIndicator["type"]) => void; // インジケーターの表示/非表示を切り替え
+  updateIndicatorParams: (type: TechnicalIndicator["type"], params: Record<string, number>) => void; // インジケーターのパラメータを更新
 }
 
 // チャートストアの作成
@@ -53,6 +67,7 @@ export const useChartStore = create<ChartStoreState>()(
         chartType: "candles" as ChartType,
         useRealTimeData: true, // リアルタイムデータをデフォルトで有効に変更
         exchangeType: 'spot', // デフォルトはスポット取引
+        indicators: initialIndicators, // インジケーター設定を初期化
 
         // アクション
         initializeChart: async (symbol: string, timeFrame: Timeframe) => {
@@ -80,16 +95,38 @@ export const useChartStore = create<ChartStoreState>()(
         },
 
         setChartType: (chartType: ChartType) => {
-          // Implementation of setChartType
+          set({ chartType });
         },
 
         toggleRealTimeData: () => {
-          // Implementation of toggleRealTimeData
+          set(state => ({ useRealTimeData: !state.useRealTimeData }));
         },
 
         setExchangeType: (type: ExchangeType) => {
-          // Implementation of setExchangeType
+          set({ exchangeType: type });
         },
+
+        // インジケーターの表示/非表示を切り替え
+        toggleIndicator: (type) => {
+          const { indicators = [] } = get();
+          const newIndicators = indicators.map(ind => 
+            ind.type === type 
+              ? { ...ind, visible: !ind.visible } 
+              : ind
+          );
+          set({ indicators: newIndicators });
+        },
+
+        // インジケーターのパラメータを更新
+        updateIndicatorParams: (type, params) => {
+          const { indicators = [] } = get();
+          const newIndicators = indicators.map(ind => 
+            ind.type === type 
+              ? { ...ind, params: { ...ind.params, ...params } } 
+              : ind
+          );
+          set({ indicators: newIndicators });
+        }
       }),
       {
         name: "chart-storage-v2",
@@ -99,7 +136,12 @@ export const useChartStore = create<ChartStoreState>()(
           currentTimeFrame: state.currentTimeFrame,
           chartType: state.chartType,
           useRealTimeData: state.useRealTimeData,
-          exchangeType: state.exchangeType
+          exchangeType: state.exchangeType,
+          indicators: state.indicators?.map(ind => ({ 
+            type: ind.type, 
+            visible: ind.visible,
+            params: ind.params
+          }))
         }),
       }
     ),
