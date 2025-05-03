@@ -26,13 +26,25 @@ export interface BitgetCredentials {
 
 /**
  * API応答の基本型
+ * 
+ * 注意: この型は次の二つのパターンをサポートしています:
+ * 1. Bitget API形式: { code, msg, data }
+ * 2. 標準形式: { success, data, error }
  */
 export interface ApiResponse<T = any> {
+  // Bitget API形式のフィールド
   code?: string;
   msg?: string;
-  data?: T;
+  
+  // 標準形式のフィールド
   success?: boolean;
-  error?: string;
+  data?: T;
+  
+  // エラー情報
+  error?: string | {
+    code: string;
+    message: string;
+  };
 }
 
 /**

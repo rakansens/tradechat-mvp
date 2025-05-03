@@ -1,5 +1,9 @@
 // types/common-interfaces.ts
 // 作成: コンポーネント間で共有される共通インターフェース
+// 更新: 型定義を整理し、コメントを追加
+//
+// このファイルは主にコンポーネントのプロップス型を定義しています。
+// データモデルの型定義は各ドメイン固有のファイル（chart.ts、market.tsなど）に配置されています。
 
 import type { Entry } from "./entry";
 import type { ChartType, Timeframe, OHLCData } from "./chart";

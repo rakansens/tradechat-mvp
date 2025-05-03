@@ -1,5 +1,6 @@
 // types/common.ts
 // 作成: アプリケーション全体で共通して使用される型定義
+// 更新: API関連の型定義をtypes/api.tsに移動
 
 /**
  * 日時関連の型
@@ -26,17 +27,8 @@ export interface AppSettings {
   defaultChartType?: string; // デフォルトのチャートタイプ
 }
 
-/**
- * APIレスポンスの基本構造
- */
-export interface ApiResponse<T> {
-  success: boolean;
-  data?: T;
-  error?: {
-    code: string;
-    message: string;
-  };
-}
+// APIレスポンスの型定義はtypes/api.tsに移動しました
+import { ApiResponse } from './api';
 
 /**
  * ページネーション情報
