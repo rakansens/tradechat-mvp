@@ -23,7 +23,9 @@ import {
     createCompatibleSeries, 
     safeRemoveSeries, 
     extractPrices,
-    sortAndPrepareData
+    sortAndPrepareData,
+    convertTimeSeriesData,
+    convertHistogramData
 } from '@/utils/chartIndicatorUtils';
 import type { OHLCData } from '@/types/chart';
 import type { MACDParams } from '@/types/indicators';
@@ -255,7 +257,7 @@ export function addOrUpdateMacdSeries(
     const sortedMacdLine = sortAndPrepareData(macdData.macdLine);
     if (seriesRefs.macdLine.current) {
         console.log('MACD Line データをセット:', sortedMacdLine.slice(0, 3));
-        // 型の不一致を解決するためにas anyを使用
+        // 型変換ユーティリティを使用したいが、型互換性の問題があるため一時的に as any を使用
         seriesRefs.macdLine.current.setData(sortedMacdLine as any);
     }
 
@@ -291,7 +293,7 @@ export function addOrUpdateMacdSeries(
     const sortedSignalLine = sortAndPrepareData(macdData.signalLine);
     if (seriesRefs.signalLine.current) {
         console.log('Signal Line データをセット:', sortedSignalLine.slice(0, 3));
-        // 型の不一致を解決するためにas anyを使用
+        // 型変換ユーティリティを使用したいが、型互換性の問題があるため一時的に as any を使用
         seriesRefs.signalLine.current.setData(sortedSignalLine as any);
     }
 
@@ -327,7 +329,7 @@ export function addOrUpdateMacdSeries(
     const sortedHistogram = sortAndPrepareData(macdData.histogramData);
     if (seriesRefs.histogram.current) {
         console.log('Histogram データをセット:', sortedHistogram.slice(0, 3));
-        // 型の不一致を解決するためにas anyを使用
+        // 型変換ユーティリティを使用したいが、型互換性の問題があるため一時的に as any を使用
         seriesRefs.histogram.current.setData(sortedHistogram as any);
     }
 

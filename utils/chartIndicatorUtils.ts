@@ -8,7 +8,8 @@
 // - インジケーター間で共通して使用される関数
 // - インジケーターの初期化・更新・削除の共通処理
 
-import { IChartApi, LineSeries, AreaSeries, HistogramSeries, CandlestickSeries, ISeriesApi, SeriesType, Time, LineData, UTCTimestamp } from 'lightweight-charts';
+import { IChartApi, LineSeries, AreaSeries, HistogramSeries, CandlestickSeries, ISeriesApi, SeriesType, Time, LineData } from 'lightweight-charts';
+import { UTCTimestamp, ChartTimeCompatible } from '@/types/chart';
 import type { OHLCData } from '@/types/chart';
 import type { BaseIndicatorParams, IndicatorSeriesRefs } from '@/types/indicators';
 import { dedupAndSort } from '@/utils/chartUtils';
@@ -150,12 +151,19 @@ export function sortAndPrepareData<T extends { time: Time; value: number }>(data
 }
 
 /**
- * LineData<Time>[] を lightweight‐charts が要求する { time: number | UTCTimestamp; value: number }[] 型に変換
- * 型変換のみで実際のデータ構造は変わらない
+ * LineData<Time>[] を lightweight‐charts が要求する形式に変換
+ * 新しい ChartTimeCompatible 型を使用して型安全性を向上
  */
-export function lineDataToSeriesData(data: LineData<Time>[]): { time: number | UTCTimestamp; value: number }[] {
-  // 型アサーションで十分。runtime 変換は不要
-  return data as unknown as { time: number | UTCTimestamp; value: number }[];
+export function convertTimeSeriesData<T extends { time: Time; value: number }>(data: T[]): { time: ChartTimeCompatible; value: number }[] {
+  // 型変換のみで実際のデータ構造は変わらない
+  return data as unknown as { time: ChartTimeCompatible; value: number }[];
+}
+
+/**
+ * ヒストグラムデータを変換する専用関数
+ */
+export function convertHistogramData<T extends { time: Time; value: number; color?: string }>(data: T[]): { time: ChartTimeCompatible; value: number; color?: string }[] {
+  return data as unknown as { time: ChartTimeCompatible; value: number; color?: string }[];
 }
 
 export type { UTCTimestamp };

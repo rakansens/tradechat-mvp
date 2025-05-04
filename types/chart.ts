@@ -1,6 +1,43 @@
 // types/chart.ts
 // 作成: チャート関連の型定義
-// 更新: 一目均衡表とフィボナッチリトレースメントの型を追加
+// 更新: lightweight-charts v5 互換の型定義を追加
+
+/**
+ * Nominal 型（lightweight-charts の型定義から）
+ * 基本型に名前付きの型タグを付与するためのユーティリティ型
+ */
+export type Nominal<T, Name extends string> = T & {
+  readonly __nominal: Name;
+};
+
+/**
+ * UTCTimestamp 型（lightweight-charts の型定義から）
+ * Unix タイムスタンプを表す数値型
+ */
+export type UTCTimestamp = Nominal<number, "UTCTimestamp">;
+
+/**
+ * BusinessDay 型（lightweight-charts の型定義から）
+ * 営業日を表すオブジェクト型
+ */
+export interface BusinessDay {
+  year: number;
+  month: number;
+  day: number;
+}
+
+/**
+ * Time 型（lightweight-charts の型定義から）
+ * チャートの時間軸で使用される型
+ */
+export type Time = UTCTimestamp | BusinessDay | string;
+
+/**
+ * ChartTimeCompatible 型
+ * lightweight-charts v5 と互換性のある時間型
+ * インジケーターデータの型変換に使用
+ */
+export type ChartTimeCompatible = Time | number;
 
 /**
  * チャートのタイムフレーム
