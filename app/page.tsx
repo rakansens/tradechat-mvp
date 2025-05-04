@@ -16,6 +16,7 @@ import ChartSection from "@/components/chart/ChartSection"
 import ChatSection from "@/components/chat/ChatSection"
 import PositionHistory from "@/components/position/PositionHistory"
 import TimeframeSelector from "@/components/chart/TimeframeSelector"
+import ChartToolbar from "@/components/chart/ChartToolbar"
 // import PriceChangeIndicator from "@/components/ui/PriceChangeIndicator"
 import { 
   // 分割されたチャートストア
@@ -184,7 +185,8 @@ export default function Home() {
           className="md:w-[70%] w-full h-1/2 md:h-full transition-all duration-300 ease-in-out overflow-hidden"
         >
           <Card className="h-full flex flex-col border-0 rounded-none shadow-none" style={{ backgroundColor: theme.background.card }}>
-            {/* ヘッダーはChartToolbarに統合されました */}
+            {/* ChartToolbarを常に表示 */}
+            <ChartToolbar />
 
             <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)} className="flex-1 flex flex-col">
               <TabsContent value="chart" className="flex-1 m-0 p-0 data-[state=active]:flex flex-col">

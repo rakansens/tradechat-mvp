@@ -128,14 +128,7 @@ export default function ChartSection() {
         </div>
       </div>
       
-      <ChartToolbar 
-        timeframe={currentTimeFrame}
-        onTimeframeChange={handleTimeframeChange}
-        symbol={currentSymbol}
-        onSymbolChange={handleSymbolChange}
-        chartType={chartType}
-        onChartTypeChange={handleChartTypeChange}
-      />
+      {/* ChartToolbarはメインレイアウトに移動しました */}
       
       <div className="relative flex-grow">
         {isLoading ? (

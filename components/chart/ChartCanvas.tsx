@@ -19,7 +19,9 @@ import type {
   CandlestickSeriesOptions,
   DeepPartial,
 } from "lightweight-charts"
-import * as LightweightCharts from "lightweight-charts"; // Import the namespace
+// v5.0.6のAPIを使用するようにインポートを修正
+import { createChart, ColorType } from "lightweight-charts";
+import { CandlestickSeries, LineSeries, AreaSeries } from "lightweight-charts";
 import type { Entry, ClosedEntry } from "@/types/entry"
 import type { Timeframe, ChartType, OHLCData } from "@/types/chart"
 import type { ChartViewProps, TimeframeControlProps, ChartTypeControlProps } from "@/types/common-interfaces"
@@ -61,7 +63,7 @@ import {
   selectMACD,
   selectSMA
 } from "../../store";
-import { createChart, ColorType } from "lightweight-charts";
+// v5.0.6では既にColorTypeがインポートされているため、ここでは不要
 
 // 共通インターフェースを使用して型定義を整理
 interface ChartCanvasProps {
@@ -165,7 +167,7 @@ export default function ChartCanvas() {
     const chartContainer = chartRef.current;
     const { width, height } = chartContainer.getBoundingClientRect();
 
-    // チャートインスタンスの作成
+    // チャートインスタンスの作成 - v5.0.6対応
     const chart = createChart(chartContainer, {
       width,
       height,
@@ -190,9 +192,11 @@ export default function ChartCanvas() {
       },
     });
 
-    // チャートシリーズの作成
+    // チャートシリーズの作成 - v5.0.6対応
     if (chartType === "candles") {
-      candleSeries.current = chart.addCandlestickSeries({
+      // v5ではシリーズタイプを変数として指定する
+      // 注意: コンストラクタを渡す必要があります
+      candleSeries.current = chart.addSeries(CandlestickSeries, {
         upColor: "#26A69A",
         downColor: "#EF5350",
         borderVisible: false,
@@ -212,7 +216,9 @@ export default function ChartCanvas() {
         );
       }
     } else if (chartType === "line" as ChartType) {
-      lineSeries.current = chart.addLineSeries({
+      // v5ではシリーズタイプを変数として指定する
+      // 注意: コンストラクタを渡す必要があります
+      lineSeries.current = chart.addSeries(LineSeries, {
         color: "#2962FF",
         lineWidth: 2,
       });
@@ -226,10 +232,12 @@ export default function ChartCanvas() {
         );
       }
     } else if (chartType === "area" as ChartType) {
-      areaSeries.current = chart.addAreaSeries({
-        lineColor: "#2962FF",
-        topColor: "rgba(41, 98, 255, 0.28)",
-        bottomColor: "rgba(41, 98, 255, 0.05)",
+      // v5ではシリーズタイプを変数として指定する
+      // 注意: コンストラクタを渡す必要があります
+      areaSeries.current = chart.addSeries(AreaSeries, {
+        topColor: "rgba(41, 98, 255, 0.56)",
+        bottomColor: "rgba(41, 98, 255, 0.04)",
+        lineColor: "rgba(41, 98, 255, 1)",
         lineWidth: 2,
       });
 
