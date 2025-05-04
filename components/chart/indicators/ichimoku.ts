@@ -18,9 +18,10 @@ import {
   LineSeries,
   AreaSeries,
 } from 'lightweight-charts';
+import { filterValidData, createCompatibleSeries, safeRemoveSeries } from '@/utils/chartIndicatorUtils';
 import type { OHLCData } from '@/types/chart';
 import React from 'react';
-import { dedupAndSort, safeRemoveSeries } from '@/utils/chartUtils';
+import { dedupAndSort } from '@/utils/chartUtils';
 
 /**
  * 一目均衡表の計算オプション
@@ -259,18 +260,14 @@ export function addOrUpdateIchimokuSeries(
   // 一目均衡表の各ラインデータをソートして重複を除去
   const sortedTenkan = dedupAndSort(ichimokuData.tenkan as unknown as { time: UTCTimestamp }[]) as unknown as LineData<Time>[];
   
-  // 各ラインの追加または更新
+  // 天井線（Tenkan-sen）シリーズの追加または更新
   if (seriesRefs.tenkan.current) {
-    seriesRefs.tenkan.current.setData(sortedTenkan);
     seriesRefs.tenkan.current.applyOptions(tenkanOptions);
   } else {
-    if (typeof chart.addSeries === 'function') {
-      seriesRefs.tenkan.current = chart.addSeries(LineSeries, tenkanOptions);
-    } else {
-      // 古いバージョンの場合
-      // @ts-ignore
-      seriesRefs.tenkan.current = chart.addLineSeries(tenkanOptions);
-    }
+    // 共通ユーティリティを使用してシリーズを作成
+    seriesRefs.tenkan.current = createCompatibleSeries(chart, LineSeries, tenkanOptions);
+  }
+  if (seriesRefs.tenkan.current) {
     seriesRefs.tenkan.current.setData(sortedTenkan);
   }
   
@@ -279,45 +276,36 @@ export function addOrUpdateIchimokuSeries(
   const sortedChikou = dedupAndSort(ichimokuData.chikou as unknown as { time: UTCTimestamp }[]) as unknown as LineData<Time>[];
   const sortedCloudData = dedupAndSort(cloudData as unknown as { time: UTCTimestamp }[]) as unknown as LineData<Time>[];
   
+  // 基準線（Kijun-sen）シリーズの追加または更新
   if (seriesRefs.kijun.current) {
-    seriesRefs.kijun.current.setData(sortedKijun);
     seriesRefs.kijun.current.applyOptions(kijunOptions);
   } else {
-    if (typeof chart.addSeries === 'function') {
-      seriesRefs.kijun.current = chart.addSeries(LineSeries, kijunOptions);
-    } else {
-      // 古いバージョンの場合
-      // @ts-ignore
-      seriesRefs.kijun.current = chart.addLineSeries(kijunOptions);
-    }
+    // 共通ユーティリティを使用してシリーズを作成
+    seriesRefs.kijun.current = createCompatibleSeries(chart, LineSeries, kijunOptions);
+  }
+  if (seriesRefs.kijun.current) {
     seriesRefs.kijun.current.setData(sortedKijun);
   }
   
+  // 遅行線（Chikou Span）シリーズの追加または更新
   if (seriesRefs.chikou.current) {
-    seriesRefs.chikou.current.setData(sortedChikou);
     seriesRefs.chikou.current.applyOptions(chikouOptions);
   } else {
-    if (typeof chart.addSeries === 'function') {
-      seriesRefs.chikou.current = chart.addSeries(LineSeries, chikouOptions);
-    } else {
-      // 古いバージョンの場合
-      // @ts-ignore
-      seriesRefs.chikou.current = chart.addLineSeries(chikouOptions);
-    }
+    // 共通ユーティリティを使用してシリーズを作成
+    seriesRefs.chikou.current = createCompatibleSeries(chart, LineSeries, chikouOptions);
+  }
+  if (seriesRefs.chikou.current) {
     seriesRefs.chikou.current.setData(sortedChikou);
   }
   
+  // 雲（Kumo）シリーズの追加または更新
   if (seriesRefs.cloud.current) {
-    seriesRefs.cloud.current.setData(sortedCloudData as any);
     seriesRefs.cloud.current.applyOptions(cloudOptions);
   } else {
-    if (typeof chart.addSeries === 'function') {
-      seriesRefs.cloud.current = chart.addSeries(AreaSeries, cloudOptions);
-    } else {
-      // 古いバージョンの場合
-      // @ts-ignore
-      seriesRefs.cloud.current = chart.addAreaSeries(cloudOptions);
-    }
+    // 共通ユーティリティを使用してシリーズを作成
+    seriesRefs.cloud.current = createCompatibleSeries(chart, AreaSeries, cloudOptions);
+  }
+  if (seriesRefs.cloud.current) {
     seriesRefs.cloud.current.setData(sortedCloudData as any);
   }
 }
