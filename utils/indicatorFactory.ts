@@ -8,6 +8,7 @@ import { IChartApi } from 'lightweight-charts';
 import { OHLCData } from '@/types/chart';
 import { BaseIndicatorParams, ChartIndicator, IndicatorSeriesRefs, RSIParams, MACDParams, IchimokuParams, BollingerParams } from '@/types/indicators';
 import { IndicatorType } from '@/types/store';
+import { logger } from '@/utils/logger';
 
 // インジケーターのレジストリ
 const indicatorRegistry: Record<string, ChartIndicator<any>> = {};
@@ -22,7 +23,11 @@ export function registerIndicator<T extends BaseIndicatorParams>(
   indicator: ChartIndicator<T>
 ): void {
   if (indicatorRegistry[id]) {
-    console.warn(`Indicator with id "${id}" is already registered. Overwriting.`);
+    logger.warn(`Indicator with id "${id}" is already registered. Overwriting.`, {
+      component: 'indicatorFactory',
+      action: 'registerIndicator',
+      id
+    });
   }
   indicatorRegistry[id] = indicator;
 }
@@ -76,7 +81,11 @@ export function addOrUpdateIndicator<T extends BaseIndicatorParams>(
 ): void {
   const indicator = getIndicator<T>(indicatorId);
   if (!indicator) {
-    console.error(`Indicator with id "${indicatorId}" is not registered.`);
+    logger.error(`Indicator with id "${indicatorId}" is not registered.`, null, {
+      component: 'indicatorFactory',
+      action: 'addOrUpdateIndicator',
+      indicatorId
+    });
     return;
   }
 
@@ -106,7 +115,11 @@ export function removeIndicator(
 ): void {
   const indicator = getIndicator(indicatorId);
   if (!indicator) {
-    console.error(`Indicator with id "${indicatorId}" is not registered.`);
+    logger.error(`Indicator with id "${indicatorId}" is not registered.`, null, {
+      component: 'indicatorFactory',
+      action: 'removeIndicator',
+      indicatorId
+    });
     return;
   }
 
@@ -165,7 +178,11 @@ export function getDefaultIndicatorParams(indicatorType: IndicatorType): Record<
       };
     
     default:
-      console.warn(`Unknown indicator type: ${indicatorType}, returning empty params`);
+      logger.warn(`Unknown indicator type: ${indicatorType}, returning empty params`, {
+        component: 'indicatorFactory',
+        action: 'getDefaultIndicatorParams',
+        indicatorType
+      });
       return { visible: true };
   }
 }

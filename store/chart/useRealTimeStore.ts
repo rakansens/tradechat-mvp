@@ -12,6 +12,7 @@ import { ExchangeType } from "../../types/api";
 import { OHLCData } from "../../types/chart";
 import { useChartDataStore } from "./useChartDataStore";
 import { selectCurrentPrice } from "../chart/selectors";
+import { logger } from "../../utils/logger";
 
 // リアルタイム更新ストアの作成
 export const useRealTimeStore = create<RealTimeState>()(
@@ -43,7 +44,10 @@ export const useRealTimeStore = create<RealTimeState>()(
         startRealTimeUpdates: () => {
           const api = get().bitgetApi;
           if (!api) {
-            console.error('API client not initialized');
+            logger.error('API client not initialized', null, {
+              component: 'useRealTimeStore',
+              action: 'startRealTimeUpdates'
+            });
             return;
           }
           
@@ -73,7 +77,11 @@ export const useRealTimeStore = create<RealTimeState>()(
         stopRealTimeUpdates: () => {
           const api = get().bitgetApi;
           if (!api) {
-            console.warn('API client not initialized when trying to stop updates. This might be normal during cleanup.');
+            logger.warn('API client not initialized when trying to stop updates.', {
+              component: 'useRealTimeStore',
+              action: 'stopRealTimeUpdates',
+              note: 'This might be normal during cleanup.'
+            });
             return;
           }
           

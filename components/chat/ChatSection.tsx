@@ -3,6 +3,7 @@
 "use client"
 
 import { MessageSquare, Send, Zap, TrendingUp, BarChart2 } from "lucide-react"
+import { logger } from '@/utils/logger';
 import ChatWindow from "@/components/chat/ChatWindow"
 import InputBox from "@/components/chat/InputBox"
 import type { OpenEntry } from "@/types/entry"
@@ -46,15 +47,24 @@ export default function ChatSection({
       label: "Entry Point",
       value: "Entry Point",
       icon: <TrendingUp className="h-3 w-3 mr-1" />,
-      action: () => console.log("Entry Point"),
+      action: () => logger.info("Quick command: Entry Point", {
+        component: 'ChatSection',
+        action: 'quickCommand'
+      }),
     },
     {
       label: "Market News",
       value: "Market News",
       icon: <BarChart2 className="h-3 w-3 mr-1" />,
-      action: () => console.log("Market News"),
+      action: () => logger.info("Quick command: Market News", {
+        component: 'ChatSection',
+        action: 'quickCommand'
+      }),
     },
-    { label: "AI Signal", value: "AI Signal", icon: <Zap className="h-3 w-3 mr-1" />, action: () => console.log("AI Signal") },
+    { label: "AI Signal", value: "AI Signal", icon: <Zap className="h-3 w-3 mr-1" />, action: () => logger.info("Quick command: AI Signal", {
+      component: 'ChatSection',
+      action: 'quickCommand'
+    }) },
   ]
 
   return (

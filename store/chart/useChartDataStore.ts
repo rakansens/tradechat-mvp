@@ -12,6 +12,7 @@ import type { OHLCData, Timeframe } from "../../types/chart";
 import type { ChartDataState } from "../../types/store";
 import { produce } from "immer";
 import { BitgetApiClient } from '../../services/bitgetApi';
+import { logger } from '../../utils/logger';
 
 // 初期値の設定
 const initialTimeframe: Timeframe = "1d";
@@ -58,7 +59,12 @@ export const useChartDataStore = create<ChartDataState>()(
             
             return historicalData;
           } catch (error) {
-            console.error('Failed to fetch data from Bitget API:', error);
+            logger.error('Failed to fetch data from Bitget API:', error, {
+              component: 'useChartDataStore',
+              action: 'fetchData',
+              symbol,
+              timeframe: timeFrame
+            });
             
             // APIが失敗した場合はダミーデータを使用
             const dummyData = generateOHLCData(100, timeFrame);

@@ -17,6 +17,7 @@ import {
   IS_BROWSER 
 } from './api';
 import { ExchangeType, BitgetCredentials } from '../types/api';
+import { logger } from '@/utils/logger';
 
 // API設定は共通モジュールから取得
 const BITGET_API_BASE_URL = API_CONFIG.bitget.baseUrl;
@@ -34,7 +35,10 @@ const createWebSocket = (url: string) => {
       const WebSocketImpl = require('ws');
       return new WebSocketImpl(url);
     } catch (e) {
-      console.error('Failed to create WebSocket in Node.js environment:', e);
+      logger.error('Failed to create WebSocket in Node.js environment', e, {
+        component: 'BitgetApi',
+        action: 'createWebSocket'
+      });
       return null;
     }
   }
@@ -122,12 +126,21 @@ export class BitgetApiClient {
       
       // デバッグ情報
       if (IS_DEV) {
-        console.log('BitgetAPI request URL:', IS_BROWSER ? '/api/bitget/candles' : `${BITGET_API_BASE_URL}${serverEndpoint}`);
-        console.log('BitgetAPI params:', IS_BROWSER ? browserParams : serverParams);
+        logger.debug('BitgetAPI request', {
+          component: 'BitgetApi',
+          action: 'fetchCandles',
+          url: IS_BROWSER ? '/api/bitget/candles' : `${BITGET_API_BASE_URL}${serverEndpoint}`,
+          params: IS_BROWSER ? browserParams : serverParams
+        });
       }
       
       // レスポンスの構造を査定して適切に処理
-      if (IS_DEV) console.log('API Response:', response);
+      if (IS_DEV) logger.debug('API Response received', {
+        component: 'BitgetApi',
+        action: 'fetchCandles',
+        status: response.status,
+        statusText: response.statusText
+      });
       
       // レスポンスデータの変換
       let responseData;
@@ -145,13 +158,19 @@ export class BitgetApiClient {
       }
       
       if (!responseData) {
-        if (IS_DEV) console.error('Empty API response');
+        if (IS_DEV) logger.error('Empty API response', null, {
+          component: 'BitgetApi',
+          action: 'fetchCandles'
+        });
         throw new Error('Empty API response');
       }
       
       // 配列でない場合は配列に変換を試みる
       if (!Array.isArray(responseData)) {
-        if (IS_DEV) console.log('Response is not an array, trying to extract array data');
+        if (IS_DEV) logger.debug('Response is not an array, trying to extract array data', {
+          component: 'BitgetApi',
+          action: 'fetchCandles'
+        });
         // 各種プロパティから配列を探す
         if (Array.isArray(responseData.candles)) {
           responseData = responseData.candles;
@@ -160,12 +179,20 @@ export class BitgetApiClient {
         } else if (Array.isArray(responseData.list)) {
           responseData = responseData.list;
         } else {
-          if (IS_DEV) console.error('Could not find array data in response', responseData);
+          if (IS_DEV) logger.error('Could not find array data in response', null, {
+            component: 'BitgetApi',
+            action: 'fetchCandles',
+            responseData
+          });
           throw new Error('Invalid candle data format');
         }
       }
 
-      if (IS_DEV) console.log('Candle data before processing:', responseData);
+      if (IS_DEV) logger.debug('Candle data before processing', {
+        component: 'BitgetApi',
+        action: 'fetchCandles',
+        dataLength: Array.isArray(responseData) ? responseData.length : 'not an array'
+      });
       
       // キャンドルデータを正規化して返す
       const processedData = responseData
@@ -177,13 +204,21 @@ export class BitgetApiClient {
             if (Array.isArray(candle)) {
               // 必要なデータが存在するか確認
               if (!candle[0] || !candle[1] || !candle[2] || !candle[3] || !candle[4]) {
-                if (IS_DEV) console.warn('Skipping invalid candle array data:', candle);
+                if (IS_DEV) logger.warn('Skipping invalid candle array data', {
+                  component: 'BitgetApi',
+                  action: 'processCandles',
+                  candle
+                });
                 return null;
               }
               
               const timestamp = parseInt(String(candle[0]));
               if (isNaN(timestamp) || timestamp <= 0) {
-                if (IS_DEV) console.warn('Invalid timestamp in candle array data:', candle[0]);
+                if (IS_DEV) logger.warn('Invalid timestamp in candle array data', {
+                  component: 'BitgetApi',
+                  action: 'processCandles',
+                  timestamp: candle[0]
+                });
                 return null;
               }
               
@@ -458,13 +493,19 @@ export class BitgetApiClient {
 
       // Null安全性のためのチェック
       if (!this.ws) {
-        console.error('BitgetWS: WebSocket creation failed, switching to demo mode');
+        logger.error('BitgetWS: WebSocket creation failed, switching to demo mode', null, {
+          component: 'BitgetApi',
+          action: 'connectWebSocket'
+        });
         this.isInDemoMode = true;
         return;
       }
 
       this.ws.onopen = () => {
-        if (IS_DEV) console.log('BitgetWS: Connection established');
+        if (IS_DEV) logger.info('BitgetWS: Connection established', {
+          component: 'BitgetApi',
+          action: 'connectWebSocket'
+        });
         this.sendPing();
         this.pingInterval = setInterval(() => this.sendPing(), 15000);
         this.isInDemoMode = false; // 接続成功したらデモモードをオフ
@@ -473,14 +514,20 @@ export class BitgetApiClient {
       this.ws.onmessage = (event) => {
         // Heartbeat response is plain text 'pong'
         if (event.data === 'pong') {
-          console.log('BitgetWS: pong received');
+          logger.debug('BitgetWS: pong received', {
+            component: 'BitgetApi',
+            action: 'handleWebSocketMessage'
+          });
           return;
         }
         try {
           const message = JSON.parse(event.data as string);
           this.handleWebSocketMessage(message);
         } catch (error) {
-          console.error('Error parsing WebSocket message:', error);
+          logger.error('Error parsing WebSocket message', error, {
+            component: 'BitgetApi',
+            action: 'handleWebSocketMessage'
+          });
         }
       };
 
@@ -504,7 +551,12 @@ export class BitgetApiClient {
         const isNormalClosure = ev.code === 1000;
         
         if (IS_DEV || !isNormalClosure) {
-          console.log(`BitgetWS: Connection closed (code=${ev.code}, reason=${ev.reason})`);
+          logger.info(`BitgetWS: Connection closed`, {
+            component: 'BitgetApi',
+            action: 'handleWebSocketClose',
+            code: ev.code,
+            reason: ev.reason
+          });
         }
         
         this.cleanup();
@@ -515,7 +567,10 @@ export class BitgetApiClient {
         }
       };
     } catch (error) {
-      console.error('Error connecting to WebSocket:', error);
+      logger.error('Error connecting to WebSocket', error, {
+        component: 'BitgetApi',
+        action: 'connectWebSocket'
+      });
       this.isInDemoMode = true; // エラー発生時はデモモードに
       this.reconnect();
     }
@@ -538,7 +593,12 @@ export class BitgetApiClient {
 
     // ガード: 未対応のtimeframeならエラーを投げて早期リターン
     if (!bitgetTimeframe) {
-      console.error(`Unsupported timeframe "${timeframe}" for ${this.exchangeType}`);
+      logger.error(`Unsupported timeframe "${timeframe}" for ${this.exchangeType}`, null, {
+        component: 'BitgetApi',
+        action: 'subscribeToCandles',
+        timeframe,
+        exchangeType: this.exchangeType
+      });
       return;
     }
 
@@ -560,7 +620,11 @@ export class BitgetApiClient {
         prev.channel === channelName &&
         prev.instId === instId
       ) {
-        console.log('BitgetWS: Same channel already subscribed, skip');
+        logger.debug('BitgetWS: Same channel already subscribed, skip', {
+          component: 'BitgetApi',
+          action: 'subscribeToCandles',
+          channel: channelName
+        });
         return;
       }
 
@@ -576,7 +640,11 @@ export class BitgetApiClient {
           ]
         };
         this.safeSend(unsubscribeMsg);
-        if (IS_DEV) console.log('BitgetWS: Unsubscribed previous channel');
+        if (IS_DEV) logger.debug('BitgetWS: Unsubscribed previous channel', {
+          component: 'BitgetApi',
+          action: 'subscribeToCandles',
+          previousChannel: this.currentSubscription?.channel
+        });
       }
     }
 
@@ -603,19 +671,39 @@ export class BitgetApiClient {
         l.toString().includes(JSON.stringify(subscriptionMessage))
       );
       if (alreadyQueued) {
-        if (IS_DEV) console.log('BitgetWS: Subscription already queued, skip duplicate');
+        if (IS_DEV) logger.debug('BitgetWS: Subscription already queued, skip duplicate', {
+          component: 'BitgetApi',
+          action: 'subscribeToCandles',
+          subscriptionMessage
+        });
         return;
       }
     }
 
-    console.log('BitgetWS: Sending subscription message:', JSON.stringify(subscriptionMessage));
+    logger.info('BitgetWS: Sending subscription message', {
+      component: 'BitgetApi',
+      action: 'sendSubscription',
+      subscriptionMessage
+    });
 
     // メッセージを送信（接続済みなら即送信、CONNECTING なら safeSend が onopen で発火）
     this.safeSend(subscriptionMessage);
     if (this.ws?.readyState === WebSocket.OPEN) {
-      console.log(`Subscribed to ${this.exchangeType} ${formattedSymbol} ${timeframe} candles`);
+      logger.info(`Subscribed to ${this.exchangeType} ${formattedSymbol} ${timeframe} candles`, {
+        component: 'BitgetApi',
+        action: 'subscribeToCandles',
+        exchangeType: this.exchangeType,
+        symbol: formattedSymbol,
+        timeframe
+      });
     } else {
-      console.log(`Queued subscription for ${formattedSymbol} ${timeframe} — will send on WebSocket open`);
+      logger.info(`Queued subscription for ${formattedSymbol} ${timeframe}`, {
+        component: 'BitgetApi',
+        action: 'subscribeToCandles',
+        note: 'Will send on WebSocket open',
+        symbol: formattedSymbol,
+        timeframe
+      });
     }
   }
 
