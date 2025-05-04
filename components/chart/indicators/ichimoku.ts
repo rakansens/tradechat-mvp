@@ -18,7 +18,7 @@ import {
   LineSeries,
   AreaSeries,
 } from 'lightweight-charts';
-import { filterValidData, createCompatibleSeries, safeRemoveSeries, sortAndPrepareData } from '@/utils/chartIndicatorUtils';
+import { filterValidData, createCompatibleSeries, safeRemoveSeries, sortAndPrepareData, convertLineData, convertAreaData } from '@/utils/chartIndicatorUtils';
 import type { OHLCData } from '@/types/chart';
 import React from 'react';
 import { dedupAndSort } from '@/utils/chartUtils';
@@ -268,7 +268,7 @@ export function addOrUpdateIchimokuSeries(
     seriesRefs.tenkan.current = createCompatibleSeries(chart, LineSeries, tenkanOptions);
   }
   if (seriesRefs.tenkan.current) {
-    seriesRefs.tenkan.current.setData(sortedTenkan);
+    seriesRefs.tenkan.current.setData(convertLineData(sortedTenkan));
   }
   
   // 全ラインデータの前処理（重複排除・ソート・フィルタリング）
@@ -284,7 +284,7 @@ export function addOrUpdateIchimokuSeries(
     seriesRefs.kijun.current = createCompatibleSeries(chart, LineSeries, kijunOptions);
   }
   if (seriesRefs.kijun.current) {
-    seriesRefs.kijun.current.setData(sortedKijun);
+    seriesRefs.kijun.current.setData(convertLineData(sortedKijun));
   }
   
   // 遅行線（Chikou Span）シリーズの追加または更新
@@ -295,7 +295,7 @@ export function addOrUpdateIchimokuSeries(
     seriesRefs.chikou.current = createCompatibleSeries(chart, LineSeries, chikouOptions);
   }
   if (seriesRefs.chikou.current) {
-    seriesRefs.chikou.current.setData(sortedChikou);
+    seriesRefs.chikou.current.setData(convertLineData(sortedChikou));
   }
   
   // 雲（Kumo）シリーズの追加または更新
@@ -306,7 +306,7 @@ export function addOrUpdateIchimokuSeries(
     seriesRefs.cloud.current = createCompatibleSeries(chart, AreaSeries, cloudOptions);
   }
   if (seriesRefs.cloud.current) {
-    seriesRefs.cloud.current.setData(sortedCloudData as any);
+    seriesRefs.cloud.current.setData(convertAreaData(sortedCloudData));
   }
 }
 

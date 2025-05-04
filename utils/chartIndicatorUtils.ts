@@ -8,7 +8,7 @@
 // - インジケーター間で共通して使用される関数
 // - インジケーターの初期化・更新・削除の共通処理
 
-import { IChartApi, LineSeries, AreaSeries, HistogramSeries, CandlestickSeries, ISeriesApi, SeriesType, Time, LineData } from 'lightweight-charts';
+import { IChartApi, LineSeries, AreaSeries, HistogramSeries, CandlestickSeries, ISeriesApi, SeriesType, Time, LineData, HistogramData, AreaData } from 'lightweight-charts';
 import { UTCTimestamp, ChartTimeCompatible } from '@/types/chart';
 import type { OHLCData } from '@/types/chart';
 import type { BaseIndicatorParams, IndicatorSeriesRefs } from '@/types/indicators';
@@ -151,19 +151,28 @@ export function sortAndPrepareData<T extends { time: Time; value: number }>(data
 }
 
 /**
- * LineData<Time>[] を lightweight‐charts が要求する形式に変換
- * 新しい ChartTimeCompatible 型を使用して型安全性を向上
+ * LineData<Time>[] を lightweight-charts のシリーズ用に変換
+ * 型安全な変換を提供
  */
-export function convertTimeSeriesData<T extends { time: Time; value: number }>(data: T[]): { time: ChartTimeCompatible; value: number }[] {
-  // 型変換のみで実際のデータ構造は変わらない
-  return data as unknown as { time: ChartTimeCompatible; value: number }[];
+export function convertLineData<T extends { time: Time | number; value: number }>(data: T[]): LineData<Time>[] {
+  // LineData<Time>[] 型としてキャスト
+  return data as unknown as LineData<Time>[];
 }
 
 /**
  * ヒストグラムデータを変換する専用関数
  */
-export function convertHistogramData<T extends { time: Time; value: number; color?: string }>(data: T[]): { time: ChartTimeCompatible; value: number; color?: string }[] {
-  return data as unknown as { time: ChartTimeCompatible; value: number; color?: string }[];
+export function convertHistogramData<T extends { time: Time | number; value: number; color?: string }>(data: T[]): HistogramData<Time>[] {
+  // HistogramData<Time>[] 型としてキャスト
+  return data as unknown as HistogramData<Time>[];
+}
+
+/**
+ * エリアチャートデータを変換する専用関数
+ */
+export function convertAreaData<T extends { time: Time | number; value: number }>(data: T[]): AreaData<Time>[] {
+  // AreaData<Time>[] 型としてキャスト
+  return data as unknown as AreaData<Time>[];
 }
 
 export type { UTCTimestamp };
