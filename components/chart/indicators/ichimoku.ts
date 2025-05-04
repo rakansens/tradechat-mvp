@@ -18,7 +18,7 @@ import {
   LineSeries,
   AreaSeries,
 } from 'lightweight-charts';
-import { filterValidData, createCompatibleSeries, safeRemoveSeries } from '@/utils/chartIndicatorUtils';
+import { filterValidData, createCompatibleSeries, safeRemoveSeries, sortAndPrepareData } from '@/utils/chartIndicatorUtils';
 import type { OHLCData } from '@/types/chart';
 import React from 'react';
 import { dedupAndSort } from '@/utils/chartUtils';
@@ -257,8 +257,8 @@ export function addOrUpdateIchimokuSeries(
     });
   }
   
-  // 一目均衡表の各ラインデータをソートして重複を除去
-  const sortedTenkan = dedupAndSort(ichimokuData.tenkan as unknown as { time: UTCTimestamp }[]) as unknown as LineData<Time>[];
+  // 一目均衡表の各ラインデータを前処理（重複排除・ソート・フィルタリング）
+  const sortedTenkan = sortAndPrepareData(ichimokuData.tenkan);
   
   // 天井線（Tenkan-sen）シリーズの追加または更新
   if (seriesRefs.tenkan.current) {
@@ -271,10 +271,10 @@ export function addOrUpdateIchimokuSeries(
     seriesRefs.tenkan.current.setData(sortedTenkan);
   }
   
-  // 全ラインデータの重複排除とソート
-  const sortedKijun = dedupAndSort(ichimokuData.kijun as unknown as { time: UTCTimestamp }[]) as unknown as LineData<Time>[];
-  const sortedChikou = dedupAndSort(ichimokuData.chikou as unknown as { time: UTCTimestamp }[]) as unknown as LineData<Time>[];
-  const sortedCloudData = dedupAndSort(cloudData as unknown as { time: UTCTimestamp }[]) as unknown as LineData<Time>[];
+  // 全ラインデータの前処理（重複排除・ソート・フィルタリング）
+  const sortedKijun = sortAndPrepareData(ichimokuData.kijun);
+  const sortedChikou = sortAndPrepareData(ichimokuData.chikou);
+  const sortedCloudData = sortAndPrepareData(cloudData as any);
   
   // 基準線（Kijun-sen）シリーズの追加または更新
   if (seriesRefs.kijun.current) {

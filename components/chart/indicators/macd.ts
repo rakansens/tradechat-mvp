@@ -22,7 +22,8 @@ import {
     filterValidData, 
     createCompatibleSeries, 
     safeRemoveSeries, 
-    extractPrices
+    extractPrices,
+    sortAndPrepareData
 } from '@/utils/chartIndicatorUtils';
 import type { OHLCData } from '@/types/chart';
 import type { MACDParams } from '@/types/indicators';
@@ -250,8 +251,8 @@ export function addOrUpdateMacdSeries(
         seriesRefs.macdLine.current.applyOptions(macdOptions);
     }
     
-    // 重複データを排除し昇順ソートしてからセット
-    const sortedMacdLine = dedupAndSort(macdData.macdLine);
+    // --- MACD Line ---
+    const sortedMacdLine = sortAndPrepareData(macdData.macdLine);
     if (seriesRefs.macdLine.current) {
         console.log('MACD Line データをセット:', sortedMacdLine.slice(0, 3));
         // 型の不一致を解決するためにas anyを使用
@@ -287,7 +288,7 @@ export function addOrUpdateMacdSeries(
     }
     
     // 重複データを排除し昇順ソートしてからセット
-    const sortedSignalLine = dedupAndSort(macdData.signalLine);
+    const sortedSignalLine = sortAndPrepareData(macdData.signalLine);
     if (seriesRefs.signalLine.current) {
         console.log('Signal Line データをセット:', sortedSignalLine.slice(0, 3));
         // 型の不一致を解決するためにas anyを使用
@@ -323,7 +324,7 @@ export function addOrUpdateMacdSeries(
     }
     
     // 重複データを排除し昇順ソートしてからセット
-    const sortedHistogram = dedupAndSort(macdData.histogramData);
+    const sortedHistogram = sortAndPrepareData(macdData.histogramData);
     if (seriesRefs.histogram.current) {
         console.log('Histogram データをセット:', sortedHistogram.slice(0, 3));
         // 型の不一致を解決するためにas anyを使用

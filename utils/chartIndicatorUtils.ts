@@ -11,6 +11,7 @@
 import { IChartApi, LineSeries, AreaSeries, HistogramSeries, CandlestickSeries, ISeriesApi, SeriesType, Time, LineData, UTCTimestamp } from 'lightweight-charts';
 import type { OHLCData } from '@/types/chart';
 import type { BaseIndicatorParams, IndicatorSeriesRefs } from '@/types/indicators';
+import { dedupAndSort } from '@/utils/chartUtils';
 
 /**
  * NaN値をフィルタリングし、有効なデータのみを返す
@@ -131,6 +132,21 @@ export function convertToLineData(data: OHLCData[], values: number[]): LineData<
     time: data[index].time as Time,
     value: value
   }));
+}
+
+/**
+ * データの重複排除、ソート、フィルタリングを一度に行う共通ユーティリティ
+ * 各インジケーターで繰り返し使用されるデータ前処理を標準化
+ * 
+ * @param data 処理対象のデータ配列
+ * @returns 重複排除・ソート・フィルタリング済みのデータ配列
+ */
+export function sortAndPrepareData<T extends { time: Time; value: number }>(data: T[]): T[] {
+  // 1. 重複排除とソート
+  const sortedData = dedupAndSort(data as unknown as { time: UTCTimestamp }[]) as unknown as T[];
+  
+  // 2. 無効なデータをフィルタリング
+  return filterValidData(sortedData);
 }
 
 /**
