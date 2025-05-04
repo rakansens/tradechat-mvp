@@ -2,7 +2,22 @@
 // 作成: 一目均衡表（いちもくきんこうひょう）インジケーター
 // 構成要素: 転換線、基準線、遅行スパン、先行スパンA、先行スパンB
 
-import { IChartApi, ISeriesApi, LineData, Time, UTCTimestamp, AreaData, DeepPartial, SeriesOptionsCommon, LineWidth, AreaSeriesPartialOptions, LineSeriesPartialOptions } from 'lightweight-charts';
+import {
+  IChartApi,
+  ISeriesApi,
+  LineData,
+  AreaData,
+  Time,
+  UTCTimestamp,
+  DeepPartial,
+  SeriesOptionsCommon,
+  LineWidth,
+  AreaSeriesPartialOptions,
+  LineSeriesPartialOptions,
+  createChart,
+  LineSeries,
+  AreaSeries,
+} from 'lightweight-charts';
 import type { OHLCData } from '@/types/chart';
 import React from 'react';
 import { dedupAndSort, safeRemoveSeries } from '@/utils/chartUtils';
@@ -249,7 +264,13 @@ export function addOrUpdateIchimokuSeries(
     seriesRefs.tenkan.current.setData(sortedTenkan);
     seriesRefs.tenkan.current.applyOptions(tenkanOptions);
   } else {
-    seriesRefs.tenkan.current = chart.addLineSeries(tenkanOptions);
+    if (typeof chart.addSeries === 'function') {
+      seriesRefs.tenkan.current = chart.addSeries(LineSeries, tenkanOptions);
+    } else {
+      // 古いバージョンの場合
+      // @ts-ignore
+      seriesRefs.tenkan.current = chart.addLineSeries(tenkanOptions);
+    }
     seriesRefs.tenkan.current.setData(sortedTenkan);
   }
   
@@ -262,7 +283,13 @@ export function addOrUpdateIchimokuSeries(
     seriesRefs.kijun.current.setData(sortedKijun);
     seriesRefs.kijun.current.applyOptions(kijunOptions);
   } else {
-    seriesRefs.kijun.current = chart.addLineSeries(kijunOptions);
+    if (typeof chart.addSeries === 'function') {
+      seriesRefs.kijun.current = chart.addSeries(LineSeries, kijunOptions);
+    } else {
+      // 古いバージョンの場合
+      // @ts-ignore
+      seriesRefs.kijun.current = chart.addLineSeries(kijunOptions);
+    }
     seriesRefs.kijun.current.setData(sortedKijun);
   }
   
@@ -270,7 +297,13 @@ export function addOrUpdateIchimokuSeries(
     seriesRefs.chikou.current.setData(sortedChikou);
     seriesRefs.chikou.current.applyOptions(chikouOptions);
   } else {
-    seriesRefs.chikou.current = chart.addLineSeries(chikouOptions);
+    if (typeof chart.addSeries === 'function') {
+      seriesRefs.chikou.current = chart.addSeries(LineSeries, chikouOptions);
+    } else {
+      // 古いバージョンの場合
+      // @ts-ignore
+      seriesRefs.chikou.current = chart.addLineSeries(chikouOptions);
+    }
     seriesRefs.chikou.current.setData(sortedChikou);
   }
   
@@ -278,7 +311,13 @@ export function addOrUpdateIchimokuSeries(
     seriesRefs.cloud.current.setData(sortedCloudData as any);
     seriesRefs.cloud.current.applyOptions(cloudOptions);
   } else {
-    seriesRefs.cloud.current = chart.addAreaSeries(cloudOptions);
+    if (typeof chart.addSeries === 'function') {
+      seriesRefs.cloud.current = chart.addSeries(AreaSeries, cloudOptions);
+    } else {
+      // 古いバージョンの場合
+      // @ts-ignore
+      seriesRefs.cloud.current = chart.addAreaSeries(cloudOptions);
+    }
     seriesRefs.cloud.current.setData(sortedCloudData as any);
   }
 }

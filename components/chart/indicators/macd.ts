@@ -9,7 +9,8 @@ import {
     Time,
     UTCTimestamp,
     DeepPartial,
-    LineStyleOptions,
+    LineSeries,
+    HistogramSeries,
     SeriesOptionsCommon,
     HistogramStyleOptions,
     PriceFormat,
@@ -18,6 +19,18 @@ import {
 } from 'lightweight-charts';
 import { MACD as MacdIndicator } from 'technicalindicators'; // Import MACD calculation
 import { dedupAndSort, safeRemoveSeries } from '@/utils/chartUtils';
+
+/**
+ * NaN値をフィルタリングし、有効なデータのみを返す
+ * @param data チャートデータ配列
+ * @returns NaN値を除外したデータ配列
+ */
+function filterValidData<T extends { value: number }>(data: Array<T>): Array<T> {
+  return data.filter(item => {
+    // NaN値や無限大の値をフィルタリング
+    return !isNaN(item.value) && isFinite(item.value);
+  });
+}
 
 // Type for the calculated MACD data structure from technicalindicators
 interface MacdValue {
@@ -196,35 +209,59 @@ export function addOrUpdateMacdSeries(
 
     // --- MACD Line ---
     if (!instances.macdLineSeries) {
-        instances.macdLineSeries = chart.addLineSeries(macdLineOptions);
+        // v5.0.6では、addLineSeries()の代わりにaddSeries()を使用
+        if (typeof chart.addSeries === 'function') {
+            instances.macdLineSeries = chart.addSeries(LineSeries, macdLineOptions);
+        } else {
+            // 古いバージョンの場合
+            // @ts-ignore
+            instances.macdLineSeries = chart.addLineSeries(macdLineOptions);
+        }
         console.log("MACD Line Series Created on Pane:", paneIndex);
     } else {
         instances.macdLineSeries.applyOptions(macdLineOptions);
     }
     // 重複データを排除し昇順ソートしてからセット
-    const sortedMacdLine = dedupAndSort(macdData.macdLine);
+    // NaN値をフィルタリング
+    const sortedMacdLine = filterValidData(dedupAndSort(macdData.macdLine));
     instances.macdLineSeries.setData(sortedMacdLine);
 
     // --- Signal Line ---
     if (!instances.signalLineSeries) {
-        instances.signalLineSeries = chart.addLineSeries(signalLineOptions);
+        // v5.0.6では、addLineSeries()の代わりにaddSeries()を使用
+        if (typeof chart.addSeries === 'function') {
+            instances.signalLineSeries = chart.addSeries(LineSeries, signalLineOptions);
+        } else {
+            // 古いバージョンの場合
+            // @ts-ignore
+            instances.signalLineSeries = chart.addLineSeries(signalLineOptions);
+        }
         console.log("Signal Line Series Created on Pane:", paneIndex);
     } else {
         instances.signalLineSeries.applyOptions(signalLineOptions);
     }
     // 重複データを排除し昇順ソートしてからセット
-    const sortedSignalLine = dedupAndSort(macdData.signalLine);
+    // NaN値をフィルタリング
+    const sortedSignalLine = filterValidData(dedupAndSort(macdData.signalLine));
     instances.signalLineSeries.setData(sortedSignalLine);
 
     // --- Histogram ---
     if (!instances.histogramSeries) {
-        instances.histogramSeries = chart.addHistogramSeries(histogramOptions);
+        // v5.0.6では、addHistogramSeries()の代わりにaddSeries()を使用
+        if (typeof chart.addSeries === 'function') {
+            instances.histogramSeries = chart.addSeries(HistogramSeries, histogramOptions);
+        } else {
+            // 古いバージョンの場合
+            // @ts-ignore
+            instances.histogramSeries = chart.addHistogramSeries(histogramOptions);
+        }
         console.log("Histogram Series Created on Pane:", paneIndex);
     } else {
         instances.histogramSeries.applyOptions(histogramOptions);
     }
     // 重複データを排除し昇順ソートしてからセット
-    const sortedHistogram = dedupAndSort(macdData.histogramData);
+    // NaN値をフィルタリング
+    const sortedHistogram = filterValidData(dedupAndSort(macdData.histogramData));
     instances.histogramSeries.setData(sortedHistogram);
 
     // --- Optional: Add Zero Line for Reference ---

@@ -109,20 +109,10 @@ export async function browserApiRequest<T = any>(
   params: Record<string, any> = {},
   options: Omit<Parameters<typeof apiRequest>[0], 'url' | 'params'> = {}
 ): Promise<T> {
-  // URLSearchParamsを使用してクエリ文字列を構築
-  const queryParams = new URLSearchParams();
-  Object.entries(params).forEach(([key, value]) => {
-    if (value !== undefined && value !== null) {
-      queryParams.append(key, String(value));
-    }
-  });
-
-  const queryString = queryParams.toString();
-  const url = `${endpoint}${queryString ? `?${queryString}` : ''}`;
-
+  // 修正: クエリパラメータをURLに埋め込むのではなく、axiosのparamsとして渡す
   return apiRequest<T>({
-    url,
-    params: undefined,
+    url: endpoint,
+    params: params,  // paramsをそのまま渡す
     ...options as any // 型互換性のために一時的に any を使用
   });
 }

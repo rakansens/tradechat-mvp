@@ -6,6 +6,7 @@ import {
   LineStyle,
   Time,
   createChart,
+  LineSeries,
 } from 'lightweight-charts';
 import { RSI as RsiIndicator } from 'technicalindicators';
 
@@ -103,7 +104,14 @@ export function addOrUpdateRsiSeries(
     rsiSeriesRef.current.applyOptions(rsiOptions); // Re-apply options if needed
   } else {
     // If series doesn't exist, create it
-    rsiSeriesRef.current = chart.addLineSeries(rsiOptions);
+    // v5.0.6では、addLineSeries()の代わりにaddSeries()を使用
+    if (typeof chart.addSeries === 'function') {
+      rsiSeriesRef.current = chart.addSeries(LineSeries, rsiOptions);
+    } else {
+      // 古いバージョンの場合
+      // @ts-ignore
+      rsiSeriesRef.current = chart.addLineSeries(rsiOptions);
+    }
 
     // Ensure the price scale is configured AFTER the series (and scale) is created
     chart.priceScale(`rsi_price_scale_${paneIndex}`).applyOptions({
