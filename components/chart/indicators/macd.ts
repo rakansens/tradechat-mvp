@@ -2,6 +2,7 @@
 // 作成: MACDインジケーターの実装
 // 更新: lightweight-charts v5.0.6に対応
 // 更新: 共通インターフェースに準拠し、型安全性を向上
+// 更新: ChartIndicatorインターフェースを実装し、ファクトリー関数で使用可能に
 
 import {
     IChartApi,
@@ -28,7 +29,8 @@ import {
     convertHistogramData
 } from '@/utils/chartIndicatorUtils';
 import type { OHLCData } from '@/types/chart';
-import type { MACDParams } from '@/types/indicators';
+import type { MACDParams, ChartIndicator, IndicatorSeriesRefs } from '@/types/indicators';
+import { createIndicator, registerIndicator } from '@/utils/indicatorFactory';
 import { MutableRefObject } from 'react';
 
 /**
@@ -374,8 +376,69 @@ export function removeMacdSeries(chart: IChartApi, seriesRefs: MacdSeriesRefs): 
 }
 
 /**
- * MACDインジケーターのエクスポート関数
- * チャートキャンバスから使用されるインターフェース
+ * MACDインジケーターの実装
+ * ChartIndicatorインターフェースに準拠
+ */
+
+// 計算関数: OHLCデータからMACD値を計算
+// ChartIndicatorインターフェースのcalculateメソッドに対応
+function calculateMacdForIndicator(data: OHLCData[], params: MACDParams): MacdData {
+    // MACD値を計算
+    const macdValues = calculateMacdValues(data, params);
+    
+    // チャートデータ形式に変換
+    return alignMacdData(macdValues, data, params);
+}
+
+// 追加/更新関数: MACDをチャートに追加または更新
+// ChartIndicatorインターフェースのaddOrUpdateメソッドに対応
+function addOrUpdateMacdForIndicator(
+    chart: IChartApi,
+    macdData: MacdData,
+    params: MACDParams,
+    seriesRefs: IndicatorSeriesRefs
+): void {
+    // MacdSeriesRefs型に変換
+    const macdSeriesRefs: MacdSeriesRefs = {
+        macdLine: seriesRefs.macdLine as MutableRefObject<ISeriesApi<'Line'> | null>,
+        signalLine: seriesRefs.signalLine as MutableRefObject<ISeriesApi<'Line'> | null>,
+        histogram: seriesRefs.histogram as MutableRefObject<ISeriesApi<'Histogram'> | null>
+    };
+    
+    // チャートに追加または更新
+    addOrUpdateMacdSeries(chart, macdData, params, macdSeriesRefs);
+}
+
+// 削除関数: MACDをチャートから削除
+// ChartIndicatorインターフェースのremoveメソッドに対応
+function removeMacdForIndicator(
+    chart: IChartApi,
+    seriesRefs: IndicatorSeriesRefs
+): void {
+    // MacdSeriesRefs型に変換
+    const macdSeriesRefs: MacdSeriesRefs = {
+        macdLine: seriesRefs.macdLine as MutableRefObject<ISeriesApi<'Line'> | null>,
+        signalLine: seriesRefs.signalLine as MutableRefObject<ISeriesApi<'Line'> | null>,
+        histogram: seriesRefs.histogram as MutableRefObject<ISeriesApi<'Histogram'> | null>
+    };
+    
+    // チャートから削除
+    removeMacdSeries(chart, macdSeriesRefs);
+}
+
+// ChartIndicatorインターフェースを実装したMACDインジケーターを作成
+const macdIndicator = createIndicator<MACDParams>(
+    calculateMacdForIndicator,
+    addOrUpdateMacdForIndicator,
+    removeMacdForIndicator
+);
+
+// レジストリに登録
+registerIndicator('macd', macdIndicator);
+
+/**
+ * 後方互換性のためのエクスポート
+ * 当面は既存のインターフェースを維持
  */
 export const MACD = {
     /**
@@ -388,13 +451,8 @@ export const MACD = {
     addOrUpdate: (chart: IChartApi, data: OHLCData[], params: MACDParams, seriesRefs: MacdSeriesRefs) => {
         if (!chart || !data || data.length === 0) return;
         
-        // MACDを計算
-        const macdValues = calculateMacdValues(data, params);
-        
-        // チャートデータ形式に変換
-        const macdData = alignMacdData(macdValues, data, params);
-        
-        // チャートに追加または更新
+        // ファクトリー関数で作成したインジケーターを使用
+        const macdData = calculateMacdForIndicator(data, params);
         addOrUpdateMacdSeries(chart, macdData, params, seriesRefs);
     },
     

@@ -77,7 +77,8 @@ export default function ChartToolbar({}: ChartToolbarProps) {
   const {
     activeIndicators,
     toggleIndicator,
-    clearAllIndicators
+    clearAllIndicators,
+    isIndicatorActive
   } = useIndicatorStore();
   
   // 描画ツール関連
@@ -236,7 +237,7 @@ export default function ChartToolbar({}: ChartToolbarProps) {
                   <div key={indicator.id} className="flex items-center space-x-2">
                     <Checkbox 
                       id={`indicator-${indicator.id}`} 
-                      checked={activeIndicators.includes(indicator.id as IndicatorType)}
+                      checked={isIndicatorActive(indicator.id as IndicatorType)}
                       onCheckedChange={() => toggleIndicator(indicator.id as IndicatorType)}
                     />
                     <Label 

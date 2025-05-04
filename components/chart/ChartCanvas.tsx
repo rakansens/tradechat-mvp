@@ -383,13 +383,14 @@ export default function ChartCanvas() {
     const sortedData = [...data].sort((a, b) => a.time - b.time);
     
     // RSIインジケーターの表示切替
-    if (activeIndicators.includes('rsi')) {
-      // RSIパラメータを設定
+    if (activeIndicators.some(indicator => indicator.type === 'rsi')) {
+      // RSIパラメータを取得
+      const activeRSI = activeIndicators.find(indicator => indicator.type === 'rsi');
       const rsiParams = {
         visible: true,
-        period: 14,
-        overbought: 70,
-        oversold: 30,
+        period: activeRSI?.params?.period || 14,
+        overbought: activeRSI?.params?.overbought || 70,
+        oversold: activeRSI?.params?.oversold || 30,
         paneIndex: getPaneIndex('rsi')
       };
       
@@ -401,12 +402,13 @@ export default function ChartCanvas() {
     }
     
     // MACDインジケーターの表示切替
-    if (activeIndicators.includes('macd')) {
-      // MACDパラメータを設定
+    if (activeIndicators.some(indicator => indicator.type === 'macd')) {
+      // MACDパラメータを取得
+      const activeMacd = activeIndicators.find(indicator => indicator.type === 'macd');
       const macdParams = {
-        fastPeriod: 12,
-        slowPeriod: 26,
-        signalPeriod: 9,
+        fastPeriod: activeMacd?.params?.fastPeriod || 12,
+        slowPeriod: activeMacd?.params?.slowPeriod || 26,
+        signalPeriod: activeMacd?.params?.signalPeriod || 9,
         paneIndex: getPaneIndex('macd'),
         visible: true
       };
@@ -443,12 +445,19 @@ export default function ChartCanvas() {
     }
     
     // 一目均衡表インジケーターの表示切替
-    if (activeIndicators.includes('ichimoku')) {
+    if (activeIndicators.some(indicator => indicator.type === 'ichimoku')) {
+      // 一目均衡表パラメータを取得
+      const activeIchimoku = activeIndicators.find(indicator => indicator.type === 'ichimoku');
+      
       // 一目均衡表を表示
       addOrUpdateIchimokuSeries(
         chart,
         sortedData,
-        { tenkan: 9, kijun: 26, senkou: 52 },
+        {
+          tenkan: activeIchimoku?.params?.tenkanPeriod || 9,
+          kijun: activeIchimoku?.params?.kijunPeriod || 26,
+          senkou: activeIchimoku?.params?.senkouSpanBPeriod || 52
+        },
         {
           tenkan: tenkanSeries,
           kijun: kijunSeries,

@@ -1,6 +1,7 @@
 // components/chart/indicators/ichimoku.ts
 // 作成: 一目均衡表（いちもくきんこうひょう）インジケーター
 // 構成要素: 転換線、基準線、遅行スパン、先行スパンA、先行スパンB
+// 更新: ChartIndicatorインターフェースを実装し、ファクトリー関数で使用可能に
 
 import {
   IChartApi,
@@ -20,11 +21,14 @@ import {
 } from 'lightweight-charts';
 import { filterValidData, createCompatibleSeries, safeRemoveSeries, sortAndPrepareData, convertLineData, convertAreaData } from '@/utils/chartIndicatorUtils';
 import type { OHLCData } from '@/types/chart';
+import type { IchimokuParams, ChartIndicator, IndicatorSeriesRefs } from '@/types/indicators';
+import { createIndicator, registerIndicator } from '@/utils/indicatorFactory';
 import React from 'react';
 import { dedupAndSort } from '@/utils/chartUtils';
 
 /**
  * 一目均衡表の計算オプション
+ * @deprecated types/indicators.tsのIchimokuParamsを使用してください
  */
 export interface IchimokuOptions {
   tenkan?: number;   // 転換線の期間 (デフォルト: 9)
