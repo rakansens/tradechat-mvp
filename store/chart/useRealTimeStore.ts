@@ -73,7 +73,7 @@ export const useRealTimeStore = create<RealTimeState>()(
         stopRealTimeUpdates: () => {
           const api = get().bitgetApi;
           if (!api) {
-            console.error('API client not initialized');
+            console.warn('API client not initialized when trying to stop updates. This might be normal during cleanup.');
             return;
           }
           

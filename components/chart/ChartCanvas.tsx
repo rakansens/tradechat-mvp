@@ -152,6 +152,9 @@ export default function ChartCanvas() {
   const sma20Data = useChartDataStore(selectSMA(20));
   const sma50Data = useChartDataStore(selectSMA(50));
   
+  // RSIデータをトップレベルで取得
+  const rsiValues = useChartDataStore(selectRSI(14));
+  
   // チャートの初期化と更新
   useEffect(() => {
     if (!chartRef.current) return;
@@ -324,7 +327,6 @@ export default function ChartCanvas() {
     if (activeIndicators.includes('rsi')) {
       // メモ化されたRSIセレクターを使用
       const times = sortedData.map(item => (item.time / 1000) as UTCTimestamp);
-      const rsiValues = useChartDataStore(selectRSI(14));
       
       // RSIデータを時間と結合
       const formattedRsiData = times.slice(times.length - rsiValues.length).map((time, i) => ({
