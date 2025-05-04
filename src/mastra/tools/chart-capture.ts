@@ -1,10 +1,15 @@
 // src/mastra/tools/chart-capture.ts
-// チャートキャプチャツールの実装
+// チャートキャプチャツールの実装 - Socket.ioを使用
 
 import { createTool } from "@mastra/core/tools";
 import { z } from "zod";
-import { captureChartAsBase64 } from "../../../utils/screenshotUtils";
+import { v4 as uuidv4 } from "uuid";
 import { analyzeChartWithAI } from "../../../utils/aiUtils";
+
+// グローバル関数の型定義
+declare global {
+  var requestCapture: (timeoutMs?: number) => Promise<string | null>;
+}
 
 /**
  * 現在表示中のチャートをキャプチャし、AIに分析させるツール
@@ -26,33 +31,40 @@ export const chartCaptureAnalysisTool = createTool({
   }),
   execute: async ({ context }) => {
     try {
-      // ブラウザ環境かどうかを確認
-      if (typeof window === 'undefined') {
-        throw new Error("このツールはブラウザ環境でのみ実行できます");
-      }
-
-      // チャートをキャプチャ
-      console.log("チャートキャプチャを開始します...");
-      const chartImageBase64 = await captureChartAsBase64();
-      console.log("チャートキャプチャ完了");
+      console.log("チャートキャプチャツール実行開始", context);
       
-      // AI分析の実行
-      console.log("AIによるチャート分析を開始します...");
-      const analysisResult = await analyzeChartWithAI(chartImageBase64, context.focusOn);
-      console.log("チャート分析完了");
-
+      // Socket.ioを使ってクライアントにキャプチャをリクエスト
+      let imageData: string | null = null;
+      
+      if (typeof global.requestCapture === 'function') {
+        console.log("Socket.ioでキャプチャをリクエスト");
+        // 15秒のタイムアウトでリクエスト
+        imageData = await global.requestCapture(15000);
+      } else {
+        throw new Error("Socket.ioキャプチャ機能が利用できません");
+      }
+      
+      if (!imageData) {
+        throw new Error("チャートのキャプチャに失敗しました");
+      }
+      
+      console.log("キャプチャ成功、AIでの分析を開始");
+      
+      // OpenAI Vision APIで画像を分析
+      const aiAnalysis = await analyzeChartWithAI(imageData, context.focusOn);
+      
       return {
-        analysis: analysisResult.analysis,
-        recommendation: analysisResult.recommendation,
-        confidence: analysisResult.confidence,
+        analysis: aiAnalysis.analysis,
+        recommendation: aiAnalysis.recommendation,
+        confidence: aiAnalysis.confidence,
       };
     } catch (error) {
       console.error("チャートキャプチャ分析エラー:", error);
       
-      // サーバーサイドまたはエラー時のフォールバック
+      // エラー時は一般的な分析結果を返す
       return {
-        analysis: "チャートの分析に失敗しました。このツールはブラウザ環境でのみ動作します。また、OpenAI APIキーが正しく設定されているか確認してください。",
-        recommendation: "エラーのため判断できません",
+        analysis: `チャート分析中にエラーが発生しました: ${error}`,
+        recommendation: "現在データが取得できないため、取引判断は保留することをお勧めします。",
         confidence: 0,
       };
     }
