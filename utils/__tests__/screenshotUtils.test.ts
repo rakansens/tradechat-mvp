@@ -1,180 +1,250 @@
 // utils/__tests__/screenshotUtils.test.ts
 // スクリーンショットユーティリティのテスト
 
-import { captureElementAsBase64, captureChartAsBase64 } from '../screenshotUtils';
+import { captureElementAsBase64, captureWithMultipleSelectors, captureChartAsBase64 } from '../screenshotUtils';
 
-// モック
-const mockToDataURL = jest.fn().mockReturnValue('mock-base64-data');
-const mockQuerySelector = jest.fn();
+// html2canvasをモック
+jest.mock('html2canvas', () => ({
+  __esModule: true,
+  default: jest.fn().mockImplementation(() => {
+    const mockCanvas = {
+      toDataURL: jest.fn().mockReturnValue('mock-canvas-data-url')
+    };
+    return Promise.resolve(mockCanvas);
+  })
+}));
 
-// DOM環境のセットアップ
-describe('screenshotUtils', () => {
-  // テスト前の準備
+describe('スクリーンショットユーティリティ', () => {
+  // オリジナルのwindowとdocumentを保持
+  const originalWindow = global.window;
+  const originalDocument = global.document;
+  
   beforeEach(() => {
-    // windowオブジェクトのモック
-    global.window = {} as any;
-    
-    // documentオブジェクトのモック
-    global.document = {
-      querySelector: mockQuerySelector
+    // windowとdocumentのモック
+    global.window = {
+      devicePixelRatio: 2
     } as any;
     
-    // モックをリセット
-    mockQuerySelector.mockReset();
-    mockToDataURL.mockClear();
+    global.document = {
+      body: {
+        childNodes: []
+      },
+      querySelector: jest.fn(),
+    } as any;
+    
+    // コンソールログのモック
+    jest.spyOn(console, 'log').mockImplementation();
+    jest.spyOn(console, 'warn').mockImplementation();
+    jest.spyOn(console, 'error').mockImplementation();
   });
-
-  // テスト後のクリーンアップ
+  
   afterEach(() => {
-    // モックをリストア
-    jest.restoreAllMocks();
+    // グローバルをリセット
+    global.window = originalWindow;
+    global.document = originalDocument;
+    jest.clearAllMocks();
   });
-
+  
   describe('captureElementAsBase64', () => {
-    it('要素が見つからない場合はエラーを投げる', async () => {
-      // セットアップ: querySelector は null を返す
-      mockQuerySelector.mockReturnValue(null);
-
-      // 実行 & 検証
-      await expect(captureElementAsBase64('.test-selector')).rejects.toThrow(
-        'Element with selector ".test-selector" not found'
-      );
-    });
-
-    it('Canvas要素の場合は直接toDataURLを呼び出す', async () => {
-      // セットアップ: Canvas要素を模擬
-      const mockCanvas = {
-        toDataURL: mockToDataURL,
-        nodeName: 'CANVAS'
-      };
-      mockCanvas.constructor = { name: 'HTMLCanvasElement' };
-      mockQuerySelector.mockReturnValue(mockCanvas);
+    it('ブラウザ環境以外ではエラーを返す', async () => {
+      // windowをundefinedに設定
+      global.window = undefined as any;
       
-      // instanceofをモック
-      Object.defineProperty(mockCanvas, 'instanceof', {
-        value: function(cls: any) {
-          return cls.name === 'HTMLCanvasElement';
+      await expect(captureElementAsBase64('#test')).rejects.toThrow('ブラウザ環境でのみ実行できます');
+    });
+    
+    it('セレクタに一致する要素がない場合はnullを返す', async () => {
+      // querySelector が null を返すよう設定
+      (global.document.querySelector as jest.Mock).mockReturnValue(null);
+      
+      const result = await captureElementAsBase64('#non-existent');
+      
+      expect(result).toBeNull();
+      expect(console.warn).toHaveBeenCalledWith(expect.stringContaining('要素が見つかりませんでした'));
+    });
+    
+    it('Canvas要素がある場合は直接toDataURLを呼び出す', async () => {
+      // Canvasモックを作成
+      const mockCanvas = {
+        toDataURL: jest.fn().mockReturnValue('mock-canvas-data')
+      };
+      
+      // querySelectorがCanvasを返すように設定
+      (global.document.querySelector as jest.Mock).mockReturnValue(mockCanvas);
+      // Canvas判定のためのinstanceofをエミュレート
+      (mockCanvas as any).constructor = {
+        name: 'HTMLCanvasElement'
+      };
+      Object.setPrototypeOf(mockCanvas, {
+        constructor: { name: 'HTMLCanvasElement' }
+      });
+      
+      // instanceofをオーバーライド
+      const originalInstanceOf = Object.prototype[Symbol.hasInstance];
+      Function.prototype[Symbol.hasInstance] = function(instance) {
+        if (this.name === 'HTMLCanvasElement' && instance === mockCanvas) {
+          return true;
         }
-      });
-
-      // テスト用にinstanceofをオーバーライド
-      const originalInstanceof = Object.getOwnPropertyDescriptor(Object.prototype, 'instanceof')?.value;
-      Object.defineProperty(Object.prototype, 'instanceof', {
-        value: function(cls: any) {
-          if (this === mockCanvas && cls.name === 'HTMLCanvasElement') {
-            return true;
-          }
-          return originalInstanceof.call(this, cls);
-        },
-        configurable: true
-      });
-
-      // 実行
-      const result = await captureElementAsBase64('.test-selector');
-
-      // 検証
-      expect(result).toBe('mock-base64-data');
-      expect(mockToDataURL).toHaveBeenCalledWith('image/png');
-
-      // オーバーライドを元に戻す
-      Object.defineProperty(Object.prototype, 'instanceof', {
-        value: originalInstanceof,
-        configurable: true
-      });
+        return originalInstanceOf.call(this, instance);
+      };
+      
+      const result = await captureElementAsBase64('#canvas');
+      
+      expect(result).toBe('mock-canvas-data');
+      expect(mockCanvas.toDataURL).toHaveBeenCalledWith('image/png');
+      
+      // 元に戻す
+      Function.prototype[Symbol.hasInstance] = originalInstanceOf;
     });
-
-    // Dynamicインポートのテスト（モッキングが複雑なので省略可能）
-    it('HTML要素の場合はhtml2canvasを使用', async () => {
-      // このテストはモック化が複雑なため、実際の実装では省略することも検討
-      // Dynamic importのモックが必要
+    
+    it('HTML要素がある場合はhtml2canvasを使用する', async () => {
+      // HTML要素モックを作成
+      const mockElement = { id: 'test-element' };
       
-      // セットアップ: DIV要素を模擬
-      const mockElement = {
-        nodeName: 'DIV'
-      };
-      mockQuerySelector.mockReturnValue(mockElement);
+      // querySelectorが要素を返すように設定
+      (global.document.querySelector as jest.Mock).mockReturnValue(mockElement);
       
-      // html2canvasのモック
-      const mockCanvas = {
-        toDataURL: mockToDataURL
-      };
+      const result = await captureElementAsBase64('#element');
       
-      // Dynamicインポートのモック
-      jest.mock('html2canvas', () => ({
-        default: jest.fn().mockResolvedValue(mockCanvas)
-      }), { virtual: true });
-      
-      // テストはここではスキップ（モック化の複雑さのため）
-      expect(true).toBe(true);
+      expect(result).toBe('mock-canvas-data-url');
+      // html2canvasの実際の呼び出しをテストするのは難しいので、
+      // Dynamic importを使用しているため、ここではモック確認は行わない
     });
   });
-
+  
+  describe('captureWithMultipleSelectors', () => {
+    it('複数のセレクタを順番に試行し、最初に成功したものを返す', async () => {
+      // モックの設定
+      (global.document.querySelector as jest.Mock)
+        .mockReturnValueOnce(null) // 最初のセレクタは要素なし
+        .mockReturnValueOnce({ id: 'test-element' }); // 2番目のセレクタで要素あり
+      
+      // captureElementAsBase64をモック
+      const originalCapture = captureElementAsBase64;
+      Object.defineProperty(require('../screenshotUtils'), 'captureElementAsBase64', {
+        value: jest.fn().mockImplementation((selector) => {
+          if (selector === '.second-selector') {
+            return Promise.resolve('mock-element-capture');
+          }
+          return Promise.resolve(null);
+        })
+      });
+      
+      const result = await captureWithMultipleSelectors(['.first-selector', '.second-selector', '.third-selector']);
+      
+      expect(result).toBe('mock-element-capture');
+      expect(global.document.querySelector).toHaveBeenCalledTimes(2); // 3番目は試行されない
+      
+      // 元に戻す
+      Object.defineProperty(require('../screenshotUtils'), 'captureElementAsBase64', {
+        value: originalCapture
+      });
+    });
+    
+    it('すべてのセレクタでキャプチャに失敗した場合はnullを返す', async () => {
+      // すべてのセレクタで要素は存在するが、キャプチャに失敗する場合
+      (global.document.querySelector as jest.Mock).mockReturnValue({ id: 'test-element' });
+      
+      // captureElementAsBase64をモック（常にnullを返す）
+      const originalCapture = captureElementAsBase64;
+      Object.defineProperty(require('../screenshotUtils'), 'captureElementAsBase64', {
+        value: jest.fn().mockResolvedValue(null)
+      });
+      
+      const result = await captureWithMultipleSelectors(['.first', '.second']);
+      
+      expect(result).toBeNull();
+      expect(console.warn).toHaveBeenCalledWith('すべてのセレクタでキャプチャに失敗しました');
+      
+      // 元に戻す
+      Object.defineProperty(require('../screenshotUtils'), 'captureElementAsBase64', {
+        value: originalCapture
+      });
+    });
+  });
+  
   describe('captureChartAsBase64', () => {
-    it('チャートキャンバスが見つかる場合はキャンバスをキャプチャ', async () => {
-      // チャートキャンバスが存在する場合のモック
-      const mockCanvas = {
-        toDataURL: mockToDataURL
-      };
-      mockQuerySelector.mockImplementation((selector: string) => {
-        if (selector === '.chart-canvas canvas') {
-          return mockCanvas;
-        }
-        return null;
+    it('ブラウザ環境以外ではエラーを返す', async () => {
+      // windowをundefinedに設定
+      global.window = undefined as any;
+      
+      await expect(captureChartAsBase64()).rejects.toThrow('ブラウザ環境でのみ実行できます');
+    });
+    
+    it('指定されたセレクタでキャプチャに成功した場合は結果を返す', async () => {
+      // captureElementAsBase64をモック
+      const originalCapture = captureElementAsBase64;
+      Object.defineProperty(require('../screenshotUtils'), 'captureElementAsBase64', {
+        value: jest.fn().mockResolvedValue('mock-chart-data')
       });
       
-      // captureElementAsBase64をモック
-      const origCaptureElement = captureElementAsBase64;
-      (captureElementAsBase64 as jest.Mock) = jest.fn().mockResolvedValue('canvas-base64-data');
+      const result = await captureChartAsBase64('#custom-chart');
       
-      // 実行
-      const result = await captureChartAsBase64();
-      
-      // 検証
-      expect(mockQuerySelector).toHaveBeenCalledWith('.chart-canvas canvas');
-      expect(captureElementAsBase64).toHaveBeenCalledWith('.chart-canvas canvas');
-      expect(result).toBe('canvas-base64-data');
+      expect(result).toBe('mock-chart-data');
+      expect(require('../screenshotUtils').captureElementAsBase64).toHaveBeenCalledWith('#custom-chart');
       
       // 元に戻す
-      (captureElementAsBase64 as any) = origCaptureElement;
+      Object.defineProperty(require('../screenshotUtils'), 'captureElementAsBase64', {
+        value: originalCapture
+      });
     });
-
-    it('チャートキャンバスが見つからない場合はコンテナをキャプチャ', async () => {
-      // チャートキャンバスが存在しないがコンテナは存在する場合のモック
-      mockQuerySelector.mockImplementation((selector: string) => {
-        if (selector === '.chart-canvas canvas') {
-          return null;
-        }
-        if (selector === '.chart-container') {
-          return { id: 'container' };
-        }
-        return null;
+    
+    it('指定セレクタで失敗した場合は一般的なセレクタを試す', async () => {
+      // captureElementAsBase64をモック（最初は失敗）
+      const originalCapture = captureElementAsBase64;
+      Object.defineProperty(require('../screenshotUtils'), 'captureElementAsBase64', {
+        value: jest.fn().mockResolvedValue(null)
       });
       
-      // captureElementAsBase64をモック
-      const origCaptureElement = captureElementAsBase64;
-      (captureElementAsBase64 as jest.Mock) = jest.fn().mockResolvedValue('container-base64-data');
+      // captureWithMultipleSelectorsをモック
+      const originalCapture2 = captureWithMultipleSelectors;
+      Object.defineProperty(require('../screenshotUtils'), 'captureWithMultipleSelectors', {
+        value: jest.fn().mockResolvedValue('mock-general-chart-data')
+      });
       
-      // 実行
-      const result = await captureChartAsBase64();
+      const result = await captureChartAsBase64('#custom-chart');
       
-      // 検証
-      expect(mockQuerySelector).toHaveBeenCalledWith('.chart-canvas canvas');
-      expect(mockQuerySelector).toHaveBeenCalledWith('.chart-container');
-      expect(captureElementAsBase64).toHaveBeenCalledWith('.chart-container');
-      expect(result).toBe('container-base64-data');
+      expect(result).toBe('mock-general-chart-data');
+      expect(require('../screenshotUtils').captureWithMultipleSelectors).toHaveBeenCalled();
       
       // 元に戻す
-      (captureElementAsBase64 as any) = origCaptureElement;
+      Object.defineProperty(require('../screenshotUtils'), 'captureElementAsBase64', {
+        value: originalCapture
+      });
+      Object.defineProperty(require('../screenshotUtils'), 'captureWithMultipleSelectors', {
+        value: originalCapture2
+      });
     });
-
-    it('チャート要素がまったく見つからない場合はエラーを投げる', async () => {
-      // どの要素も見つからない場合のモック
-      mockQuerySelector.mockReturnValue(null);
+    
+    it('すべてのセレクタで失敗した場合はbodyをキャプチャする', async () => {
+      // captureElementAsBase64をモック（カスタムセレクタで失敗）
+      const originalCapture = captureElementAsBase64;
+      const captureElementMock = jest.fn()
+        .mockImplementationOnce(() => Promise.resolve(null))  // 最初の呼び出し（カスタムセレクタ）
+        .mockImplementationOnce(() => Promise.resolve('mock-body-capture')); // 2回目の呼び出し（body）
+        
+      Object.defineProperty(require('../screenshotUtils'), 'captureElementAsBase64', {
+        value: captureElementMock
+      });
       
-      // 実行 & 検証
-      await expect(captureChartAsBase64()).rejects.toThrow(
-        'チャート要素が見つかりません。セレクタを確認してください。'
-      );
+      // captureWithMultipleSelectorsをモック（一般的なセレクタでも失敗）
+      const originalCapture2 = captureWithMultipleSelectors;
+      Object.defineProperty(require('../screenshotUtils'), 'captureWithMultipleSelectors', {
+        value: jest.fn().mockResolvedValue(null)
+      });
+      
+      const result = await captureChartAsBase64('#custom-chart');
+      
+      expect(result).toBe('mock-body-capture');
+      expect(captureElementMock).toHaveBeenCalledWith('body');
+      
+      // 元に戻す
+      Object.defineProperty(require('../screenshotUtils'), 'captureElementAsBase64', {
+        value: originalCapture
+      });
+      Object.defineProperty(require('../screenshotUtils'), 'captureWithMultipleSelectors', {
+        value: originalCapture2
+      });
     });
   });
 }); 

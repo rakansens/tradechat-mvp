@@ -46,12 +46,12 @@ export const chartCaptureAnalysisTool = createTool({
       if (typeof global.requestCapture === 'function') {
         console.log("Socket.ioでキャプチャをリクエスト開始");
         
-        // 最大3回リトライ
-        for (let attempt = 1; attempt <= 3; attempt++) {
+        // 最大5回リトライ（より多くのリトライ）
+        for (let attempt = 1; attempt <= 5; attempt++) {
           try {
-            console.log(`キャプチャ試行 ${attempt}/3`);
-            // 15秒のタイムアウトでリクエスト
-            imageData = await global.requestCapture(20000);
+            console.log(`キャプチャ試行 ${attempt}/5`);
+            // タイムアウトを長めに設定（30秒）
+            imageData = await global.requestCapture(30000);
             
             if (imageData) {
               console.log("キャプチャ成功、リトライ終了");
@@ -60,16 +60,18 @@ export const chartCaptureAnalysisTool = createTool({
           } catch (captureError) {
             console.error(`キャプチャ試行 ${attempt} 失敗:`, captureError);
             
-            if (attempt < 3) {
-              // 1秒待機してから再試行
-              await new Promise(resolve => setTimeout(resolve, 1000));
+            if (attempt < 5) {
+              // 待機時間を徐々に増やす（指数バックオフ）
+              const waitTime = Math.min(2000 * Math.pow(2, attempt - 1), 10000);
+              console.log(`${waitTime}ms待機してから再試行します`);
+              await new Promise(resolve => setTimeout(resolve, waitTime));
             }
           }
         }
         
         // キャプチャに失敗した場合
         if (!imageData) {
-          console.error("3回の試行後もキャプチャに失敗しました");
+          console.error("リトライ後もキャプチャに失敗しました");
           return fallbackAnalysis;
         }
         
