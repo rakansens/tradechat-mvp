@@ -5,9 +5,9 @@
   "private": true,
   "scripts": {
     "dev": "node server.js",
-    "dev:full": "concurrently \"node server.js\" \"mastra dev\"",
+    "dev:full": "concurrently \"node server.js\" \"MASTRA_PORT=4112 mastra dev\"",
     "dev:next": "node server.js",
-    "dev:mastra": "mastra dev",
+    "dev:mastra": "MASTRA_PORT=4112 mastra dev",
     "build": "next build",
     "start": "NODE_ENV=production node server.js",
     "lint": "next lint",

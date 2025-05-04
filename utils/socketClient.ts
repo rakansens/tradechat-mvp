@@ -40,24 +40,44 @@ export function initializeSocketClient() {
     
     // キャプチャリクエスト受信時の処理
     socket.on('capture_request', async (data: { requestId: string }) => {
-      console.log('キャプチャリクエスト受信:', data);
-      
       try {
-        // チャート要素をキャプチャ
-        // トレーディングビューチャートのセレクタを指定
-        // ここの値はプロジェクト固有のセレクタに変更する必要がある
-        const chartSelector = 'canvas'; // 広めのセレクタで試す
-        const imageData = await captureChartAsBase64(chartSelector);
+        console.log('キャプチャリクエスト受信:', data);
+        
+        // チャート要素をキャプチャ - 複数のセレクタを試行
+        // より広いセレクタパターンを使用
+        const possibleSelectors = [
+          'canvas', 
+          '.chart-canvas', 
+          '.tradingview-wrapper canvas', 
+          '.chart-container',
+          '#chart-container',
+          '.flex-col-full' // フォールバックとして大きなコンテナを試す
+        ];
+        
+        // セレクタを順番に試す
+        let imageData: string | null = null;
+        for (const selector of possibleSelectors) {
+          console.log(`セレクタを試行: ${selector}`);
+          try {
+            imageData = await captureChartAsBase64(selector);
+            if (imageData) {
+              console.log(`キャプチャ成功: ${selector}`);
+              break;
+            }
+          } catch (e) {
+            console.warn(`セレクタでの失敗: ${selector}`, e);
+          }
+        }
         
         if (imageData) {
-          console.log('キャプチャ成功、データ送信 - ID:', data.requestId);
+          console.log(`キャプチャ成功、データ送信 - ID: ${data.requestId}`);
           // 成功時はレスポンスを送信
           socket?.emit('capture_response', {
             requestId: data.requestId,
             imageData
           });
         } else {
-          console.warn('チャート要素が見つかりません - ID:', data.requestId);
+          console.warn(`チャート要素が見つかりません - ID: ${data.requestId}`);
           // キャプチャ失敗時
           socket?.emit('error_message', {
             requestId: data.requestId,

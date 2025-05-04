@@ -217,18 +217,15 @@ app.prepare().then(() => {
         }
       };
       
-      // イベントハンドラを登録
+      // イベントリスナーを登録（オフハンドラーとして）
       io.on('capture_response', responseHandler);
       io.on('error_message', errorHandler);
       
-      // ダミークライアントIDとして空文字列を使用
-      pendingCaptureRequests.set(requestId, {
-        clientId: '',
-        timestamp: Date.now()
-      });
-      
-      // キャプチャリクエストをブロードキャスト
+      // リクエストを全クライアントに直接ブロードキャスト
+      // これにより、リクエスト元のクライアントIDをマッピングせずに
+      // 直接イベントハンドラでレスポンスを処理する
       io.emit('capture_request', { requestId });
+      console.log(`キャプチャリクエストをブロードキャスト: ${requestId}`);
     });
   };
   
