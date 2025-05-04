@@ -155,6 +155,8 @@ export default function ChartCanvas() {
   // RSIデータをトップレベルで取得
   const rsiValues = useChartDataStore(selectRSI(14));
   
+  // Hook calls must be at component top-level; remove any nested calls in effects below.
+
   // チャートの初期化と更新
   useEffect(() => {
     if (!chartRef.current) return;
@@ -251,6 +253,20 @@ export default function ChartCanvas() {
       candleSeries.current = null;
       lineSeries.current = null;
       areaSeries.current = null;
+      // インジケーター / 補助シリーズもリセットして二重削除を防止
+      if (rsiSeries.current) {
+        rsiSeries.current = null;
+      }
+      if (macdSeries.current) {
+        macdSeries.current.macdLineSeries = null;
+        macdSeries.current.signalLineSeries = null;
+        macdSeries.current.histogramSeries = null;
+        macdSeries.current = null;
+      }
+      if (tenkanSeries.current) tenkanSeries.current = null;
+      if (kijunSeries.current) kijunSeries.current = null;
+      if (chikouSeries.current) chikouSeries.current = null;
+      if (cloudSeries.current) cloudSeries.current = null;
     };
   }, [chartType]);
 
@@ -346,7 +362,7 @@ export default function ChartCanvas() {
     if (activeIndicators.includes('macd')) {
       // メモ化されたMACDセレクターを使用
       const times = sortedData.map(item => (item.time / 1000) as UTCTimestamp);
-      const macdValues = useChartDataStore(selectMACD());
+      const macdValues = macdData;
       
       // MACDデータを正しい形式に変換
       const convertedMacdData = [];

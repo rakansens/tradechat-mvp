@@ -2,7 +2,7 @@
 // 更新: 共通インターフェースを使用するように修正
 "use client"
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { getTimeframeDisplayName } from "@/utils/ohlcDummyData"
 import ChartCanvas from "@/components/chart/ChartCanvas"
 import type { Entry } from "@/types/entry"
@@ -24,6 +24,7 @@ import {
 } from "@/store"
 import { theme } from "@/styles/colors"
 import ChartToolbar from "./ChartToolbar"
+import { formatTimestamp, ensureMilliseconds } from "@/utils/chartUtils"
 
 // 共通インターフェースを組み合わせて使用
 interface ChartSectionProps extends ChartViewProps, Pick<TimeframeControlProps, 'timeframe'> {
@@ -120,7 +121,8 @@ export default function ChartSection() {
           </div>
           {dateRange && (
             <div className="text-xs text-[#9CA3AF]">
-              {new Date(dateRange[0]).toLocaleDateString()} - {new Date(dateRange[1]).toLocaleDateString()}
+              {formatTimestamp(dateRange[0] instanceof Date ? dateRange[0].getTime() / 1000 : dateRange[0])} - 
+              {formatTimestamp(dateRange[1] instanceof Date ? dateRange[1].getTime() / 1000 : dateRange[1])}
             </div>
           )}
         </div>

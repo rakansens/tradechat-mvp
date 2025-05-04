@@ -5,8 +5,12 @@
 // - タイムフレーム関連の計算
 // - テクニカル指標の計算（SMA, EMA, RSI, MACD, ボリンジャーバンド）
 // - チャートデータの処理と変換
+// - チャートシリーズの安全な削除と管理
+// - タイムスタンプの重複排除と昇順ソート
+// - SSR/CSR間で一貫した日付フォーマット
 
 import type { Timeframe, OHLCData } from "@/types/chart";
+import { IChartApi, ISeriesApi, UTCTimestamp } from "lightweight-charts";
 
 /**
  * 指定されたタイムフレームに対する適切なデータポイント数を返す
@@ -228,3 +232,88 @@ export const extractPrices = (
 ): number[] => {
   return data.map(candle => candle[key]);
 };
+
+/**
+ * タイムスタンプの重複を除去し、昇順にソートする
+ * lightweight-charts の "data must be asc ordered by time" エラー防止
+ * @param arr 時系列データの配列
+ * @returns 重複除去・ソート済み配列
+ */
+export function dedupAndSort<T extends { time: UTCTimestamp | number }>(arr: T[]): T[] {
+  if (!arr || !arr.length) return [];
+  
+  // timeを数値として扱うために変換を確実に行う
+  const map = new Map<number, T>();
+  for (const item of arr) {
+    const timeKey = typeof item.time === 'number' ? item.time : Number(item.time);
+    map.set(timeKey, item);
+  }
+  
+  return Array.from(map.values())
+    .sort((a, b) => {
+      const timeA = typeof a.time === 'number' ? a.time : Number(a.time);
+      const timeB = typeof b.time === 'number' ? b.time : Number(b.time);
+      return timeA - timeB;
+    });
+}
+
+/**
+ * チャートシリーズを安全に削除する
+ * 「Value is undefined」エラー防止
+ * @param chart チャートインスタンス
+ * @param series 削除対象のシリーズ
+ */
+export function safeRemoveSeries(
+  chart: IChartApi | null,
+  series: ISeriesApi<any> | null | undefined
+): void {
+  if (!chart || !series) return;
+  
+  try {
+    chart.removeSeries(series);
+  } catch (e) {
+    console.warn('Series already removed or invalid', e);
+  }
+}
+
+/**
+ * 秒タイムスタンプをミリ秒に変換（必要な場合）
+ * lightweight-charts は通常、秒単位のUTCTimestampを使用
+ * 一方、JavaScriptのDateは常にミリ秒単位
+ * @param timestamp 秒またはミリ秒のタイムスタンプ
+ * @returns 常にミリ秒単位のタイムスタンプ
+ */
+export function ensureMilliseconds(timestamp: number): number {
+  // Unix時間の一般的な範囲をチェック
+  // 2000年前後の秒単位タイムスタンプは10桁、ミリ秒なら13桁
+  return timestamp < 10000000000 ? timestamp * 1000 : timestamp;
+}
+
+/**
+ * 秒単位のUTCTimestampを日付文字列に変換
+ * SSRとCSRで一貫性のある日付表示のために使用
+ * @param timestamp 秒単位のUTCTimestamp
+ * @param format 日付フォーマット (simple=YYYY/MM/DD, iso=ISO形式)
+ * @returns フォーマットされた日付文字列
+ */
+export function formatTimestamp(
+  timestamp: UTCTimestamp | number, 
+  format: 'simple' | 'iso' = 'simple'
+): string {
+  if (!timestamp) return '';
+  
+  // 秒→ミリ秒変換を確実に行う
+  const ms = ensureMilliseconds(Number(timestamp));
+  const date = new Date(ms);
+  
+  if (format === 'iso') {
+    return date.toISOString();
+  }
+  
+  // YYY/MM/DD形式（ロケール非依存）
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(date.getUTCDate()).padStart(2, '0');
+  
+  return `${year}/${month}/${day}`;
+}

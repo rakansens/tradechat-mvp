@@ -5,6 +5,7 @@
 import { IChartApi, ISeriesApi, LineData, Time, UTCTimestamp, AreaData, DeepPartial, SeriesOptionsCommon, LineWidth, AreaSeriesPartialOptions, LineSeriesPartialOptions } from 'lightweight-charts';
 import type { OHLCData } from '@/types/chart';
 import React from 'react';
+import { dedupAndSort, safeRemoveSeries } from '@/utils/chartUtils';
 
 /**
  * 一目均衡表の計算オプション
@@ -240,37 +241,45 @@ export function addOrUpdateIchimokuSeries(
     });
   }
   
+  // 一目均衡表の各ラインデータをソートして重複を除去
+  const sortedTenkan = dedupAndSort(ichimokuData.tenkan as unknown as { time: UTCTimestamp }[]) as unknown as LineData<Time>[];
+  
   // 各ラインの追加または更新
   if (seriesRefs.tenkan.current) {
-    seriesRefs.tenkan.current.setData(ichimokuData.tenkan);
+    seriesRefs.tenkan.current.setData(sortedTenkan);
     seriesRefs.tenkan.current.applyOptions(tenkanOptions);
   } else {
     seriesRefs.tenkan.current = chart.addLineSeries(tenkanOptions);
-    seriesRefs.tenkan.current.setData(ichimokuData.tenkan);
+    seriesRefs.tenkan.current.setData(sortedTenkan);
   }
   
+  // 全ラインデータの重複排除とソート
+  const sortedKijun = dedupAndSort(ichimokuData.kijun as unknown as { time: UTCTimestamp }[]) as unknown as LineData<Time>[];
+  const sortedChikou = dedupAndSort(ichimokuData.chikou as unknown as { time: UTCTimestamp }[]) as unknown as LineData<Time>[];
+  const sortedCloudData = dedupAndSort(cloudData as unknown as { time: UTCTimestamp }[]) as unknown as LineData<Time>[];
+  
   if (seriesRefs.kijun.current) {
-    seriesRefs.kijun.current.setData(ichimokuData.kijun);
+    seriesRefs.kijun.current.setData(sortedKijun);
     seriesRefs.kijun.current.applyOptions(kijunOptions);
   } else {
     seriesRefs.kijun.current = chart.addLineSeries(kijunOptions);
-    seriesRefs.kijun.current.setData(ichimokuData.kijun);
+    seriesRefs.kijun.current.setData(sortedKijun);
   }
   
   if (seriesRefs.chikou.current) {
-    seriesRefs.chikou.current.setData(ichimokuData.chikou);
+    seriesRefs.chikou.current.setData(sortedChikou);
     seriesRefs.chikou.current.applyOptions(chikouOptions);
   } else {
     seriesRefs.chikou.current = chart.addLineSeries(chikouOptions);
-    seriesRefs.chikou.current.setData(ichimokuData.chikou);
+    seriesRefs.chikou.current.setData(sortedChikou);
   }
   
   if (seriesRefs.cloud.current) {
-    seriesRefs.cloud.current.setData(cloudData);
+    seriesRefs.cloud.current.setData(sortedCloudData as any);
     seriesRefs.cloud.current.applyOptions(cloudOptions);
   } else {
     seriesRefs.cloud.current = chart.addAreaSeries(cloudOptions);
-    seriesRefs.cloud.current.setData(cloudData);
+    seriesRefs.cloud.current.setData(sortedCloudData as any);
   }
 }
 
@@ -290,23 +299,16 @@ export function removeIchimokuSeries(
 ): void {
   if (!chart) return;
   
-  if (seriesRefs.tenkan.current) {
-    chart.removeSeries(seriesRefs.tenkan.current);
-    seriesRefs.tenkan.current = null;
-  }
+  // safeRemoveSeries関数を使用して安全に削除
+  safeRemoveSeries(chart, seriesRefs.tenkan.current);
+  seriesRefs.tenkan.current = null;
   
-  if (seriesRefs.kijun.current) {
-    chart.removeSeries(seriesRefs.kijun.current);
-    seriesRefs.kijun.current = null;
-  }
+  safeRemoveSeries(chart, seriesRefs.kijun.current);
+  seriesRefs.kijun.current = null;
   
-  if (seriesRefs.chikou.current) {
-    chart.removeSeries(seriesRefs.chikou.current);
-    seriesRefs.chikou.current = null;
-  }
+  safeRemoveSeries(chart, seriesRefs.chikou.current);
+  seriesRefs.chikou.current = null;
   
-  if (seriesRefs.cloud.current) {
-    chart.removeSeries(seriesRefs.cloud.current);
-    seriesRefs.cloud.current = null;
-  }
+  safeRemoveSeries(chart, seriesRefs.cloud.current);
+  seriesRefs.cloud.current = null;
 } 

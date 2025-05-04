@@ -17,6 +17,7 @@ import {
     LineWidth
 } from 'lightweight-charts';
 import { MACD as MacdIndicator } from 'technicalindicators'; // Import MACD calculation
+import { dedupAndSort, safeRemoveSeries } from '@/utils/chartUtils';
 
 // Type for the calculated MACD data structure from technicalindicators
 interface MacdValue {
@@ -137,12 +138,14 @@ export function addOrUpdateMacdSeries(
 
     const instances = seriesInstancesRef.current; // Get the current instances object
 
+    // Use a constant custom price scale ID instead of dynamic IDs per pane to avoid invalid price scale errors
+    const scaleId = 'macd_scale';
+
     // Let TypeScript infer the type for options objects
     const macdLineOptions = {
         color: '#2962FF', // Blue for MACD line
         lineWidth: 1 as const,
-        pane: paneIndex,
-        priceScaleId: `macd_price_scale_${paneIndex}`, // Unique price scale ID
+        priceScaleId: scaleId, // Use shared custom scale
         priceFormat: { type: 'price' as const, precision: 4, minMove: 0.0001 }, // Adjust precision as needed
         lastValueVisible: true,
         priceLineVisible: false,
@@ -163,8 +166,7 @@ export function addOrUpdateMacdSeries(
     const signalLineOptions = {
         color: '#FF9800', // Orange for Signal line
         lineWidth: 1 as const,
-        pane: paneIndex,
-        priceScaleId: `macd_price_scale_${paneIndex}`, // Same scale as MACD line
+        priceScaleId: scaleId, // Same scale as MACD line
         priceFormat: { type: 'price' as const, precision: 4, minMove: 0.0001 },
         lastValueVisible: true,
         priceLineVisible: false,
@@ -185,8 +187,7 @@ export function addOrUpdateMacdSeries(
     const histogramOptions = {
         // Color is set per bar in the data
         title: 'Histogram',
-        pane: paneIndex,
-        priceScaleId: `macd_price_scale_${paneIndex}`, // Same scale
+        priceScaleId: scaleId, // Same scale
         priceFormat: { type: 'price' as const, precision: 4, minMove: 0.0001 },
         lastValueVisible: false, // Usually hide histogram value
         priceLineVisible: false,
@@ -200,7 +201,9 @@ export function addOrUpdateMacdSeries(
     } else {
         instances.macdLineSeries.applyOptions(macdLineOptions);
     }
-    instances.macdLineSeries.setData(macdData.macdLine);
+    // 重複データを排除し昇順ソートしてからセット
+    const sortedMacdLine = dedupAndSort(macdData.macdLine);
+    instances.macdLineSeries.setData(sortedMacdLine);
 
     // --- Signal Line ---
     if (!instances.signalLineSeries) {
@@ -209,7 +212,9 @@ export function addOrUpdateMacdSeries(
     } else {
         instances.signalLineSeries.applyOptions(signalLineOptions);
     }
-    instances.signalLineSeries.setData(macdData.signalLine);
+    // 重複データを排除し昇順ソートしてからセット
+    const sortedSignalLine = dedupAndSort(macdData.signalLine);
+    instances.signalLineSeries.setData(sortedSignalLine);
 
     // --- Histogram ---
     if (!instances.histogramSeries) {
@@ -218,7 +223,9 @@ export function addOrUpdateMacdSeries(
     } else {
         instances.histogramSeries.applyOptions(histogramOptions);
     }
-    instances.histogramSeries.setData(macdData.histogramData);
+    // 重複データを排除し昇順ソートしてからセット
+    const sortedHistogram = dedupAndSort(macdData.histogramData);
+    instances.histogramSeries.setData(sortedHistogram);
 
     // --- Optional: Add Zero Line for Reference ---
     // This requires managing the line, potentially adding/removing it
@@ -238,14 +245,18 @@ export function addOrUpdateMacdSeries(
     }
     */
 
-    // Ensure the price scale is visible if the pane was newly created implicitly
-    chart.priceScale(`macd_price_scale_${paneIndex}`).applyOptions({
-        scaleMargins: { top: 0.2, bottom: 0.2 }, // TradingViewに近いマージンに調整
-        autoScale: true,
-        entireTextOnly: true,
-        borderVisible: false,
-        textColor: '#9598A1' // テキスト色を薄く
-    });
+    // Ensure the price scale exists and apply common options (ignore errors if scale not found)
+    try {
+        chart.priceScale(scaleId).applyOptions({
+            scaleMargins: { top: 0.2, bottom: 0.2 },
+            autoScale: true,
+            entireTextOnly: true,
+            borderVisible: false,
+            textColor: '#9598A1',
+        });
+    } catch (err) {
+        console.warn('MACD price scale not found, skipping applyOptions:', err);
+    }
     console.log("MACD Series Updated/Set on Pane:", paneIndex);
 }
 
@@ -262,17 +273,17 @@ export function removeMacdSeries(
 
     const instances = seriesInstancesRef.current;
 
-    if (instances.macdLineSeries) {
-        chart.removeSeries(instances.macdLineSeries);
-        instances.macdLineSeries = null;
-    }
-    if (instances.signalLineSeries) {
-        chart.removeSeries(instances.signalLineSeries);
-        instances.signalLineSeries = null;
-    }
-    if (instances.histogramSeries) {
-        chart.removeSeries(instances.histogramSeries);
-        instances.histogramSeries = null;
-    }
+    // 安全な削除ユーティリティを使用して例外を回避
+    safeRemoveSeries(chart, instances.macdLineSeries);
+    instances.macdLineSeries = null;
+    
+    safeRemoveSeries(chart, instances.signalLineSeries);
+    instances.signalLineSeries = null;
+    
+    safeRemoveSeries(chart, instances.histogramSeries);
+    instances.histogramSeries = null;
+    
+    // 処理完了をログ
+    console.log("MACD Series successfully removed");
     console.log("MACD Series Removed");
 }
