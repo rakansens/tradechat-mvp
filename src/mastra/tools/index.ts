@@ -1,10 +1,11 @@
 // src/mastra/tools/index.ts
-// 新規作成：Mem0記憶ツール定義
-// 長期記憶を検索・保存するためのAIツールを実装
+// 更新：Mem0記憶ツールとチャートキャプチャツールをエクスポート
+// 長期記憶を検索・保存するためのAIツールと、チャートをキャプチャして分析するツールを実装
 
 import { createTool } from "@mastra/core/tools";
 import { z } from "zod";
 import { mem0 } from "../integrations";
+import { chartCaptureAnalysisTool } from "./chart-capture";
 
 /**
  * 過去に保存した記憶を検索するツール
@@ -50,3 +51,6 @@ export const mem0MemorizeTool = createTool({
     }
   },
 });
+
+// チャートキャプチャツールをエクスポート
+export { chartCaptureAnalysisTool };
