@@ -99,7 +99,8 @@ export function addOrUpdateRsiSeries(
     }
 
     // Ensure the price scale is configured AFTER the series (and scale) is created
-    rsiSeriesRef.current.priceScale().applyOptions({
+    // null チェックを追加
+    rsiSeriesRef.current?.priceScale().applyOptions({
         scaleMargins: {
             top: 0.1, // TradingView風のマージン調整
             bottom: 0.1,

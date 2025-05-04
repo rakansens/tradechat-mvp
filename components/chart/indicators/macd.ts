@@ -22,7 +22,7 @@ import {
     filterValidData, 
     createCompatibleSeries, 
     safeRemoveSeries, 
-    extractPrices 
+    extractPrices
 } from '@/utils/chartIndicatorUtils';
 import type { OHLCData } from '@/types/chart';
 import type { MACDParams } from '@/types/indicators';
