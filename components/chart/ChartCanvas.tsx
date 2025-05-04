@@ -28,14 +28,8 @@ import type { ChartViewProps, TimeframeControlProps, ChartTypeControlProps } fro
 import { theme } from "@/styles/colors"
 import { useChartConfig } from "@/hooks/useChartConfig"
 import { useTheme } from "next-themes"
-import { addOrUpdateRsiSeries } from "./indicators/rsi"; // Import RSI functions
-import {
-  calculateMacdValues,
-  alignMacdData,
-  addOrUpdateMacdSeries,
-  removeMacdSeries, // Import remove function
-  MacdSeriesInstances, // Import the new interface
-} from "./indicators/macd"; // Import MACD functions
+import { RSI } from './indicators/rsi'; // Import RSI functions
+import { MACD, MacdSeriesRefs } from "./indicators/macd"; // Import MACD functions
 import {
   calculateIchimokuData,
   addOrUpdateIchimokuSeries,
@@ -108,7 +102,11 @@ export default function ChartCanvas() {
   
   // インジケーターのシリーズ参照
   const rsiSeries = useRef<ISeriesApi<"Line"> | null>(null);
-  const macdSeries = useRef<MacdSeriesInstances | null>(null);
+  const macdSeries = useRef<MacdSeriesRefs>({ 
+    macdLine: { current: null },
+    signalLine: { current: null },
+    histogram: { current: null }
+  });
   
   // 一目均衡表のシリーズ参照
   const tenkanSeries = useRef<ISeriesApi<"Line"> | null>(null);
@@ -158,6 +156,43 @@ export default function ChartCanvas() {
   const rsiValues = useChartDataStore(selectRSI(14));
   
   // Hook calls must be at component top-level; remove any nested calls in effects below.
+
+  // チャートのリセット処理
+  const resetChartState = () => {
+    // インジケーターのシリーズをリセット
+    rsiSeries.current = null;
+    
+    // MACDシリーズのリセット
+    if (macdSeries.current) {
+      macdSeries.current.macdLine.current = null;
+      macdSeries.current.signalLine.current = null;
+      macdSeries.current.histogram.current = null;
+    }
+  };
+
+  // チャートの再描画処理
+  const redrawChart = () => {
+    if (!chartRef.current || !chartInstanceRef.current) return;
+    
+    // チャートのサイズを再設定
+    chartInstanceRef.current.resize(
+      chartRef.current.clientWidth,
+      chartRef.current.clientHeight
+    );
+  };
+
+  // --- Pane management ---
+  // Keeps track of next available pane index (0 is main chart)
+  const paneCounterRef = useRef<number>(1);
+  // Map indicator key -> assigned pane index
+  const paneMapRef = useRef<Record<string, number>>({});
+
+  const getPaneIndex = (key: string): number => {
+    if (paneMapRef.current[key] !== undefined) return paneMapRef.current[key];
+    const idx = paneCounterRef.current++;
+    paneMapRef.current[key] = idx;
+    return idx;
+  };
 
   // チャートの初期化と更新
   useEffect(() => {
@@ -262,14 +297,14 @@ export default function ChartCanvas() {
       lineSeries.current = null;
       areaSeries.current = null;
       // インジケーター / 補助シリーズもリセットして二重削除を防止
-      if (rsiSeries.current) {
-        rsiSeries.current = null;
-      }
+      // インジケーターのシリーズをリセット
+      rsiSeries.current = null;
+      
+      // MACDシリーズのリセット
       if (macdSeries.current) {
-        macdSeries.current.macdLineSeries = null;
-        macdSeries.current.signalLineSeries = null;
-        macdSeries.current.histogramSeries = null;
-        macdSeries.current = null;
+        macdSeries.current.macdLine.current = null;
+        macdSeries.current.signalLine.current = null;
+        macdSeries.current.histogram.current = null;
       }
       if (tenkanSeries.current) tenkanSeries.current = null;
       if (kijunSeries.current) kijunSeries.current = null;
@@ -349,65 +384,62 @@ export default function ChartCanvas() {
     
     // RSIインジケーターの表示切替
     if (activeIndicators.includes('rsi')) {
-      // メモ化されたRSIセレクターを使用
-      const times = sortedData.map(item => (item.time / 1000) as UTCTimestamp);
+      // RSIパラメータを設定
+      const rsiParams = {
+        visible: true,
+        period: 14,
+        overbought: 70,
+        oversold: 30,
+        paneIndex: getPaneIndex('rsi')
+      };
       
-      // RSIデータを時間と結合
-      const formattedRsiData = times.slice(times.length - rsiValues.length).map((time, i) => ({
-        time,
-        value: rsiValues[i] || 0
-      }));
-      
-      // パネルインデックスを指定して1を渡す（メインチャートの下に表示）
-      addOrUpdateRsiSeries(chart, formattedRsiData, 1, rsiSeries);
+      // 新しいRSIインターフェースを使用
+      RSI.addOrUpdate(chart, sortedData, rsiParams, rsiSeries);
     } else if (rsiSeries.current) {
       // RSIを非表示
-      chart.removeSeries(rsiSeries.current);
-      rsiSeries.current = null;
+      RSI.remove(chart, rsiSeries);
     }
     
     // MACDインジケーターの表示切替
     if (activeIndicators.includes('macd')) {
-      // メモ化されたMACDセレクターを使用
-      const times = sortedData.map(item => (item.time / 1000) as UTCTimestamp);
-      const macdValues = macdData;
+      // MACDパラメータを設定
+      const macdParams = {
+        fastPeriod: 12,
+        slowPeriod: 26,
+        signalPeriod: 9,
+        paneIndex: getPaneIndex('macd'),
+        visible: true
+      };
       
-      // MACDデータを正しい形式に変換
-      const convertedMacdData = [];
-      for (let i = 0; i < macdValues.macd.length; i++) {
-        convertedMacdData.push({
-          macd: macdValues.macd[i],
-          signal: macdValues.signal[i],
-          histogram: macdValues.histogram[i]
+      // データが十分にあるか確認
+      if (sortedData.length >= Math.max(macdParams.fastPeriod, macdParams.slowPeriod) + macdParams.signalPeriod) {
+        console.log('MACDを表示します。データ数:', sortedData.length);
+        
+        // MACDデータのサンプルをログ出力して確認
+        // メモ化されたセレクターを使用してMACDを計算
+        const macdSelector = selectMACD(macdParams.fastPeriod, macdParams.slowPeriod, macdParams.signalPeriod);
+        const macdValues = macdSelector({ data: sortedData });
+        
+        console.log('MACDデータサンプル:', {
+          macd: macdValues.macd.slice(-5),  // 最後の5データポイント
+          signal: macdValues.signal.slice(-5),
+          histogram: macdValues.histogram.slice(-5)
         });
-      }
-      
-      // 時間データとMACDデータを結合
-      const alignedData = alignMacdData(
-        sortedData.map(item => ({ 
-          time: (item.time / 1000) as UTCTimestamp, 
-          close: item.close 
-        })),
-        convertedMacdData
-      );
-      
-      // MACDシリーズの初期化
-      if (!macdSeries.current) {
-        macdSeries.current = {
-          macdLineSeries: null,
-          signalLineSeries: null,
-          histogramSeries: null
-        };
-      }
-      
-      // パネルインデックスを指定して2を渡す（RSIの下に表示）
-      if (macdSeries.current) {
-        addOrUpdateMacdSeries(chart, alignedData, 2, { current: macdSeries.current });
+        
+        // 新しいMACDインターフェースを使用
+        try {
+          MACD.addOrUpdate(chart, sortedData, macdParams, macdSeries.current);
+          console.log('MACD表示処理完了');
+        } catch (error) {
+          console.error('MACD表示中にエラーが発生しました:', error);
+        }
+      } else {
+        console.warn('MACDの計算に必要なデータが不足しています。データ数:', sortedData.length);
       }
     } else if (macdSeries.current) {
       // MACDを非表示
-      removeMacdSeries(chart, { current: macdSeries.current });
-      macdSeries.current = null;
+      MACD.remove(chart, macdSeries.current);
+      // 保存済み paneMap は残しておく（再表示時に同じ pane を再利用）
     }
     
     // 一目均衡表インジケーターの表示切替

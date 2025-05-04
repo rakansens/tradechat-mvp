@@ -8,78 +8,67 @@ import {
   createChart,
   LineSeries,
 } from 'lightweight-charts';
+import { 
+  filterValidData, 
+  createCompatibleSeries, 
+  safeRemoveSeries,
+  extractPrices,
+  convertToLineData 
+} from '@/utils/chartIndicatorUtils';
+import type { OHLCData } from '@/types/chart';
+import type { RSIParams } from '@/types/indicators';
 import { RSI as RsiIndicator } from 'technicalindicators';
+import { MutableRefObject } from 'react';
 
 /**
- * Calculates RSI data from price data.
- * @param prices - Array of closing prices.
- * @param period - The RSI period (default: 14).
- * @returns Array of RSI values matching the input price data length (with initial NaNs).
+ * RSIデータを計算する関数
+ * @param ohlcData OHLCデータの配列
+ * @param params RSIパラメータ
+ * @returns RSIの計算結果を含むLineData配列
  */
 export function calculateRsiData(
-  prices: number[],
-  period: number = 14
+  ohlcData: OHLCData[],
+  params: RSIParams
 ): LineData<Time>[] {
-  if (prices.length < period) {
+  if (ohlcData.length < params.period) {
     return []; // Not enough data to calculate RSI
   }
 
-  const rsiValues = RsiIndicator.calculate({ values: prices, period });
+  // 終値からRSIを計算
+  const prices = extractPrices(ohlcData, 'close');
+  const rsiValues = RsiIndicator.calculate({ values: prices, period: params.period });
 
-  // Need to align RSI output with the original price data timeline.
-  // technicalindicators output is shorter than input by (period - 1).
-  // We also need the 'time' property from the original data.
-  // This part requires the original data with time information.
-  // Let's assume the ChartCanvas will handle the alignment for now.
-  // This function will just return the calculated values.
-
-  // For now, let's return a placeholder structure. The actual implementation
-  // will need the time data associated with the prices.
-  console.warn(
-    'calculateRsiData needs time information for proper LineData structure'
-  );
-  const rsiData: LineData<Time>[] = [];
-  const candles = prices.map((price, index) => ({ time: (Date.now() / 1000 + index) as Time, price }));
-  // Start from the 'period'-th candle, as RSI calculation needs prior data
-  for (let i = period - 1; i < candles.length; i++) {
-    // Make sure candles[i] and rsiValues[i - (period - 1)] exist
-    const candleTime = candles[i]?.time;
-    const rsiValue = rsiValues[i - (period - 1)];
-
-    if (candleTime && typeof candleTime === 'string' && rsiValue !== undefined) {
-        // Ensure time is in 'yyyy-mm-dd' format for lightweight-charts
-        const formattedTime = candleTime.split('T')[0]; // Extract date part from ISO string
-
-        rsiData.push({
-            time: formattedTime as Time, // Cast to Time type
-            value: rsiValue,
-        });
-    }
-  }
-  return rsiData;
+  // RSI計算の結果は入力データより(period - 1)短くなる
+  // 時間データと合わせる必要がある
+  const rsiLineData: LineData[] = rsiValues.map((value, index) => ({
+    time: ohlcData[index + (params.period - 1)].time as Time,
+    value: value
+  }));
+  
+  // NaN値をフィルタリング
+  return filterValidData(rsiLineData);
 }
 
 /**
- * Adds or updates the RSI series on a given chart pane.
- * @param chart - The main chart instance (IChartApi).
- * @param rsiData - The calculated RSI data array (LineData[]).
- * @param paneIndex - The index of the pane where the RSI should be drawn.
- * @param rsiSeriesRef - A React ref to store the RSI series instance.
+ * RSIシリーズをチャートに追加または更新する
+ * @param chart チャートインスタンス
+ * @param rsiData RSIデータ
+ * @param params RSIパラメータ
+ * @param rsiSeriesRef RSIシリーズの参照
  */
 export function addOrUpdateRsiSeries(
   chart: IChartApi,
   rsiData: LineData<Time>[],
-  paneIndex: number,
-  rsiSeriesRef: React.MutableRefObject<ISeriesApi<'Line'> | null>
-) {
+  params: RSIParams,
+  rsiSeriesRef: MutableRefObject<ISeriesApi<"Line"> | null>
+): void {
   if (!chart) return;
 
   const rsiOptions = {
-    color: '#FF9800', // RSIラインをオレンジ色に
+    color: '#2962FF',
     lineWidth: 1 as const,
     title: 'RSI',
-    pane: paneIndex,
-    priceScaleId: `rsi_price_scale_${paneIndex}`,
+    pane: params.paneIndex,
     lastValueVisible: true,
     crosshairMarkerVisible: true,
     lastPriceAnimation: 0, // アニメーションなし
@@ -98,23 +87,19 @@ export function addOrUpdateRsiSeries(
     // オーバーボート/オーバーソールドラインは後で追加
   };
 
-  if (rsiSeriesRef.current) {
-    // If series exists, update data
-    rsiSeriesRef.current.setData(rsiData);
-    rsiSeriesRef.current.applyOptions(rsiOptions); // Re-apply options if needed
-  } else {
-    // If series doesn't exist, create it
-    // v5.0.6では、addLineSeries()の代わりにaddSeries()を使用
+  if (!rsiSeriesRef.current) {
+    // シリーズが存在しなければ作成
     if (typeof chart.addSeries === 'function') {
-      rsiSeriesRef.current = chart.addSeries(LineSeries, rsiOptions);
+      // v5.0.6+ API
+      const opts = { ...rsiOptions, overlay: false };
+      rsiSeriesRef.current = chart.addSeries(LineSeries, opts, params.paneIndex) as ISeriesApi<'Line'>;
     } else {
-      // 古いバージョンの場合
-      // @ts-ignore
-      rsiSeriesRef.current = chart.addLineSeries(rsiOptions);
+      // 古いAPI
+      rsiSeriesRef.current = createCompatibleSeries(chart, LineSeries, rsiOptions);
     }
 
     // Ensure the price scale is configured AFTER the series (and scale) is created
-    chart.priceScale(`rsi_price_scale_${paneIndex}`).applyOptions({
+    rsiSeriesRef.current.priceScale().applyOptions({
         scaleMargins: {
             top: 0.1, // TradingView風のマージン調整
             bottom: 0.1,
@@ -125,11 +110,12 @@ export function addOrUpdateRsiSeries(
         textColor: '#9598A1', // テキスト色を薄く
     });
 
-    rsiSeriesRef.current.setData(rsiData);
+    if (rsiSeriesRef.current) {
+      rsiSeriesRef.current.setData(rsiData);
 
-    // オーバーボート/オーバーソールドラインをTradingView風に設定
-    rsiSeriesRef.current.createPriceLine({
-        price: 70,
+      // オーバーボート/オーバーソールドラインをTradingView風に設定
+      rsiSeriesRef.current.createPriceLine({
+        price: params.overbought,
         color: '#FF6D00', // オレンジ色
         lineWidth: 1,
         lineStyle: 2, // 点線
@@ -138,13 +124,63 @@ export function addOrUpdateRsiSeries(
     });
 
     rsiSeriesRef.current.createPriceLine({
-        price: 30,
+        price: params.oversold,
         color: '#2962FF', // 青色
         lineWidth: 1,
         lineStyle: 2, // 点線
         axisLabelVisible: true,
         title: 'Oversold',
     });
-
+    }
+  } else {
+    // 既存シリーズがあればデータ更新のみ
+    rsiSeriesRef.current.setData(rsiData);
   }
 }
+
+/**
+ * RSIインジケーターをチャートから削除する
+ * @param chart チャートインスタンス
+ * @param rsiSeriesRef RSIシリーズの参照
+ */
+export function removeRsiSeries(
+  chart: IChartApi,
+  rsiSeriesRef: MutableRefObject<ISeriesApi<"Line"> | null>
+): void {
+  safeRemoveSeries(chart, rsiSeriesRef.current);
+  if (rsiSeriesRef.current) {
+    rsiSeriesRef.current = null;
+  }
+}
+
+/**
+ * RSIインジケーターのエクスポート関数
+ * チャートキャンバスから使用されるインターフェース
+ */
+export const RSI = {
+  /**
+   * OHLCデータからRSIを計算し、チャートに表示する
+   * @param chart チャートインスタンス
+   * @param data OHLCデータ
+   * @param params RSIパラメータ
+   * @param seriesRef シリーズ参照
+   */
+  addOrUpdate: (chart: IChartApi, data: OHLCData[], params: RSIParams, seriesRef: MutableRefObject<ISeriesApi<"Line"> | null>) => {
+    if (!chart || !data || data.length === 0) return;
+    
+    // RSIを計算
+    const rsiData = calculateRsiData(data, params);
+    
+    // チャートに追加または更新
+    addOrUpdateRsiSeries(chart, rsiData, params, seriesRef);
+  },
+  
+  /**
+   * RSIをチャートから削除する
+   * @param chart チャートインスタンス
+   * @param seriesRef シリーズ参照
+   */
+  remove: (chart: IChartApi, seriesRef: MutableRefObject<ISeriesApi<"Line"> | null>) => {
+    removeRsiSeries(chart, seriesRef);
+  }
+};

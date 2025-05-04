@@ -1,326 +1,406 @@
 // components/chart/indicators/macd.ts
-// Added functions for MACD calculation (calculateMacdValues, alignMacdData) and chart series management (addOrUpdateMacdSeries, removeMacdSeries).
+// 作成: MACDインジケーターの実装
+// 更新: lightweight-charts v5.0.6に対応
+// 更新: 共通インターフェースに準拠し、型安全性を向上
 
 import {
     IChartApi,
     ISeriesApi,
     LineData,
-    HistogramData,
+    LineStyle,
     Time,
     UTCTimestamp,
-    DeepPartial,
+    HistogramData,
     LineSeries,
     HistogramSeries,
-    SeriesOptionsCommon,
-    HistogramStyleOptions,
-    PriceFormat,
-    LineStyle,
-    LineWidth
+    LineWidth,
+    DeepPartial
 } from 'lightweight-charts';
-import { MACD as MacdIndicator } from 'technicalindicators'; // Import MACD calculation
-import { dedupAndSort, safeRemoveSeries } from '@/utils/chartUtils';
+import { MACD as MacdIndicator } from 'technicalindicators';
+import { dedupAndSort } from '@/utils/chartUtils';
+import { 
+    filterValidData, 
+    createCompatibleSeries, 
+    safeRemoveSeries, 
+    extractPrices 
+} from '@/utils/chartIndicatorUtils';
+import type { OHLCData } from '@/types/chart';
+import type { MACDParams } from '@/types/indicators';
+import { MutableRefObject } from 'react';
 
 /**
- * NaN値をフィルタリングし、有効なデータのみを返す
- * @param data チャートデータ配列
- * @returns NaN値を除外したデータ配列
+ * MACDの計算結果の型定義
  */
-function filterValidData<T extends { value: number }>(data: Array<T>): Array<T> {
-  return data.filter(item => {
-    // NaN値や無限大の値をフィルタリング
-    return !isNaN(item.value) && isFinite(item.value);
-  });
-}
-
-// Type for the calculated MACD data structure from technicalindicators
 interface MacdValue {
     MACD?: number;
     signal?: number;
     histogram?: number;
 }
 
-// Type for the data structure we'll use with lightweight-charts
-export interface MacdChartData {
-    macdLine: LineData<UTCTimestamp>[];
-    signalLine: LineData<UTCTimestamp>[];
-    histogramData: HistogramData<UTCTimestamp>[];
+/**
+ * チャート表示用のMACDデータ
+ */
+interface MacdData {
+    macdLine: LineData<Time>[];
+    signalLine: LineData<Time>[];
+    histogramData: HistogramData<Time>[];
 }
 
 /**
- * Calculates MACD data using technicalindicators.
- * @param prices - Array of closing prices.
- * @param fastPeriod - Default 12.
- * @param slowPeriod - Default 26.
- * @param signalPeriod - Default 9.
- * @returns Array of MACD values (MACD line, signal line, histogram).
+ * MACDシリーズの参照を管理するオブジェクト
+ */
+export interface MacdSeriesRefs {
+    macdLine: MutableRefObject<ISeriesApi<'Line'> | null>;
+    signalLine: MutableRefObject<ISeriesApi<'Line'> | null>;
+    histogram: MutableRefObject<ISeriesApi<'Histogram'> | null>;
+}
+
+/**
+ * MACDを計算する関数
+ * @param ohlcData OHLCデータの配列
+ * @param params MACDパラメータ
+ * @returns MACD値の配列
  */
 export function calculateMacdValues(
-    prices: number[],
-    fastPeriod = 12,
-    slowPeriod = 26,
-    signalPeriod = 9
+    ohlcData: OHLCData[],
+    params: MACDParams
 ): MacdValue[] {
-    if (prices.length < slowPeriod + signalPeriod -1) { // Need enough data for calculation
-        console.warn("Not enough data for MACD calculation.");
-        return [];
+    // 終値からMACDを計算
+    const prices = extractPrices(ohlcData, 'close');
+    
+    if (prices.length < Math.max(params.fastPeriod, params.slowPeriod) + params.signalPeriod) {
+        return []; // Not enough data to calculate MACD
     }
-    const macdInput = {
+
+    // technicalindicatorsライブラリを使用してMACDを計算
+    return MacdIndicator.calculate({
         values: prices,
-        fastPeriod: fastPeriod,
-        slowPeriod: slowPeriod,
-        signalPeriod: signalPeriod,
-        SimpleMAOscillator: false, // Use EMA for MACD line
-        SimpleMASignal: false,     // Use EMA for Signal line
-    };
-    return MacdIndicator.calculate(macdInput);
+        fastPeriod: params.fastPeriod,
+        slowPeriod: params.slowPeriod,
+        signalPeriod: params.signalPeriod,
+        SimpleMAOscillator: false,
+        SimpleMASignal: false
+    });
 }
 
 /**
- * Aligns calculated MACD values with the original price data timestamps.
- * @param priceData - Original price data with timestamps (e.g., CandlestickData[] or similar).
- * @param macdValues - Raw MACD values calculated by technicalindicators.
- * @param slowPeriod - Must match the slowPeriod used in calculation.
- * @param signalPeriod - Must match the signalPeriod used in calculation.
- * @returns Formatted data ready for lightweight-charts series.
+ * MACDデータをチャートデータ形式に変換する
+ * @param macdValues MACD値の配列
+ * @param ohlcData OHLCデータの配列
+ * @param params MACDパラメータ
+ * @returns チャート用にLineData形式に変換されたMACDデータ
  */
 export function alignMacdData(
-    priceData: { time: Time; close: number }[], // Needs time and close
     macdValues: MacdValue[],
-    slowPeriod = 26,
-    signalPeriod = 9
-): MacdChartData {
-    const alignedData: MacdChartData = { macdLine: [], signalLine: [], histogramData: [] };
-    const startIndex = slowPeriod + signalPeriod - 2; // Index offset for MACD output
+    ohlcData: OHLCData[],
+    params: MACDParams
+): MacdData {
+    // 空のデータの場合は早期リターン
+    if (macdValues.length === 0 || ohlcData.length === 0) {
+        return {
+            macdLine: [],
+            signalLine: [],
+            histogramData: []
+        };
+    }
+    
+    // --- MACD と OHLC データの長さ整合を取る ---
+    // technicalindicators の MACD 計算結果は通常、原データより短くなります。
+    // 差分は slowPeriod + signalPeriod 付近ですが実際のライブラリ実装に依存するため
+    // 長さ差分から動的に開始インデックスを決定します。
 
-    if (priceData.length < startIndex + 1 || macdValues.length === 0) {
-        return alignedData; // Not enough data or no MACD values
+    const startIndex = ohlcData.length - macdValues.length;
+    if (startIndex < 0) {
+        console.warn('MACD: Computed values longer than source data. Abort align.');
+        return { macdLine: [], signalLine: [], histogramData: [] };
     }
 
-    // Iterate starting from where MACD values become available
-    for (let i = startIndex; i < priceData.length; i++) {
-        const macdIndex = i - startIndex;
-        if (macdIndex >= macdValues.length || macdValues[macdIndex] === undefined) {
-            continue; // Skip if index out of bounds or value missing
+    const relevantData = ohlcData.slice(startIndex);
+
+    const minLen = Math.min(relevantData.length, macdValues.length);
+
+    // MACDの値と時間データをマッピング
+    const macdLine: LineData<Time>[] = [];
+    const signalLine: LineData<Time>[] = [];
+    const histogramData: HistogramData<Time>[] = [];
+
+    for (let i = 0; i < minLen; i++) {
+        const timePoint = relevantData[i].time as Time;
+        const macdValue = macdValues[i];
+        
+        if (macdValue.MACD !== undefined) {
+            macdLine.push({
+                time: timePoint,
+                value: macdValue.MACD
+            } as LineData<Time>);
         }
 
-        const currentMacd = macdValues[macdIndex];
-        const rawTime = priceData[i].time;
-        // Convert time to UTCTimestamp (number) if it's an ISO string
-        const time: UTCTimestamp =
-            typeof rawTime === 'string'
-                ? (new Date(rawTime).getTime() / 1000) as UTCTimestamp
-                : (rawTime as UTCTimestamp);
+        if (macdValue.signal !== undefined) {
+            signalLine.push({
+                time: timePoint,
+                value: macdValue.signal
+            } as LineData<Time>);
+        }
 
-        if (currentMacd.MACD !== undefined) {
-            alignedData.macdLine.push({ time, value: currentMacd.MACD });
-        }
-        if (currentMacd.signal !== undefined) {
-            alignedData.signalLine.push({ time, value: currentMacd.signal });
-        }
-        if (currentMacd.histogram !== undefined) {
-            // Determine histogram color based on value (positive/negative)
-            const color = currentMacd.histogram >= 0 ? '#26a69a' : '#ef5350'; // Green for positive, Red for negative
-            alignedData.histogramData.push({ time, value: currentMacd.histogram, color });
+        if (macdValue.histogram !== undefined) {
+            histogramData.push({
+                time: timePoint,
+                value: macdValue.histogram,
+                color: macdValue.histogram >= 0 ? '#26A69A' : '#EF5350' // 正の値は緑、負の値は赤
+            } as HistogramData<Time>);
         }
     }
-    return alignedData;
-}
 
-// Series instances type for MACD components
-export interface MacdSeriesInstances {
-  macdLineSeries: ISeriesApi<"Line"> | null;
-  signalLineSeries: ISeriesApi<"Line"> | null;
-  histogramSeries: ISeriesApi<"Histogram"> | null;
+    // NaN値をフィルタリング
+    return {
+        macdLine: filterValidData(macdLine),
+        signalLine: filterValidData(signalLine),
+        histogramData: filterValidData(histogramData)
+    };
 }
 
 /**
- * Adds or updates MACD series (MACD Line, Signal Line, Histogram) on the specified chart pane.
- * Creates the series if they don't exist, otherwise updates their data.
- * @param chart - The IChartApi instance.
- * @param macdData - Formatted MACD data (macdLine, signalLine, histogramData).
- * @param paneIndex - The index of the pane where the MACD should be displayed.
- * @param seriesInstancesRef - Ref object holding the MACD series instances.
+ * MACDシリーズをチャートに追加または更新する
+ * @param chart チャートインスタンス
+ * @param macdData MACDデータ
+ * @param params MACDパラメータ
+ * @param seriesRefs MACDシリーズの参照
  */
 export function addOrUpdateMacdSeries(
     chart: IChartApi,
-    macdData: MacdChartData,
-    paneIndex: number,
-    seriesInstancesRef: React.MutableRefObject<MacdSeriesInstances>
-) {
-    if (!chart || !seriesInstancesRef) return;
+    macdData: MacdData,
+    params: MACDParams,
+    seriesRefs: MacdSeriesRefs
+): void {
+    if (!chart) return;
 
-    const instances = seriesInstancesRef.current; // Get the current instances object
+    console.log('MACDシリーズを追加/更新します', { paneIndex: params.paneIndex });
 
-    // Use a constant custom price scale ID instead of dynamic IDs per pane to avoid invalid price scale errors
-    const scaleId = 'macd_scale';
-
-    // Let TypeScript infer the type for options objects
+    // MACD Line options
     const macdLineOptions = {
-        color: '#2962FF', // Blue for MACD line
-        lineWidth: 1 as const,
-        priceScaleId: scaleId, // Use shared custom scale
-        priceFormat: { type: 'price' as const, precision: 4, minMove: 0.0001 }, // Adjust precision as needed
-        lastValueVisible: true,
-        priceLineVisible: false,
-        crosshairMarkerVisible: true,
+        color: '#2962FF', // Blue color for MACD line
+        lineWidth: 1 as LineWidth,
         title: 'MACD',
-        lastPriceAnimation: 0,
-        // より小さいラベル
-        priceScale: {
-            scaleMargins: { top: 0.2, bottom: 0.2 }, // TradingViewに近いマージンに調整
-            autoScale: true,
-            entireTextOnly: true,
-            borderVisible: false,
-            textColor: '#9598A1', // テキスト色を薄く
-            fontSize: 10, // フォントサイズを小さく
-        },
-    };
-
-    const signalLineOptions = {
-        color: '#FF9800', // Orange for Signal line
-        lineWidth: 1 as const,
-        priceScaleId: scaleId, // Same scale as MACD line
-        priceFormat: { type: 'price' as const, precision: 4, minMove: 0.0001 },
+        priceScaleId: 'right',
         lastValueVisible: true,
-        priceLineVisible: false,
-        crosshairMarkerVisible: true,
-        title: 'Signal',
-        lastPriceAnimation: 0,
-        // より小さいラベル
-        priceScale: {
-            scaleMargins: { top: 0.2, bottom: 0.2 }, // TradingViewに近いマージンに調整
-            autoScale: true,
-            entireTextOnly: true,
-            borderVisible: false,
-            textColor: '#9598A1', // テキスト色を薄く
-            fontSize: 10, // フォントサイズを小さく
-        },
     };
 
-    const histogramOptions = {
-        // Color is set per bar in the data
-        title: 'Histogram',
-        priceScaleId: scaleId, // Same scale
-        priceFormat: { type: 'price' as const, precision: 4, minMove: 0.0001 },
-        lastValueVisible: false, // Usually hide histogram value
-        priceLineVisible: false,
-        base: 0, // Histogram bars grow from the zero line
+    // Signal Line options
+    const signalLineOptions = {
+        color: '#FF6D00', // Orange color for signal line
+        lineWidth: 1 as LineWidth,
+        title: 'Signal',
+        priceScaleId: 'right',
+        lastValueVisible: true,
     };
+
+    // Histogram options
+    const histogramOptions = {
+        color: '#26A69A', // Green color for positive histogram
+        priceFormat: {
+            type: 'price' as const,
+            precision: 4,
+            minMove: 0.0001,
+        },
+        title: 'Histogram',
+        priceScaleId: 'right',
+        lastValueVisible: true,
+    };
+
+    // プライススケールの設定
+    try {
+        // プライススケールにオプションを適用
+        chart.priceScale('right').applyOptions({
+            scaleMargins: {
+                top: 0.2,
+                bottom: 0.2,
+            },
+            borderVisible: false
+        });
+    } catch (error) {
+        console.error('Error applying price scale options:', error);
+    }
 
     // --- MACD Line ---
-    if (!instances.macdLineSeries) {
-        // v5.0.6では、addLineSeries()の代わりにaddSeries()を使用
+    if (!seriesRefs.macdLine.current) {
+        // 共通ユーティリティを使用してシリーズを作成
+        // v5.0.6では第3引数にパネルインデックスを指定できる
         if (typeof chart.addSeries === 'function') {
-            instances.macdLineSeries = chart.addSeries(LineSeries, macdLineOptions);
+            // 新しいAPI (v5.0.6)
+            // パネルインデックスを明示的に指定
+            const macdOptions = {
+                ...macdLineOptions,
+                pane: params.paneIndex,
+                overlay: false  // オーバーレイではなく個別のペインに表示
+            };
+            seriesRefs.macdLine.current = chart.addSeries(LineSeries, macdOptions, params.paneIndex) as ISeriesApi<'Line'>;
+            console.log('MACDラインオプション:', macdOptions);
         } else {
-            // 古いバージョンの場合
-            // @ts-ignore
-            instances.macdLineSeries = chart.addLineSeries(macdLineOptions);
+            // 古いAPIの場合は元のユーティリティを使用
+            seriesRefs.macdLine.current = createCompatibleSeries(chart, LineSeries, macdLineOptions);
         }
-        console.log("MACD Line Series Created on Pane:", paneIndex);
+        console.log("MACD Line Series Created on Pane:", params.paneIndex);
     } else {
-        instances.macdLineSeries.applyOptions(macdLineOptions);
+        // パネルインデックスを明示的に指定して更新
+        const macdOptions = {
+            ...macdLineOptions,
+            pane: params.paneIndex,
+            overlay: false
+        };
+        seriesRefs.macdLine.current.applyOptions(macdOptions);
     }
+    
     // 重複データを排除し昇順ソートしてからセット
-    // NaN値をフィルタリング
-    const sortedMacdLine = filterValidData(dedupAndSort(macdData.macdLine));
-    instances.macdLineSeries.setData(sortedMacdLine);
+    const sortedMacdLine = dedupAndSort(macdData.macdLine);
+    if (seriesRefs.macdLine.current) {
+        console.log('MACD Line データをセット:', sortedMacdLine.slice(0, 3));
+        // 型の不一致を解決するためにas anyを使用
+        seriesRefs.macdLine.current.setData(sortedMacdLine as any);
+    }
 
     // --- Signal Line ---
-    if (!instances.signalLineSeries) {
-        // v5.0.6では、addLineSeries()の代わりにaddSeries()を使用
+    if (!seriesRefs.signalLine.current) {
+        // v5.0.6では第3引数にパネルインデックスを指定できる
         if (typeof chart.addSeries === 'function') {
-            instances.signalLineSeries = chart.addSeries(LineSeries, signalLineOptions);
+            // 新しいAPI (v5.0.6)
+            // パネルインデックスを明示的に指定
+            const signalOptions = {
+                ...signalLineOptions,
+                pane: params.paneIndex,
+                overlay: false
+            };
+            seriesRefs.signalLine.current = chart.addSeries(LineSeries, signalOptions, params.paneIndex) as ISeriesApi<'Line'>;
+            console.log('シグナルラインオプション:', signalOptions);
         } else {
-            // 古いバージョンの場合
-            // @ts-ignore
-            instances.signalLineSeries = chart.addLineSeries(signalLineOptions);
+            // 古いAPIの場合は元のユーティリティを使用
+            seriesRefs.signalLine.current = createCompatibleSeries(chart, LineSeries, signalLineOptions);
         }
-        console.log("Signal Line Series Created on Pane:", paneIndex);
+        console.log("Signal Line Series Created on Pane:", params.paneIndex);
     } else {
-        instances.signalLineSeries.applyOptions(signalLineOptions);
+        // パネルインデックスを明示的に指定して更新
+        const signalOptions = {
+            ...signalLineOptions,
+            pane: params.paneIndex,
+            overlay: false
+        };
+        seriesRefs.signalLine.current.applyOptions(signalOptions);
     }
+    
     // 重複データを排除し昇順ソートしてからセット
-    // NaN値をフィルタリング
-    const sortedSignalLine = filterValidData(dedupAndSort(macdData.signalLine));
-    instances.signalLineSeries.setData(sortedSignalLine);
+    const sortedSignalLine = dedupAndSort(macdData.signalLine);
+    if (seriesRefs.signalLine.current) {
+        console.log('Signal Line データをセット:', sortedSignalLine.slice(0, 3));
+        // 型の不一致を解決するためにas anyを使用
+        seriesRefs.signalLine.current.setData(sortedSignalLine as any);
+    }
 
     // --- Histogram ---
-    if (!instances.histogramSeries) {
-        // v5.0.6では、addHistogramSeries()の代わりにaddSeries()を使用
+    if (!seriesRefs.histogram.current) {
+        // v5.0.6では第3引数にパネルインデックスを指定できる
         if (typeof chart.addSeries === 'function') {
-            instances.histogramSeries = chart.addSeries(HistogramSeries, histogramOptions);
+            // 新しいAPI (v5.0.6)
+            // パネルインデックスを明示的に指定
+            const histOptions = {
+                ...histogramOptions,
+                pane: params.paneIndex,
+                overlay: false  // オーバーレイではなく個別のペインに表示
+            };
+            seriesRefs.histogram.current = chart.addSeries(HistogramSeries, histOptions, params.paneIndex) as ISeriesApi<'Histogram'>;
+            console.log('ヒストグラムオプション:', histOptions);
         } else {
-            // 古いバージョンの場合
-            // @ts-ignore
-            instances.histogramSeries = chart.addHistogramSeries(histogramOptions);
+            // 古いAPIの場合は元のユーティリティを使用
+            seriesRefs.histogram.current = createCompatibleSeries(chart, HistogramSeries, histogramOptions);
         }
-        console.log("Histogram Series Created on Pane:", paneIndex);
+        console.log("Histogram Series Created on Pane:", params.paneIndex);
     } else {
-        instances.histogramSeries.applyOptions(histogramOptions);
+        // パネルインデックスを明示的に指定して更新
+        const histOptions = {
+            ...histogramOptions,
+            pane: params.paneIndex,
+            overlay: false
+        };
+        seriesRefs.histogram.current.applyOptions(histOptions);
     }
+    
     // 重複データを排除し昇順ソートしてからセット
-    // NaN値をフィルタリング
-    const sortedHistogram = filterValidData(dedupAndSort(macdData.histogramData));
-    instances.histogramSeries.setData(sortedHistogram);
+    const sortedHistogram = dedupAndSort(macdData.histogramData);
+    if (seriesRefs.histogram.current) {
+        console.log('Histogram データをセット:', sortedHistogram.slice(0, 3));
+        // 型の不一致を解決するためにas anyを使用
+        seriesRefs.histogram.current.setData(sortedHistogram as any);
+    }
 
     // --- Optional: Add Zero Line for Reference ---
     // This requires managing the line, potentially adding/removing it
     // Example (simplified, needs more robust handling):
-    /*
-    const zeroLineId = `macd_zero_line_${paneIndex}`;
-    let zeroLine = instances.histogramSeries.priceLines().find(line => line.options().id === zeroLineId);
-    if (!zeroLine) {
-       instances.histogramSeries.createPriceLine({
-            // id: zeroLineId, // Setting ID might require internal library access or different approach
-            price: 0,
-            color: '#787B86', // Grey color for zero line
-            lineWidth: 1 as const,
-            lineStyle: LineStyle.Dotted,
-            axisLabelVisible: false, // Usually hide axis label for zero line
-       });
-    }
-    */
-
-    // Ensure the price scale exists and apply common options (ignore errors if scale not found)
-    try {
-        chart.priceScale(scaleId).applyOptions({
-            scaleMargins: { top: 0.2, bottom: 0.2 },
-            autoScale: true,
-            entireTextOnly: true,
-            borderVisible: false,
-            textColor: '#9598A1',
-        });
-    } catch (err) {
-        console.warn('MACD price scale not found, skipping applyOptions:', err);
-    }
-    console.log("MACD Series Updated/Set on Pane:", paneIndex);
+    // const zeroLineId = `macd_zero_line_${params.paneIndex}`;
+    // let zeroLine = seriesRefs.histogram.current.priceLines().find(line => line.options().id === zeroLineId);
+    // if (!zeroLine) {
+    //     seriesRefs.histogram.current.createPriceLine({
+    //         // id: zeroLineId, // Setting ID might require internal library access or different approach
+    //         price: 0,
+    //         color: '#787B86', // Grey color for zero line
+    //         lineWidth: 1,
+    //         lineStyle: LineStyle.Dotted,
+    //         axisLabelVisible: false, // Usually hide axis label for zero line
+    //     });
+    // }
 }
 
 /**
- * Removes all MACD series from the chart.
- * @param chart - The IChartApi instance.
- * @param seriesInstancesRef - Ref object holding the MACD series instances.
+ * MACDをチャートから削除する
+ * @param chart チャートインスタンス
+ * @param seriesRefs シリーズ参照
  */
-export function removeMacdSeries(
-    chart: IChartApi,
-    seriesInstancesRef: React.MutableRefObject<MacdSeriesInstances>
-) {
-    if (!chart || !seriesInstancesRef || !seriesInstancesRef.current) return;
+export function removeMacdSeries(chart: IChartApi, seriesRefs: MacdSeriesRefs): void {
+    if (!chart) return;
 
-    const instances = seriesInstancesRef.current;
+    console.log('MACDシリーズを削除します');
 
-    // 安全な削除ユーティリティを使用して例外を回避
-    safeRemoveSeries(chart, instances.macdLineSeries);
-    instances.macdLineSeries = null;
-    
-    safeRemoveSeries(chart, instances.signalLineSeries);
-    instances.signalLineSeries = null;
-    
-    safeRemoveSeries(chart, instances.histogramSeries);
-    instances.histogramSeries = null;
-    
-    // 処理完了をログ
-    console.log("MACD Series successfully removed");
-    console.log("MACD Series Removed");
+    // MACD Lineを削除
+    safeRemoveSeries(chart, seriesRefs.macdLine.current);
+    seriesRefs.macdLine.current = null;
+
+    // Signal Lineを削除
+    safeRemoveSeries(chart, seriesRefs.signalLine.current);
+    seriesRefs.signalLine.current = null;
+
+    // Histogramを削除
+    safeRemoveSeries(chart, seriesRefs.histogram.current);
+    seriesRefs.histogram.current = null;
 }
+
+/**
+ * MACDインジケーターのエクスポート関数
+ * チャートキャンバスから使用されるインターフェース
+ */
+export const MACD = {
+    /**
+     * OHLCデータからMACDを計算し、チャートに表示する
+     * @param chart チャートインスタンス
+     * @param data OHLCデータ
+     * @param params MACDパラメータ
+     * @param seriesRefs シリーズ参照
+     */
+    addOrUpdate: (chart: IChartApi, data: OHLCData[], params: MACDParams, seriesRefs: MacdSeriesRefs) => {
+        if (!chart || !data || data.length === 0) return;
+        
+        // MACDを計算
+        const macdValues = calculateMacdValues(data, params);
+        
+        // チャートデータ形式に変換
+        const macdData = alignMacdData(macdValues, data, params);
+        
+        // チャートに追加または更新
+        addOrUpdateMacdSeries(chart, macdData, params, seriesRefs);
+    },
+    
+    /**
+     * MACDをチャートから削除する
+     * @param chart チャートインスタンス
+     * @param seriesRefs シリーズ参照
+     */
+    remove: (chart: IChartApi, seriesRefs: MacdSeriesRefs) => {
+        removeMacdSeries(chart, seriesRefs);
+    }
+};
