@@ -20,7 +20,7 @@ const pendingCaptureRequests = new Map();
 // ポート設定
 const PORT = parseInt(process.env.PORT, 10) || 3000;
 // Mastraのデフォルトポートと異なる値を使用
-const MASTRA_PORT = 4111;
+const MASTRA_PORT = 4112;
 
 // リクエストのタイムアウトフラグ
 let setupComplete = false;
@@ -64,14 +64,6 @@ app.prepare().then(() => {
         // リクエストIDがない場合は新しく生成
         const actualRequestId = requestId || uuidv4();
         
-        // リクエストを保存
-        if (!pendingCaptureRequests.has(actualRequestId)) {
-          pendingCaptureRequests.set(actualRequestId, {
-            clientId,
-            timestamp: Date.now()
-          });
-        }
-        
         // 全クライアントにキャプチャリクエストをブロードキャスト
         io.emit('capture_request', { requestId: actualRequestId });
       } catch (error) {
@@ -85,58 +77,50 @@ app.prepare().then(() => {
         console.log('キャプチャレスポンス受信:', data.requestId);
         const { requestId, imageData } = data;
         
-        if (!requestId || !pendingCaptureRequests.has(requestId)) {
-          console.warn(`不明なキャプチャレスポンス: ${requestId}`);
+        if (!requestId) {
+          console.warn('リクエストIDがないレスポンス');
           return;
         }
         
-        const request = pendingCaptureRequests.get(requestId);
-        const requestingClientId = request.clientId;
-        
-        // リクエスト元のクライアントにレスポンスを送信
-        const requestingSocket = activeConnections.get(requestingClientId);
-        if (requestingSocket) {
-          console.log(`レスポンスを送信: ${requestId} -> ${requestingClientId}`);
-          requestingSocket.emit('capture_response', {
-            requestId,
-            imageData
-          });
+        // pendingCaptureRequestsを検索
+        if (pendingCaptureRequests.has(requestId)) {
+          const request = pendingCaptureRequests.get(requestId);
+          
+          // Promiseを解決
+          clearTimeout(request.timeout);
+          request.resolve(imageData);
+          pendingCaptureRequests.delete(requestId);
+          console.log(`キャプチャ成功: ${requestId}`);
         } else {
-          console.warn(`リクエスト元クライアントが見つかりません: ${requestingClientId}`);
+          console.warn(`不明なキャプチャレスポンス: ${requestId}`);
         }
-        
-        // 処理済みリクエストを削除
-        pendingCaptureRequests.delete(requestId);
       } catch (error) {
         console.error('キャプチャレスポンス処理エラー:', error);
       }
     });
     
-    // エラーメッセージの処理
+    // エラーメッセージ処理
     socket.on('error_message', (data) => {
       try {
         console.log('エラーメッセージ受信:', data);
         const { requestId, error } = data;
         
-        if (!requestId || !pendingCaptureRequests.has(requestId)) {
-          console.warn(`不明なエラーメッセージ: ${requestId}`);
+        if (!requestId) {
+          console.warn('リクエストIDがないエラー');
           return;
         }
         
-        const request = pendingCaptureRequests.get(requestId);
-        const requestingClientId = request.clientId;
-        
-        // リクエスト元のクライアントにエラーを送信
-        const requestingSocket = activeConnections.get(requestingClientId);
-        if (requestingSocket) {
-          requestingSocket.emit('error_message', {
-            requestId,
-            error
-          });
+        // pendingCaptureRequestsを検索
+        if (pendingCaptureRequests.has(requestId)) {
+          const request = pendingCaptureRequests.get(requestId);
+          
+          // Promiseを拒否
+          clearTimeout(request.timeout);
+          request.reject(new Error(error));
+          pendingCaptureRequests.delete(requestId);
+        } else {
+          console.warn(`不明なエラーメッセージ: ${requestId}`);
         }
-        
-        // 処理済みリクエストを削除
-        pendingCaptureRequests.delete(requestId);
       } catch (error) {
         console.error('エラーメッセージ処理エラー:', error);
       }
@@ -184,50 +168,25 @@ app.prepare().then(() => {
       // タイムアウト設定
       const timeout = setTimeout(() => {
         console.warn(`キャプチャリクエストがタイムアウト: ${requestId}`);
-        cleanup();
+        pendingCaptureRequests.delete(requestId);
         reject(new Error('キャプチャリクエストがタイムアウトしました'));
       }, timeoutMs);
       
-      // クリーンアップ関数
-      const cleanup = () => {
-        io.off('capture_response', responseHandler);
-        io.off('error_message', errorHandler);
-        if (pendingCaptureRequests.has(requestId)) {
-          pendingCaptureRequests.delete(requestId);
-        }
-      };
-      
-      // レスポンスハンドラ
-      const responseHandler = (data) => {
-        if (data.requestId === requestId) {
-          console.log(`キャプチャレスポンス受信 (グローバル): ${requestId}`);
-          clearTimeout(timeout);
-          cleanup();
-          resolve(data.imageData);
-        }
-      };
-      
-      // エラーハンドラ
-      const errorHandler = (data) => {
-        if (data.requestId === requestId) {
-          console.error(`キャプチャエラー受信 (グローバル): ${requestId}`, data.error);
-          clearTimeout(timeout);
-          cleanup();
-          reject(new Error(data.error));
-        }
-      };
-      
-      // イベントリスナーを登録（オフハンドラーとして）
-      io.on('capture_response', responseHandler);
-      io.on('error_message', errorHandler);
+      // リクエストとPromiseを関連付けて保存
+      pendingCaptureRequests.set(requestId, {
+        resolve,
+        reject,
+        timeout,
+        timestamp: Date.now()
+      });
       
       // リクエストを全クライアントに直接ブロードキャスト
-      // これにより、リクエスト元のクライアントIDをマッピングせずに
-      // 直接イベントハンドラでレスポンスを処理する
       io.emit('capture_request', { requestId });
       console.log(`キャプチャリクエストをブロードキャスト: ${requestId}`);
     });
   };
+  
+  // 以下のイベントリスナーは接続ハンドラ内に移動しました
   
   // サーバー起動のエラーハンドリング
   server.on('error', (error) => {
