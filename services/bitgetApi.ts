@@ -106,7 +106,7 @@ export class BitgetApiClient {
       
       // 共通API関数を使用してデータを取得
       const response = await adaptiveApiRequest({
-        browserEndpoint: '/api/bitget/candles',
+        browserEndpoint: '/api/bitget/candles',  // Next.js App Routerの場合、route.tsは付けない
         serverBaseUrl: BITGET_API_BASE_URL,
         serverEndpoint,
         params: IS_BROWSER ? browserParams : serverParams,
@@ -119,6 +119,12 @@ export class BitgetApiClient {
           fallbackData: null
         }
       });
+      
+      // デバッグ情報
+      if (IS_DEV) {
+        console.log('BitgetAPI request URL:', IS_BROWSER ? '/api/bitget/candles' : `${BITGET_API_BASE_URL}${serverEndpoint}`);
+        console.log('BitgetAPI params:', IS_BROWSER ? browserParams : serverParams);
+      }
       
       // レスポンスの構造を査定して適切に処理
       if (IS_DEV) console.log('API Response:', response);

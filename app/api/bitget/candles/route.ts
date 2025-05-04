@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import axios from 'axios';
 
+// Bitget APIのベースURL
 const BITGET_API_BASE_URL = 'https://api.bitget.com';
+
+// デバッグモード
+const DEBUG = true;
 
 /**
  * Bitget API プロキシエンドポイント
@@ -82,10 +86,20 @@ export async function GET(req: NextRequest) {
     };
 
     try {
+      if (DEBUG) {
+        console.log('Bitget API request details:');
+        console.log('- URL:', apiUrl);
+        console.log('- Params:', params);
+      }
+      
       // Bitget APIにリクエスト
       const response = await axios.get(apiUrl, { 
         params,
-        timeout: 5000 // タイムアウト設定
+        timeout: 10000, // タイムアウトを増やす
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
       });
       
       console.log('Bitget API response:', response.status, response.statusText);
@@ -99,6 +113,9 @@ export async function GET(req: NextRequest) {
       return NextResponse.json(response.data);
     } catch (axiosError: any) {
       // Axiosエラーの詳細をログに出力
+      console.error('Bitget API request failed:');
+      console.error('- URL:', apiUrl);
+      console.error('- Params:', params);
       console.error('Axios error details:', {
         message: axiosError.message,
         code: axiosError.code,
