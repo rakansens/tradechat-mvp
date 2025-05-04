@@ -1,140 +1,154 @@
 // utils/socketUtils.ts
-// チャートキャプチャ用のWebSocket通信インターフェース
+// Socket.ioを使用したチャートキャプチャ用のユーティリティ
 
 /**
- * ソケットメッセージのタイプ定義
+ * キャプチャリクエストとレスポンスの型定義
  */
-export enum SocketMessageType {
-  // サーバーからのキャプチャリクエスト
-  CAPTURE_REQUEST = 'CAPTURE_REQUEST',
-  // クライアントからのキャプチャレスポンス
-  CAPTURE_RESPONSE = 'CAPTURE_RESPONSE',
-  // エラーメッセージ
-  ERROR = 'ERROR'
+export interface CaptureRequest {
+  requestId: string;
+}
+
+export interface CaptureResponse {
+  requestId: string;
+  imageData: string;
+}
+
+export interface ErrorResponse {
+  requestId: string;
+  error: string;
+}
+
+// キャプチャリクエストとプロミスのマップ（サーバー側で使用）
+export interface PendingRequest {
+  clientId: string;
+  timestamp: number;
+  resolve?: (value: string | null) => void;
+  reject?: (reason: any) => void;
+  timeout?: NodeJS.Timeout;
 }
 
 /**
- * ソケットメッセージのインターフェース
+ * プロミスとタイムアウトを管理するリクエストトラッカー
  */
-export interface SocketMessage {
-  type: SocketMessageType;
-  payload: any;
-  requestId?: string; // リクエストとレスポンスを紐付けるためのID
-}
-
-// クライアント側のキャプチャリクエストハンドラ
-let captureRequestHandler: ((requestId: string) => Promise<string | null>) | null = null;
-
-/**
- * クライアント側でキャプチャリクエストを処理するハンドラを登録
- * @param handler キャプチャを実行して結果を返す関数
- */
-export function registerCaptureHandler(handler: (requestId: string) => Promise<string | null>) {
-  captureRequestHandler = handler;
-}
-
-/**
- * クライアント側でソケットメッセージを処理
- * @param message 受信したメッセージ
- * @param sendResponse レスポンスを送信するコールバック
- */
-export async function handleSocketMessage(
-  message: SocketMessage,
-  sendResponse: (response: SocketMessage) => void
-) {
-  if (message.type === SocketMessageType.CAPTURE_REQUEST) {
-    if (!captureRequestHandler) {
-      sendResponse({
-        type: SocketMessageType.ERROR,
-        payload: 'キャプチャハンドラが登録されていません',
-        requestId: message.requestId
-      });
-      return;
-    }
-
-    try {
-      const imageData = await captureRequestHandler(message.requestId || '');
-      sendResponse({
-        type: SocketMessageType.CAPTURE_RESPONSE,
-        payload: imageData, 
-        requestId: message.requestId
-      });
-    } catch (error) {
-      sendResponse({
-        type: SocketMessageType.ERROR,
-        payload: `キャプチャエラー: ${error}`,
-        requestId: message.requestId
-      });
-    }
-  }
-}
-
-// リクエストとプロミスを保持するマップ
-type RequestResolver = {
-  resolve: (value: string | null) => void;
-  reject: (reason: any) => void;
-  timeout: NodeJS.Timeout;
-};
-
-const pendingRequests = new Map<string, RequestResolver>();
-
-/**
- * サーバー側でキャプチャをリクエスト
- * @param requestId リクエストID
- * @param sendRequest リクエストを送信するコールバック
- * @param timeoutMs タイムアウト時間（ミリ秒）
- * @returns キャプチャしたBase64画像データ
- */
-export function requestCapture(
-  requestId: string,
-  sendRequest: (request: SocketMessage) => void,
-  timeoutMs: number = 10000
-): Promise<string | null> {
-  return new Promise((resolve, reject) => {
-    // リクエスト送信
-    sendRequest({
-      type: SocketMessageType.CAPTURE_REQUEST,
-      payload: null,
-      requestId
-    });
-
+export class RequestTracker {
+  private pendingRequests = new Map<string, PendingRequest>();
+  
+  /**
+   * 新しいリクエストを登録
+   * @param requestId リクエストID
+   * @param clientId クライアントID
+   * @param resolve 成功時コールバック
+   * @param reject 失敗時コールバック
+   * @param timeoutMs タイムアウト時間
+   */
+  registerRequest(
+    requestId: string, 
+    clientId: string,
+    resolve: (value: string | null) => void,
+    reject: (reason: any) => void,
+    timeoutMs: number = 15000
+  ): void {
     // タイムアウト設定
     const timeout = setTimeout(() => {
-      const request = pendingRequests.get(requestId);
+      const request = this.pendingRequests.get(requestId);
       if (request) {
-        request.reject(new Error('キャプチャリクエストがタイムアウトしました'));
-        pendingRequests.delete(requestId);
+        if (request.reject) {
+          request.reject(new Error('キャプチャリクエストがタイムアウトしました'));
+        }
+        this.pendingRequests.delete(requestId);
       }
     }, timeoutMs);
-
+    
     // 保留中リクエストに追加
-    pendingRequests.set(requestId, {
+    this.pendingRequests.set(requestId, {
+      clientId,
+      timestamp: Date.now(),
       resolve,
       reject,
       timeout
     });
-  });
-}
-
-/**
- * サーバー側でソケットメッセージを処理
- * @param message 受信したメッセージ
- */
-export function handleServerSocketMessage(message: SocketMessage) {
-  const { type, payload, requestId } = message;
-
-  if (!requestId) return;
-
-  const request = pendingRequests.get(requestId);
-  if (!request) return;
-
-  clearTimeout(request.timeout);
-  
-  if (type === SocketMessageType.CAPTURE_RESPONSE) {
-    request.resolve(payload);
-  } else if (type === SocketMessageType.ERROR) {
-    request.reject(new Error(payload));
   }
   
-  pendingRequests.delete(requestId);
+  /**
+   * リクエストを解決
+   * @param requestId リクエストID
+   * @param data レスポンスデータ
+   * @returns 成功したか
+   */
+  resolveRequest(requestId: string, data: string | null): boolean {
+    const request = this.pendingRequests.get(requestId);
+    if (!request) return false;
+    
+    if (request.timeout) {
+      clearTimeout(request.timeout);
+    }
+    
+    if (request.resolve) {
+      request.resolve(data);
+    }
+    
+    this.pendingRequests.delete(requestId);
+    return true;
+  }
+  
+  /**
+   * リクエストをエラーで拒否
+   * @param requestId リクエストID
+   * @param error エラー
+   * @returns 成功したか
+   */
+  rejectRequest(requestId: string, error: any): boolean {
+    const request = this.pendingRequests.get(requestId);
+    if (!request) return false;
+    
+    if (request.timeout) {
+      clearTimeout(request.timeout);
+    }
+    
+    if (request.reject) {
+      request.reject(error);
+    }
+    
+    this.pendingRequests.delete(requestId);
+    return true;
+  }
+  
+  /**
+   * リクエストが存在するか確認
+   * @param requestId リクエストID
+   * @returns 存在するか
+   */
+  hasRequest(requestId: string): boolean {
+    return this.pendingRequests.has(requestId);
+  }
+  
+  /**
+   * リクエストを取得
+   * @param requestId リクエストID
+   * @returns リクエスト情報
+   */
+  getRequest(requestId: string): PendingRequest | undefined {
+    return this.pendingRequests.get(requestId);
+  }
+  
+  /**
+   * 古いリクエストをクリーンアップ
+   * @param maxAgeMs 最大有効期間
+   */
+  cleanupOldRequests(maxAgeMs: number = 5 * 60 * 1000): void {
+    const now = Date.now();
+    for (const [requestId, request] of this.pendingRequests.entries()) {
+      if (now - request.timestamp > maxAgeMs) {
+        if (request.timeout) {
+          clearTimeout(request.timeout);
+        }
+        
+        if (request.reject) {
+          request.reject(new Error('リクエストがタイムアウトしました'));
+        }
+        
+        this.pendingRequests.delete(requestId);
+      }
+    }
+  }
 } 

@@ -11,7 +11,10 @@ let socket: Socket | null = null;
 let isInitialized = false;
 let clientId = '';
 
-// キャプチャリクエストのハンドラー登録
+/**
+ * Socket.ioクライアントを初期化
+ * チャートキャプチャのイベントハンドラを設定
+ */
 export function initializeSocketClient() {
   if (isInitialized) return;
   
@@ -21,63 +24,79 @@ export function initializeSocketClient() {
     return;
   }
   
-  // Socket.io接続を初期化
-  socket = io();
-  
-  // 接続成功時の処理
-  socket.on('connected', (data: { clientId: string }) => {
-    console.log('Socket.IO接続成功:', data);
-    clientId = data.clientId;
-    isInitialized = true;
-  });
-  
-  // キャプチャリクエスト受信時の処理
-  socket.on('capture_request', async (data: { requestId: string }) => {
-    console.log('キャプチャリクエスト受信:', data);
+  try {
+    // Socket.io接続を初期化
+    socket = io({
+      reconnectionAttempts: 5,
+      timeout: 10000
+    });
     
-    try {
-      // チャート要素をキャプチャ
-      const chartSelector = '.tradingview-wrapper canvas'; // トレーディングビューチャートのセレクタ
-      const imageData = await captureChartAsBase64(chartSelector);
+    // 接続成功時の処理
+    socket.on('connected', (data: { clientId: string }) => {
+      console.log('Socket.IO接続成功:', data);
+      clientId = data.clientId;
+      isInitialized = true;
+    });
+    
+    // キャプチャリクエスト受信時の処理
+    socket.on('capture_request', async (data: { requestId: string }) => {
+      console.log('キャプチャリクエスト受信:', data);
       
-      if (imageData) {
-        // 成功時はレスポンスを送信
-        socket?.emit('capture_response', {
-          requestId: data.requestId,
-          imageData
-        });
-      } else {
-        // キャプチャ失敗時
+      try {
+        // チャート要素をキャプチャ
+        // トレーディングビューチャートのセレクタを指定
+        // ここの値はプロジェクト固有のセレクタに変更する必要がある
+        const chartSelector = 'canvas'; // 広めのセレクタで試す
+        const imageData = await captureChartAsBase64(chartSelector);
+        
+        if (imageData) {
+          console.log('キャプチャ成功、データ送信 - ID:', data.requestId);
+          // 成功時はレスポンスを送信
+          socket?.emit('capture_response', {
+            requestId: data.requestId,
+            imageData
+          });
+        } else {
+          console.warn('チャート要素が見つかりません - ID:', data.requestId);
+          // キャプチャ失敗時
+          socket?.emit('error_message', {
+            requestId: data.requestId,
+            error: 'チャート要素を見つけられませんでした'
+          });
+        }
+      } catch (error) {
+        console.error('キャプチャエラー:', error);
+        
+        // エラー時のレスポンス
         socket?.emit('error_message', {
           requestId: data.requestId,
-          error: 'チャート要素を見つけられませんでした'
+          error: `キャプチャ処理中にエラーが発生しました: ${error}`
         });
       }
-    } catch (error) {
-      console.error('キャプチャエラー:', error);
-      
-      // エラー時のレスポンス
-      socket?.emit('error_message', {
-        requestId: data.requestId,
-        error: `キャプチャ処理中にエラーが発生しました: ${error}`
-      });
-    }
-  });
-  
-  // 切断時の処理
-  socket.on('disconnect', () => {
-    console.log('Socket.IO切断');
-    isInitialized = false;
-  });
-  
-  // エラー発生時の処理
-  socket.on('connect_error', (error) => {
-    console.error('Socket.IO接続エラー:', error);
-    isInitialized = false;
-  });
+    });
+    
+    // 切断時の処理
+    socket.on('disconnect', () => {
+      console.log('Socket.IO切断');
+      isInitialized = false;
+    });
+    
+    // エラー発生時の処理
+    socket.on('connect_error', (error) => {
+      console.error('Socket.IO接続エラー:', error);
+      isInitialized = false;
+    });
+    
+    console.log('Socket.IO初期化完了');
+  } catch (error) {
+    console.error('Socket.IO初期化エラー:', error);
+  }
 }
 
-// クライアント側からキャプチャをリクエスト（テスト用）
+/**
+ * クライアント側からキャプチャをリクエスト（テスト用）
+ * @returns キャプチャしたBase64画像データ
+ */
 export function requestCaptureFromClient(): Promise<string | null> {
   return new Promise((resolve, reject) => {
     if (!socket || !isInitialized) {
@@ -123,12 +142,18 @@ export function requestCaptureFromClient(): Promise<string | null> {
   });
 }
 
-// ソケット接続を取得
+/**
+ * ソケット接続を取得
+ * @returns ソケットインスタンス
+ */
 export function getSocket(): Socket | null {
   return socket;
 }
 
-// クライアントIDを取得
+/**
+ * クライアントIDを取得
+ * @returns クライアントID
+ */
 export function getClientId(): string {
   return clientId;
 } 

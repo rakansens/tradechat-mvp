@@ -36,28 +36,60 @@ export const chartCaptureAnalysisTool = createTool({
       // Socket.ioを使ってクライアントにキャプチャをリクエスト
       let imageData: string | null = null;
       
-      if (typeof global.requestCapture === 'function') {
-        console.log("Socket.ioでキャプチャをリクエスト");
-        // 15秒のタイムアウトでリクエスト
-        imageData = await global.requestCapture(15000);
-      } else {
-        throw new Error("Socket.ioキャプチャ機能が利用できません");
-      }
-      
-      if (!imageData) {
-        throw new Error("チャートのキャプチャに失敗しました");
-      }
-      
-      console.log("キャプチャ成功、AIでの分析を開始");
-      
-      // OpenAI Vision APIで画像を分析
-      const aiAnalysis = await analyzeChartWithAI(imageData, context.focusOn);
-      
-      return {
-        analysis: aiAnalysis.analysis,
-        recommendation: aiAnalysis.recommendation,
-        confidence: aiAnalysis.confidence,
+      // キャプチャ失敗時のフォールバック
+      const fallbackAnalysis = {
+        analysis: "チャートのキャプチャに失敗しました。リロードするか、別のブラウザで試してください。",
+        recommendation: "技術的な問題のため分析できません。トレードの判断は控えてください。",
+        confidence: 0,
       };
+      
+      if (typeof global.requestCapture === 'function') {
+        console.log("Socket.ioでキャプチャをリクエスト開始");
+        
+        // 最大3回リトライ
+        for (let attempt = 1; attempt <= 3; attempt++) {
+          try {
+            console.log(`キャプチャ試行 ${attempt}/3`);
+            // 15秒のタイムアウトでリクエスト
+            imageData = await global.requestCapture(20000);
+            
+            if (imageData) {
+              console.log("キャプチャ成功、リトライ終了");
+              break;
+            }
+          } catch (captureError) {
+            console.error(`キャプチャ試行 ${attempt} 失敗:`, captureError);
+            
+            if (attempt < 3) {
+              // 1秒待機してから再試行
+              await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+          }
+        }
+        
+        // キャプチャに失敗した場合
+        if (!imageData) {
+          console.error("3回の試行後もキャプチャに失敗しました");
+          return fallbackAnalysis;
+        }
+        
+        console.log("キャプチャ成功、AIでの分析を開始");
+        
+        // OpenAI Vision APIで画像を分析
+        const aiAnalysis = await analyzeChartWithAI(imageData, context.focusOn);
+        
+        return {
+          analysis: aiAnalysis.analysis,
+          recommendation: aiAnalysis.recommendation,
+          confidence: aiAnalysis.confidence,
+        };
+      } else {
+        console.error("Socket.ioキャプチャ機能が利用できません");
+        return {
+          ...fallbackAnalysis,
+          analysis: "Socket.ioキャプチャ機能が利用できません。サーバー側の設定を確認してください。"
+        };
+      }
     } catch (error) {
       console.error("チャートキャプチャ分析エラー:", error);
       
