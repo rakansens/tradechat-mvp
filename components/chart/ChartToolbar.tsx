@@ -25,6 +25,8 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { theme } from '@/styles/colors';
+import { TabType, IndicatorType, DrawingToolType } from '@/types/store';
+import { Timeframe, ChartType } from '@/types/chart';
 
 interface ChartToolbarProps {
   // 必要に応じて追加のプロパティを定義
@@ -157,7 +159,7 @@ export default function ChartToolbar({}: ChartToolbarProps) {
             {availableTimeframes.map((tf) => (
               <button
                 key={tf}
-                onClick={() => updateTimeFrame(tf as any)}
+                onClick={() => updateTimeFrame(tf as Timeframe)}
                 className={`inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors hover:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-transparent px-2 py-1 h-7 text-[#A7B0C4] data-[state=on]:bg-[#2962FF] data-[state=on]:text-white border-[#2A2E39] hover:bg-[#242838] ${
                   currentTimeFrame === tf ? 'bg-[#2962FF] text-white' : ''
                 }`}
@@ -170,7 +172,7 @@ export default function ChartToolbar({}: ChartToolbarProps) {
           <Separator orientation="vertical" className="h-6 bg-[#374151]" />
           
           {/* チャート/ポジション切替タブ */}
-          <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)} className="h-7">
+          <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as TabType)} className="h-7">
             <TabsList className="h-7 bg-[#242838] border border-[#2A2E39]">
               <TabsTrigger 
                 value="chart" 
@@ -204,7 +206,7 @@ export default function ChartToolbar({}: ChartToolbarProps) {
             {chartTypes.map((type) => (
               <button
                 key={type}
-                onClick={() => setChartType(type as any)}
+                onClick={() => setChartType(type as ChartType)}
                 className={`px-3 py-1 text-xs rounded ${
                   chartType === type
                     ? 'bg-blue-600 text-white'
@@ -234,8 +236,8 @@ export default function ChartToolbar({}: ChartToolbarProps) {
                   <div key={indicator.id} className="flex items-center space-x-2">
                     <Checkbox 
                       id={`indicator-${indicator.id}`} 
-                      checked={activeIndicators.includes(indicator.id as any)}
-                      onCheckedChange={() => toggleIndicator(indicator.id as any)}
+                      checked={activeIndicators.includes(indicator.id as IndicatorType)}
+                      onCheckedChange={() => toggleIndicator(indicator.id as IndicatorType)}
                     />
                     <Label 
                       htmlFor={`indicator-${indicator.id}`}
@@ -251,8 +253,8 @@ export default function ChartToolbar({}: ChartToolbarProps) {
                   <div key={tool.id} className="flex items-center space-x-2">
                     <Checkbox 
                       id={`tool-${tool.id}`} 
-                      checked={activeDrawingTools.includes(tool.id as any)}
-                      onCheckedChange={() => toggleDrawingTool(tool.id as any)}
+                      checked={activeDrawingTools.includes(tool.id as DrawingToolType)}
+                      onCheckedChange={() => toggleDrawingTool(tool.id as DrawingToolType)}
                     />
                     <Label 
                       htmlFor={`tool-${tool.id}`}
