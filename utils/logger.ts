@@ -1,8 +1,11 @@
 // utils/logger.ts
 // 作成: 集中型ロギングシステム
+// 更新: ログの永続化機能を追加
 // 
 // このファイルはアプリケーション全体で一貫したロギングを提供します。
 // コンソールログの代わりにこのロガーを使用することで、デバッグが容易になります。
+
+import { saveLogToStorage, LOG_LEVEL } from './logStorage';
 
 export enum LogLevel {
   ERROR = 'error',
@@ -78,6 +81,10 @@ class Logger {
           formattedContext,
           error ? this.formatError(error) : ''
         );
+        // エラーレベルのログをストレージに保存
+        if (typeof window !== 'undefined') {
+          saveLogToStorage(LOG_LEVEL.ERROR, message, error, context);
+        }
         break;
       case LogLevel.WARN:
         console.warn(
@@ -86,6 +93,10 @@ class Logger {
           'color: inherit',
           formattedContext
         );
+        // 警告レベルのログをストレージに保存
+        if (typeof window !== 'undefined') {
+          saveLogToStorage(LOG_LEVEL.WARN, message, null, context);
+        }
         break;
       case LogLevel.INFO:
         console.info(
