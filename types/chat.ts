@@ -17,6 +17,9 @@ export interface ExtendedMessage extends Message {
   price?: number;            // 提案価格
   takeProfit?: number;       // 提案利確価格
   stopLoss?: number;         // 提案損切り価格
+  imageData?: string;        // Base64エンコードされた画像データ
+  imageCaption?: string;     // 画像の説明
+  imageId?: string;          // 画像のID（サーバー側で保存された画像を参照するためのID）
 }
 
 /**

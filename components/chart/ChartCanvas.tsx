@@ -171,7 +171,7 @@ export default function ChartCanvas() {
   };
 
   // チャートの再描画処理
-  const redrawChart = () => {
+  const redrawChart = useCallback(() => {
     if (!chartRef.current || !chartInstanceRef.current) return;
     
     // チャートのサイズを再設定
@@ -179,7 +179,21 @@ export default function ChartCanvas() {
       chartRef.current.clientWidth,
       chartRef.current.clientHeight
     );
-  };
+    
+    // Y軸の価格スケールを適切にフィットさせる
+    if (candleSeries.current) {
+      candleSeries.current.applyOptions({
+        priceFormat: {
+          type: 'price',
+          precision: 2,
+          minMove: 0.01,
+        },
+      });
+      
+      // 必要に応じてフィッティング処理を実行
+      chartInstanceRef.current.timeScale().fitContent();
+    }
+  }, []);
 
   // --- Pane management ---
   // Keeps track of next available pane index (0 is main chart)
@@ -193,6 +207,29 @@ export default function ChartCanvas() {
     paneMapRef.current[key] = idx;
     return idx;
   };
+
+  // リサイズイベント検出用のResizeObserver
+  useEffect(() => {
+    if (!chartRef.current) return;
+    
+    // ResizeObserverを使用してコンテナリサイズを監視
+    const resizeObserver = new ResizeObserver(() => {
+      if (chartInstanceRef.current) {
+        redrawChart();
+      }
+    });
+    
+    // 監視開始
+    resizeObserver.observe(chartRef.current);
+    
+    // クリーンアップ
+    return () => {
+      if (chartRef.current) {
+        resizeObserver.unobserve(chartRef.current);
+      }
+      resizeObserver.disconnect();
+    };
+  }, [redrawChart]);
 
   // チャートの初期化と更新
   useEffect(() => {
@@ -221,6 +258,13 @@ export default function ChartCanvas() {
       },
       rightPriceScale: {
         borderColor: "#1F2937",
+        scaleMargins: {
+          top: 0.1, // 上部マージンを小さくして価格表示領域を拡大
+          bottom: 0.1, // 下部マージンを小さくして価格表示領域を拡大
+        },
+        entireTextOnly: false, // 価格ラベルをクリッピングして表示
+        visible: true,
+        autoScale: true, // 自動スケーリングを有効化
       },
       crosshair: {
         mode: 0,

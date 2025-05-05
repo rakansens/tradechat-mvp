@@ -1,0 +1,230 @@
+{
+  "symbol": "BINANCE:BTCUSDT",
+  "extractionTime": "2025-05-04T12:09:43.447Z",
+  "chartData": {
+    "windowProps": {
+      "hasTradingView": true,
+      "tradingViewProps": [
+        "onChartPage",
+        "isMobile",
+        "onWidget",
+        "FeatureToggle",
+        "isFeatureEnabled",
+        "QuoteSession",
+        "QuoteSessionMultiplexer",
+        "trackEvent",
+        "createGoProDialog",
+        "changeLoginState",
+        "signOut",
+        "setTrialAvailiable",
+        "notificationsChanged",
+        "Pro",
+        "saveDefaults",
+        "factoryDefaults",
+        "StudyMetaInfo",
+        "runOrSigninWithFeature",
+        "defaultProperties",
+        "bottomWidgetBar"
+      ]
+    },
+    "chartInfo": null,
+    "domData": {
+      "hasChartContainer": true,
+      "chartContainerAttributes": {},
+      "canvasCount": 12,
+      "canvasInfo": [
+        {
+          "index": 0,
+          "width": 1576,
+          "height": 1296,
+          "clientRect": {
+            "width": 788,
+            "height": 648,
+            "top": 42,
+            "left": 56
+          }
+        },
+        {
+          "index": 1,
+          "width": 1576,
+          "height": 1296,
+          "clientRect": {
+            "width": 788,
+            "height": 648,
+            "top": 42,
+            "left": 56
+          }
+        },
+        {
+          "index": 2,
+          "width": 172,
+          "height": 1296,
+          "clientRect": {
+            "width": 86,
+            "height": 648,
+            "top": 42,
+            "left": 844
+          }
+        },
+        {
+          "index": 3,
+          "width": 172,
+          "height": 1296,
+          "clientRect": {
+            "width": 86,
+            "height": 648,
+            "top": 42,
+            "left": 844
+          }
+        },
+        {
+          "index": 4,
+          "width": 1576,
+          "height": 56,
+          "clientRect": {
+            "width": 788,
+            "height": 28,
+            "top": 690,
+            "left": 56
+          }
+        },
+        {
+          "index": 5,
+          "width": 1576,
+          "height": 56,
+          "clientRect": {
+            "width": 788,
+            "height": 28,
+            "top": 690,
+            "left": 56
+          }
+        },
+        {
+          "index": 6,
+          "width": 172,
+          "height": 56,
+          "clientRect": {
+            "width": 86,
+            "height": 28,
+            "top": 690,
+            "left": 844
+          }
+        },
+        {
+          "index": 7,
+          "width": 536,
+          "height": 284,
+          "clientRect": {
+            "width": 268,
+            "height": 142,
+            "top": 940,
+            "left": 950
+          }
+        },
+        {
+          "index": 8,
+          "width": 536,
+          "height": 284,
+          "clientRect": {
+            "width": 268,
+            "height": 142,
+            "top": 940,
+            "left": 950
+          }
+        },
+        {
+          "index": 9,
+          "width": 536,
+          "height": 56,
+          "clientRect": {
+            "width": 268,
+            "height": 28,
+            "top": 1082,
+            "left": 950
+          }
+        },
+        {
+          "index": 10,
+          "width": 536,
+          "height": 56,
+          "clientRect": {
+            "width": 268,
+            "height": 28,
+            "top": 1082,
+            "left": 950
+          }
+        },
+        {
+          "index": 11,
+          "width": 0,
+          "height": 0,
+          "clientRect": {
+            "width": 0,
+            "height": 0,
+            "top": 0,
+            "left": 0
+          }
+        }
+      ],
+      "priceElements": [
+        {
+          "text": "USDTAL",
+          "className": "price-axis"
+        }
+      ],
+      "timeElements": [
+        {
+          "text": "",
+          "className": "chart-markup-table time-axis"
+        }
+      ]
+    }
+  },
+  "requests": [
+    {
+      "url": "https://www.tradingview.com/chart/?symbol=BINANCE:BTCUSDT",
+      "method": "GET",
+      "headers": {
+        "accept-language": "ja",
+        "upgrade-insecure-requests": "1",
+        "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+        "sec-ch-ua": "\"Not.A/Brand\";v=\"99\", \"Chromium\";v=\"136\"",
+        "sec-ch-ua-mobile": "?0",
+        "sec-ch-ua-platform": "\"macOS\"",
+        "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7"
+      },
+      "time": "2025-05-04T12:09:35.427Z"
+    },
+    {
+      "url": "https://static.tradingview.com/static/bundles/end-of-series-banner.b4c3e6dc8030ead415b2.js",
+      "method": "GET",
+      "headers": {
+        "origin": "https://www.tradingview.com",
+        "sec-ch-ua-platform": "\"macOS\"",
+        "referer": "https://www.tradingview.com/",
+        "accept-language": "ja",
+        "sec-ch-ua": "\"Not.A/Brand\";v=\"99\", \"Chromium\";v=\"136\"",
+        "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+        "sec-ch-ua-mobile": "?0",
+        "accept": "*/*"
+      },
+      "time": "2025-05-04T12:09:36.504Z"
+    },
+    {
+      "url": "https://www.google-analytics.com/g/collect?v=2&tid=G-YVVRYGL0E0&gtm=45je54u1v9104254764za200&_p=1746360576744&gcs=G1-0&gcd=13l3p3l3l5l1&npa=0&dma=0&tag_exp=101509157~103101747~103101749~103116026~103200004~103233427~103251618~103251620&cid=157214820.1746360577&ul=ja&sr=2560x1440&uaa=arm&uab=64&uafvl=Not.A%252FBrand%3B99.0.0.0%7CChromium%3B136.0.7103.49&uamb=0&uam=&uap=macOS&uapv=14.5.0&uaw=0&are=1&pae=1&frm=0&pscdl=&_s=3&sid=1746360577&sct=1&seg=0&dl=https%3A%2F%2Fwww.tradingview.com%2Fchart%2F%3Fsymbol%3DBINANCE%253ABTCUSDT&dt=BTCUSDT%2095%2C440.23%20%E2%96%BC%20%E2%88%920.43%25&en=timing_complete&_ee=1&ep.anonymize_ip=true&ep.name=Time%20to%20series&epn.value=1321.0999999642372&ep.event_category=Chart&tfd=2009",
+      "method": "POST",
+      "headers": {
+        "sec-ch-ua-platform": "\"macOS\"",
+        "referer": "https://www.tradingview.com/",
+        "accept-language": "ja",
+        "sec-ch-ua": "\"Not.A/Brand\";v=\"99\", \"Chromium\";v=\"136\"",
+        "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+        "sec-ch-ua-mobile": "?0",
+        "accept": "*/*",
+        "origin": "https://www.tradingview.com"
+      },
+      "time": "2025-05-04T12:09:37.434Z"
+    }
+  ],
+  "responses": 0
+}

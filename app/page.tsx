@@ -1,15 +1,19 @@
 // app/page.tsx
 // 更新: any型を排除し、正しい型を使用するように修正
+// 追加: リサイズ可能なパネル機能を実装
 "use client"
 
 import { useEffect, useRef, useCallback } from "react"
 import { Bell, CandlestickChart, BarChart3, LineChart, MessageSquare, Settings } from "lucide-react"
+import { PanelGroup, Panel, ImperativePanelHandle } from "react-resizable-panels"
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
+import { ResizeHandle } from "@/components/ui/ResizeHandle"
+import { MobileResizeHandle } from "@/components/ui/MobileResizeHandle"
 // import { ThemeToggle } from "@/components/theme-toggle"
 
 import ChartSection from "@/components/chart/ChartSection"
@@ -46,6 +50,10 @@ const mastraClient = new MastraClient({
 });
 
 export default function Home() {
+  // Refs
+  const chatEndRef = useRef<HTMLDivElement>(null);
+  const mobileContainerRef = useRef<HTMLDivElement>(null);
+
   // --- Zustand Stores (using individual selectors from separate stores) ---
   // エントリーストアから状態とアクションを取得
   const entries = useEntryStore((state) => state.entries);
@@ -93,8 +101,6 @@ export default function Home() {
     // Add other useChat options if needed (e.g., initialMessages, body, etc.)
   });
 
-  const chatEndRef = useRef<HTMLDivElement>(null);
-
   // --- Wrappers for Store Actions passed to ChatSection ---
   const handleExecuteTrade = useCallback(() => {
     console.log('Executing trade:', pendingEntry);
@@ -137,11 +143,26 @@ export default function Home() {
           <Badge variant="outline" className="text-xs">BETA</Badge>
           {currentPrice > 0 && (
             <div className="flex items-center space-x-2">
-              <Badge variant="outline" className="font-mono text-xs">
+              <Badge variant="outline" className="font-mono text-sm py-1 px-2" style={{
+                backgroundColor: theme.background.tertiary,
+                borderColor: theme.border.light,
+                color: theme.text.primary,
+                fontWeight: 'bold',
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+              }}>
                 {currentSymbol}: ${currentPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </Badge>
               {priceChangePercent !== 0 && (
-                <Badge variant={priceChangePercent >= 0 ? "success" : "destructive"} className="text-xs">
+                <Badge 
+                  className="text-sm py-1 px-2"
+                  style={{
+                    backgroundColor: priceChangePercent >= 0 ? `${theme.accent.green}20` : `${theme.accent.red}20`,
+                    borderColor: priceChangePercent >= 0 ? theme.accent.green : theme.accent.red,
+                    color: priceChangePercent >= 0 ? theme.accent.green : theme.accent.red,
+                    fontWeight: 'bold',
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+                  }}
+                >
                   {priceChangePercent >= 0 ? '+' : ''}{priceChangePercent.toFixed(2)}%
                 </Badge>
               )}
@@ -160,44 +181,102 @@ export default function Home() {
         </div>
       </header>
 
-      {/* 強制的にレイアウトをチャート表示に初期化 */}
-      <div className="flex flex-col md:flex-row h-full" style={{ backgroundColor: theme.background.primary }}>
-        {/* Chat Section - 常に左サイドバーとして表示、3割の幅に設定 */}
-        <div 
-          className="md:w-[30%] w-full h-1/2 md:h-full transition-all duration-300 ease-in-out overflow-hidden"
-        >
-          <ChatSection
-            messages={messages}
-            input={input}
-            handleInputChange={handleInputChange}
-            handleSubmit={handleSubmit}
-            isLoading={isLoading}
-            pendingEntry={pendingEntry}
-            chatEndRef={chatEndRef as React.RefObject<HTMLDivElement>}
-            executeEntry={handleExecuteTrade}
-            editPendingEntry={handleEditSubmit}
-            cancelPendingEntry={handleCancelPendingEntry}
+      {/* リサイズ可能なパネルレイアウト */}
+      <div className="h-full" style={{ backgroundColor: theme.background.primary }}>
+        {/* モバイル表示 - スタックレイアウト（縦方向にリサイズ） */}
+        <div className="flex flex-col h-full md:hidden" ref={mobileContainerRef}>
+          <div className="h-1/2 min-h-[200px] overflow-hidden">
+            <ChatSection
+              messages={messages}
+              input={input}
+              handleInputChange={handleInputChange}
+              handleSubmit={handleSubmit}
+              isLoading={isLoading}
+              pendingEntry={pendingEntry}
+              chatEndRef={chatEndRef as React.RefObject<HTMLDivElement>}
+              executeEntry={handleExecuteTrade}
+              editPendingEntry={handleEditSubmit}
+              cancelPendingEntry={handleCancelPendingEntry}
+            />
+          </div>
+          
+          {/* モバイル用リサイズハンドル */}
+          <MobileResizeHandle
+            containerRef={mobileContainerRef}
+            onResize={(topHeight, bottomHeight) => {
+              // リサイズ後の処理（オプション）
+              console.log(`Top height: ${topHeight}px, Bottom height: ${bottomHeight}px`);
+            }}
+            minTopHeight={150}
+            minBottomHeight={150}
           />
+          
+          <div className="h-1/2 min-h-[200px] overflow-hidden">
+            <Card className="h-full flex flex-col border-0 rounded-none shadow-none" style={{ backgroundColor: theme.background.card }}>
+              <ChartToolbar />
+              <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)} className="flex-1 flex flex-col">
+                <TabsContent value="chart" className="flex-1 m-0 p-0 data-[state=active]:flex flex-col">
+                  <ChartSection />
+                </TabsContent>
+                <TabsContent value="positions" className="flex-1 m-0 p-0 data-[state=active]:flex flex-col">
+                  <PositionHistory entries={entries} onClosePosition={closePosition} onCancelPosition={cancelPosition} />
+                </TabsContent>
+              </Tabs>
+            </Card>
+          </div>
         </div>
-
-        {/* Chart and Position History Section - 常に右側に大きく表示、7割の幅に設定 */}
-        <div 
-          className="md:w-[70%] w-full h-1/2 md:h-full transition-all duration-300 ease-in-out overflow-hidden"
-        >
-          <Card className="h-full flex flex-col border-0 rounded-none shadow-none" style={{ backgroundColor: theme.background.card }}>
-            {/* ChartToolbarを常に表示 */}
-            <ChartToolbar />
-
-            <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)} className="flex-1 flex flex-col">
-              <TabsContent value="chart" className="flex-1 m-0 p-0 data-[state=active]:flex flex-col">
-                <ChartSection />
-              </TabsContent>
-
-              <TabsContent value="positions" className="flex-1 m-0 p-0 data-[state=active]:flex flex-col">
-                <PositionHistory entries={entries} onClosePosition={closePosition} onCancelPosition={cancelPosition} />
-              </TabsContent>
-            </Tabs>
-          </Card>
+        
+        {/* デスクトップ表示 - react-resizable-panels使用 */}
+        <div className="hidden md:block h-full">
+          <PanelGroup 
+            direction="horizontal" 
+            onLayout={(sizes: number[]) => {
+              // 任意: サイズをローカルストレージに保存
+              localStorage.setItem('panelSizes', JSON.stringify(sizes));
+            }}
+          >
+            {/* Chat Panel */}
+            <Panel 
+              defaultSize={30} 
+              minSize={20}
+              className="overflow-hidden"
+            >
+              <ChatSection
+                messages={messages}
+                input={input}
+                handleInputChange={handleInputChange}
+                handleSubmit={handleSubmit}
+                isLoading={isLoading}
+                pendingEntry={pendingEntry}
+                chatEndRef={chatEndRef as React.RefObject<HTMLDivElement>}
+                executeEntry={handleExecuteTrade}
+                editPendingEntry={handleEditSubmit}
+                cancelPendingEntry={handleCancelPendingEntry}
+              />
+            </Panel>
+            
+            {/* リサイズハンドル */}
+            <ResizeHandle />
+            
+            {/* Chart Panel */}
+            <Panel 
+              defaultSize={70} 
+              minSize={30}
+              className="overflow-hidden"
+            >
+              <Card className="h-full flex flex-col border-0 rounded-none shadow-none" style={{ backgroundColor: theme.background.card }}>
+                <ChartToolbar />
+                <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)} className="flex-1 flex flex-col">
+                  <TabsContent value="chart" className="flex-1 m-0 p-0 data-[state=active]:flex flex-col">
+                    <ChartSection />
+                  </TabsContent>
+                  <TabsContent value="positions" className="flex-1 m-0 p-0 data-[state=active]:flex flex-col">
+                    <PositionHistory entries={entries} onClosePosition={closePosition} onCancelPosition={cancelPosition} />
+                  </TabsContent>
+                </Tabs>
+              </Card>
+            </Panel>
+          </PanelGroup>
         </div>
       </div>
     </main>

@@ -134,23 +134,31 @@ export default function ChartToolbar({}: ChartToolbarProps) {
             24h Vol: 12.5K
           </Badge>
           
-          {/* 最新価格表示 */}
-          {currentPrice > 0 && (
-            <Badge variant="outline" className="font-mono text-xs py-0.5 px-1.5 ml-2" style={{ backgroundColor: theme.background.tertiary, borderColor: theme.border.light, color: theme.text.primary }}>
-              ${currentPrice.toLocaleString('en-US')}
-            </Badge>
-          )}
-          
-          {/* 価格変化率表示 */}
-          {priceChangePercent !== 0 && (
-            <Badge variant="outline" className="font-mono text-xs py-0.5 px-1.5 ml-2" style={{ 
-              backgroundColor: theme.background.tertiary, 
-              borderColor: theme.border.light, 
-              color: priceChangePercent >= 0 ? theme.accent.green : theme.accent.red 
-            }}>
-              {priceChangePercent >= 0 ? '+' : ''}{priceChangePercent.toFixed(2)}%
-            </Badge>
-          )}
+          {/* 最新価格表示 - position:fixedで表示位置を固定 */}
+          <div className="relative z-10 flex items-center">
+            {currentPrice > 0 && (
+              <Badge variant="outline" className="font-mono text-sm font-bold py-1 px-2 ml-2" style={{ 
+                backgroundColor: theme.background.tertiary, 
+                borderColor: theme.border.light, 
+                color: theme.text.primary,
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+              }}>
+                ${currentPrice.toLocaleString('en-US')}
+              </Badge>
+            )}
+            
+            {/* 価格変化率表示 */}
+            {priceChangePercent !== 0 && (
+              <Badge variant="outline" className="font-mono text-sm font-bold py-1 px-2 ml-2" style={{ 
+                backgroundColor: theme.background.tertiary, 
+                borderColor: theme.border.light, 
+                color: priceChangePercent >= 0 ? theme.accent.green : theme.accent.red,
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+              }}>
+                {priceChangePercent >= 0 ? '+' : ''}{priceChangePercent.toFixed(2)}%
+              </Badge>
+            )}
+          </div>
         </div>
 
         <div className="flex items-center space-x-2">
