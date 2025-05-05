@@ -244,7 +244,7 @@ export default function ChartSection() {
         
         {/* オーダーブック部分 */}
         <div 
-          className={`${window.innerWidth < 768 ? 'w-full h-1/2' : orderBookWidth} border-l border-[#2A2E39]`}
+          className={`${isMobile ? 'w-full h-1/2' : orderBookWidth} border-l border-[#2A2E39]`}
           style={{ backgroundColor: '#131722' }}
         >
           <div className="h-full flex flex-col">
