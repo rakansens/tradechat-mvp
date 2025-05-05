@@ -1,5 +1,5 @@
 // components/chart/ChartToolbar.tsx
-// 更新: Homeコンポーネントのヘッダー機能を統合
+// 更新: Homeコンポーネントのヘッダー機能を統合、銘柄選択モーダルを追加
 "use client"
 
 import React from 'react';
@@ -17,23 +17,24 @@ import {
   useUIStore, 
   useEntryStore 
 } from '@/store';
-import { Wifi, WifiOff, TrendingUp, Landmark, BarChart2, LineChart, Layers, BarChart3 } from 'lucide-react';
+import { Wifi, WifiOff, TrendingUp, Landmark, BarChart2, LineChart, Layers, BarChart3, CandlestickChart } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
+import { Button } from '@/components/ui/button';
 import { theme } from '@/styles/colors';
 import { TabType, IndicatorType, DrawingToolType } from '@/types/store';
 import { Timeframe, ChartType } from '@/types/chart';
+import SymbolSelectorModal from './SymbolSelectorModal';
 
 interface ChartToolbarProps {
   // 必要に応じて追加のプロパティを定義
 }
 
 const availableTimeframes = ['1m', '5m', '15m', '30m', '1h', '4h', '1d', '1w'];
-const availableSymbols = ['BTC/USDT', 'ETH/USDT', 'SOL/USDT', 'XRP/USDT', 'DOGE/USDT'];
 const chartTypes = ['candles', 'line', 'area'];
 
 // 利用可能なインジケーターの定義
@@ -58,7 +59,8 @@ export default function ChartToolbar({}: ChartToolbarProps) {
     currentTimeFrame,
     error,
     updateTimeFrame,
-    updateSymbol
+    updateSymbol,
+    fetchData
   } = useChartDataStore();
   
   // メモ化されたセレクターを使用
@@ -94,8 +96,6 @@ export default function ChartToolbar({}: ChartToolbarProps) {
     toggleRealTimeData
   } = useRealTimeStore();
   
-  // ストアからのアクションはすべて取得済み
-  
   // UIストアから状態とアクションを取得
   const activeTab = useUIStore((state) => state.activeTab);
   const setActiveTab = useUIStore((state) => state.setActiveTab);
@@ -115,21 +115,18 @@ export default function ChartToolbar({}: ChartToolbarProps) {
       
       <div className="flex justify-between items-center py-2 px-3 border-b" style={{ borderColor: theme.border.light, backgroundColor: theme.background.secondary }}>
         <div className="flex items-center space-x-2">
-          {/* シンボル選択 */}
-          <div className="flex items-center">
-            <select
-              value={currentSymbol}
-              onChange={(e) => updateSymbol(e.target.value)}
-              className="bg-transparent text-sm font-bold px-1 border-none focus:outline-none"
-              style={{ color: theme.text.primary }}
-            >
-              {availableSymbols.map((sym) => (
-                <option key={sym} value={sym}>
-                  {sym}
-                </option>
-              ))}
-            </select>
-          </div>
+          {/* 銘柄選択モーダル */}
+          <SymbolSelectorModal
+            currentSymbol={currentSymbol}
+            exchangeType={exchangeType}
+            onSymbolSelect={updateSymbol}
+            trigger={
+              <Button variant="outline" size="sm" className="gap-1">
+                <CandlestickChart className="h-4 w-4" />
+                <span>{currentSymbol}</span>
+              </Button>
+            }
+          />
           
           <Badge variant="outline" className="font-mono text-xs py-0.5 px-1.5" style={{ backgroundColor: theme.background.tertiary, borderColor: theme.border.light, color: theme.text.secondary }}>
             24h Vol: 12.5K
@@ -199,8 +196,7 @@ export default function ChartToolbar({}: ChartToolbarProps) {
         </div>
       </div>
       
-      {/* 拡張ツールバー - チャートタイプ、インジケーター、取引種別など */}
-      <div className="flex items-center justify-between px-4 py-1 border-b" style={{ borderColor: theme.border.light, backgroundColor: theme.background.tertiary }}>
+      <div className="flex items-center justify-between px-3 py-1 border-b" style={{ borderColor: theme.border.light, backgroundColor: theme.background.secondary }}>
         <div className="flex items-center space-x-4">
           {/* チャートタイプ選択 */}
           <div className="flex items-center space-x-1">
@@ -277,61 +273,59 @@ export default function ChartToolbar({}: ChartToolbarProps) {
               </div>
             </PopoverContent>
           </Popover>
+          
+          {/* リアルタイム更新切替ボタン */}
+          <button
+            onClick={() => toggleRealTimeData()}
+            className="flex items-center px-2 py-1 text-xs rounded bg-dark-800 text-gray-300 hover:bg-dark-700"
+            title={useRealTimeData ? "リアルタイム更新を停止" : "リアルタイム更新を開始"}
+          >
+            {useRealTimeData ? (
+              <>
+                <Wifi className="w-3.5 h-3.5 mr-1 text-green-500" />
+                <span>リアルタイム</span>
+              </>
+            ) : (
+              <>
+                <WifiOff className="w-3.5 h-3.5 mr-1 text-gray-500" />
+                <span>リアルタイム</span>
+              </>
+            )}
+          </button>
         </div>
 
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center">
           {/* 取引種別切り替えボタン */}
           <div className="flex items-center">
             <button
-              onClick={() => setExchangeType('spot')}
+              onClick={() => {
+                setExchangeType('spot');
+                fetchData(currentSymbol, currentTimeFrame);
+              }}
               className={`flex items-center px-2 py-1 text-xs rounded-l ${
                 exchangeType === 'spot'
                   ? 'bg-blue-600 text-white'
                   : 'bg-dark-800 text-gray-300 hover:bg-dark-700'
               }`}
-              title="スポット取引"
             >
-              <Landmark className="w-3 h-3 mr-1" />
-              <span>SPOT</span>
+              現物
             </button>
             <button
-              onClick={() => setExchangeType('futures')}
+              onClick={() => {
+                setExchangeType('futures');
+                fetchData(currentSymbol, currentTimeFrame);
+              }}
               className={`flex items-center px-2 py-1 text-xs rounded-r ${
                 exchangeType === 'futures'
                   ? 'bg-blue-600 text-white'
                   : 'bg-dark-800 text-gray-300 hover:bg-dark-700'
               }`}
-              title="先物取引"
             >
-              <TrendingUp className="w-3 h-3 mr-1" />
-              <span>FUTURES</span>
+              先物
             </button>
           </div>
-
-          {/* リアルタイムデータ切り替えボタン */}
-          <button
-            onClick={toggleRealTimeData}
-            className={`flex items-center px-2 py-1 text-xs rounded ${
-              useRealTimeData
-                ? 'bg-green-600/20 text-green-300 border border-green-600/30'
-                : 'bg-gray-800 text-gray-400 border border-gray-700'
-            }`}
-            title={useRealTimeData ? 'リアルタイムデータ使用中 (クリックで無効化)' : 'ダミーデータ使用中 (クリックでリアルタイムデータに切替)'}
-          >
-            {useRealTimeData ? (
-              <>
-                <Wifi className="w-3 h-3 mr-1" /> 
-                <span>LIVE</span>
-              </>
-            ) : (
-              <>
-                <WifiOff className="w-3 h-3 mr-1" /> 
-                <span>DEMO</span>
-              </>
-            )}
-          </button>
         </div>
       </div>
     </div>
   );
-} 
+}

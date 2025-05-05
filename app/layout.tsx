@@ -1,16 +1,11 @@
-"use client"
-
-import React, { useEffect } from "react"
 import "@/app/globals.css"
-
 import { Inter } from "next/font/google"
-import { ThemeProvider } from "@/components/theme-provider"
-import { ErrorBoundary } from "@/components/ErrorBoundary"
-import { setupGlobalErrorHandlers } from "@/utils/errorHandlers"
+import ClientLayout from "@/components/ClientLayout"
+import type { Metadata } from "next"
 
 const inter = Inter({ subsets: ["latin"] })
 
-export const metadata = {
+export const metadata: Metadata = {
   title: "TradeChat MVP",
   description: "チャットベースで自然言語によりチャート分析・エントリー提案・モック注文実行ができる最小限のUIモック",
   generator: 'v0.dev'
@@ -21,19 +16,10 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
-  // グローバルエラーハンドラーをセットアップ（クライアントサイドのみ）
-  useEffect(() => {
-    setupGlobalErrorHandlers();
-  }, []);
-
   return (
     <html lang="ja" suppressHydrationWarning>
       <body className={inter.className} suppressHydrationWarning>
-        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
-          <ErrorBoundary>
-            {children}
-          </ErrorBoundary>
-        </ThemeProvider>
+        <ClientLayout>{children}</ClientLayout>
       </body>
     </html>
   )

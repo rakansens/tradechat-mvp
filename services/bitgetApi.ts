@@ -17,6 +17,7 @@ import {
   IS_BROWSER 
 } from './api';
 import { ExchangeType, BitgetCredentials } from '../types/api';
+import { SymbolInfo } from '../types/symbol';
 import { logger } from '@/utils/logger';
 
 // API設定は共通モジュールから取得
@@ -331,6 +332,179 @@ export class BitgetApiClient {
     };
     
     return mapping[timeframe] || '1day'; // デフォルトは日足
+  }
+
+  // オーダーブック取得関数を追加
+  /**
+   * 利用可能な全銘柄リストを取得する
+   * @param exchangeType 取引種別 (デフォルトはインスタンスの設定値)
+   * @returns 銘柄情報の配列
+   */
+  async fetchSymbols(exchangeType: ExchangeType = this.exchangeType): Promise<SymbolInfo[]> {
+    try {
+      // 最新のBitget API V2エンドポイントを使用
+      const endpoint = exchangeType === 'spot' 
+        ? '/api/v2/spot/public/symbols' 
+        : '/api/v2/mix/market/contracts';
+      
+      logger.info(`Fetching symbols from API: ${endpoint}`, {
+        component: 'BitgetApiClient',
+        action: 'fetchSymbols',
+        exchangeType
+      });
+      
+      // ブラウザ環境では内部APIを使用
+      if (IS_BROWSER) {
+        try {
+          // 内部APIを使用（Next.jsのAPI Routes経由）
+          const response = await adaptiveApiRequest({
+            browserEndpoint: '/api/bitget/symbols',
+            serverBaseUrl: BITGET_API_BASE_URL,
+            serverEndpoint: endpoint,
+            params: { type: exchangeType },
+            options: {
+              method: 'GET',
+              errorTitle: '銘柄情報取得エラー',
+              errorDescription: '銘柄情報の取得に失敗しました',
+              showToast: IS_DEV
+            }
+          });
+          
+          // レスポンスデータを解析
+          return this.parseSymbolsResponse(response, exchangeType);
+        } catch (browserError) {
+          logger.error('Failed to fetch symbols via browser API', browserError, {
+            component: 'BitgetApiClient',
+            action: 'fetchSymbols',
+            exchangeType
+          });
+          
+          // ブラウザAPIが失敗した場合はダミーデータを返す
+          return this.generateDummySymbols(exchangeType);
+        }
+      } else {
+        // サーバー環境では直接APIリクエスト
+        try {
+          const response = await apiRequest({
+            url: `${BITGET_API_BASE_URL}${endpoint}`,
+            method: 'GET'
+          });
+          
+          return this.parseSymbolsResponse(response, exchangeType);
+        } catch (serverError) {
+          logger.error('Failed to fetch symbols via server API', serverError, {
+            component: 'BitgetApiClient',
+            action: 'fetchSymbols',
+            exchangeType
+          });
+          
+          // サーバーAPIが失敗した場合はダミーデータを返す
+          return this.generateDummySymbols(exchangeType);
+        }
+      }
+    } catch (error) {
+      logger.error('Failed to fetch symbols', error, {
+        component: 'BitgetApiClient',
+        action: 'fetchSymbols',
+        exchangeType
+      });
+      
+      // エラー時はダミーデータを返す
+      return this.generateDummySymbols(exchangeType);
+    }
+  }
+  
+  /**
+   * APIレスポンスから銘柄情報をパースする
+   * @param data APIレスポンスデータ
+   * @param exchangeType 取引種別
+   * @returns 銘柄情報の配列
+   */
+  private parseSymbolsResponse(data: any, exchangeType: ExchangeType): SymbolInfo[] {
+    // Bitget v2 API ではトップレベルに code / msg / data があり、
+    // Next.js API ルート経由の場合は data 部分だけが渡ってくる。
+    const symbols: any[] = Array.isArray(data)
+      ? data
+      : Array.isArray(data?.data)
+        ? data.data
+        : [];
+
+    if (symbols.length === 0) {
+      logger.warn('Empty symbols response from API', {
+        component: 'BitgetApiClient',
+        action: 'parseSymbolsResponse',
+        exchangeType,
+        apiVersion: 'v2'
+      });
+    }
+
+    return symbols.map((symbol: any) => {
+      if (exchangeType === 'spot') {
+        // スポット取引用 v2 フォーマット
+        return {
+          symbol: symbol.symbol || '',
+          baseAsset: symbol.baseCoin || '',
+          quoteAsset: symbol.quoteCoin || '',
+          displayName: `${symbol.baseCoin || ''}/${symbol.quoteCoin || ''}`,
+          pricePrecision: symbol.priceScale || 8,
+          quantityPrecision: symbol.quantityScale || 8,
+          minNotional: symbol.minTradeAmount || '0',
+          status: symbol.status === 'online' ? 'TRADING' : 'BREAK'
+        } as SymbolInfo;
+      }
+
+      // 先物（mix）取引用 v2 フォーマット
+      return {
+        symbol: symbol.symbol || '',
+        baseAsset: symbol.baseCoin || '',
+        quoteAsset: symbol.quoteCoin || '',
+        displayName: `${symbol.baseCoin || ''}/${symbol.quoteCoin || ''}`,
+        pricePrecision: symbol.priceEndStep || 8,
+        quantityPrecision: symbol.sizeMultiplier || 8,
+        minNotional: symbol.minTradeAmount || '0',
+        status: symbol.status === 'normal' ? 'TRADING' : 'BREAK'
+      } as SymbolInfo;
+    });
+  }
+  
+  /**
+   * デモ用の銘柄データを生成する
+   * @param exchangeType 取引種別
+   * @returns デモ用の銘柄情報の配列
+   */
+  private generateDummySymbols(exchangeType: ExchangeType): SymbolInfo[] {
+    logger.info('Generating dummy symbols data', {
+      component: 'BitgetApiClient',
+      action: 'generateDummySymbols',
+      exchangeType
+    });
+    
+    // 主要な通貨ペアのダミーデータ
+    const baseAssets = ['BTC', 'ETH', 'XRP', 'SOL', 'DOGE', 'SHIB', 'ADA', 'AVAX', 'DOT', 'MATIC'];
+    const quoteAssets = ['USDT', 'USD', 'BTC', 'ETH'];
+    
+    const symbols: SymbolInfo[] = [];
+    
+    // ダミーデータの生成
+    baseAssets.forEach(base => {
+      quoteAssets.forEach(quote => {
+        // 同じ通貨同士のペアは除外
+        if (base === quote) return;
+        
+        symbols.push({
+          symbol: `${base}${quote}`,
+          baseAsset: base,
+          quoteAsset: quote,
+          displayName: `${base}/${quote}`,
+          pricePrecision: 8,
+          quantityPrecision: 6,
+          minNotional: '10',
+          status: 'TRADING'
+        });
+      });
+    });
+    
+    return symbols;
   }
 
   // オーダーブック取得関数を追加
