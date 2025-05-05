@@ -13,6 +13,7 @@ import type { ChartDataState } from "../../types/store";
 import { produce } from "immer";
 import { BitgetApiClient } from '../../services/bitgetApi';
 import { logger } from '../../utils/logger';
+import { useChartConfigStore } from './useChartConfigStore';
 
 // 初期値の設定
 const initialTimeframe: Timeframe = "1d";
@@ -38,10 +39,11 @@ export const useChartDataStore = create<ChartDataState>()(
           set({ isLoading: true, error: null });
           
           try {
-            // 新しいAPIクライアントを作成
-            // 注意: 実際の実装では、APIクライアントはRealTimeStoreから取得するべきです
-            // ここでは循環参照を避けるために直接作成しています
-            const api = new BitgetApiClient({}, 'spot');
+            // useChartConfigStoreから現在の取引タイプを取得
+            const { exchangeType } = useChartConfigStore.getState();
+            
+            // 正しい取引タイプでAPIクライアントを作成
+            const api = new BitgetApiClient({}, exchangeType);
             
             // Bitget APIから過去のローソク足データを取得
             const historicalData = await api.getHistoricalCandles(symbol, timeFrame, 100);

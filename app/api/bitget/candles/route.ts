@@ -55,12 +55,13 @@ export async function GET(req: NextRequest) {
     } else {
       // 先物取引用V2 API
       endpoint = '/api/v2/mix/market/candles';
-      // 先物取引の場合、シンボルに_UMCBLを追加（BitgetのAPI仕様）
-      // 注意: Bitget APIはシンボル名が大文字小文字を区別する
-      const futuresSymbol = `${symbol}_UMCBL`;
+      // V2ではsymbolにサフィックスを付けず、productTypeで契約タイプを指定する
+      const futuresSymbol = symbol; // "BTCUSDT" など
+      const productType = 'umcbl'; // USDT無期限
       params = {
         symbol: futuresSymbol,
-        granularity: convertTimeframeForBitgetV2(timeframe),
+        productType,
+        granularity: convertTimeframeForFuturesV2(timeframe),
         limit,
         ...(endTime ? { endTime } : {})
       };
@@ -128,9 +129,19 @@ export async function GET(req: NextRequest) {
         }
       });
       
-      // API障害時はスタブデータを返す（テスト用）
-      console.log('Returning stub data for testing');
-      return NextResponse.json(stubData);
+      // 実際のAPIエラーを返す
+      console.log('Returning actual API error');
+      return NextResponse.json(
+        { 
+          error: 'Bitget API request failed', 
+          details: {
+            message: axiosError.message,
+            status: axiosError.response?.status,
+            data: axiosError.response?.data
+          }
+        }, 
+        { status: axiosError.response?.status || 500 }
+      );
     }
   } catch (error: any) {
     console.error('Critical error in API route:', error);
@@ -143,7 +154,7 @@ export async function GET(req: NextRequest) {
 }
 
 /**
- * Bitget API V2用のタイムフレーム変換（スポットと先物で共通）
+ * Bitget API V2用のタイムフレーム変換（スポット取引用）
  * V2 APIではkラインの時間範囲は文字列形式が必要
  */
 function convertTimeframeForBitgetV2(timeframe: string): string {
@@ -162,6 +173,34 @@ function convertTimeframeForBitgetV2(timeframe: string): string {
   };
   
   return mapping[timeframe] || '1day'; // デフォルトは日足
+}
+
+/**
+ * Bitget API V2用のタイムフレーム変換（先物取引用）
+ * V2 APIの先物取引ではタイムフレーム形式が異なる
+ * 
+ * 注意: Bitget APIの最新仕様に基づいて修正しました
+ * 大文字ではなく小文字を使用します
+ */
+function convertTimeframeForFuturesV2(timeframe: string): string {
+  const mapping: Record<string, string> = {
+    '1m': '1m',        // 1分足
+    '3m': '3m',        // 3分足（APIがサポート）
+    '5m': '5m',        // 5分足
+    '15m': '15m',      // 15分足
+    '30m': '30m',      // 30分足
+    '1h': '1H',        // 1時間足 ※大文字 "H"
+    '4h': '4H',        // 4時間足 ※大文字 "H"
+    '6h': '6H',        // 6時間足 ※大文字 "H"
+    '12h': '12H',      // 12時間足 ※大文字 "H"
+    '1d': '1D',        // 日足 ※大文字 "D"
+    '3d': '3D',        // 3日足 (稀に使用)
+    '1w': '1W',        // 週足 ※大文字 "W"
+    '1M': '1M',        // 月足 （既に適切）
+  };
+  
+  // デフォルトは1D
+  return mapping[timeframe] || '1D';
 }
 
 /**
