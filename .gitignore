@@ -28,3 +28,6 @@ next-env.d.ts
 
 # mastra
 .mastra
+# analysis output
+/public/hybrid-analysis/
+/public/*-analysis/
