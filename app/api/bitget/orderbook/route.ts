@@ -38,13 +38,13 @@ export async function GET(request: NextRequest) {
     let params: Record<string, string> = {};
 
     if (type === 'spot') {
-      endpoint = '/api/spot/v1/market/orderbook';
+      endpoint = '/api/v2/spot/market/orderbook';
       params = {
         symbol,
         limit,
       };
     } else {
-      endpoint = '/api/mix/v1/market/orderbook';
+      endpoint = '/api/v2/mix/market/orderbook';
       params = {
         symbol: `${symbol}_UMCBL`,
         limit,
