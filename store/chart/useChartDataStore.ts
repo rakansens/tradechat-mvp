@@ -42,6 +42,10 @@ export const useChartDataStore = create<ChartDataState>()(
             // useChartConfigStoreから現在の取引タイプを取得
             const { exchangeType } = useChartConfigStore.getState();
             
+            if (process.env.NODE_ENV !== 'production') {
+              console.log('[fetchData] exchangeType:', exchangeType, 'symbol:', symbol, 'timeframe:', timeFrame);
+            }
+            
             // 正しい取引タイプでAPIクライアントを作成
             const api = new BitgetApiClient({}, exchangeType);
             
@@ -59,6 +63,16 @@ export const useChartDataStore = create<ChartDataState>()(
               currentTimeFrame: timeFrame
             });
             
+            // リアルタイムストアで新しいシンボル/タイムフレームを購読し直す
+            try {
+              const { startRealTimeUpdates, useRealTimeData } = (await import('./useRealTimeStore')).useRealTimeStore.getState();
+              if (useRealTimeData) {
+                startRealTimeUpdates();
+              }
+            } catch (e) {
+              // 循環参照の回避やSSR環境での安全性のため、動的import
+            }
+            
             return historicalData;
           } catch (error) {
             logger.error('Failed to fetch data from Bitget API:', error, {
@@ -68,12 +82,33 @@ export const useChartDataStore = create<ChartDataState>()(
               timeframe: timeFrame
             });
             
+            // エラーメッセージを取得
+            let errorMessage = error instanceof Error ? error.message : 'Failed to fetch data';
+            
+            const { exchangeType } = useChartConfigStore.getState();
+            // 先物取引でサポートされていない銘柄のエラーの場合は、よりユーザーフレンドリーなメッセージに変換
+            if (
+              errorMessage.includes('先物取引でサポートされていません') ||
+              (
+                exchangeType === 'futures' &&
+                (errorMessage.includes('status code 400') || errorMessage.includes('Bad Request'))
+              )
+            ) {
+              // 現物取引に切り替えるオプションを提供するメッセージ
+              errorMessage = `この銘柄は先物取引で利用できません。現物取引をお試しください。`;
+              
+              // 現物取引に切り替えるオプションを提供する場合は、ここで自動的に切り替えるロジックを追加できます
+              // 例: useChartConfigStore.getState().setExchangeType('spot');
+            }
+            
             // APIが失敗した場合はダミーデータを使用
             const dummyData = generateOHLCData(100, timeFrame);
             set({ 
               data: dummyData,
               isLoading: false,
-              error: error instanceof Error ? error.message : 'Failed to fetch data'
+              error: errorMessage,
+              currentSymbol: symbol,         // エラー時でも現在のシンボルを保持
+              currentTimeFrame: timeFrame    // エラー時でも現在のタイムフレームを保持
             });
             
             return dummyData;
@@ -100,13 +135,30 @@ export const useChartDataStore = create<ChartDataState>()(
         },
         
         updateTimeFrame: async (timeFrame: Timeframe) => {
+          // 先にタイムフレームを更新してUIに即反映
+          set({ currentTimeFrame: timeFrame });
+          
           // 現在のシンボルと新しいタイムフレームでデータを取得
           await get().fetchData(get().currentSymbol, timeFrame);
+          
+          // WebSocket購読を更新
+          try {
+            const { startRealTimeUpdates } = (await import('./useRealTimeStore')).useRealTimeStore.getState();
+            startRealTimeUpdates();
+          } catch {}
         },
         
         updateSymbol: async (symbol: string) => {
+          // 先にシンボルを更新してUIに即反映
+          set({ currentSymbol: symbol });
+          
           // 新しいシンボルと現在のタイムフレームでデータを取得
           await get().fetchData(symbol, get().currentTimeFrame);
+          
+          try {
+            const { startRealTimeUpdates } = (await import('./useRealTimeStore')).useRealTimeStore.getState();
+            startRealTimeUpdates();
+          } catch {}
         },
         
         // リアルタイム更新用のメソッド

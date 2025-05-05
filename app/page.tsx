@@ -124,8 +124,10 @@ export default function Home() {
   
   useEffect(() => {
     // 新しいストアを使用してチャートデータを取得
-    fetchData('BTC/USDT', currentTimeFrame);
-  }, [fetchData, currentTimeFrame]);
+    if (currentSymbol) {
+      fetchData(currentSymbol, currentTimeFrame);
+    }
+  }, [fetchData, currentSymbol, currentTimeFrame]);
 
   const openPositionsCount = entries.filter((entry) => entry.status === "open").length
 
