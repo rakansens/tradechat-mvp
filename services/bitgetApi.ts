@@ -20,6 +20,12 @@ import { ExchangeType, BitgetCredentials } from '../types/api';
 import { SymbolInfo } from '../types/symbol';
 import { logger } from '@/utils/logger';
 
+// 先物取引で利用できない可能性が高い銘柄のパターン
+const UNSUPPORTED_FUTURES_PATTERNS = [
+  /USDC$/,  // USDC建ての通貨ペア
+  /[^B]BTC$/  // BTC建ての通貨ペア（BTC自体は除く）
+];
+
 // API設定は共通モジュールから取得
 const BITGET_API_BASE_URL = API_CONFIG.bitget.baseUrl;
 const BITGET_WS_URL = API_CONFIG.bitget.wsUrl;
@@ -62,6 +68,40 @@ export class BitgetApiClient {
   private exchangeType: ExchangeType = 'spot'; // デフォルトはスポット取引
   private isInDemoMode: boolean = false; // デモモードフラグ
   private currentSubscription: { instType: string; channel: string; instId: string } | null = null;
+  
+  /**
+   * 先物取引で利用可能な銘柄かどうかをチェックする
+   * @param symbol チェックするシンボル
+   * @returns 利用可能な場合はtrue、そうでない場合はfalse
+   */
+  public isSupportedFuturesSymbol(symbol: string): boolean {
+    // _UMCBL サフィックスを削除
+    const cleanSymbol = symbol.replace(/_UMCBL$/i, '');
+    
+    // サポートされていないパターンにマッチするかチェック
+    for (const pattern of UNSUPPORTED_FUTURES_PATTERNS) {
+      if (pattern.test(cleanSymbol)) {
+        logger.info(`先物取引でサポートされていない銘柄です: ${cleanSymbol}`, {
+          component: 'BitgetApiClient',
+          action: 'isSupportedFuturesSymbol',
+          symbol: cleanSymbol
+        });
+        return false;
+      }
+    }
+    
+    return true;
+  }
+  
+  /**
+   * 先物取引用のシンボルを正規化する（_UMCBLサフィックスの削除のみ）
+   * @param symbol 元のシンボル
+   * @returns 正規化されたシンボル
+   */
+  private normalizeFuturesSymbol(symbol: string): string {
+    // _UMCBL サフィックスを削除するのみ
+    return symbol.replace(/_UMCBL$/i, '');
+  }
 
   constructor(credentials: BitgetCredentials = {}, exchangeType: ExchangeType = 'spot') {
     this.credentials = credentials;
@@ -81,11 +121,24 @@ export class BitgetApiClient {
     try {
       // シンボルを正しい形式に変換（スラッシュを削除）
       const formattedSymbol = symbol.replace('/', '').toUpperCase();
+      // 先物取引の場合の処理
+      let sanitizedSymbol = formattedSymbol;
       
+      if (this.exchangeType === 'futures') {
+        // 正規化（_UMCBL サフィックスを削除）
+        sanitizedSymbol = this.normalizeFuturesSymbol(formattedSymbol);
+        
+        // 先物取引でサポートされているかチェック
+        if (!this.isSupportedFuturesSymbol(sanitizedSymbol)) {
+          // サポートされていない場合は明示的なエラーを投げる
+          throw new Error(`この銘柄は先物取引でサポートされていません: ${sanitizedSymbol}`);
+        }
+      }
+            
       // パラメータの準備
       const browserParams = {
         type: this.exchangeType, // 取引タイプを追加（spotまたはfutures）
-        symbol: formattedSymbol,
+        symbol: sanitizedSymbol,
         timeframe,
         limit: limit.toString(),
         ...(endTime ? { endTime: endTime.toString() } : {})
@@ -522,9 +575,16 @@ export class BitgetApiClient {
       // シンボルを正しい形式に変換（スラッシュを削除）
       const formattedSymbol = symbol.replace('/', '').toUpperCase();
       
+      // 先物取引の場合、UI で渡ってくるシンボルは "BTCUSDT_UMCBL" 形式のことがあるため
+      // Bitget V2 API 仕様どおり "BTCUSDT" のみを送るようにサニタイズする
+      const sanitizedSymbol =
+        this.exchangeType === 'futures'
+          ? formattedSymbol.replace(/_UMCBL$/i, '')
+          : formattedSymbol;
+      
       // パラメータの準備
       const browserParams = {
-        symbol: formattedSymbol,
+        symbol: sanitizedSymbol,
         type: exchangeType,
       };
       
@@ -536,7 +596,7 @@ export class BitgetApiClient {
       // エンドポイントの準備
       const serverEndpoint = exchangeType === 'spot'
         ? '/api/v2/spot/market/orderbook'
-        : '/api/v2/mix/market/orderbook';
+        : '/api/mix/v1/market/depth'; // 先物市場はV1 APIを使用
       
       // キャンセル可能なリクエストを作成
       const { signal } = createCancellableRequest();

@@ -38,13 +38,15 @@ export async function GET(request: NextRequest) {
     let params: Record<string, string> = {};
 
     if (type === 'spot') {
+      // スポット市場はV2 APIを使用
       endpoint = '/api/v2/spot/market/orderbook';
       params = {
         symbol,
         limit,
       };
     } else {
-      endpoint = '/api/v2/mix/market/orderbook';
+      // 先物市場はV1 APIを使用（エンドポイントが異なる）
+      endpoint = '/api/mix/v1/market/depth';
       params = {
         symbol: `${symbol}_UMCBL`,
         limit,
