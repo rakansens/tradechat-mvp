@@ -19,12 +19,14 @@ interface SymbolSelectorProps {
   onSelect: (symbol: string) => void;
   currentSymbol?: string;
   defaultExchangeType?: ExchangeType;
+  onExchangeTypeChange?: (exchangeType: ExchangeType) => void;
 }
 
 export default function SymbolSelector({ 
   onSelect, 
   currentSymbol = 'BTCUSDT',
-  defaultExchangeType = 'spot'
+  defaultExchangeType = 'spot',
+  onExchangeTypeChange,
 }: SymbolSelectorProps) {
   // ストアから状態とアクションを取得
   const { 
@@ -53,6 +55,7 @@ export default function SymbolSelector({
   const handleExchangeTypeChange = (value: string) => {
     setExchangeType(value as ExchangeType);
     fetchSymbols(value as ExchangeType);
+    onExchangeTypeChange?.(value as ExchangeType);
   };
   
   // 検索処理

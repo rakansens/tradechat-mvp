@@ -116,7 +116,32 @@ function generateStubSymbolData(type: string) {
   const baseAssets = ['BTC', 'ETH', 'XRP', 'SOL', 'DOGE', 'SHIB', 'ADA', 'AVAX', 'DOT', 'MATIC'];
   const quoteAssets = ['USDT', 'USD', 'BTC', 'ETH'];
   
-  const symbols = [];
+  // シンボルデータの型定義
+  type SpotSymbol = {
+    symbol: string;
+    baseCoin: string;
+    quoteCoin: string;
+    status: string;
+    minTradeAmount: string;
+    priceScale: number;
+    quantityScale: number;
+    makerFeeRate: string;
+    takerFeeRate: string;
+  };
+  
+  type FuturesSymbol = {
+    symbol: string;
+    baseCoin: string;
+    quoteCoin: string;
+    status: string;
+    minTradeAmount: string;
+    priceEndStep: number;
+    sizeMultiplier: number;
+    makerFeeRate: string;
+    takerFeeRate: string;
+  };
+  
+  const symbols: (SpotSymbol | FuturesSymbol)[] = [];
   
   // ダミーデータの生成
   baseAssets.forEach(base => {

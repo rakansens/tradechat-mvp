@@ -42,13 +42,31 @@ export const useRealTimeStore = create<RealTimeState>()(
         },
         
         startRealTimeUpdates: () => {
-          const api = get().bitgetApi;
+          let api = get().bitgetApi;
+          
+          // APIクライアントが初期化されていない場合は初期化する
           if (!api) {
-            logger.error('API client not initialized', null, {
-              component: 'useRealTimeStore',
-              action: 'startRealTimeUpdates'
-            });
-            return;
+            try {
+              // チャート設定ストアから現在の取引種別を取得
+              const { exchangeType } = require('./useChartConfigStore').useChartConfigStore.getState();
+              get().initializeApi(exchangeType);
+              api = get().bitgetApi;
+              
+              // それでもAPIクライアントが初期化できない場合はエラーログを出力して終了
+              if (!api) {
+                logger.error('API client not initialized', null, {
+                  component: 'useRealTimeStore',
+                  action: 'startRealTimeUpdates'
+                });
+                return;
+              }
+            } catch (e) {
+              logger.error('Failed to initialize API client', e, {
+                component: 'useRealTimeStore',
+                action: 'startRealTimeUpdates'
+              });
+              return;
+            }
           }
           
           // チャートデータストアから現在のシンボルとタイムフレームを取得

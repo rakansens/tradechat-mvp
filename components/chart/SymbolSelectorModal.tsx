@@ -20,6 +20,7 @@ interface SymbolSelectorModalProps {
   currentSymbol: string;
   onSymbolSelect: (symbol: string) => void;
   exchangeType?: ExchangeType;
+  onExchangeTypeChange?: (exchangeType: ExchangeType) => void;
   trigger?: React.ReactNode;
 }
 
@@ -27,6 +28,7 @@ export default function SymbolSelectorModal({
   currentSymbol,
   onSymbolSelect,
   exchangeType = 'spot',
+  onExchangeTypeChange,
   trigger
 }: SymbolSelectorModalProps) {
   const [open, setOpen] = useState(false);
@@ -55,6 +57,7 @@ export default function SymbolSelectorModal({
             onSelect={handleSymbolSelect}
             currentSymbol={currentSymbol}
             defaultExchangeType={exchangeType}
+            onExchangeTypeChange={onExchangeTypeChange}
           />
         </div>
       </DialogContent>

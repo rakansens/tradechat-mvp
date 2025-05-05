@@ -120,6 +120,7 @@ export default function ChartToolbar({}: ChartToolbarProps) {
             currentSymbol={currentSymbol}
             exchangeType={exchangeType}
             onSymbolSelect={updateSymbol}
+            onExchangeTypeChange={setExchangeType}
             trigger={
               <Button variant="outline" size="sm" className="gap-1">
                 <CandlestickChart className="h-4 w-4" />
