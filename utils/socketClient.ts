@@ -282,4 +282,30 @@ export function getSocket(): Socket | null {
  */
 export function getClientId(): string {
   return clientId;
-} 
+}
+
+/**
+ * ソケットイベントを発行
+ * @param eventName イベント名
+ * @param data 送信データ
+ * @param callback コールバック関数
+ * @returns 成功した場合はtrue、失敗した場合はfalse
+ */
+export function emitEvent(eventName: string, data: any, callback?: (response: any) => void): boolean {
+  if (!socket || !isInitialized) {
+    console.warn(`Socket.IO接続が初期化されていません。イベント ${eventName} を発行できません。`);
+    return false;
+  }
+
+  try {
+    if (callback) {
+      socket.emit(eventName, data, callback);
+    } else {
+      socket.emit(eventName, data);
+    }
+    return true;
+  } catch (error) {
+    console.error(`イベント ${eventName} の発行中にエラーが発生しました:`, error);
+    return false;
+  }
+}

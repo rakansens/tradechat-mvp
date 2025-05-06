@@ -13,8 +13,11 @@ export type ThemeMode = "light" | "dark" | "system";
 
 /**
  * UIの状態型
+ *
+ * 注意: このインターフェースは非推奨です。代わりに types/store.ts の UIState を使用してください。
+ * @deprecated Use UIState from types/store.ts instead
  */
-export interface UIState {
+export interface UIStateDeprecated {
   // 状態
   activeTab: AppTab;
   themeMode?: ThemeMode;
@@ -27,6 +30,9 @@ export interface UIState {
   toggleSidebar?: () => void;
   toggleSettings?: () => void;
 }
+
+// types/store.ts からUIStateをエクスポート
+export type { UIState, TabType } from './store';
 
 /**
  * レスポンシブ表示のブレークポイント

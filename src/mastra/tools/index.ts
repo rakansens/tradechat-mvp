@@ -6,6 +6,7 @@ import { createTool } from "@mastra/core/tools";
 import { z } from "zod";
 import { mem0 } from "../integrations";
 import { chartCaptureAnalysisTool } from "./chart-capture";
+import { changeTimeframeTool } from "./timeframe-tools";
 
 /**
  * 過去に保存した記憶を検索するツール
@@ -52,5 +53,5 @@ export const mem0MemorizeTool = createTool({
   },
 });
 
-// チャートキャプチャツールをエクスポート
-export { chartCaptureAnalysisTool };
+// チャートキャプチャツールとチャート時間足変更ツールをエクスポート
+export { chartCaptureAnalysisTool, changeTimeframeTool };

@@ -1,8 +1,9 @@
 // services/socketService.ts
 // 作成: ソケット初期化の責任を一箇所に集約するサービス
+// 更新: 時間足変更機能を追加
 
 import { Socket } from 'socket.io-client';
-import { initializeSocketClient, getSocket } from '@/utils/socketClient';
+import { initializeSocketClient, getSocket, emitEvent } from '@/utils/socketClient';
 import { BitgetApiClient } from '@/services/bitgetApi';
 import { ExchangeType } from '@/types/api';
 import { logger } from '@/utils/logger';
@@ -114,6 +115,51 @@ export const socketService = {
         component: 'socketService',
         action: 'disconnectAll'
       });
+    }
+  },
+
+  /**
+   * 時間足変更イベントを発行
+   * 
+   * @param timeframe 変更する時間足（例：1m, 5m, 15m, 1h, 4h, 1d）
+   * @returns 成功した場合はtrue、失敗した場合はfalse
+   */
+  emitTimeframeChange(timeframe: string): Promise<boolean> {
+    try {
+      const socket = getSocket();
+      if (!socket) {
+        logger.warn('ソケット接続がありません。時間足変更イベントを発行できません。', {
+          component: 'socketService',
+          action: 'emitTimeframeChange',
+          timeframe
+        });
+        return Promise.resolve(false);
+      }
+
+      return new Promise((resolve) => {
+        emitEvent('changeTimeframe', { timeframe }, (response: { success: boolean }) => {
+          if (response && response.success) {
+            logger.info(`時間足を${timeframe}に変更しました`, {
+              component: 'socketService',
+              action: 'emitTimeframeChange'
+            });
+            resolve(true);
+          } else {
+            logger.warn(`時間足${timeframe}への変更に失敗しました`, {
+              component: 'socketService',
+              action: 'emitTimeframeChange'
+            });
+            resolve(false);
+          }
+        });
+      });
+    } catch (error) {
+      logger.error('時間足変更エラー:', error, {
+        component: 'socketService',
+        action: 'emitTimeframeChange',
+        timeframe
+      });
+      return Promise.resolve(false);
     }
   }
 };

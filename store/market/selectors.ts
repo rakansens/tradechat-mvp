@@ -1,5 +1,6 @@
 // store/market/selectors.ts
 // 更新: 基本セレクターとメモ化されたセレクターの明確な分離
+// 更新: 型安全性の向上のため、明示的な型定義を使用
 //
 // このファイルはZustandストアのパフォーマンスを向上させるためのセレクター関数を提供します。
 // 基本セレクターは単純なステート取得のみを行い、計算が必要なセレクターはメモ化されています。
@@ -12,6 +13,19 @@ import type { ExchangeType } from '@/types/api';
 // 基本セレクター
 // ==========================================
 // 単純なステート取得のみを行う関数
+
+// 型定義
+interface MarketStateBase {
+  currentSymbol: string;
+  exchangeType: ExchangeType;
+  orderBook: OrderBookData | null;
+  isLoadingOrderBook: boolean;
+  orderBookError: string | null;
+  trades: TradeData[];
+  marketStats: MarketStatsData | null;
+  symbols: SymbolInfo[];
+  isDemoMode: boolean;
+}
 
 export const selectMarketCurrentSymbol = (state: { currentSymbol: string }) => state.currentSymbol;
 export const selectExchangeType = (state: { exchangeType: ExchangeType }) => state.exchangeType;

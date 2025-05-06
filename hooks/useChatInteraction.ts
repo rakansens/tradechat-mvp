@@ -3,6 +3,7 @@
 // 更新: メモ化されたセレクタを使用するように更新
 // 更新: ストリーミングテキスト表示のためのリアルタイム更新機能を追加
 // 更新: ストリーミングメッセージの処理を改善し、isStreaming フラグを設定
+// 更新: any型キャストを具体的な型に置き換えて型安全性を向上
 "use client"
 
 import { useState, useEffect, useRef } from "react"
@@ -11,6 +12,7 @@ import { useChatStore, useEntryStore, selectLatestProposal } from "@/store"
 import type { Entry, OpenEntry } from "@/types/entry"
 import type { ExtendedMessage, ProposalType } from "@/types/chat"
 import type { ChangeEvent, FormEvent } from "react"
+import type { Message } from "ai"
 
 interface UseChatInteractionProps {
   ohlcData: any[]
@@ -66,7 +68,7 @@ Would you like to enter a long position at the current price of $60,500?`,
     error
   } = useChat({
     api: "/api/mastra/chat",
-    initialMessages: initialMessages as any,
+    initialMessages: initialMessages as Message[],
     onFinish: (message) => {
       // Check if the message suggests an entry
       if (message.content.includes("enter") || message.content.includes("position")) {
@@ -145,7 +147,7 @@ Would you like to enter a long position at the current price of $60,500?`,
   // 型変換用のヘルパー
   const messages = originalMessages as ExtendedMessage[];
   const setMessages = (newMessages: ExtendedMessage[]) => {
-    setOriginalMessages(newMessages as any);
+    setOriginalMessages(newMessages as Message[]);
   };
   
   // isLoadingをisSearchingに同期

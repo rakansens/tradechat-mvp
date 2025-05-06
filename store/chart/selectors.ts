@@ -1,5 +1,6 @@
 // store/chart/selectors.ts
 // 更新: 基本セレクターとメモ化されたセレクターの明確な分離
+// 更新: 型安全性の向上のため、部分的な型定義を完全な型定義に置き換え
 //
 // このファイルはZustandストアのパフォーマンスを向上させるためのセレクター関数を提供します。
 // 基本セレクターは単純なステート取得のみを行い、計算が必要なセレクターはメモ化されています。
@@ -9,6 +10,7 @@ import { createSelector } from 'reselect';
 
 // チャートデータの型定義
 import { OHLCData, Timeframe, ChartType } from '@/types/chart';
+import { ChartDataState } from '@/types/store';
 
 // チャートユーティリティ関数をインポート
 import * as chartUtils from '@/utils/chartUtils';
@@ -19,31 +21,31 @@ import * as chartUtils from '@/utils/chartUtils';
 // 単純なステート取得のみを行う関数
 
 // チャートデータセレクター
-export const selectChartData = (state: { data: OHLCData[] }) => state.data;
+export const selectChartData = (state: ChartDataState) => state.data;
 
 // 現在のシンボルセレクター
-export const selectChartCurrentSymbol = (state: { currentSymbol: string }) => state.currentSymbol;
+export const selectChartCurrentSymbol = (state: ChartDataState) => state.currentSymbol;
 
 // 現在のタイムフレームセレクター
-export const selectCurrentTimeFrame = (state: { currentTimeFrame: Timeframe }) => state.currentTimeFrame;
+export const selectCurrentTimeFrame = (state: ChartDataState) => state.currentTimeFrame;
 
 // ローディング状態セレクター
-export const selectIsLoading = (state: { isLoading: boolean }) => state.isLoading;
+export const selectIsLoading = (state: ChartDataState) => state.isLoading;
 
 // エラー状態セレクター
-export const selectError = (state: { error: string | null }) => state.error;
+export const selectError = (state: ChartDataState) => state.error;
 
 // チャートタイプセレクター
 export const selectChartType = (state: { chartType: ChartType }) => state.chartType;
 
 // アクションセレクター
-export const selectUpdateTimeFrame = (state: { updateTimeFrame: (timeframe: Timeframe) => void }) =>
+export const selectUpdateTimeFrame = (state: ChartDataState) =>
   state.updateTimeFrame;
 
-export const selectUpdateSymbol = (state: { updateSymbol: (symbol: string) => void }) =>
+export const selectUpdateSymbol = (state: ChartDataState) =>
   state.updateSymbol;
 
-export const selectFetchData = (state: { fetchData: (symbol: string, timeframe: Timeframe) => void }) =>
+export const selectFetchData = (state: ChartDataState) =>
   state.fetchData;
 
 export const selectSetChartType = (state: { setChartType: (type: ChartType) => void }) =>
@@ -126,9 +128,17 @@ export const selectDateRange = createSelector(
 // パラメータを受け取り、メモ化された結果を返す関数
 
 // SMAセレクター
+// 部分的な型定義を許容するためのヘルパー型
+type ChartDataInput = { data: OHLCData[] } | ChartDataState;
+
+// データアクセス用のヘルパー関数
+const getData = (state: ChartDataInput): OHLCData[] => {
+  return 'data' in state ? state.data : [];
+};
+
 export const selectSMA = (period: number) =>
   createSelector(
-    [selectChartData],
+    [(state: ChartDataInput) => getData(state)],
     (data: OHLCData[]): number[] => {
       if (!data || data.length === 0) return [];
       return chartUtils.calculateSMA(data.map(d => d.close), period);
@@ -138,7 +148,7 @@ export const selectSMA = (period: number) =>
 // RSIセレクター
 export const selectRSI = (period: number = 14) =>
   createSelector(
-    [selectChartData],
+    [(state: ChartDataInput) => getData(state)],
     (data: OHLCData[]): number[] => {
       if (!data || data.length < period + 1) return [];
       return chartUtils.calculateRSI(data.map(d => d.close), period);
@@ -148,7 +158,7 @@ export const selectRSI = (period: number = 14) =>
 // MACDセレクター
 export const selectMACD = (fastPeriod: number = 12, slowPeriod: number = 26, signalPeriod: number = 9) =>
   createSelector(
-    [selectChartData],
+    [(state: ChartDataInput) => getData(state)],
     (data: OHLCData[]) => {
       if (!data || data.length < slowPeriod + signalPeriod) return { macd: [], signal: [], histogram: [] };
       return chartUtils.calculateMACD(data.map(d => d.close), fastPeriod, slowPeriod, signalPeriod);
