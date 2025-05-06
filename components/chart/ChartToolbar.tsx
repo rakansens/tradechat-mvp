@@ -1,14 +1,9 @@
 // components/chart/ChartToolbar.tsx
-<<<<<<< HEAD
-// 更新: Homeコンポーネントのヘッダー機能を統合
-// 更新: メモ化を適用し、セレクタパターンを一貫して使用
-=======
-// 更新: Homeコンポーネントのヘッダー機能を統合、銘柄選択モーダルを追加
->>>>>>> develop-new
+// 更新: Homeコンポーネントのヘッダー機能を統合、銘柄選択モーダルを追加、メモ化を適用し、セレクタパターンを一貫して使用
 "use client"
 
 import React, { memo, useMemo } from 'react';
-import { 
+import {
   // 分割されたチャートストア
   useChartDataStore,
   useChartConfigStore,
@@ -22,8 +17,8 @@ import {
   // エントリーストアセレクター
   selectOpenEntries,
   // その他のストア
-  useUIStore, 
-  useEntryStore 
+  useUIStore,
+  useEntryStore
 } from '@/store';
 import { Wifi, WifiOff, TrendingUp, Landmark, BarChart2, LineChart, Layers, BarChart3, CandlestickChart } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -65,7 +60,7 @@ const ChartToolbarComponent = memo(function ChartToolbar({
   onTabChange
 }: ChartToolbarProps) {
   // 分割されたチャートストアから状態とアクションを取得
-  
+
   // チャートデータ関連
   const {
     currentSymbol,
@@ -75,11 +70,11 @@ const ChartToolbarComponent = memo(function ChartToolbar({
     updateSymbol,
     fetchData
   } = useChartDataStore();
-  
+
   // メモ化されたセレクターを使用
   const currentPrice = useChartDataStore(selectCurrentPrice);
   const priceChangePercent = useChartDataStore(selectPriceChangePercent);
-  
+
   // チャート設定関連
   const {
     chartType,
@@ -87,7 +82,7 @@ const ChartToolbarComponent = memo(function ChartToolbar({
     setChartType,
     setExchangeType
   } = useChartConfigStore();
-  
+
   // インジケーター関連
   const {
     activeIndicators,
@@ -95,35 +90,23 @@ const ChartToolbarComponent = memo(function ChartToolbar({
     clearAllIndicators,
     isIndicatorActive
   } = useIndicatorStore();
-  
+
   // 描画ツール関連
   const {
     activeDrawingTools,
     toggleDrawingTool,
     clearAllDrawingTools
   } = useDrawingToolStore();
-  
+
   // リアルタイム更新関連
   const {
     useRealTimeData,
     toggleRealTimeData
   } = useRealTimeStore();
-  
-<<<<<<< HEAD
-  // ストアからのアクションはすべて取得済み
-  
+
   // エントリーストアから状態を取得（メモ化されたセレクタを使用）
   const openEntries = useEntryStore(selectOpenEntries);
   const openPositionsCount = openEntries.length;
-=======
-  // UIストアから状態とアクションを取得
-  const activeTab = useUIStore((state) => state.activeTab);
-  const setActiveTab = useUIStore((state) => state.setActiveTab);
-  
-  // エントリーストアから状態を取得
-  const entries = useEntryStore((state) => state.entries);
-  const openPositionsCount = entries.filter((entry) => entry.status === "open").length;
->>>>>>> develop-new
 
   return (
     <div className="flex flex-col w-full" style={{ backgroundColor: theme.background.card }}>
@@ -133,7 +116,7 @@ const ChartToolbarComponent = memo(function ChartToolbar({
           {error}
         </div>
       )}
-      
+
       <div className="flex justify-between items-center py-2 px-3 border-b" style={{ borderColor: theme.border.light, backgroundColor: theme.background.secondary }}>
         <div className="flex items-center space-x-2">
           {/* 銘柄選択モーダル */}
@@ -149,29 +132,29 @@ const ChartToolbarComponent = memo(function ChartToolbar({
               </Button>
             }
           />
-          
+
           <Badge variant="outline" className="font-mono text-xs py-0.5 px-1.5" style={{ backgroundColor: theme.background.tertiary, borderColor: theme.border.light, color: theme.text.secondary }}>
             24h Vol: 12.5K
           </Badge>
-          
+
           {/* 最新価格表示 - position:fixedで表示位置を固定 */}
           <div className="relative z-10 flex items-center">
             {currentPrice > 0 && (
-              <Badge variant="outline" className="font-mono text-sm font-bold py-1 px-2 ml-2" style={{ 
-                backgroundColor: theme.background.tertiary, 
-                borderColor: theme.border.light, 
+              <Badge variant="outline" className="font-mono text-sm font-bold py-1 px-2 ml-2" style={{
+                backgroundColor: theme.background.tertiary,
+                borderColor: theme.border.light,
                 color: theme.text.primary,
                 boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
               }}>
                 ${currentPrice.toLocaleString('en-US')}
               </Badge>
             )}
-            
+
             {/* 価格変化率表示 */}
             {priceChangePercent !== 0 && (
-              <Badge variant="outline" className="font-mono text-sm font-bold py-1 px-2 ml-2" style={{ 
-                backgroundColor: theme.background.tertiary, 
-                borderColor: theme.border.light, 
+              <Badge variant="outline" className="font-mono text-sm font-bold py-1 px-2 ml-2" style={{
+                backgroundColor: theme.background.tertiary,
+                borderColor: theme.border.light,
                 color: priceChangePercent >= 0 ? theme.accent.green : theme.accent.red,
                 boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
               }}>
@@ -196,25 +179,25 @@ const ChartToolbarComponent = memo(function ChartToolbar({
               </button>
             ))}
           </div>
-          
+
           <Separator orientation="vertical" className="h-6 bg-[#374151]" />
-          
+
           {/* チャート/ポジション切替タブ */}
-          <Tabs 
-            value={activeTab} 
-            onValueChange={(value) => onTabChange && onTabChange(value)} 
+          <Tabs
+            value={activeTab}
+            onValueChange={(value) => onTabChange && onTabChange(value)}
             className="h-7"
           >
             <TabsList className="h-7 bg-[#242838] border border-[#2A2E39]">
-              <TabsTrigger 
-                value="chart" 
+              <TabsTrigger
+                value="chart"
                 className="flex items-center h-6 px-2 text-xs data-[state=active]:bg-[#2a2e3d] data-[state=active]:text-[#E0E3EB]"
               >
                 <BarChart3 className="h-3.5 w-3.5 mr-1" />
                 Chart
               </TabsTrigger>
-              <TabsTrigger 
-                value="positions" 
+              <TabsTrigger
+                value="positions"
                 className="flex items-center relative h-6 px-2 text-xs data-[state=active]:bg-[#2a2e39] data-[state=active]:text-[#b2b5be]"
               >
                 <LineChart className="h-3.5 w-3.5 mr-1" />
@@ -229,7 +212,7 @@ const ChartToolbarComponent = memo(function ChartToolbar({
           </Tabs>
         </div>
       </div>
-      
+
       <div className="flex items-center justify-between px-3 py-1 border-b" style={{ borderColor: theme.border.light, backgroundColor: theme.background.secondary }}>
         <div className="flex items-center space-x-4">
           {/* チャートタイプ選択 */}
@@ -248,7 +231,7 @@ const ChartToolbarComponent = memo(function ChartToolbar({
               </button>
             ))}
           </div>
-          
+
           {/* インジケーター選択ポップオーバー */}
           <Popover>
             <PopoverTrigger asChild>
@@ -265,12 +248,12 @@ const ChartToolbarComponent = memo(function ChartToolbar({
                 <h3 className="text-xs font-semibold text-gray-300">インジケーター</h3>
                 {indicators.map((indicator) => (
                   <div key={indicator.id} className="flex items-center space-x-2">
-                    <Checkbox 
-                      id={`indicator-${indicator.id}`} 
+                    <Checkbox
+                      id={`indicator-${indicator.id}`}
                       checked={isIndicatorActive(indicator.id as IndicatorType)}
                       onCheckedChange={() => toggleIndicator(indicator.id as IndicatorType)}
                     />
-                    <Label 
+                    <Label
                       htmlFor={`indicator-${indicator.id}`}
                       className="text-xs text-gray-300 cursor-pointer"
                     >
@@ -278,16 +261,16 @@ const ChartToolbarComponent = memo(function ChartToolbar({
                     </Label>
                   </div>
                 ))}
-                
+
                 <h3 className="text-xs font-semibold text-gray-300 pt-2">描画ツール</h3>
                 {drawingTools.map((tool) => (
                   <div key={tool.id} className="flex items-center space-x-2">
-                    <Checkbox 
-                      id={`tool-${tool.id}`} 
+                    <Checkbox
+                      id={`tool-${tool.id}`}
                       checked={activeDrawingTools.includes(tool.id as DrawingToolType)}
                       onCheckedChange={() => toggleDrawingTool(tool.id as DrawingToolType)}
                     />
-                    <Label 
+                    <Label
                       htmlFor={`tool-${tool.id}`}
                       className="text-xs text-gray-300 cursor-pointer"
                     >
@@ -295,9 +278,9 @@ const ChartToolbarComponent = memo(function ChartToolbar({
                     </Label>
                   </div>
                 ))}
-                
+
                 <div className="pt-2">
-                  <button 
+                  <button
                     onClick={clearAllDrawingTools}
                     className="text-xs text-red-400 hover:text-red-300"
                   >
@@ -307,7 +290,7 @@ const ChartToolbarComponent = memo(function ChartToolbar({
               </div>
             </PopoverContent>
           </Popover>
-          
+
           {/* リアルタイム更新切替ボタン */}
           <button
             onClick={() => toggleRealTimeData()}
@@ -362,11 +345,7 @@ const ChartToolbarComponent = memo(function ChartToolbar({
       </div>
     </div>
   );
-<<<<<<< HEAD
 });
 
 // デフォルトエクスポート
 export default ChartToolbarComponent;
-=======
-}
->>>>>>> develop-new
