@@ -1,5 +1,5 @@
 // components/chart/ChartToolbar.tsx
-// 更新: Homeコンポーネントのヘッダー機能を統合、銘柄選択モーダルを追加、メモ化を適用し、セレクタパターンを一貫して使用
+// 更新: Homeコンポーネントのヘッダー機能を統合、銘柄選択モーダルを追加
 "use client"
 
 import React, { memo, useMemo } from 'react';
@@ -56,7 +56,7 @@ const drawingTools = [
 ];
 
 const ChartToolbarComponent = memo(function ChartToolbar({
-  activeTab = "chart",
+  activeTab,
   onTabChange
 }: ChartToolbarProps) {
   // 分割されたチャートストアから状態とアクションを取得
@@ -103,10 +103,10 @@ const ChartToolbarComponent = memo(function ChartToolbar({
     useRealTimeData,
     toggleRealTimeData
   } = useRealTimeStore();
-
-  // エントリーストアから状態を取得（メモ化されたセレクタを使用）
-  const openEntries = useEntryStore(selectOpenEntries);
-  const openPositionsCount = openEntries.length;
+  
+  // エントリーストアから状態を取得
+  const entries = useEntryStore((state) => state.entries);
+  const openPositionsCount = entries.filter((entry) => entry.status === "open").length;
 
   return (
     <div className="flex flex-col w-full" style={{ backgroundColor: theme.background.card }}>
@@ -132,7 +132,7 @@ const ChartToolbarComponent = memo(function ChartToolbar({
               </Button>
             }
           />
-
+          
           <Badge variant="outline" className="font-mono text-xs py-0.5 px-1.5" style={{ backgroundColor: theme.background.tertiary, borderColor: theme.border.light, color: theme.text.secondary }}>
             24h Vol: 12.5K
           </Badge>
@@ -212,7 +212,7 @@ const ChartToolbarComponent = memo(function ChartToolbar({
           </Tabs>
         </div>
       </div>
-
+      
       <div className="flex items-center justify-between px-3 py-1 border-b" style={{ borderColor: theme.border.light, backgroundColor: theme.background.secondary }}>
         <div className="flex items-center space-x-4">
           {/* チャートタイプ選択 */}
@@ -248,8 +248,8 @@ const ChartToolbarComponent = memo(function ChartToolbar({
                 <h3 className="text-xs font-semibold text-gray-300">インジケーター</h3>
                 {indicators.map((indicator) => (
                   <div key={indicator.id} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={`indicator-${indicator.id}`}
+                    <Checkbox 
+                      id={`indicator-${indicator.id}`} 
                       checked={isIndicatorActive(indicator.id as IndicatorType)}
                       onCheckedChange={() => toggleIndicator(indicator.id as IndicatorType)}
                     />
@@ -290,7 +290,7 @@ const ChartToolbarComponent = memo(function ChartToolbar({
               </div>
             </PopoverContent>
           </Popover>
-
+          
           {/* リアルタイム更新切替ボタン */}
           <button
             onClick={() => toggleRealTimeData()}

@@ -3,11 +3,7 @@
 "use client"
 
 import { MessageSquare, Send, Zap, TrendingUp, BarChart2 } from "lucide-react"
-<<<<<<< HEAD
-import { memo, useCallback } from "react"
-=======
 import { logger } from '@/utils/logger';
->>>>>>> develop-new
 import ChatWindow from "@/components/chat/ChatWindow"
 import InputBox from "@/components/chat/InputBox"
 import { 
@@ -57,17 +53,17 @@ export default function ChatSection({
   const sendMessage = useChatStore(selectSendMessage);
   
   // 入力変更ハンドラー
-  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement> | React.ChangeEvent<HTMLTextAreaElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement> | React.ChangeEvent<HTMLTextAreaElement>) => {
     setInput(e.target.value);
-  }, [setInput]);
+  };
   
   // 送信ハンドラー
-  const handleSubmit = useCallback((e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (input.trim()) {
       sendMessage(input);
     }
-  }, [input, sendMessage]);
+  };
   // Quick commands
   const quickCommands = [
     {

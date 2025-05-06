@@ -1,10 +1,5 @@
 // components/market/OrderBook.tsx
-<<<<<<< HEAD
-// オーダーブック（板情報）表示コンポーネント
-// 更新: セレクタパターンを適用し、メモ化を導入
-=======
 // オーダーブック（板情報）表示コンポーネント - ChartSectionと視覚的に統一
->>>>>>> develop-new
 
 'use client';
 
@@ -169,13 +164,8 @@ export const OrderBook: React.FC<OrderBookProps> = ({
       </div>
       
       {/* スプレッド */}
-<<<<<<< HEAD
-      <div className="p-1 text-xs text-center bg-gray-100 dark:bg-gray-800 border-y border-gray-200 dark:border-gray-700">
-        スプレッド: {spreadValue.toFixed(2)} ({spreadPercent.toFixed(2)}%)
-=======
       <div className="py-1 px-2 text-xs text-center bg-[#1E222D] border-y border-[#2A2E39] font-medium">
-        <span className="text-white">スプレッド:</span> <span className="text-[#9CA3AF]">{spread.value.toFixed(2)} ({spread.percent.toFixed(2)}%)</span>
->>>>>>> develop-new
+        <span className="text-white">スプレッド:</span> <span className="text-[#9CA3AF]">{spreadValue.toFixed(2)} ({spreadPercent.toFixed(2)}%)</span>
       </div>
       
       {/* 買い注文（bids） - 高い価格から低い価格へ */}

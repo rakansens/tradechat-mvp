@@ -53,34 +53,40 @@ export default function ChartSection() {
   const currentPrice = useChartDataStore(selectCurrentPrice);
   const priceChangePercent = useChartDataStore(selectPriceChangePercent);
   const dateRange = useChartDataStore(selectDateRange);
-  const chartType = useChartConfigStore(selectChartType);
+  
+  // チャート設定関連の状態とアクション
+  const { 
+    chartType,
+    setChartType,
+    exchangeType,
+    setExchangeType 
+  } = useChartConfigStore();
+  
+  // リアルタイム更新関連のアクション
+  const {
+    stopRealTimeUpdates,
+    initializeApi
+  } = useRealTimeStore();
+  
+  // オーダーブック関連の状態とアクション
+  const {
+    setCurrentSymbol: setMarketSymbol,
+    setExchangeType: setMarketExchangeType,
+    fetchOrderBook,
+    isLoadingOrderBook,
+    orderBookError
+  } = useMarketStore();
 
   // メモ化されたセレクターを使用してアクションを取得
   const updateTimeFrame = useChartDataStore(selectUpdateTimeFrame);
   const updateSymbol = useChartDataStore(selectUpdateSymbol);
   const fetchData = useChartDataStore(selectFetchData);
-  const setChartType = useChartConfigStore(selectSetChartType);
-  const stopRealTimeUpdates = useRealTimeStore(selectStopRealTimeUpdates);
-
-  // チャート設定関連の状態とアクション
-  const exchangeType = useChartConfigStore((state) => state.exchangeType);
-  const setExchangeType = useChartConfigStore((state) => state.setExchangeType);
-
-  // リアルタイム更新関連のアクション
-  const initializeApi = useRealTimeStore((state) => state.initializeApi);
-
-  // オーダーブック関連の状態とアクション
-  const setMarketSymbol = useMarketStore((state) => state.setCurrentSymbol);
-  const setMarketExchangeType = useMarketStore((state) => state.setExchangeType);
-  const fetchOrderBook = useMarketStore((state) => state.fetchOrderBook);
-  const isLoadingOrderBook = useMarketStore((state) => state.isLoadingOrderBook);
-  const orderBookError = useMarketStore((state) => state.orderBookError);
 
   // コンポーネントのマウント時とタイムフレーム・シンボル変更時にチャートを初期化
   useEffect(() => {
     // リアルタイム更新用のAPIクライアントを初期化
     initializeApi(exchangeType);
-
+    
     // 初期データの取得
     fetchData(currentSymbol, currentTimeFrame);
     // 依存配列に関数と状態を追加して不要な再実行を防止
@@ -92,14 +98,14 @@ export default function ChartSection() {
       stopRealTimeUpdates();
     };
   }, [stopRealTimeUpdates]);
-
+  
   // exchangeTypeが変更されたときにリアルタイムAPIクライアントを再初期化
   useEffect(() => {
     initializeApi(exchangeType);
     // マーケットストアの取引タイプも更新
     setMarketExchangeType(exchangeType);
   }, [exchangeType, initializeApi, setMarketExchangeType]);
-
+  
   // シンボルが変更されたときにオーダーブックも更新
   useEffect(() => {
     // マーケットストアのシンボルを更新
@@ -146,7 +152,7 @@ export default function ChartSection() {
     const checkIfMobile = () => {
       const isMobileView = window.innerWidth < 768;
       setIsMobile(isMobileView);
-
+      
       if (isMobileView) {
         // モバイルでは下部に表示
         setChartWidth(100);
@@ -161,15 +167,15 @@ export default function ChartSection() {
         setOrderBookWidth(25);
       }
     };
-
+    
     // 初期設定
     checkIfMobile();
-
+    
     // リサイズイベントのリスナー設定
     window.addEventListener('resize', checkIfMobile);
     return () => window.removeEventListener('resize', checkIfMobile);
   }, []);
-
+  
   // インジケーターと価格表示の共通スタイル
   const commonStyles = useMemo(() => {
     return {
@@ -207,7 +213,7 @@ export default function ChartSection() {
       </div>
 
       {/* ChartToolbarはメインレイアウトに移動しました */}
-
+      
       {/* チャートとオーダーブックを横並びに配置（レスポンシブ対応） */}
       <div className={`relative flex flex-grow ${isMobile ? 'flex-col' : 'flex-row'}`}>
         {/* チャート部分 */}
@@ -221,11 +227,11 @@ export default function ChartSection() {
               <div className="text-center p-4">
                 <p className="text-2xl font-semibold text-red-500">Error loading chart data</p>
                 <p className="text-base mt-2 mb-4">{error}</p>
-
+                
                 {/* 先物取引でサポートされていない銘柄の場合は現物取引に切り替えるボタンを表示 */}
                 {error?.includes('先物取引で利用できません') || error?.includes('先物取引でサポートされていません') ? (
                   <div className="flex flex-col space-y-2 items-center">
-                    <button
+                    <button 
                       className="px-6 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
                       onClick={() => {
                         setExchangeType('spot');
@@ -237,8 +243,8 @@ export default function ChartSection() {
                     <span className="text-sm text-gray-400 mt-1">または</span>
                   </div>
                 ) : null}
-
-                <button
+                
+                <button 
                   className="mt-2 px-6 py-3 bg-[#2962FF] text-white rounded-md hover:bg-blue-700 transition-colors"
                   onClick={() => fetchData(currentSymbol, currentTimeFrame)}
                 >
@@ -250,19 +256,19 @@ export default function ChartSection() {
             <ChartCanvas />
           )}
         </div>
-
+        
         {/* オーダーブック部分 */}
-        <div
-          style={{
-            width: isMobile ? '100%' : `${orderBookWidth}%`,
+        <div 
+          style={{ 
+            width: isMobile ? '100%' : `${orderBookWidth}%`, 
             height: isMobile ? '50%' : '100%',
             borderLeft: '1px solid #2A2E39',
             backgroundColor: '#131722'
           }}
         >
           <div className="h-full flex flex-col">
-            <OrderBook
-              depth={15}
+            <OrderBook 
+              depth={15} 
               className="h-full"
               orderBookWidth={orderBookWidth}
             />

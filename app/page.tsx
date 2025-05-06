@@ -82,8 +82,11 @@ export default function Home() {
     setPendingEntry(null);
   }, [setPendingEntry]);
 
-  // 新しいストアを使用してチャートデータを取得
   useEffect(() => {
+  }, [messages]); 
+  
+  useEffect(() => {
+    // 新しいストアを使用してチャートデータを取得
     if (currentSymbol) {
       fetchData(currentSymbol, currentTimeFrame);
     }
