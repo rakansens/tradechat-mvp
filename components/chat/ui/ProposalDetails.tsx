@@ -15,6 +15,8 @@ interface ProposalDetailsProps {
   isLastMessage: boolean
   pendingEntry: OpenEntry | null
   onExecuteEntry?: () => void
+  onEditEntry?: (entry: OpenEntry) => void
+  onCancelEntry?: () => void
 }
 
 export const ProposalDetails = ({

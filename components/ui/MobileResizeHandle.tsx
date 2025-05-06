@@ -1,13 +1,12 @@
 // components/ui/MobileResizeHandle.tsx
-// 作成: モバイル表示用のリサイズハンドルコンポーネント
+// 更新: BaseResizeHandleを利用してモバイル表示用のリサイズハンドルを提供、型定義を最適化
 
 "use client"
 
 import React, { useRef, useCallback, useState, useEffect } from "react"
-import { cn } from "@/lib/utils"
-import { theme } from "@/styles/colors"
+import { BaseResizeHandle } from "./BaseResizeHandle"
 
-interface MobileResizeHandleProps {
+export interface MobileResizeHandleProps {
   className?: string
   onResize: (topHeight: number, bottomHeight: number) => void
   containerRef: React.RefObject<HTMLDivElement | null>
@@ -129,19 +128,13 @@ export function MobileResizeHandle({
   return (
     <div
       ref={handleRef}
-      className={cn(
-        "resize-handle cursor-row-resize",
-        isDragging && "active",
-        className
-      )}
-      style={{ 
-        height: '8px',
-        backgroundColor: isDragging 
-          ? `${theme.background.elevated}` 
-          : `${theme.background.tertiary}`,
-      }}
+      className={className}
       onPointerDown={handlePointerDown}
-      aria-hidden="true"
-    />
+    >
+      <BaseResizeHandle
+        direction="vertical"
+        isActive={isDragging}
+      />
+    </div>
   )
 }

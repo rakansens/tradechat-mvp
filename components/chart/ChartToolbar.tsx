@@ -29,7 +29,9 @@ import { TabType, IndicatorType, DrawingToolType } from '@/types/store';
 import { Timeframe, ChartType } from '@/types/chart';
 
 interface ChartToolbarProps {
-  // 必要に応じて追加のプロパティを定義
+  // タブ関連のprops（親コンポーネントから渡される）
+  activeTab?: string
+  onTabChange?: (tab: string) => void
 }
 
 const availableTimeframes = ['1m', '5m', '15m', '30m', '1h', '4h', '1d', '1w'];
@@ -49,7 +51,10 @@ const drawingTools = [
   { id: 'rectangle', name: '矩形', icon: Landmark },
 ];
 
-export default function ChartToolbar({}: ChartToolbarProps) {
+export default function ChartToolbar({
+  activeTab = "chart",
+  onTabChange
+}: ChartToolbarProps) {
   // 分割されたチャートストアから状態とアクションを取得
   
   // チャートデータ関連
@@ -94,10 +99,6 @@ export default function ChartToolbar({}: ChartToolbarProps) {
   } = useRealTimeStore();
   
   // ストアからのアクションはすべて取得済み
-  
-  // UIストアから状態とアクションを取得
-  const activeTab = useUIStore((state) => state.activeTab);
-  const setActiveTab = useUIStore((state) => state.setActiveTab);
   
   // エントリーストアから状態を取得
   const entries = useEntryStore((state) => state.entries);
@@ -180,7 +181,11 @@ export default function ChartToolbar({}: ChartToolbarProps) {
           <Separator orientation="vertical" className="h-6 bg-[#374151]" />
           
           {/* チャート/ポジション切替タブ */}
-          <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as TabType)} className="h-7">
+          <Tabs 
+            value={activeTab} 
+            onValueChange={(value) => onTabChange && onTabChange(value)} 
+            className="h-7"
+          >
             <TabsList className="h-7 bg-[#242838] border border-[#2A2E39]">
               <TabsTrigger 
                 value="chart" 

@@ -1,9 +1,9 @@
 // components/ui/ResizeHandle.tsx
-// 作成: チャートとチャットの境界線でリサイズ操作を提供するコンポーネント
+// 更新: BaseResizeHandleを利用してリサイズハンドル機能を提供
 
-import React from "react";
+import React, { useState } from "react";
 import { PanelResizeHandle } from "react-resizable-panels";
-import { cn } from "@/lib/utils";
+import { BaseResizeHandle } from "./BaseResizeHandle";
 
 interface ResizeHandleProps {
   className?: string;
@@ -17,14 +17,19 @@ export function ResizeHandle({
   direction = "horizontal",
   ...props
 }: ResizeHandleProps) {
+  const [isResizing, setIsResizing] = useState(false);
+
   return (
     <PanelResizeHandle
       id={id}
-      className={cn(
-        "resize-handle",
-        direction === "vertical" && "flex-col",
-        className
-      )}
-    />
+      onDragging={setIsResizing}
+      className={className}
+      {...props}
+    >
+      <BaseResizeHandle
+        direction={direction}
+        isActive={isResizing}
+      />
+    </PanelResizeHandle>
   );
 }

@@ -68,14 +68,16 @@ export default function ChatSection({
           </CardTitle>
         </CardHeader>
 
-        {/* チャットウィンドウ */}
+        {/* チャットウィンドウ - リファクタリングされたコンポーネントに必要なプロップスを渡す */}
         <CardContent className="p-0 flex-1 overflow-hidden">
           <ChatWindow
             messages={messages}
             ref={chatEndRef}
             isSearching={isLoading}
-            onExecuteEntry={() => executeEntry()}
+            onExecuteEntry={executeEntry}
             pendingEntry={pendingEntry}
+            editPendingEntry={editPendingEntry}
+            cancelPendingEntry={cancelPendingEntry}
           />
         </CardContent>
 

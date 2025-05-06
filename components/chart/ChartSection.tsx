@@ -59,12 +59,12 @@ export default function ChartSection() {
     stopRealTimeUpdates
   } = useRealTimeStore();
 
-  // コンポーネントのマウント時にチャートを初期化
-  // 初期化とクリーンアップを分離して最適化
+  // コンポーネントのマウント時とタイムフレーム・シンボル変更時にチャートを初期化
   useEffect(() => {
-    // 初期データの取得
+    // データの取得
     fetchData(currentSymbol, currentTimeFrame);
-  }, []);
+    // 依存配列に関数と状態を追加して不要な再実行を防止
+  }, [fetchData, currentSymbol, currentTimeFrame]);
   
   // クリーンアップロジックを別のエフェクトに分離
   useEffect(() => {
