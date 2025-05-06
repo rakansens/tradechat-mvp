@@ -1,4 +1,6 @@
-// Logic for calculating and displaying RSI
+// components/chart/indicators/rsi.ts
+// 作成: RSIインジケーターの実装
+// 更新: ChartIndicatorインターフェースを実装し、ファクトリー関数で使用可能に
 import {
   IChartApi,
   ISeriesApi,
@@ -16,7 +18,8 @@ import {
   convertToLineData 
 } from '@/utils/chartIndicatorUtils';
 import type { OHLCData } from '@/types/chart';
-import type { RSIParams } from '@/types/indicators';
+import type { RSIParams, ChartIndicator, IndicatorSeriesRefs } from '@/types/indicators';
+import { createIndicator, registerIndicator } from '@/utils/indicatorFactory';
 import { RSI as RsiIndicator } from 'technicalindicators';
 import { MutableRefObject } from 'react';
 
@@ -155,8 +158,57 @@ export function removeRsiSeries(
 }
 
 /**
- * RSIインジケーターのエクスポート関数
- * チャートキャンバスから使用されるインターフェース
+ * RSIインジケーターの実装
+ * ChartIndicatorインターフェースに準拠
+ */
+
+// 計算関数: OHLCデータからRSI値を計算
+// ChartIndicatorインターフェースのcalculateメソッドに対応
+function calculateRsiForIndicator(data: OHLCData[], params: RSIParams): LineData<Time>[] {
+  return calculateRsiData(data, params);
+}
+
+// 追加/更新関数: RSIをチャートに追加または更新
+// ChartIndicatorインターフェースのaddOrUpdateメソッドに対応
+function addOrUpdateRsiForIndicator(
+  chart: IChartApi,
+  rsiData: LineData<Time>[],
+  params: RSIParams,
+  seriesRefs: IndicatorSeriesRefs
+): void {
+  // 単一シリーズの参照を取得
+  const rsiSeriesRef = seriesRefs.rsi as MutableRefObject<ISeriesApi<"Line"> | null>;
+  
+  // チャートに追加または更新
+  addOrUpdateRsiSeries(chart, rsiData, params, rsiSeriesRef);
+}
+
+// 削除関数: RSIをチャートから削除
+// ChartIndicatorインターフェースのremoveメソッドに対応
+function removeRsiForIndicator(
+  chart: IChartApi,
+  seriesRefs: IndicatorSeriesRefs
+): void {
+  // 単一シリーズの参照を取得
+  const rsiSeriesRef = seriesRefs.rsi as MutableRefObject<ISeriesApi<"Line"> | null>;
+  
+  // チャートから削除
+  removeRsiSeries(chart, rsiSeriesRef);
+}
+
+// ChartIndicatorインターフェースを実装したRSIインジケーターを作成
+const rsiIndicator = createIndicator<RSIParams>(
+  calculateRsiForIndicator,
+  addOrUpdateRsiForIndicator,
+  removeRsiForIndicator
+);
+
+// レジストリに登録
+registerIndicator('rsi', rsiIndicator);
+
+/**
+ * 後方互換性のためのエクスポート
+ * 当面は既存のインターフェースを維持
  */
 export const RSI = {
   /**

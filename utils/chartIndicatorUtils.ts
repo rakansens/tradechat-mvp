@@ -13,6 +13,7 @@ import { UTCTimestamp, ChartTimeCompatible } from '@/types/chart';
 import type { OHLCData } from '@/types/chart';
 import type { BaseIndicatorParams, IndicatorSeriesRefs } from '@/types/indicators';
 import { dedupAndSort } from '@/utils/chartUtils';
+import { logger } from '@/utils/logger';
 
 /**
  * NaN値をフィルタリングし、有効なデータのみを返す
@@ -75,7 +76,10 @@ export function safeRemoveSeries(chart: IChartApi | null, series: any | null): b
     chart.removeSeries(series);
     return true;
   } catch (error) {
-    console.error('Failed to remove series:', error);
+    logger.error('Failed to remove series:', error, {
+      component: 'chartIndicatorUtils',
+      action: 'removeSeriesSafely'
+    });
     return false;
   }
 }
@@ -100,7 +104,10 @@ export function removeIndicatorSeries(chart: IChartApi | null, seriesRefs: Indic
         chart.removeSeries(seriesRef.current);
         seriesRef.current = null;
       } catch (error) {
-        console.error('Failed to remove indicator series:', error);
+        logger.error('Failed to remove indicator series', error, {
+          component: 'chartIndicatorUtils',
+          action: 'removeIndicatorSeries'
+        });
         success = false;
       }
     }

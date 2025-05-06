@@ -15,6 +15,14 @@ import { BitgetApiClient } from '../services/bitgetApi';
 export type IndicatorType = 'rsi' | 'macd' | 'ichimoku' | 'bollinger' | 'ema';
 
 /**
+ * アクティブなインジケーターの設定
+ */
+export interface ActiveIndicator {
+  type: IndicatorType;
+  params: Record<string, any>;
+}
+
+/**
  * 描画ツールの種類
  */
 export type DrawingToolType = 'fibonacci' | 'rectangle' | 'line' | 'arrow' | 'text';
@@ -58,11 +66,14 @@ export interface ChartConfigState {
  */
 export interface IndicatorState {
   // 状態
-  activeIndicators: IndicatorType[];
+  activeIndicators: ActiveIndicator[];
   
   // アクション
-  toggleIndicator: (indicator: IndicatorType) => void;
+  toggleIndicator: (indicator: IndicatorType, params?: Record<string, any>) => void;
+  updateIndicatorParams: (indicator: IndicatorType, params: Record<string, any>) => void;
   clearAllIndicators: () => void;
+  getIndicatorParams: (indicator: IndicatorType) => Record<string, any> | undefined;
+  isIndicatorActive: (indicator: IndicatorType) => boolean;
 }
 
 /**

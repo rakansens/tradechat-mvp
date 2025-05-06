@@ -108,6 +108,7 @@ export default function Home() {
 
   const chartSectionComponent = <ChartSection />;
   
+<<<<<<< HEAD
   const positionsSectionComponent = (
     <PositionHistory 
       entries={entries} 
@@ -115,6 +116,14 @@ export default function Home() {
       onCancelPosition={cancelPosition} 
     />
   );
+=======
+  useEffect(() => {
+    // 新しいストアを使用してチャートデータを取得
+    if (currentSymbol) {
+      fetchData(currentSymbol, currentTimeFrame);
+    }
+  }, [fetchData, currentSymbol, currentTimeFrame]);
+>>>>>>> develop-new
 
   const toolbarSectionComponent = (
     <ChartToolbarComponent 

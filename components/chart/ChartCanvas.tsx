@@ -29,6 +29,7 @@ import { theme } from "@/styles/colors"
 import { useChartConfig } from "@/hooks/useChartConfig"
 import { useTheme } from "next-themes"
 import { RSI } from './indicators/rsi'; // Import RSI functions
+import { logger } from '@/utils/logger'; // Import logger
 import { MACD, MacdSeriesRefs } from "./indicators/macd"; // Import MACD functions
 import {
   calculateIchimokuData,
@@ -85,10 +86,16 @@ const hslCssVarToRgba = (hslVarValue: string, fallbackColor: string): string => 
     if (rgbaColor && rgbaColor.startsWith('rgb')) {
       return rgbaColor;
     }
-    console.warn(`Failed to convert HSL value 'hsl(${hslVarValue})' to RGBA/RGB. Computed value: ${rgbaColor}. Using fallback: ${fallbackColor}`);
+    logger.warn(`Failed to convert HSL value 'hsl(${hslVarValue})' to RGBA/RGB. Computed value: ${rgbaColor}. Using fallback: ${fallbackColor}`, {
+      component: 'ChartCanvas',
+      action: 'hslCssVarToRgba'
+    });
     return fallbackColor;
   } catch (error) {
-    console.error(`Error converting HSL value 'hsl(${hslVarValue})':`, error);
+    logger.error(`Error converting HSL value 'hsl(${hslVarValue})'`, error, {
+      component: 'ChartCanvas',
+      action: 'hslCssVarToRgba'
+    });
     return fallbackColor; // Return fallback on error
   }
 };
@@ -370,7 +377,12 @@ export default function ChartCanvas() {
     // データが時間順に並んでいるか検証（デバッグ用）
     for (let i = 1; i < sortedData.length; i++) {
       if (sortedData[i].time < sortedData[i-1].time) {
-        console.warn('データが時間順になっていません:', sortedData[i-1].time, sortedData[i].time);
+        logger.warn('データが時間順になっていません', {
+          component: 'ChartCanvas',
+          action: 'renderChart',
+          prevTime: sortedData[i-1].time,
+          currentTime: sortedData[i].time
+        });
         break;
       }
     }
@@ -427,13 +439,14 @@ export default function ChartCanvas() {
     const sortedData = [...data].sort((a, b) => a.time - b.time);
     
     // RSIインジケーターの表示切替
-    if (activeIndicators.includes('rsi')) {
-      // RSIパラメータを設定
+    if (activeIndicators.some(indicator => indicator.type === 'rsi')) {
+      // RSIパラメータを取得
+      const activeRSI = activeIndicators.find(indicator => indicator.type === 'rsi');
       const rsiParams = {
         visible: true,
-        period: 14,
-        overbought: 70,
-        oversold: 30,
+        period: activeRSI?.params?.period || 14,
+        overbought: activeRSI?.params?.overbought || 70,
+        oversold: activeRSI?.params?.oversold || 30,
         paneIndex: getPaneIndex('rsi')
       };
       
@@ -445,26 +458,33 @@ export default function ChartCanvas() {
     }
     
     // MACDインジケーターの表示切替
-    if (activeIndicators.includes('macd')) {
-      // MACDパラメータを設定
+    if (activeIndicators.some(indicator => indicator.type === 'macd')) {
+      // MACDパラメータを取得
+      const activeMacd = activeIndicators.find(indicator => indicator.type === 'macd');
       const macdParams = {
-        fastPeriod: 12,
-        slowPeriod: 26,
-        signalPeriod: 9,
+        fastPeriod: activeMacd?.params?.fastPeriod || 12,
+        slowPeriod: activeMacd?.params?.slowPeriod || 26,
+        signalPeriod: activeMacd?.params?.signalPeriod || 9,
         paneIndex: getPaneIndex('macd'),
         visible: true
       };
       
       // データが十分にあるか確認
       if (sortedData.length >= Math.max(macdParams.fastPeriod, macdParams.slowPeriod) + macdParams.signalPeriod) {
-        console.log('MACDを表示します。データ数:', sortedData.length);
+        logger.info('MACDを表示します', {
+          component: 'ChartCanvas',
+          action: 'renderMACD',
+          dataPoints: sortedData.length
+        });
         
         // MACDデータのサンプルをログ出力して確認
         // メモ化されたセレクターを使用してMACDを計算
         const macdSelector = selectMACD(macdParams.fastPeriod, macdParams.slowPeriod, macdParams.signalPeriod);
         const macdValues = macdSelector({ data: sortedData });
         
-        console.log('MACDデータサンプル:', {
+        logger.debug('MACDデータサンプル', {
+          component: 'ChartCanvas',
+          action: 'renderMACD',
           macd: macdValues.macd.slice(-5),  // 最後の5データポイント
           signal: macdValues.signal.slice(-5),
           histogram: macdValues.histogram.slice(-5)
@@ -473,12 +493,24 @@ export default function ChartCanvas() {
         // 新しいMACDインターフェースを使用
         try {
           MACD.addOrUpdate(chart, sortedData, macdParams, macdSeries.current);
-          console.log('MACD表示処理完了');
+          logger.debug('MACD表示処理完了', {
+            component: 'ChartCanvas',
+            action: 'renderMACD'
+          });
         } catch (error) {
-          console.error('MACD表示中にエラーが発生しました:', error);
+          logger.error('MACD表示中にエラーが発生しました', error, {
+            component: 'ChartCanvas',
+            action: 'renderMACD',
+            params: macdParams
+          });
         }
       } else {
-        console.warn('MACDの計算に必要なデータが不足しています。データ数:', sortedData.length);
+        logger.warn('MACDの計算に必要なデータが不足しています', {
+          component: 'ChartCanvas',
+          action: 'renderMACD',
+          dataPoints: sortedData.length,
+          requiredPoints: Math.max(macdParams.fastPeriod, macdParams.slowPeriod) + macdParams.signalPeriod
+        });
       }
     } else if (macdSeries.current) {
       // MACDを非表示
@@ -487,12 +519,19 @@ export default function ChartCanvas() {
     }
     
     // 一目均衡表インジケーターの表示切替
-    if (activeIndicators.includes('ichimoku')) {
+    if (activeIndicators.some(indicator => indicator.type === 'ichimoku')) {
+      // 一目均衡表パラメータを取得
+      const activeIchimoku = activeIndicators.find(indicator => indicator.type === 'ichimoku');
+      
       // 一目均衡表を表示
       addOrUpdateIchimokuSeries(
         chart,
         sortedData,
-        { tenkan: 9, kijun: 26, senkou: 52 },
+        {
+          tenkan: activeIchimoku?.params?.tenkanPeriod || 9,
+          kijun: activeIchimoku?.params?.kijunPeriod || 26,
+          senkou: activeIchimoku?.params?.senkouSpanBPeriod || 52
+        },
         {
           tenkan: tenkanSeries,
           kijun: kijunSeries,

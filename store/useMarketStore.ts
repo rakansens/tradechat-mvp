@@ -7,6 +7,7 @@ import { devtools } from 'zustand/middleware';
 import { BitgetApiClient } from '../services/bitgetApi';
 import { ExchangeType } from '../types/api';
 import { OrderBookData, TradeData, MarketStatsData, SymbolInfo } from '../types/market';
+import { logger } from '../utils/logger';
 
 // APIクライアントインスタンス
 const api = new BitgetApiClient();
@@ -131,7 +132,7 @@ const useMarketStore = create<MarketState>()(
             isDemoMode: false // 正常取得の場合はデモモードをオフ
           });
         } catch (error: any) {
-          console.error('Failed to fetch order book:', error);
+          logger.error('Failed to fetch order book:', error);
           
           // デモモードの生成されたデータを使用
           try {

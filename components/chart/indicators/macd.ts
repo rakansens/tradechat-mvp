@@ -2,6 +2,7 @@
 // 作成: MACDインジケーターの実装
 // 更新: lightweight-charts v5.0.6に対応
 // 更新: 共通インターフェースに準拠し、型安全性を向上
+// 更新: ChartIndicatorインターフェースを実装し、ファクトリー関数で使用可能に
 
 import {
     IChartApi,
@@ -28,7 +29,9 @@ import {
     convertHistogramData
 } from '@/utils/chartIndicatorUtils';
 import type { OHLCData } from '@/types/chart';
-import type { MACDParams } from '@/types/indicators';
+import { logger } from '@/utils/logger';
+import type { MACDParams, ChartIndicator, IndicatorSeriesRefs } from '@/types/indicators';
+import { createIndicator, registerIndicator } from '@/utils/indicatorFactory';
 import { MutableRefObject } from 'react';
 
 /**
@@ -114,7 +117,12 @@ export function alignMacdData(
 
     const startIndex = ohlcData.length - macdValues.length;
     if (startIndex < 0) {
-        console.warn('MACD: Computed values longer than source data. Abort align.');
+        logger.warn('MACD: Computed values longer than source data. Abort align.', {
+          component: 'MACD',
+          action: 'alignIndicatorData',
+          macdValuesLength: macdValues.length,
+          ohlcDataLength: ohlcData.length
+        });
         return { macdLine: [], signalLine: [], histogramData: [] };
     }
 
@@ -177,7 +185,11 @@ export function addOrUpdateMacdSeries(
 ): void {
     if (!chart) return;
 
-    console.log('MACDシリーズを追加/更新します', { paneIndex: params.paneIndex });
+    logger.info('MACDシリーズを追加/更新します', {
+      component: 'MACD',
+      action: 'addOrUpdate',
+      paneIndex: params.paneIndex
+    });
 
     // MACD Line options
     const macdLineOptions = {
@@ -221,7 +233,11 @@ export function addOrUpdateMacdSeries(
             borderVisible: false
         });
     } catch (error) {
-        console.error('Error applying price scale options:', error);
+        logger.error('Error applying price scale options', error, {
+          component: 'MACD',
+          action: 'addOrUpdate',
+          paneIndex: params.paneIndex
+        });
     }
 
     // --- MACD Line ---
@@ -237,12 +253,20 @@ export function addOrUpdateMacdSeries(
                 overlay: false  // オーバーレイではなく個別のペインに表示
             };
             seriesRefs.macdLine.current = chart.addSeries(LineSeries, macdOptions, params.paneIndex) as ISeriesApi<'Line'>;
-            console.log('MACDラインオプション:', macdOptions);
+            logger.debug('MACDラインオプション', {
+              component: 'MACD',
+              action: 'createMacdLineSeries',
+              options: macdOptions
+            });
         } else {
             // 古いAPIの場合は元のユーティリティを使用
             seriesRefs.macdLine.current = createCompatibleSeries(chart, LineSeries, macdLineOptions);
         }
-        console.log("MACD Line Series Created on Pane:", params.paneIndex);
+        logger.debug('MACD Line Series Created on Pane', {
+          component: 'MACD',
+          action: 'createMacdLineSeries',
+          paneIndex: params.paneIndex
+        });
     } else {
         // パネルインデックスを明示的に指定して更新
         const macdOptions = {
@@ -256,7 +280,11 @@ export function addOrUpdateMacdSeries(
     // --- MACD Line ---
     const sortedMacdLine = sortAndPrepareData(macdData.macdLine);
     if (seriesRefs.macdLine.current) {
-        console.log('MACD Line データをセット:', sortedMacdLine.slice(0, 3));
+        logger.debug('MACD Line データをセット', {
+          component: 'MACD',
+          action: 'setMacdLineData',
+          sampleData: sortedMacdLine.slice(0, 3)
+        });
         // 新しい型変換ユーティリティを使用して型安全に変換
         seriesRefs.macdLine.current.setData(convertLineData(sortedMacdLine));
     }
@@ -273,12 +301,20 @@ export function addOrUpdateMacdSeries(
                 overlay: false
             };
             seriesRefs.signalLine.current = chart.addSeries(LineSeries, signalOptions, params.paneIndex) as ISeriesApi<'Line'>;
-            console.log('シグナルラインオプション:', signalOptions);
+            logger.debug('シグナルラインオプション', {
+              component: 'MACD',
+              action: 'createSignalLineSeries',
+              options: signalOptions
+            });
         } else {
             // 古いAPIの場合は元のユーティリティを使用
             seriesRefs.signalLine.current = createCompatibleSeries(chart, LineSeries, signalLineOptions);
         }
-        console.log("Signal Line Series Created on Pane:", params.paneIndex);
+        logger.debug('Signal Line Series Created on Pane', {
+          component: 'MACD',
+          action: 'createSignalLineSeries',
+          paneIndex: params.paneIndex
+        });
     } else {
         // パネルインデックスを明示的に指定して更新
         const signalOptions = {
@@ -292,7 +328,11 @@ export function addOrUpdateMacdSeries(
     // 重複データを排除し昇順ソートしてからセット
     const sortedSignalLine = sortAndPrepareData(macdData.signalLine);
     if (seriesRefs.signalLine.current) {
-        console.log('Signal Line データをセット:', sortedSignalLine.slice(0, 3));
+        logger.debug('Signal Line データをセット', {
+          component: 'MACD',
+          action: 'setSignalLineData',
+          sampleData: sortedSignalLine.slice(0, 3)
+        });
         // 新しい型変換ユーティリティを使用して型安全に変換
         seriesRefs.signalLine.current.setData(convertLineData(sortedSignalLine));
     }
@@ -309,12 +349,20 @@ export function addOrUpdateMacdSeries(
                 overlay: false  // オーバーレイではなく個別のペインに表示
             };
             seriesRefs.histogram.current = chart.addSeries(HistogramSeries, histOptions, params.paneIndex) as ISeriesApi<'Histogram'>;
-            console.log('ヒストグラムオプション:', histOptions);
+            logger.debug('ヒストグラムオプション', {
+              component: 'MACD',
+              action: 'createHistogramSeries',
+              options: histOptions
+            });
         } else {
             // 古いAPIの場合は元のユーティリティを使用
             seriesRefs.histogram.current = createCompatibleSeries(chart, HistogramSeries, histogramOptions);
         }
-        console.log("Histogram Series Created on Pane:", params.paneIndex);
+        logger.debug('Histogram Series Created on Pane', {
+          component: 'MACD',
+          action: 'createHistogramSeries',
+          paneIndex: params.paneIndex
+        });
     } else {
         // パネルインデックスを明示的に指定して更新
         const histOptions = {
@@ -328,7 +376,11 @@ export function addOrUpdateMacdSeries(
     // 重複データを排除し昇順ソートしてからセット
     const sortedHistogram = sortAndPrepareData(macdData.histogramData);
     if (seriesRefs.histogram.current) {
-        console.log('Histogram データをセット:', sortedHistogram.slice(0, 3));
+        logger.debug('Histogram データをセット', {
+          component: 'MACD',
+          action: 'setHistogramData',
+          sampleData: sortedHistogram.slice(0, 3)
+        });
         // 新しい型変換ユーティリティを使用して型安全に変換
         seriesRefs.histogram.current.setData(convertHistogramData(sortedHistogram));
     }
@@ -358,7 +410,10 @@ export function addOrUpdateMacdSeries(
 export function removeMacdSeries(chart: IChartApi, seriesRefs: MacdSeriesRefs): void {
     if (!chart) return;
 
-    console.log('MACDシリーズを削除します');
+    logger.info('MACDシリーズを削除します', {
+      component: 'MACD',
+      action: 'remove'
+    });
 
     // MACD Lineを削除
     safeRemoveSeries(chart, seriesRefs.macdLine.current);
@@ -374,8 +429,69 @@ export function removeMacdSeries(chart: IChartApi, seriesRefs: MacdSeriesRefs): 
 }
 
 /**
- * MACDインジケーターのエクスポート関数
- * チャートキャンバスから使用されるインターフェース
+ * MACDインジケーターの実装
+ * ChartIndicatorインターフェースに準拠
+ */
+
+// 計算関数: OHLCデータからMACD値を計算
+// ChartIndicatorインターフェースのcalculateメソッドに対応
+function calculateMacdForIndicator(data: OHLCData[], params: MACDParams): MacdData {
+    // MACD値を計算
+    const macdValues = calculateMacdValues(data, params);
+    
+    // チャートデータ形式に変換
+    return alignMacdData(macdValues, data, params);
+}
+
+// 追加/更新関数: MACDをチャートに追加または更新
+// ChartIndicatorインターフェースのaddOrUpdateメソッドに対応
+function addOrUpdateMacdForIndicator(
+    chart: IChartApi,
+    macdData: MacdData,
+    params: MACDParams,
+    seriesRefs: IndicatorSeriesRefs
+): void {
+    // MacdSeriesRefs型に変換
+    const macdSeriesRefs: MacdSeriesRefs = {
+        macdLine: seriesRefs.macdLine as MutableRefObject<ISeriesApi<'Line'> | null>,
+        signalLine: seriesRefs.signalLine as MutableRefObject<ISeriesApi<'Line'> | null>,
+        histogram: seriesRefs.histogram as MutableRefObject<ISeriesApi<'Histogram'> | null>
+    };
+    
+    // チャートに追加または更新
+    addOrUpdateMacdSeries(chart, macdData, params, macdSeriesRefs);
+}
+
+// 削除関数: MACDをチャートから削除
+// ChartIndicatorインターフェースのremoveメソッドに対応
+function removeMacdForIndicator(
+    chart: IChartApi,
+    seriesRefs: IndicatorSeriesRefs
+): void {
+    // MacdSeriesRefs型に変換
+    const macdSeriesRefs: MacdSeriesRefs = {
+        macdLine: seriesRefs.macdLine as MutableRefObject<ISeriesApi<'Line'> | null>,
+        signalLine: seriesRefs.signalLine as MutableRefObject<ISeriesApi<'Line'> | null>,
+        histogram: seriesRefs.histogram as MutableRefObject<ISeriesApi<'Histogram'> | null>
+    };
+    
+    // チャートから削除
+    removeMacdSeries(chart, macdSeriesRefs);
+}
+
+// ChartIndicatorインターフェースを実装したMACDインジケーターを作成
+const macdIndicator = createIndicator<MACDParams>(
+    calculateMacdForIndicator,
+    addOrUpdateMacdForIndicator,
+    removeMacdForIndicator
+);
+
+// レジストリに登録
+registerIndicator('macd', macdIndicator);
+
+/**
+ * 後方互換性のためのエクスポート
+ * 当面は既存のインターフェースを維持
  */
 export const MACD = {
     /**
@@ -388,13 +504,8 @@ export const MACD = {
     addOrUpdate: (chart: IChartApi, data: OHLCData[], params: MACDParams, seriesRefs: MacdSeriesRefs) => {
         if (!chart || !data || data.length === 0) return;
         
-        // MACDを計算
-        const macdValues = calculateMacdValues(data, params);
-        
-        // チャートデータ形式に変換
-        const macdData = alignMacdData(macdValues, data, params);
-        
-        // チャートに追加または更新
+        // ファクトリー関数で作成したインジケーターを使用
+        const macdData = calculateMacdForIndicator(data, params);
         addOrUpdateMacdSeries(chart, macdData, params, seriesRefs);
     },
     

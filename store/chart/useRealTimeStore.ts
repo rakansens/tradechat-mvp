@@ -12,6 +12,7 @@ import { ExchangeType } from "../../types/api";
 import { OHLCData } from "../../types/chart";
 import { useChartDataStore } from "./useChartDataStore";
 import { selectCurrentPrice } from "../chart/selectors";
+import { logger } from "../../utils/logger";
 
 // リアルタイム更新ストアの作成
 export const useRealTimeStore = create<RealTimeState>()(
@@ -41,10 +42,31 @@ export const useRealTimeStore = create<RealTimeState>()(
         },
         
         startRealTimeUpdates: () => {
-          const api = get().bitgetApi;
+          let api = get().bitgetApi;
+          
+          // APIクライアントが初期化されていない場合は初期化する
           if (!api) {
-            console.error('API client not initialized');
-            return;
+            try {
+              // チャート設定ストアから現在の取引種別を取得
+              const { exchangeType } = require('./useChartConfigStore').useChartConfigStore.getState();
+              get().initializeApi(exchangeType);
+              api = get().bitgetApi;
+              
+              // それでもAPIクライアントが初期化できない場合はエラーログを出力して終了
+              if (!api) {
+                logger.error('API client not initialized', null, {
+                  component: 'useRealTimeStore',
+                  action: 'startRealTimeUpdates'
+                });
+                return;
+              }
+            } catch (e) {
+              logger.error('Failed to initialize API client', e, {
+                component: 'useRealTimeStore',
+                action: 'startRealTimeUpdates'
+              });
+              return;
+            }
           }
           
           // チャートデータストアから現在のシンボルとタイムフレームを取得
@@ -73,7 +95,11 @@ export const useRealTimeStore = create<RealTimeState>()(
         stopRealTimeUpdates: () => {
           const api = get().bitgetApi;
           if (!api) {
-            console.warn('API client not initialized when trying to stop updates. This might be normal during cleanup.');
+            logger.warn('API client not initialized when trying to stop updates.', {
+              component: 'useRealTimeStore',
+              action: 'stopRealTimeUpdates',
+              note: 'This might be normal during cleanup.'
+            });
             return;
           }
           

@@ -17,6 +17,14 @@ import {
   IS_BROWSER 
 } from './api';
 import { ExchangeType, BitgetCredentials } from '../types/api';
+import { SymbolInfo } from '../types/symbol';
+import { logger } from '@/utils/logger';
+
+// 先物取引で利用できない可能性が高い銘柄のパターン
+const UNSUPPORTED_FUTURES_PATTERNS = [
+  /USDC$/,  // USDC建ての通貨ペア
+  /[^B]BTC$/  // BTC建ての通貨ペア（BTC自体は除く）
+];
 
 // API設定は共通モジュールから取得
 const BITGET_API_BASE_URL = API_CONFIG.bitget.baseUrl;
@@ -34,7 +42,10 @@ const createWebSocket = (url: string) => {
       const WebSocketImpl = require('ws');
       return new WebSocketImpl(url);
     } catch (e) {
-      console.error('Failed to create WebSocket in Node.js environment:', e);
+      logger.error('Failed to create WebSocket in Node.js environment', e, {
+        component: 'BitgetApi',
+        action: 'createWebSocket'
+      });
       return null;
     }
   }
@@ -57,6 +68,40 @@ export class BitgetApiClient {
   private exchangeType: ExchangeType = 'spot'; // デフォルトはスポット取引
   private isInDemoMode: boolean = false; // デモモードフラグ
   private currentSubscription: { instType: string; channel: string; instId: string } | null = null;
+  
+  /**
+   * 先物取引で利用可能な銘柄かどうかをチェックする
+   * @param symbol チェックするシンボル
+   * @returns 利用可能な場合はtrue、そうでない場合はfalse
+   */
+  public isSupportedFuturesSymbol(symbol: string): boolean {
+    // _UMCBL サフィックスを削除
+    const cleanSymbol = symbol.replace(/_UMCBL$/i, '');
+    
+    // サポートされていないパターンにマッチするかチェック
+    for (const pattern of UNSUPPORTED_FUTURES_PATTERNS) {
+      if (pattern.test(cleanSymbol)) {
+        logger.info(`先物取引でサポートされていない銘柄です: ${cleanSymbol}`, {
+          component: 'BitgetApiClient',
+          action: 'isSupportedFuturesSymbol',
+          symbol: cleanSymbol
+        });
+        return false;
+      }
+    }
+    
+    return true;
+  }
+  
+  /**
+   * 先物取引用のシンボルを正規化する（_UMCBLサフィックスの削除のみ）
+   * @param symbol 元のシンボル
+   * @returns 正規化されたシンボル
+   */
+  private normalizeFuturesSymbol(symbol: string): string {
+    // _UMCBL サフィックスを削除するのみ
+    return symbol.replace(/_UMCBL$/i, '');
+  }
 
   constructor(credentials: BitgetCredentials = {}, exchangeType: ExchangeType = 'spot') {
     this.credentials = credentials;
@@ -76,11 +121,24 @@ export class BitgetApiClient {
     try {
       // シンボルを正しい形式に変換（スラッシュを削除）
       const formattedSymbol = symbol.replace('/', '').toUpperCase();
+      // 先物取引の場合の処理
+      let sanitizedSymbol = formattedSymbol;
       
+      if (this.exchangeType === 'futures') {
+        // 正規化（_UMCBL サフィックスを削除）
+        sanitizedSymbol = this.normalizeFuturesSymbol(formattedSymbol);
+        
+        // 先物取引でサポートされているかチェック
+        if (!this.isSupportedFuturesSymbol(sanitizedSymbol)) {
+          // サポートされていない場合は明示的なエラーを投げる
+          throw new Error(`この銘柄は先物取引でサポートされていません: ${sanitizedSymbol}`);
+        }
+      }
+            
       // パラメータの準備
       const browserParams = {
         type: this.exchangeType, // 取引タイプを追加（spotまたはfutures）
-        symbol: formattedSymbol,
+        symbol: sanitizedSymbol,
         timeframe,
         limit: limit.toString(),
         ...(endTime ? { endTime: endTime.toString() } : {})
@@ -122,12 +180,21 @@ export class BitgetApiClient {
       
       // デバッグ情報
       if (IS_DEV) {
-        console.log('BitgetAPI request URL:', IS_BROWSER ? '/api/bitget/candles' : `${BITGET_API_BASE_URL}${serverEndpoint}`);
-        console.log('BitgetAPI params:', IS_BROWSER ? browserParams : serverParams);
+        logger.debug('BitgetAPI request', {
+          component: 'BitgetApi',
+          action: 'fetchCandles',
+          url: IS_BROWSER ? '/api/bitget/candles' : `${BITGET_API_BASE_URL}${serverEndpoint}`,
+          params: IS_BROWSER ? browserParams : serverParams
+        });
       }
       
       // レスポンスの構造を査定して適切に処理
-      if (IS_DEV) console.log('API Response:', response);
+      if (IS_DEV) logger.debug('API Response received', {
+        component: 'BitgetApi',
+        action: 'fetchCandles',
+        status: response.status,
+        statusText: response.statusText
+      });
       
       // レスポンスデータの変換
       let responseData;
@@ -145,13 +212,19 @@ export class BitgetApiClient {
       }
       
       if (!responseData) {
-        if (IS_DEV) console.error('Empty API response');
+        if (IS_DEV) logger.error('Empty API response', null, {
+          component: 'BitgetApi',
+          action: 'fetchCandles'
+        });
         throw new Error('Empty API response');
       }
       
       // 配列でない場合は配列に変換を試みる
       if (!Array.isArray(responseData)) {
-        if (IS_DEV) console.log('Response is not an array, trying to extract array data');
+        if (IS_DEV) logger.debug('Response is not an array, trying to extract array data', {
+          component: 'BitgetApi',
+          action: 'fetchCandles'
+        });
         // 各種プロパティから配列を探す
         if (Array.isArray(responseData.candles)) {
           responseData = responseData.candles;
@@ -160,12 +233,20 @@ export class BitgetApiClient {
         } else if (Array.isArray(responseData.list)) {
           responseData = responseData.list;
         } else {
-          if (IS_DEV) console.error('Could not find array data in response', responseData);
+          if (IS_DEV) logger.error('Could not find array data in response', null, {
+            component: 'BitgetApi',
+            action: 'fetchCandles',
+            responseData
+          });
           throw new Error('Invalid candle data format');
         }
       }
 
-      if (IS_DEV) console.log('Candle data before processing:', responseData);
+      if (IS_DEV) logger.debug('Candle data before processing', {
+        component: 'BitgetApi',
+        action: 'fetchCandles',
+        dataLength: Array.isArray(responseData) ? responseData.length : 'not an array'
+      });
       
       // キャンドルデータを正規化して返す
       const processedData = responseData
@@ -177,13 +258,21 @@ export class BitgetApiClient {
             if (Array.isArray(candle)) {
               // 必要なデータが存在するか確認
               if (!candle[0] || !candle[1] || !candle[2] || !candle[3] || !candle[4]) {
-                if (IS_DEV) console.warn('Skipping invalid candle array data:', candle);
+                if (IS_DEV) logger.warn('Skipping invalid candle array data', {
+                  component: 'BitgetApi',
+                  action: 'processCandles',
+                  candle
+                });
                 return null;
               }
               
               const timestamp = parseInt(String(candle[0]));
               if (isNaN(timestamp) || timestamp <= 0) {
-                if (IS_DEV) console.warn('Invalid timestamp in candle array data:', candle[0]);
+                if (IS_DEV) logger.warn('Invalid timestamp in candle array data', {
+                  component: 'BitgetApi',
+                  action: 'processCandles',
+                  timestamp: candle[0]
+                });
                 return null;
               }
               
@@ -300,6 +389,179 @@ export class BitgetApiClient {
 
   // オーダーブック取得関数を追加
   /**
+   * 利用可能な全銘柄リストを取得する
+   * @param exchangeType 取引種別 (デフォルトはインスタンスの設定値)
+   * @returns 銘柄情報の配列
+   */
+  async fetchSymbols(exchangeType: ExchangeType = this.exchangeType): Promise<SymbolInfo[]> {
+    try {
+      // 最新のBitget API V2エンドポイントを使用
+      const endpoint = exchangeType === 'spot' 
+        ? '/api/v2/spot/public/symbols' 
+        : '/api/v2/mix/market/contracts';
+      
+      logger.info(`Fetching symbols from API: ${endpoint}`, {
+        component: 'BitgetApiClient',
+        action: 'fetchSymbols',
+        exchangeType
+      });
+      
+      // ブラウザ環境では内部APIを使用
+      if (IS_BROWSER) {
+        try {
+          // 内部APIを使用（Next.jsのAPI Routes経由）
+          const response = await adaptiveApiRequest({
+            browserEndpoint: '/api/bitget/symbols',
+            serverBaseUrl: BITGET_API_BASE_URL,
+            serverEndpoint: endpoint,
+            params: { type: exchangeType },
+            options: {
+              method: 'GET',
+              errorTitle: '銘柄情報取得エラー',
+              errorDescription: '銘柄情報の取得に失敗しました',
+              showToast: IS_DEV
+            }
+          });
+          
+          // レスポンスデータを解析
+          return this.parseSymbolsResponse(response, exchangeType);
+        } catch (browserError) {
+          logger.error('Failed to fetch symbols via browser API', browserError, {
+            component: 'BitgetApiClient',
+            action: 'fetchSymbols',
+            exchangeType
+          });
+          
+          // ブラウザAPIが失敗した場合はダミーデータを返す
+          return this.generateDummySymbols(exchangeType);
+        }
+      } else {
+        // サーバー環境では直接APIリクエスト
+        try {
+          const response = await apiRequest({
+            url: `${BITGET_API_BASE_URL}${endpoint}`,
+            method: 'GET'
+          });
+          
+          return this.parseSymbolsResponse(response, exchangeType);
+        } catch (serverError) {
+          logger.error('Failed to fetch symbols via server API', serverError, {
+            component: 'BitgetApiClient',
+            action: 'fetchSymbols',
+            exchangeType
+          });
+          
+          // サーバーAPIが失敗した場合はダミーデータを返す
+          return this.generateDummySymbols(exchangeType);
+        }
+      }
+    } catch (error) {
+      logger.error('Failed to fetch symbols', error, {
+        component: 'BitgetApiClient',
+        action: 'fetchSymbols',
+        exchangeType
+      });
+      
+      // エラー時はダミーデータを返す
+      return this.generateDummySymbols(exchangeType);
+    }
+  }
+  
+  /**
+   * APIレスポンスから銘柄情報をパースする
+   * @param data APIレスポンスデータ
+   * @param exchangeType 取引種別
+   * @returns 銘柄情報の配列
+   */
+  private parseSymbolsResponse(data: any, exchangeType: ExchangeType): SymbolInfo[] {
+    // Bitget v2 API ではトップレベルに code / msg / data があり、
+    // Next.js API ルート経由の場合は data 部分だけが渡ってくる。
+    const symbols: any[] = Array.isArray(data)
+      ? data
+      : Array.isArray(data?.data)
+        ? data.data
+        : [];
+
+    if (symbols.length === 0) {
+      logger.warn('Empty symbols response from API', {
+        component: 'BitgetApiClient',
+        action: 'parseSymbolsResponse',
+        exchangeType,
+        apiVersion: 'v2'
+      });
+    }
+
+    return symbols.map((symbol: any) => {
+      if (exchangeType === 'spot') {
+        // スポット取引用 v2 フォーマット
+        return {
+          symbol: symbol.symbol || '',
+          baseAsset: symbol.baseCoin || '',
+          quoteAsset: symbol.quoteCoin || '',
+          displayName: `${symbol.baseCoin || ''}/${symbol.quoteCoin || ''}`,
+          pricePrecision: symbol.priceScale || 8,
+          quantityPrecision: symbol.quantityScale || 8,
+          minNotional: symbol.minTradeAmount || '0',
+          status: symbol.status === 'online' ? 'TRADING' : 'BREAK'
+        } as SymbolInfo;
+      }
+
+      // 先物（mix）取引用 v2 フォーマット
+      return {
+        symbol: symbol.symbol || '',
+        baseAsset: symbol.baseCoin || '',
+        quoteAsset: symbol.quoteCoin || '',
+        displayName: `${symbol.baseCoin || ''}/${symbol.quoteCoin || ''}`,
+        pricePrecision: symbol.priceEndStep || 8,
+        quantityPrecision: symbol.sizeMultiplier || 8,
+        minNotional: symbol.minTradeAmount || '0',
+        status: symbol.status === 'normal' ? 'TRADING' : 'BREAK'
+      } as SymbolInfo;
+    });
+  }
+  
+  /**
+   * デモ用の銘柄データを生成する
+   * @param exchangeType 取引種別
+   * @returns デモ用の銘柄情報の配列
+   */
+  private generateDummySymbols(exchangeType: ExchangeType): SymbolInfo[] {
+    logger.info('Generating dummy symbols data', {
+      component: 'BitgetApiClient',
+      action: 'generateDummySymbols',
+      exchangeType
+    });
+    
+    // 主要な通貨ペアのダミーデータ
+    const baseAssets = ['BTC', 'ETH', 'XRP', 'SOL', 'DOGE', 'SHIB', 'ADA', 'AVAX', 'DOT', 'MATIC'];
+    const quoteAssets = ['USDT', 'USD', 'BTC', 'ETH'];
+    
+    const symbols: SymbolInfo[] = [];
+    
+    // ダミーデータの生成
+    baseAssets.forEach(base => {
+      quoteAssets.forEach(quote => {
+        // 同じ通貨同士のペアは除外
+        if (base === quote) return;
+        
+        symbols.push({
+          symbol: `${base}${quote}`,
+          baseAsset: base,
+          quoteAsset: quote,
+          displayName: `${base}/${quote}`,
+          pricePrecision: 8,
+          quantityPrecision: 6,
+          minNotional: '10',
+          status: 'TRADING'
+        });
+      });
+    });
+    
+    return symbols;
+  }
+
+  // オーダーブック取得関数を追加
+  /**
    * オーダーブックデータを取得する
    * @param symbol 通貨ペア (例: 'BTC/USDT')
    * @param exchangeType 取引種別 (デフォルトはインスタンスの設定値)
@@ -313,9 +575,16 @@ export class BitgetApiClient {
       // シンボルを正しい形式に変換（スラッシュを削除）
       const formattedSymbol = symbol.replace('/', '').toUpperCase();
       
+      // 先物取引の場合、UI で渡ってくるシンボルは "BTCUSDT_UMCBL" 形式のことがあるため
+      // Bitget V2 API 仕様どおり "BTCUSDT" のみを送るようにサニタイズする
+      const sanitizedSymbol =
+        this.exchangeType === 'futures'
+          ? formattedSymbol.replace(/_UMCBL$/i, '')
+          : formattedSymbol;
+      
       // パラメータの準備
       const browserParams = {
-        symbol: formattedSymbol,
+        symbol: sanitizedSymbol,
         type: exchangeType,
       };
       
@@ -327,7 +596,7 @@ export class BitgetApiClient {
       // エンドポイントの準備
       const serverEndpoint = exchangeType === 'spot'
         ? '/api/v2/spot/market/orderbook'
-        : '/api/v2/mix/market/orderbook';
+        : '/api/mix/v1/market/depth'; // 先物市場はV1 APIを使用
       
       // キャンセル可能なリクエストを作成
       const { signal } = createCancellableRequest();
@@ -458,13 +727,19 @@ export class BitgetApiClient {
 
       // Null安全性のためのチェック
       if (!this.ws) {
-        console.error('BitgetWS: WebSocket creation failed, switching to demo mode');
+        logger.error('BitgetWS: WebSocket creation failed, switching to demo mode', null, {
+          component: 'BitgetApi',
+          action: 'connectWebSocket'
+        });
         this.isInDemoMode = true;
         return;
       }
 
       this.ws.onopen = () => {
-        if (IS_DEV) console.log('BitgetWS: Connection established');
+        if (IS_DEV) logger.info('BitgetWS: Connection established', {
+          component: 'BitgetApi',
+          action: 'connectWebSocket'
+        });
         this.sendPing();
         this.pingInterval = setInterval(() => this.sendPing(), 15000);
         this.isInDemoMode = false; // 接続成功したらデモモードをオフ
@@ -473,14 +748,20 @@ export class BitgetApiClient {
       this.ws.onmessage = (event) => {
         // Heartbeat response is plain text 'pong'
         if (event.data === 'pong') {
-          console.log('BitgetWS: pong received');
+          logger.debug('BitgetWS: pong received', {
+            component: 'BitgetApi',
+            action: 'handleWebSocketMessage'
+          });
           return;
         }
         try {
           const message = JSON.parse(event.data as string);
           this.handleWebSocketMessage(message);
         } catch (error) {
-          console.error('Error parsing WebSocket message:', error);
+          logger.error('Error parsing WebSocket message', error, {
+            component: 'BitgetApi',
+            action: 'handleWebSocketMessage'
+          });
         }
       };
 
@@ -504,7 +785,12 @@ export class BitgetApiClient {
         const isNormalClosure = ev.code === 1000;
         
         if (IS_DEV || !isNormalClosure) {
-          console.log(`BitgetWS: Connection closed (code=${ev.code}, reason=${ev.reason})`);
+          logger.info(`BitgetWS: Connection closed`, {
+            component: 'BitgetApi',
+            action: 'handleWebSocketClose',
+            code: ev.code,
+            reason: ev.reason
+          });
         }
         
         this.cleanup();
@@ -515,7 +801,10 @@ export class BitgetApiClient {
         }
       };
     } catch (error) {
-      console.error('Error connecting to WebSocket:', error);
+      logger.error('Error connecting to WebSocket', error, {
+        component: 'BitgetApi',
+        action: 'connectWebSocket'
+      });
       this.isInDemoMode = true; // エラー発生時はデモモードに
       this.reconnect();
     }
@@ -538,7 +827,12 @@ export class BitgetApiClient {
 
     // ガード: 未対応のtimeframeならエラーを投げて早期リターン
     if (!bitgetTimeframe) {
-      console.error(`Unsupported timeframe "${timeframe}" for ${this.exchangeType}`);
+      logger.error(`Unsupported timeframe "${timeframe}" for ${this.exchangeType}`, null, {
+        component: 'BitgetApi',
+        action: 'subscribeToCandles',
+        timeframe,
+        exchangeType: this.exchangeType
+      });
       return;
     }
 
@@ -560,7 +854,11 @@ export class BitgetApiClient {
         prev.channel === channelName &&
         prev.instId === instId
       ) {
-        console.log('BitgetWS: Same channel already subscribed, skip');
+        logger.debug('BitgetWS: Same channel already subscribed, skip', {
+          component: 'BitgetApi',
+          action: 'subscribeToCandles',
+          channel: channelName
+        });
         return;
       }
 
@@ -576,7 +874,11 @@ export class BitgetApiClient {
           ]
         };
         this.safeSend(unsubscribeMsg);
-        if (IS_DEV) console.log('BitgetWS: Unsubscribed previous channel');
+        if (IS_DEV) logger.debug('BitgetWS: Unsubscribed previous channel', {
+          component: 'BitgetApi',
+          action: 'subscribeToCandles',
+          previousChannel: this.currentSubscription?.channel
+        });
       }
     }
 
@@ -603,19 +905,39 @@ export class BitgetApiClient {
         l.toString().includes(JSON.stringify(subscriptionMessage))
       );
       if (alreadyQueued) {
-        if (IS_DEV) console.log('BitgetWS: Subscription already queued, skip duplicate');
+        if (IS_DEV) logger.debug('BitgetWS: Subscription already queued, skip duplicate', {
+          component: 'BitgetApi',
+          action: 'subscribeToCandles',
+          subscriptionMessage
+        });
         return;
       }
     }
 
-    console.log('BitgetWS: Sending subscription message:', JSON.stringify(subscriptionMessage));
+    logger.info('BitgetWS: Sending subscription message', {
+      component: 'BitgetApi',
+      action: 'sendSubscription',
+      subscriptionMessage
+    });
 
     // メッセージを送信（接続済みなら即送信、CONNECTING なら safeSend が onopen で発火）
     this.safeSend(subscriptionMessage);
     if (this.ws?.readyState === WebSocket.OPEN) {
-      console.log(`Subscribed to ${this.exchangeType} ${formattedSymbol} ${timeframe} candles`);
+      logger.info(`Subscribed to ${this.exchangeType} ${formattedSymbol} ${timeframe} candles`, {
+        component: 'BitgetApi',
+        action: 'subscribeToCandles',
+        exchangeType: this.exchangeType,
+        symbol: formattedSymbol,
+        timeframe
+      });
     } else {
-      console.log(`Queued subscription for ${formattedSymbol} ${timeframe} — will send on WebSocket open`);
+      logger.info(`Queued subscription for ${formattedSymbol} ${timeframe}`, {
+        component: 'BitgetApi',
+        action: 'subscribeToCandles',
+        note: 'Will send on WebSocket open',
+        symbol: formattedSymbol,
+        timeframe
+      });
     }
   }
 
