@@ -79,11 +79,12 @@ export const ChatMessage = memo(({
   const [isHovering, setIsHovering] = useState(false)
   
   // メッセージのプロパティをメモ化
-  const { isUser, isProposal, proposalType, price } = useMemo(() => ({
+  const { isUser, isProposal, proposalType, price, isStreaming } = useMemo(() => ({
     isUser: message.role === "user",
     isProposal: !!message.isProposal,
     proposalType: message.proposalType,
-    price: message.price
+    price: message.price,
+    isStreaming: !!message.isStreaming
   }), [message])
   
   // コンテナスタイルをメモ化
@@ -107,7 +108,7 @@ export const ChatMessage = memo(({
           <ProposalTypeIndicator type={proposalType} />
         )}
 
-        <MessageContent message={message} />
+        <MessageContent message={message} isStreaming={isStreaming} />
 
         {/* Actions menu appears on hover */}
         <MessageActions 

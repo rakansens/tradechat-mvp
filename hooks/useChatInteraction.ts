@@ -1,9 +1,11 @@
 // hooks/useChatInteraction.ts
 // 更新: Message型をExtendedMessage型に置き換えて型エラーを修正
 // 更新: メモ化されたセレクタを使用するように更新
+// 更新: ストリーミングテキスト表示のためのリアルタイム更新機能を追加
+// 更新: ストリーミングメッセージの処理を改善し、isStreaming フラグを設定
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useChat } from "ai/react"
 import { useChatStore, useEntryStore, selectLatestProposal } from "@/store"
 import type { Entry, OpenEntry } from "@/types/entry"
@@ -59,9 +61,11 @@ Would you like to enter a long position at the current price of $60,500?`,
     input,
     handleInputChange,
     handleSubmit: originalHandleSubmit,
-    setMessages: setOriginalMessages
+    setMessages: setOriginalMessages,
+    isLoading,
+    error
   } = useChat({
-    api: "/api/chat",
+    api: "/api/mastra/chat",
     initialMessages: initialMessages as any,
     onFinish: (message) => {
       // Check if the message suggests an entry
@@ -93,11 +97,61 @@ Would you like to enter a long position at the current price of $60,500?`,
     },
   })
 
+  // ストリーミング中のメッセージを処理するための状態と参照
+  const streamingMessageIdRef = useRef<string | null>(null);
+  
+  // isLoadingがtrueの場合、AIからの応答がストリーミング中と判断
+  // originalMessagesの変更を監視して、最後のメッセージが更新されたらそれを表示
+  useEffect(() => {
+    if (isLoading && originalMessages.length > 0) {
+      // 最後のメッセージがAIのメッセージであれば、それはストリーミング中のメッセージ
+      const lastMessage = originalMessages[originalMessages.length - 1];
+      if (lastMessage.role === 'assistant') {
+        // ストリーミングメッセージIDを保存または更新
+        if (!streamingMessageIdRef.current) {
+          // 新しいストリーミングメッセージの場合、IDを生成して保存
+          streamingMessageIdRef.current = `streaming-${Date.now()}`;
+          
+          // 新しいメッセージをストアに追加
+          const streamingMessage: ExtendedMessage = {
+            id: streamingMessageIdRef.current,
+            role: 'assistant',
+            content: lastMessage.content,
+            isStreaming: true, // ストリーミング中であることを示すフラグを追加
+          };
+          
+          useChatStore.getState().addMessage(streamingMessage);
+        } else {
+          // 既存のストリーミングメッセージを更新
+          useChatStore.getState().updateMessage(
+            streamingMessageIdRef.current,
+            {
+              content: lastMessage.content,
+              isStreaming: true // ストリーミング中であることを示すフラグを更新
+            }
+          );
+        }
+      }
+    } else if (!isLoading && streamingMessageIdRef.current) {
+      // ストリーミングが終了した場合、isStreamingフラグをfalseに設定して参照をリセット
+      useChatStore.getState().updateMessage(
+        streamingMessageIdRef.current,
+        { isStreaming: false }
+      );
+      streamingMessageIdRef.current = null;
+    }
+  }, [isLoading, originalMessages]);
+
   // 型変換用のヘルパー
   const messages = originalMessages as ExtendedMessage[];
   const setMessages = (newMessages: ExtendedMessage[]) => {
     setOriginalMessages(newMessages as any);
   };
+  
+  // isLoadingをisSearchingに同期
+  useEffect(() => {
+    setIsSearching(isLoading);
+  }, [isLoading]);
 
   // Handle sample responses for specific keywords
   const handleSubmitWithSamples = (e: FormEvent<HTMLFormElement>) => {

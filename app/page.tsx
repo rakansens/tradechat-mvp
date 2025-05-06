@@ -7,7 +7,7 @@ import { MainLayout } from "@/components/layout/MainLayout"
 import ChartSection from "@/components/chart/ChartSection"
 import ChatSection from "@/components/chat/ChatSection"
 import PositionHistory from "@/components/position/PositionHistory"
-import ChartToolbar from "@/components/chart/ChartToolbar"
+import ChartToolbarComponent from "@/components/chart/ChartToolbar"
 import { 
   // 分割されたチャートストア
   useChartDataStore,
@@ -15,6 +15,9 @@ import {
   // メモ化されたセレクター
   selectCurrentPrice,
   selectPriceChangePercent,
+  selectEntries,
+  selectPendingEntry,
+  selectActiveTab,
   // その他のストア
   useEntryStore, 
   useUIStore 
@@ -31,27 +34,25 @@ export default function Home() {
   // Refs
   const chatEndRef = useRef<HTMLDivElement>(null);
 
-  // エントリーストアから状態とアクションを取得
-  const entries = useEntryStore((state) => state.entries);
-  const pendingEntry = useEntryStore((state) => state.pendingEntry);
+  // エントリーストアから状態とアクションを取得（メモ化されたセレクタを使用）
+  const entries = useEntryStore(selectEntries);
+  const pendingEntry = useEntryStore(selectPendingEntry);
   const setPendingEntry = useEntryStore((state) => state.setPendingEntry);
   const executeStoreEntry = useEntryStore((state) => state.executeEntry);
   const closePosition = useEntryStore((state) => state.closePosition);
   const cancelPosition = useEntryStore((state) => state.cancelPosition);
   
-  // チャートデータ関連
-  const { 
-    currentSymbol,
-    currentTimeFrame,
-    fetchData,
-  } = useChartDataStore();
+  // チャートデータ関連（メモ化されたセレクタを使用）
+  const currentSymbol = useChartDataStore((state) => state.currentSymbol);
+  const currentTimeFrame = useChartDataStore((state) => state.currentTimeFrame);
+  const fetchData = useChartDataStore((state) => state.fetchData);
   
   // メモ化されたセレクターを使用してデータを取得
   const currentPrice = useChartDataStore(selectCurrentPrice);
   const priceChangePercent = useChartDataStore(selectPriceChangePercent);
   
-  // UIストアから状態とアクションを取得
-  const activeTab = useUIStore((state) => state.activeTab);
+  // UIストアから状態とアクションを取得（メモ化されたセレクタを使用）
+  const activeTab = useUIStore(selectActiveTab);
   const setActiveTab = useUIStore((state) => state.setActiveTab);
 
   // --- AI SDK useChat Hook for Chat State and API Interaction ---
@@ -98,12 +99,6 @@ export default function Home() {
   // コンポーネントをレンダリング前に事前計算
   const chatSectionComponent = (
     <ChatSection
-      messages={messages}
-      input={input}
-      handleInputChange={handleInputChange}
-      handleSubmit={handleSubmit}
-      isLoading={isLoading}
-      pendingEntry={pendingEntry}
       chatEndRef={chatEndRef as React.RefObject<HTMLDivElement>}
       executeEntry={handleExecuteTrade}
       editPendingEntry={handleEditSubmit}
@@ -122,7 +117,7 @@ export default function Home() {
   );
 
   const toolbarSectionComponent = (
-    <ChartToolbar 
+    <ChartToolbarComponent 
       activeTab={activeTab}
       onTabChange={handleTabChange}
     />

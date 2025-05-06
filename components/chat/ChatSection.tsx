@@ -1,13 +1,24 @@
 // components/chat/ChatSection.tsx
-// 更新: ExtendedMessage型と共通インターフェースを使用するように修正
-// 更新: メモ化されたセレクタを使用するように更新
+// 更新: セレクタパターンを一貫して適用するように修正
 "use client"
 
 import { MessageSquare, Send, Zap, TrendingUp, BarChart2 } from "lucide-react"
-import { memo } from "react"
+import { memo, useCallback } from "react"
 import ChatWindow from "@/components/chat/ChatWindow"
 import InputBox from "@/components/chat/InputBox"
-import { useChatStore, useEntryStore, selectMessages, selectPendingEntry } from "@/store"
+import { 
+  useChatStore, 
+  useEntryStore, 
+  // メモ化されたセレクター
+  selectMessages, 
+  selectIsSearching,
+  selectInput,
+  selectSetInput,
+  selectSendMessage,
+  selectAddMessage,
+  selectPendingEntry,
+  selectHasPendingEntry
+} from "@/store"
 import type { OpenEntry } from "@/types/entry"
 import type { ExtendedMessage } from "@/types/chat"
 import type { MessageDisplayProps, TradeActionProps } from "@/types/common-interfaces"
@@ -19,12 +30,6 @@ import { theme } from "@/styles/colors"
 
 // 共通インターフェースを使用して型定義を整理
 interface ChatSectionProps {
-  messages: ExtendedMessage[]
-  input: string
-  handleInputChange: (e: React.ChangeEvent<HTMLInputElement> | React.ChangeEvent<HTMLTextAreaElement>) => void
-  handleSubmit: (e: React.FormEvent<HTMLFormElement>) => void
-  isLoading: boolean
-  pendingEntry: OpenEntry | null
   chatEndRef: RefObject<HTMLDivElement>
   executeEntry: () => void
   editPendingEntry: (updatedEntry: OpenEntry) => void
@@ -32,17 +37,33 @@ interface ChatSectionProps {
 }
 
 export default function ChatSection({
-  messages,
-  input,
-  handleInputChange,
-  handleSubmit,
-  isLoading,
-  pendingEntry,
   chatEndRef,
   executeEntry,
   editPendingEntry,
   cancelPendingEntry
 }: ChatSectionProps) {
+  // メモ化されたセレクターを使用してデータと状態を取得
+  const messages = useChatStore(selectMessages);
+  const isLoading = useChatStore(selectIsSearching);
+  const input = useChatStore(selectInput);
+  const pendingEntry = useEntryStore(selectPendingEntry);
+  
+  // メモ化されたセレクターを使用してアクションを取得
+  const setInput = useChatStore(selectSetInput);
+  const sendMessage = useChatStore(selectSendMessage);
+  
+  // 入力変更ハンドラー
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement> | React.ChangeEvent<HTMLTextAreaElement>) => {
+    setInput(e.target.value);
+  }, [setInput]);
+  
+  // 送信ハンドラー
+  const handleSubmit = useCallback((e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (input.trim()) {
+      sendMessage(input);
+    }
+  }, [input, sendMessage]);
   // Quick commands
   const quickCommands = [
     {
@@ -74,11 +95,8 @@ export default function ChatSection({
         {/* チャットウィンドウ - リファクタリングされたコンポーネントに必要なプロップスを渡す */}
         <CardContent className="p-0 flex-1 overflow-hidden">
           <ChatWindow
-            messages={messages}
             ref={chatEndRef}
-            isSearching={isLoading}
             onExecuteEntry={executeEntry}
-            pendingEntry={pendingEntry}
             editPendingEntry={editPendingEntry}
             cancelPendingEntry={cancelPendingEntry}
           />

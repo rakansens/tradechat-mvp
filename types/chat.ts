@@ -20,6 +20,7 @@ export interface ExtendedMessage extends Message {
   imageData?: string;        // Base64エンコードされた画像データ
   imageCaption?: string;     // 画像の説明
   imageId?: string;          // 画像のID（サーバー側で保存された画像を参照するためのID）
+  isStreaming?: boolean;     // ストリーミング中のメッセージかどうか
 }
 
 /**
@@ -29,6 +30,7 @@ export interface ChatState {
   // 状態
   messages: ExtendedMessage[];
   isSearching: boolean;
+  input: string;
 
   // アクション
   setMessages: (messages: ExtendedMessage[]) => void;
@@ -37,6 +39,13 @@ export interface ChatState {
   handleEntryPointQuery: () => void;
   handleNewsQuery: () => void;
   handleAIProposalQuery: () => void;
+  
+  // 追加アクション
+  setInput: (input: string) => void;
+  sendMessage: (message: string) => void;
+  clearMessages: () => void;
+  updateMessage: (id: string, updatedMessage: Partial<ExtendedMessage>) => void;
+  deleteMessage: (id: string) => void;
 }
 
 /**

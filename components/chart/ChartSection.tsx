@@ -1,5 +1,5 @@
 // components/chart/ChartSection.tsx
-// 更新: 共通インターフェースを使用するように修正
+// 更新: セレクタパターンを一貫して適用するように修正
 "use client"
 
 import React, { useEffect, useState } from "react";
@@ -13,14 +13,24 @@ import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { BarChart3, CandlestickChart, LineChart } from "lucide-react"
 import { 
-  // 分割されたチャートストア
+  // チャートストア
   useChartDataStore,
   useChartConfigStore,
   useRealTimeStore,
   // メモ化されたセレクター
   selectCurrentPrice,
   selectPriceChangePercent,
-  selectDateRange
+  selectDateRange,
+  selectChartCurrentSymbol,
+  selectCurrentTimeFrame,
+  selectIsLoading,
+  selectError,
+  selectChartType,
+  selectUpdateTimeFrame,
+  selectUpdateSymbol,
+  selectFetchData,
+  selectSetChartType,
+  selectStopRealTimeUpdates
 } from "@/store"
 import { theme } from "@/styles/colors"
 import ChartToolbar from "./ChartToolbar"
@@ -32,32 +42,22 @@ interface ChartSectionProps extends ChartViewProps, Pick<TimeframeControlProps, 
 }
 
 export default function ChartSection() {
-  // チャートデータ関連の状態とアクション
-  const { 
-    currentSymbol, 
-    currentTimeFrame,
-    updateTimeFrame, 
-    updateSymbol,
-    fetchData,
-    isLoading,
-    error
-  } = useChartDataStore();
-  
-  // メモ化されたセレクターを使用してデータを取得
+  // メモ化されたセレクターを使用してデータと状態を取得
+  const currentSymbol = useChartDataStore(selectChartCurrentSymbol);
+  const currentTimeFrame = useChartDataStore(selectCurrentTimeFrame);
+  const isLoading = useChartDataStore(selectIsLoading);
+  const error = useChartDataStore(selectError);
   const currentPrice = useChartDataStore(selectCurrentPrice);
   const priceChangePercent = useChartDataStore(selectPriceChangePercent);
   const dateRange = useChartDataStore(selectDateRange);
+  const chartType = useChartConfigStore(selectChartType);
   
-  // チャート設定関連の状態とアクション
-  const { 
-    chartType,
-    setChartType 
-  } = useChartConfigStore();
-  
-  // リアルタイム更新関連のアクション
-  const {
-    stopRealTimeUpdates
-  } = useRealTimeStore();
+  // メモ化されたセレクターを使用してアクションを取得
+  const updateTimeFrame = useChartDataStore(selectUpdateTimeFrame);
+  const updateSymbol = useChartDataStore(selectUpdateSymbol);
+  const fetchData = useChartDataStore(selectFetchData);
+  const setChartType = useChartConfigStore(selectSetChartType);
+  const stopRealTimeUpdates = useRealTimeStore(selectStopRealTimeUpdates);
 
   // コンポーネントのマウント時とタイムフレーム・シンボル変更時にチャートを初期化
   useEffect(() => {

@@ -1,8 +1,9 @@
 // components/chart/ChartToolbar.tsx
 // 更新: Homeコンポーネントのヘッダー機能を統合
+// 更新: メモ化を適用し、セレクタパターンを一貫して使用
 "use client"
 
-import React from 'react';
+import React, { memo, useMemo } from 'react';
 import { 
   // 分割されたチャートストア
   useChartDataStore,
@@ -13,6 +14,7 @@ import {
   // メモ化されたセレクター
   selectCurrentPrice,
   selectPriceChangePercent,
+  selectChartData,
   // エントリーストアセレクター
   selectOpenEntries,
   // その他のストア
@@ -53,7 +55,7 @@ const drawingTools = [
   { id: 'rectangle', name: '矩形', icon: Landmark },
 ];
 
-export default function ChartToolbar({
+const ChartToolbarComponent = memo(function ChartToolbar({
   activeTab = "chart",
   onTabChange
 }: ChartToolbarProps) {
@@ -348,4 +350,7 @@ export default function ChartToolbar({
       </div>
     </div>
   );
-}
+});
+
+// デフォルトエクスポート
+export default ChartToolbarComponent;

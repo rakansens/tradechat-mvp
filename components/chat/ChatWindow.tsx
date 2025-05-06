@@ -1,16 +1,23 @@
 // components/chat/ChatWindow.tsx
-// 更新: 最適化されたメッセージリストコンポーネントを統合
-// 更新: スクロール管理を組み込みコンポーネントに委任
-// 更新: パフォーマンス最適化とコードシンプル化
-// 更新: メモ化されたセレクタを使用するように更新
+// 更新: セレクタパターンを一貫して適用するように修正
+// 更新: 内部でメモ化されたセレクタを使用するように変更
 
 "use client"
 
-import { useState, useRef, forwardRef, memo } from "react"
-import { useChatStore, selectMessages } from "@/store"
+import { useState, useRef, forwardRef, memo, useCallback } from "react"
+import { 
+  useChatStore, 
+  useEntryStore,
+  // メモ化されたセレクター
+  selectMessages,
+  selectMessagesWithStreaming,
+  selectIsSearching,
+  selectPendingEntry,
+  selectStreamingMessage
+} from "@/store"
 import type { OpenEntry } from "@/types/entry"
 import type { ExtendedMessage } from "@/types/chat"
-import type { MessageDisplayProps, TradeActionProps } from "@/types/common-interfaces"
+import type { TradeActionProps } from "@/types/common-interfaces"
 
 // 最適化されたメッセージリストコンポーネントをインポート
 import { MessageList } from "./VirtualMessageList"
@@ -18,10 +25,8 @@ import { ScrollDownButton } from "./ui/ScrollDownButton"
 import { SearchingIndicator } from "./ui/SearchingIndicator"
 
 // シンプル化されたインターフェース
-interface ChatWindowProps extends MessageDisplayProps, Pick<TradeActionProps, 'onExecuteEntry'> {
-  pendingEntry?: OpenEntry | null
-  isSearching?: boolean
-  isLoading?: boolean
+interface ChatWindowProps extends Pick<TradeActionProps, 'onExecuteEntry'> {
+  ref?: React.Ref<HTMLDivElement>
   isThinking?: boolean
   editPendingEntry?: (entry: OpenEntry) => void
   cancelPendingEntry?: () => void
@@ -29,15 +34,16 @@ interface ChatWindowProps extends MessageDisplayProps, Pick<TradeActionProps, 'o
 
 const ChatWindow = forwardRef<HTMLDivElement, ChatWindowProps>(
   ({ 
-    messages, 
-    isSearching = false, 
-    isLoading = false,
     isThinking = false,
     onExecuteEntry, 
-    pendingEntry,
     editPendingEntry,
     cancelPendingEntry
   }, ref) => {
+    // メモ化されたセレクターを使用してデータを取得
+    const messages = useChatStore(selectMessagesWithStreaming);
+    const isSearching = useChatStore(selectIsSearching);
+    const pendingEntry = useEntryStore(selectPendingEntry);
+    const streamingMessage = useChatStore(selectStreamingMessage);
     const containerRef = useRef<HTMLDivElement>(null)
     const [showScrollButton, setShowScrollButton] = useState(false)
     
@@ -84,11 +90,13 @@ const ChatWindow = forwardRef<HTMLDivElement, ChatWindowProps>(
           cancelPendingEntry={cancelPendingEntry}
         />
         
-        {/* 状態インジケーター */}
-        <SearchingIndicator 
-          isSearching={isSearching || isLoading} 
-          isThinking={isThinking}
-        />
+        {/* 状態インジケーター - ストリーミングメッセージがない場合のみ表示 */}
+        {!streamingMessage && (
+          <SearchingIndicator
+            isSearching={isSearching}
+            isThinking={isThinking}
+          />
+        )}
         
         {/* スクロールダウンボタン */}
         <ScrollDownButton 

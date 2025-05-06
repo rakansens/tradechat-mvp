@@ -161,4 +161,4 @@ export const analyzeChartWithAI = async (
       confidence: 0,
     };
   }
-}; 
+};

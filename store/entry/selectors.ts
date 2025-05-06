@@ -1,5 +1,6 @@
 // store/entry/selectors.ts
 // 作成: エントリーストア用のメモ化されたセレクター関数
+// 更新: 基本セレクタを追加し、一貫したセレクタパターンを適用
 // 
 // このファイルはZustandストアのパフォーマンスを向上させるためのメモ化されたセレクター関数を提供します。
 
@@ -9,6 +10,7 @@ import type { EntryState, Entry, OpenEntry, ClosedEntry } from '@/types/entry';
 // 基本セレクター
 export const selectEntries = (state: EntryState) => state.entries;
 export const selectPendingEntry = (state: EntryState) => state.pendingEntry;
+export const selectHasPendingEntry = (state: EntryState) => state.pendingEntry !== null;
 
 // メモ化されたセレクター
 export const selectOpenEntries = createSelector(

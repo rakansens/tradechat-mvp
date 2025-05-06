@@ -116,6 +116,24 @@ export function isClosedEntry(entry: Entry): entry is ClosedEntry {
 }
 ```
 
+## セレクタの命名規則
+
+セレクタの命名には以下の規則を適用します：
+
+1. **基本セレクタ**：`select` + 取得するデータの名前
+   - 例：`selectMessages`, `selectCurrentPrice`
+
+2. **複合セレクタ**：`select` + 計算結果の名前
+   - 例：`selectLastMessage`, `selectSpreadPercent`
+
+3. **パラメータ化されたセレクタ**：`select` + 計算結果の名前 + パラメータの説明（必要に応じて）
+   - 例：`selectCumulativeVolume`, `selectRecentTrades`
+
+4. **ストア間で重複する可能性のあるセレクタ**：`select` + ストア名 + データの名前
+   - 例：`selectChartCurrentSymbol`, `selectMarketCurrentSymbol`
+
+この命名規則により、セレクタの役割が明確になり、名前の衝突を避けることができます。
+
 ## ベストプラクティス
 
 1. **基本セレクタを再利用する**：基本セレクタを複数のメモ化されたセレクタで再利用することで、コードの重複を減らし、一貫性を確保します。
@@ -127,3 +145,5 @@ export function isClosedEntry(entry: Entry): entry is ClosedEntry {
 4. **パフォーマンスを考慮する**：セレクタは、パフォーマンスを向上させるために使用されます。不要な計算を避け、必要な場合にのみメモ化を使用しましょう。
 
 5. **集約されたセレクタをインポートする**：コンポーネントでは、個々のセレクタファイルからではなく、`@/store`からセレクタをインポートすることで、インポートパスの一貫性を確保します。
+
+6. **名前の衝突を避ける**：複数のストアで同じデータ名を使用する場合は、ストア名をプレフィックスとして追加します（例：`selectChartCurrentSymbol`）。

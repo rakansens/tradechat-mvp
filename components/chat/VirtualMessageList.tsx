@@ -1,16 +1,16 @@
 // components/chat/VirtualMessageList.tsx
 // 更新: メッセージリスト表示用の最適化されたコンポーネント
-// 仮想スクロールの代わりにメモ化と最適化されたレンダリングを使用
+// 更新: ExtendedMessage型を使用するように変更
 
 "use client"
 
 import React, { useRef, useEffect, memo } from "react"
-import { Message } from "ai"
 import { ChatMessage } from "@/components/chat/messages/ChatMessage"
 import { OpenEntry } from "@/types/entry"
+import { ExtendedMessage } from "@/types/chat"
 
 interface MessageListProps {
-  messages: Message[]
+  messages: ExtendedMessage[]
   pendingEntry: OpenEntry | null
   chatEndRef: React.RefObject<HTMLDivElement>
   executeEntry?: () => void
@@ -26,7 +26,7 @@ const MemoizedChatMessage = memo(({
   editPendingEntry, 
   cancelPendingEntry 
 }: {
-  message: Message
+  message: ExtendedMessage
   pendingEntry: OpenEntry | null
   executeEntry?: () => void
   editPendingEntry?: (entry: OpenEntry) => void

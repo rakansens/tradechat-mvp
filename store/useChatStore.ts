@@ -1,5 +1,6 @@
 // store/useChatStore.ts
 // 更新: 新しい型定義を使用するチャット関連の状態管理ストア
+// 更新: input、setInput、sendMessageなどの機能を追加
 
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
@@ -42,6 +43,7 @@ export const useChatStore = create<ChatState>()(
       // 初期状態
       messages: initialMessages,
       isSearching: false,
+      input: "", // 入力フィールドの初期値
 
       // アクション
       setMessages: (messages) => set({ messages }),
@@ -52,6 +54,205 @@ export const useChatStore = create<ChatState>()(
       },
 
       setIsSearching: (isSearching) => set({ isSearching }),
+      
+      // 入力フィールドの値を設定
+      setInput: (input) => set({ input }),
+      
+      // メッセージを送信
+      sendMessage: async (message) => {
+        const { messages } = get();
+        
+        // ユーザーメッセージを追加
+        const userMessage: ExtendedMessage = {
+          id: Date.now().toString(),
+          role: "user",
+          content: message,
+        };
+        
+        set({
+          messages: [...messages, userMessage],
+          input: "", // 入力フィールドをクリア
+          isSearching: true // 検索中状態に設定
+        });
+        
+        try {
+          // AIの応答用メッセージを事前に作成（ストリーミング用）
+          const aiResponseId = Date.now().toString() + "-response";
+          const aiResponse: ExtendedMessage = {
+            id: aiResponseId,
+            role: "assistant",
+            content: "",
+            isStreaming: true, // ストリーミング中フラグを設定
+          };
+          
+          // 空のAI応答メッセージを追加
+          set({
+            messages: [...get().messages, aiResponse]
+          });
+          
+          // MASTRAのAPIエンドポイントを使用
+          const response = await fetch('/api/mastra/chat', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              messages: [...messages, userMessage].map(msg => ({
+                role: msg.role,
+                content: msg.content
+              }))
+            }),
+          });
+          
+          if (!response.ok) {
+            throw new Error('APIリクエストに失敗しました');
+          }
+          
+          // レスポンスをストリームとして読み込む
+          const reader = response.body?.getReader();
+          if (!reader) {
+            throw new Error('レスポンスボディを読み取れません');
+          }
+          
+          // テキストデコーダーを作成
+          const decoder = new TextDecoder();
+          let accumulatedContent = ""; // 累積コンテンツ
+          
+          // ストリームを読み込む
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            
+            // バイナリデータをテキストに変換
+            const chunk = decoder.decode(value, { stream: true });
+            
+            // 0:"文字" 形式のパターンを検出
+            const charMatches = chunk.match(/0:"([^"]*)"/g);
+            if (charMatches && charMatches.length > 0) {
+              // 各文字を処理
+              for (const match of charMatches) {
+                const char = match.match(/0:"([^"]*)"/);
+                if (char) {
+                  // 文字を累積コンテンツに追加
+                  accumulatedContent += char[1];
+                  
+                  // メッセージを更新
+                  set(state => {
+                    const updatedMessages = state.messages.map(msg =>
+                      msg.id === aiResponseId
+                        ? { ...msg, content: accumulatedContent }
+                        : msg
+                    );
+                    return { messages: updatedMessages };
+                  });
+                }
+              }
+            } else {
+              // 従来の "data: {"text":"..."}" 形式のストリーミングデータを処理
+              const matches = chunk.match(/data: ({.*?})/g);
+              if (matches && matches.length > 0) {
+                try {
+                  // 最後のデータチャンクを取得
+                  const lastChunk = matches[matches.length - 1].replace('data: ', '');
+                  const chunkData = JSON.parse(lastChunk);
+                  const chunkContent = chunkData.text || chunkData.content || "";
+                  
+                  // コンテンツを更新
+                  accumulatedContent = chunkContent;
+                  
+                  // メッセージを更新
+                  set(state => {
+                    const updatedMessages = state.messages.map(msg =>
+                      msg.id === aiResponseId
+                        ? { ...msg, content: accumulatedContent }
+                        : msg
+                    );
+                    return { messages: updatedMessages };
+                  });
+                } catch (chunkError) {
+                  console.log('チャンク抽出エラー:', chunkError);
+                }
+              }
+            }
+          }
+          
+          // ストリーミング完了後、isStreamingフラグをfalseに設定
+          set(state => {
+            const updatedMessages = state.messages.map(msg =>
+              msg.id === aiResponseId
+                ? { ...msg, isStreaming: false }
+                : msg
+            );
+            return {
+              messages: updatedMessages,
+              isSearching: false
+            };
+          });
+          
+          // エントリーポイントの提案を検出
+          if (aiResponse.content.includes("enter") || 
+              aiResponse.content.includes("position") || 
+              aiResponse.content.includes("buy") || 
+              aiResponse.content.includes("sell")) {
+            
+            // 価格を抽出
+            const priceMatch = aiResponse.content.match(/\$(\d+,?\d*)/);
+            const price = priceMatch
+              ? Number.parseFloat(priceMatch[1].replace(",", ""))
+              : 60500; // デフォルト価格
+            
+            // 買いか売りかを判断
+            const isBuy = !aiResponse.content.includes("sell") && !aiResponse.content.includes("short");
+            
+            // エントリーストアのアクションを呼び出し
+            useEntryStore.getState().setPendingEntry({
+              id: Date.now().toString(),
+              side: isBuy ? "buy" : "sell",
+              symbol: "BTC/USD",
+              price: price,
+              time: new Date().toISOString(),
+              status: "open",
+            });
+          }
+          
+        } catch (error) {
+          console.error('チャットAPIエラー:', error);
+          
+          // エラー時のフォールバック応答
+          const errorResponse: ExtendedMessage = {
+            id: Date.now().toString() + "-error",
+            role: "assistant",
+            content: "申し訳ありませんが、応答の生成中にエラーが発生しました。もう一度お試しください。",
+            isStreaming: false,
+          };
+          
+          set({
+            messages: [...get().messages, errorResponse],
+            isSearching: false
+          });
+        }
+      },
+      
+      // メッセージをクリア
+      clearMessages: () => set({ 
+        messages: initialMessages.slice(0, 1) // ウェルカムメッセージのみ残す
+      }),
+      
+      // メッセージを更新
+      updateMessage: (id, updatedMessage) => {
+        const { messages } = get();
+        const updatedMessages = messages.map(msg => 
+          msg.id === id ? { ...msg, ...updatedMessage } : msg
+        );
+        set({ messages: updatedMessages });
+      },
+      
+      // メッセージを削除
+      deleteMessage: (id) => {
+        const { messages } = get();
+        const filteredMessages = messages.filter(msg => msg.id !== id);
+        set({ messages: filteredMessages });
+      },
 
       handleEntryPointQuery: () => {
         const { messages } = get();

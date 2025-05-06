@@ -7,7 +7,7 @@
 import { createSelector } from 'reselect';
 
 // チャートデータの型定義
-import { OHLCData } from '@/types/chart';
+import { OHLCData, Timeframe, ChartType } from '@/types/chart';
 
 // チャートユーティリティ関数をインポート
 import * as chartUtils from '@/utils/chartUtils';
@@ -107,3 +107,36 @@ export const selectDateRange = createSelector(
     return [startDate, endDate];
   }
 );
+
+// 以下、新しく追加したセレクタ
+
+// 現在のシンボルセレクター
+export const selectChartCurrentSymbol = (state: { currentSymbol: string }) => state.currentSymbol;
+
+// 現在のタイムフレームセレクター
+export const selectCurrentTimeFrame = (state: { currentTimeFrame: Timeframe }) => state.currentTimeFrame;
+
+// ローディング状態セレクター
+export const selectIsLoading = (state: { isLoading: boolean }) => state.isLoading;
+
+// エラー状態セレクター
+export const selectError = (state: { error: string | null }) => state.error;
+
+// チャートタイプセレクター
+export const selectChartType = (state: { chartType: ChartType }) => state.chartType;
+
+// アクションセレクタ
+export const selectUpdateTimeFrame = (state: { updateTimeFrame: (timeframe: Timeframe) => void }) => 
+  state.updateTimeFrame;
+
+export const selectUpdateSymbol = (state: { updateSymbol: (symbol: string) => void }) => 
+  state.updateSymbol;
+
+export const selectFetchData = (state: { fetchData: (symbol: string, timeframe: Timeframe) => void }) => 
+  state.fetchData;
+
+export const selectSetChartType = (state: { setChartType: (type: ChartType) => void }) => 
+  state.setChartType;
+
+export const selectStopRealTimeUpdates = (state: { stopRealTimeUpdates: () => void }) => 
+  state.stopRealTimeUpdates;

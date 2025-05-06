@@ -1,6 +1,8 @@
 // components/chart/TimeframeSelector.tsx
 // 更新: 共通インターフェースを使用するように修正
+// 更新: メモ化を適用してパフォーマンスを最適化
 "use client"
+import { memo } from "react"
 import type { Timeframe } from "@/types/chart"
 import type { TimeframeControlProps } from "@/types/common-interfaces"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
@@ -12,17 +14,17 @@ type TimeframeSelectorProps = {
   onTimeframeChange: TimeframeControlProps["onTimeframeChange"]
 }
 
-export default function TimeframeSelector({ selectedTimeframe, onTimeframeChange }: TimeframeSelectorProps) {
-  // Available timeframes
-  const availableTimeframes: Timeframe[] = ["1m", "5m", "15m", "1h", "4h", "1d"]
+// 利用可能なタイムフレームを定数化
+const AVAILABLE_TIMEFRAMES: Timeframe[] = ["1m", "5m", "15m", "1h", "4h", "1d"]
 
+const TimeframeSelector = memo(function TimeframeSelector({ selectedTimeframe, onTimeframeChange }: TimeframeSelectorProps) {
   return (
     <ToggleGroup
       type="single"
       value={selectedTimeframe}
       onValueChange={(value) => value && onTimeframeChange(value as Timeframe)}
     >
-      {availableTimeframes.map((timeframe) => (
+      {AVAILABLE_TIMEFRAMES.map((timeframe) => (
         <ToggleGroupItem 
           key={timeframe} 
           value={timeframe} 
@@ -34,4 +36,6 @@ export default function TimeframeSelector({ selectedTimeframe, onTimeframeChange
       ))}
     </ToggleGroup>
   )
-}
+})
+
+export default TimeframeSelector;

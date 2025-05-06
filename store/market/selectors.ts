@@ -8,7 +8,7 @@ import type { OrderBookData, OrderBookEntry, TradeData, MarketStatsData, SymbolI
 import type { ExchangeType } from '@/types/api';
 
 // 基本セレクター
-export const selectCurrentSymbol = (state: { currentSymbol: string }) => state.currentSymbol;
+export const selectMarketCurrentSymbol = (state: { currentSymbol: string }) => state.currentSymbol;
 export const selectExchangeType = (state: { exchangeType: ExchangeType }) => state.exchangeType;
 export const selectOrderBook = (state: { orderBook: OrderBookData | null }) => state.orderBook;
 export const selectIsLoadingOrderBook = (state: { isLoadingOrderBook: boolean }) => state.isLoadingOrderBook;

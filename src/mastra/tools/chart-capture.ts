@@ -178,4 +178,4 @@ export const chartCaptureAnalysisTool = createTool({
       };
     }
   },
-}); 
+});

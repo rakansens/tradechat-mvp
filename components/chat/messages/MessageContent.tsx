@@ -19,10 +19,11 @@ interface ParsedContent {
 }
 
 interface MessageContentProps {
-  message: ExtendedMessage
+  message: ExtendedMessage;
+  isStreaming?: boolean;
 }
 
-export const MessageContent = ({ message }: MessageContentProps) => {
+export const MessageContent = ({ message, isStreaming = false }: MessageContentProps) => {
   // メッセージコンテンツの解析を行う
   const parsedContents = useMemo(() => {
     const contents: ParsedContent[] = []
@@ -98,20 +99,34 @@ export const MessageContent = ({ message }: MessageContentProps) => {
   }, [message])
   
   if (parsedContents.length === 0) {
-    return <div className="text-sm whitespace-pre-wrap break-words">{message.content}</div>
+    return (
+      <div className={`text-sm whitespace-pre-wrap break-words ${isStreaming ? 'animate-pulse' : ''}`}>
+        {message.content}
+        {isStreaming && (
+          <span className="inline-block w-1.5 h-4 ml-0.5 bg-blue-500 animate-blink">
+            &nbsp;
+          </span>
+        )}
+      </div>
+    )
   }
 
   return (
-    <div className="space-y-3">
+    <div className={`space-y-3 ${isStreaming ? 'animate-pulse' : ''}`}>
       {parsedContents.map((content, index) => {
         switch (content.type) {
           case 'text':
             return (
-              <div 
-                key={`text-${index}`} 
+              <div
+                key={`text-${index}`}
                 className="text-sm whitespace-pre-wrap break-words"
               >
                 {content.content}
+                {isStreaming && index === parsedContents.length - 1 && (
+                  <span className="inline-block w-1.5 h-4 ml-0.5 bg-blue-500 animate-blink">
+                    &nbsp;
+                  </span>
+                )}
               </div>
             )
             

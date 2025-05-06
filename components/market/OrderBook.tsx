@@ -1,10 +1,21 @@
 // components/market/OrderBook.tsx
 // オーダーブック（板情報）表示コンポーネント
+// 更新: セレクタパターンを適用し、メモ化を導入
 
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useMarketStore } from '../../store';
+import { useEffect, useState, useMemo } from 'react';
+import { 
+  useMarketStore, 
+  selectOrderBook, 
+  selectIsLoadingOrderBook, 
+  selectOrderBookError, 
+  selectMarketCurrentSymbol,
+  selectBids,
+  selectAsks,
+  selectSpread,
+  selectSpreadPercent
+} from '../../store';
 import { OrderBookEntry } from '../../types/market';
 import { cn } from '../../lib/utils';
 
@@ -35,32 +46,35 @@ export const OrderBook: React.FC<OrderBookProps> = ({
   depth = 15, // デフォルトは15レベル
   className,
 }) => {
-  // マーケットストアからデータを取得
-  const {
-    orderBook,
-    isLoadingOrderBook,
-    orderBookError,
-    currentSymbol,
-    fetchOrderBook,
-  } = useMarketStore();
-
-  // スプレッド計算用
-  const [spread, setSpread] = useState<{value: number, percent: number}>({value: 0, percent: 0});
+  // メモ化されたセレクタを使用してストアからデータを取得
+  const orderBook = useMarketStore(selectOrderBook);
+  const isLoadingOrderBook = useMarketStore(selectIsLoadingOrderBook);
+  const orderBookError = useMarketStore(selectOrderBookError);
+  const currentSymbol = useMarketStore(selectMarketCurrentSymbol);
+  const fetchOrderBook = useMarketStore((state) => state.fetchOrderBook);
+  
+  // メモ化されたセレクタを使用してスプレッド情報を取得
+  const spreadValue = useMarketStore(selectSpread);
+  const spreadPercent = useMarketStore(selectSpreadPercent);
+  
+  // メモ化されたセレクタを使用して注文データを取得
+  const rawBids = useMarketStore(selectBids);
+  const rawAsks = useMarketStore(selectAsks);
 
   // データのローカル加工
   const [processedBids, setProcessedBids] = useState<OrderBookEntry[]>([]);
   const [processedAsks, setProcessedAsks] = useState<OrderBookEntry[]>([]);
 
-  // オーダーブックデータを加工する関数
-  const processOrderBookData = () => {
-    if (!orderBook) return;
+  // メモ化された注文データ処理
+  const processedData = useMemo(() => {
+    if (!rawBids.length || !rawAsks.length) return { bids: [], asks: [] };
 
     // 累積数量計算用の一時変数
     let bidTotal = 0;
     let askTotal = 0;
 
     // 売り注文（asks）を処理 - 上から表示するため、最初から深さ分だけを取得
-    const asks = [...orderBook.asks]
+    const asks = [...rawAsks]
       .slice(0, depth)
       .map(entry => {
         askTotal += entry.amount;
@@ -71,7 +85,7 @@ export const OrderBook: React.FC<OrderBookProps> = ({
       });
 
     // 買い注文（bids）を処理 - 上から表示するため、最初から深さ分だけを取得
-    const bids = [...orderBook.bids]
+    const bids = [...rawBids]
       .slice(0, depth)
       .map(entry => {
         bidTotal += entry.amount;
@@ -81,22 +95,18 @@ export const OrderBook: React.FC<OrderBookProps> = ({
         };
       });
 
-    // スプレッド計算（最良売り注文と最良買い注文の差）
-    if (orderBook.asks.length > 0 && orderBook.bids.length > 0) {
-      const bestAsk = orderBook.asks[0].price;
-      const bestBid = orderBook.bids[0].price;
-      const spreadValue = bestAsk - bestBid;
-      const spreadPercent = (spreadValue / bestBid) * 100;
-      
-      setSpread({
-        value: spreadValue,
-        percent: spreadPercent
-      });
-    }
+    return { bids, asks };
+  }, [rawBids, rawAsks, depth]);
 
-    setProcessedAsks(asks);
-    setProcessedBids(bids);
-  };
+  // 処理されたデータをステートに設定
+  useEffect(() => {
+    if (processedData.bids.length > 0) {
+      setProcessedBids(processedData.bids);
+    }
+    if (processedData.asks.length > 0) {
+      setProcessedAsks(processedData.asks);
+    }
+  }, [processedData]);
 
   // コンポーネントマウント時とシンボル変更時にデータ取得
   useEffect(() => {
@@ -110,11 +120,6 @@ export const OrderBook: React.FC<OrderBookProps> = ({
     // クリーンアップ
     return () => clearInterval(intervalId);
   }, [currentSymbol, fetchOrderBook]);
-
-  // オーダーブックデータが変更されたら加工
-  useEffect(() => {
-    processOrderBookData();
-  }, [orderBook]);
 
   // エラー表示
   if (orderBookError) {
@@ -158,7 +163,7 @@ export const OrderBook: React.FC<OrderBookProps> = ({
       
       {/* スプレッド */}
       <div className="p-1 text-xs text-center bg-gray-100 dark:bg-gray-800 border-y border-gray-200 dark:border-gray-700">
-        スプレッド: {spread.value.toFixed(2)} ({spread.percent.toFixed(2)}%)
+        スプレッド: {spreadValue.toFixed(2)} ({spreadPercent.toFixed(2)}%)
       </div>
       
       {/* 買い注文（bids） - 高い価格から低い価格へ */}
@@ -188,4 +193,4 @@ export const OrderBook: React.FC<OrderBookProps> = ({
   );
 };
 
-export default OrderBook; 
+export default OrderBook;
