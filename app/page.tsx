@@ -83,9 +83,6 @@ export default function Home() {
   }, [setPendingEntry]);
 
   useEffect(() => {
-  }, [messages]); 
-  
-  useEffect(() => {
     // 新しいストアを使用してチャートデータを取得
     if (currentSymbol) {
       fetchData(currentSymbol, currentTimeFrame);

@@ -1,7 +1,8 @@
 // store/chart/selectors.ts
-// 更新: メモ化されたセレクター関数
-// 
-// このファイルはZustandストアのパフォーマンスを向上させるためのメモ化されたセレクター関数を提供します。
+// 更新: 基本セレクターとメモ化されたセレクターの明確な分離
+//
+// このファイルはZustandストアのパフォーマンスを向上させるためのセレクター関数を提供します。
+// 基本セレクターは単純なステート取得のみを行い、計算が必要なセレクターはメモ化されています。
 
 // reselectパッケージからcreateSelectorをインポート
 import { createSelector } from 'reselect';
@@ -12,8 +13,49 @@ import { OHLCData, Timeframe, ChartType } from '@/types/chart';
 // チャートユーティリティ関数をインポート
 import * as chartUtils from '@/utils/chartUtils';
 
+// ==========================================
+// 基本セレクター
+// ==========================================
+// 単純なステート取得のみを行う関数
+
 // チャートデータセレクター
 export const selectChartData = (state: { data: OHLCData[] }) => state.data;
+
+// 現在のシンボルセレクター
+export const selectChartCurrentSymbol = (state: { currentSymbol: string }) => state.currentSymbol;
+
+// 現在のタイムフレームセレクター
+export const selectCurrentTimeFrame = (state: { currentTimeFrame: Timeframe }) => state.currentTimeFrame;
+
+// ローディング状態セレクター
+export const selectIsLoading = (state: { isLoading: boolean }) => state.isLoading;
+
+// エラー状態セレクター
+export const selectError = (state: { error: string | null }) => state.error;
+
+// チャートタイプセレクター
+export const selectChartType = (state: { chartType: ChartType }) => state.chartType;
+
+// アクションセレクター
+export const selectUpdateTimeFrame = (state: { updateTimeFrame: (timeframe: Timeframe) => void }) =>
+  state.updateTimeFrame;
+
+export const selectUpdateSymbol = (state: { updateSymbol: (symbol: string) => void }) =>
+  state.updateSymbol;
+
+export const selectFetchData = (state: { fetchData: (symbol: string, timeframe: Timeframe) => void }) =>
+  state.fetchData;
+
+export const selectSetChartType = (state: { setChartType: (type: ChartType) => void }) =>
+  state.setChartType;
+
+export const selectStopRealTimeUpdates = (state: { stopRealTimeUpdates: () => void }) =>
+  state.stopRealTimeUpdates;
+
+// ==========================================
+// メモ化されたセレクター
+// ==========================================
+// 計算処理を含み、結果をメモ化する関数
 
 // 現在の価格セレクター
 export const selectCurrentPrice = createSelector(
@@ -39,36 +81,6 @@ export const selectPriceChangePercent = createSelector(
     return ((currentPrice - prevPrice) / prevPrice) * 100;
   }
 );
-
-// SMAセレクター
-export const selectSMA = (period: number) => 
-  createSelector(
-    [selectChartData],
-    (data: OHLCData[]): number[] => {
-      if (!data || data.length === 0) return [];
-      return chartUtils.calculateSMA(data.map(d => d.close), period);
-    }
-  );
-
-// RSIセレクター
-export const selectRSI = (period: number = 14) => 
-  createSelector(
-    [selectChartData],
-    (data: OHLCData[]): number[] => {
-      if (!data || data.length < period + 1) return [];
-      return chartUtils.calculateRSI(data.map(d => d.close), period);
-    }
-  );
-
-// MACDセレクター
-export const selectMACD = (fastPeriod: number = 12, slowPeriod: number = 26, signalPeriod: number = 9) => 
-  createSelector(
-    [selectChartData],
-    (data: OHLCData[]) => {
-      if (!data || data.length < slowPeriod + signalPeriod) return { macd: [], signal: [], histogram: [] };
-      return chartUtils.calculateMACD(data.map(d => d.close), fastPeriod, slowPeriod, signalPeriod);
-    }
-  );
 
 // 出来高セレクター
 export const selectVolume = createSelector(
@@ -108,35 +120,37 @@ export const selectDateRange = createSelector(
   }
 );
 
-// 以下、新しく追加したセレクタ
+// ==========================================
+// パラメータ化されたメモ化セレクター
+// ==========================================
+// パラメータを受け取り、メモ化された結果を返す関数
 
-// 現在のシンボルセレクター
-export const selectChartCurrentSymbol = (state: { currentSymbol: string }) => state.currentSymbol;
+// SMAセレクター
+export const selectSMA = (period: number) =>
+  createSelector(
+    [selectChartData],
+    (data: OHLCData[]): number[] => {
+      if (!data || data.length === 0) return [];
+      return chartUtils.calculateSMA(data.map(d => d.close), period);
+    }
+  );
 
-// 現在のタイムフレームセレクター
-export const selectCurrentTimeFrame = (state: { currentTimeFrame: Timeframe }) => state.currentTimeFrame;
+// RSIセレクター
+export const selectRSI = (period: number = 14) =>
+  createSelector(
+    [selectChartData],
+    (data: OHLCData[]): number[] => {
+      if (!data || data.length < period + 1) return [];
+      return chartUtils.calculateRSI(data.map(d => d.close), period);
+    }
+  );
 
-// ローディング状態セレクター
-export const selectIsLoading = (state: { isLoading: boolean }) => state.isLoading;
-
-// エラー状態セレクター
-export const selectError = (state: { error: string | null }) => state.error;
-
-// チャートタイプセレクター
-export const selectChartType = (state: { chartType: ChartType }) => state.chartType;
-
-// アクションセレクタ
-export const selectUpdateTimeFrame = (state: { updateTimeFrame: (timeframe: Timeframe) => void }) => 
-  state.updateTimeFrame;
-
-export const selectUpdateSymbol = (state: { updateSymbol: (symbol: string) => void }) => 
-  state.updateSymbol;
-
-export const selectFetchData = (state: { fetchData: (symbol: string, timeframe: Timeframe) => void }) => 
-  state.fetchData;
-
-export const selectSetChartType = (state: { setChartType: (type: ChartType) => void }) => 
-  state.setChartType;
-
-export const selectStopRealTimeUpdates = (state: { stopRealTimeUpdates: () => void }) => 
-  state.stopRealTimeUpdates;
+// MACDセレクター
+export const selectMACD = (fastPeriod: number = 12, slowPeriod: number = 26, signalPeriod: number = 9) =>
+  createSelector(
+    [selectChartData],
+    (data: OHLCData[]) => {
+      if (!data || data.length < slowPeriod + signalPeriod) return { macd: [], signal: [], histogram: [] };
+      return chartUtils.calculateMACD(data.map(d => d.close), fastPeriod, slowPeriod, signalPeriod);
+    }
+  );

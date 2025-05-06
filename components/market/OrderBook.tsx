@@ -56,7 +56,7 @@ export const OrderBook: React.FC<OrderBookProps> = ({
   const fetchOrderBook = useMarketStore((state) => state.fetchOrderBook);
   
   // メモ化されたセレクタを使用してスプレッド情報を取得
-  const spreadValue = useMarketStore(selectSpread);
+  const spread = useMarketStore(selectSpread);
   const spreadPercent = useMarketStore(selectSpreadPercent);
   
   // メモ化されたセレクタを使用して注文データを取得
@@ -165,7 +165,7 @@ export const OrderBook: React.FC<OrderBookProps> = ({
       
       {/* スプレッド */}
       <div className="py-1 px-2 text-xs text-center bg-[#1E222D] border-y border-[#2A2E39] font-medium">
-        <span className="text-white">スプレッド:</span> <span className="text-[#9CA3AF]">{spreadValue.toFixed(2)} ({spreadPercent.toFixed(2)}%)</span>
+        <span className="text-white">スプレッド:</span> <span className="text-[#9CA3AF]">{spread.toFixed(2)} ({spreadPercent.toFixed(2)}%)</span>
       </div>
       
       {/* 買い注文（bids） - 高い価格から低い価格へ */}

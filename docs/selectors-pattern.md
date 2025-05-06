@@ -35,18 +35,44 @@ store/
 1. **基本セレクタ**：ストアから直接データを取得する単純な関数
 2. **メモ化されたセレクタ**：基本セレクタを入力として使用し、計算結果をメモ化する関数
 
-例：
+### 使い分けのガイドライン
+
+基本セレクタとメモ化されたセレクタの使い分けは、以下のガイドラインに従います：
+
+1. **基本セレクタを使用する場合**：
+   - ストアから直接値を取得するだけの単純な操作
+   - 計算や変換を必要としない場合
+   - 他のセレクタの入力として使用される場合
+   - 例：`state.messages`、`state.currentSymbol`などの単純なプロパティアクセス
+
+2. **メモ化されたセレクタを使用する場合**：
+   - 複数の基本セレクタの結果を組み合わせる場合
+   - フィルタリング、マッピング、集計などの計算処理が必要な場合
+   - パフォーマンスが重要な場合（特に計算コストが高い処理）
+   - 同じ入力に対して同じ出力を返す純粋な関数の場合
+
+### 実装例
 
 ```typescript
-// 基本セレクタ
+// 基本セレクタ - 単純なプロパティアクセス
 export const selectMessages = (state: ChatState) => state.messages;
+export const selectCurrentUser = (state: ChatState) => state.currentUser;
 
-// メモ化されたセレクタ
+// メモ化されたセレクタ - 計算処理を含む
 export const selectLastMessage = createSelector(
   [selectMessages],
   (messages: ExtendedMessage[]): ExtendedMessage | null => {
     if (!messages || messages.length === 0) return null;
     return messages[messages.length - 1];
+  }
+);
+
+// 複数の入力を使用するメモ化されたセレクタ
+export const selectUserMessages = createSelector(
+  [selectMessages, selectCurrentUser],
+  (messages: ExtendedMessage[], userId: string): ExtendedMessage[] => {
+    if (!messages || messages.length === 0) return [];
+    return messages.filter(message => message.userId === userId);
   }
 );
 ```
@@ -147,3 +173,11 @@ export function isClosedEntry(entry: Entry): entry is ClosedEntry {
 5. **集約されたセレクタをインポートする**：コンポーネントでは、個々のセレクタファイルからではなく、`@/store`からセレクタをインポートすることで、インポートパスの一貫性を確保します。
 
 6. **名前の衝突を避ける**：複数のストアで同じデータ名を使用する場合は、ストア名をプレフィックスとして追加します（例：`selectChartCurrentSymbol`）。
+
+7. **メモ化の過剰使用を避ける**：単純なプロパティアクセスのみを行う基本セレクタはメモ化する必要はありません。メモ化は計算コストが高い処理に対してのみ使用しましょう。
+
+8. **セレクタの依存関係を明確にする**：メモ化されたセレクタの入力として使用される基本セレクタは、同じファイル内で定義し、依存関係を明確にしましょう。
+
+9. **ファイル構造を整理する**：基本セレクタをファイルの先頭に配置し、それに続いてメモ化されたセレクタを配置することで、コードの可読性を向上させます。
+
+10. **テスト可能性を考慮する**：セレクタは純粋関数として実装し、副作用を持たないようにすることで、テストの容易さを確保します。

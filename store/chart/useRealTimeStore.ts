@@ -7,12 +7,12 @@
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
 import type { RealTimeState } from "../../types/store";
-import { BitgetApiClient } from "../../services/bitgetApi";
 import { ExchangeType } from "../../types/api";
 import { OHLCData } from "../../types/chart";
 import { useChartDataStore } from "./useChartDataStore";
 import { selectCurrentPrice } from "../chart/selectors";
 import { logger } from "../../utils/logger";
+import { socketService } from "../../services/socketService";
 
 // リアルタイム更新ストアの作成
 export const useRealTimeStore = create<RealTimeState>()(
@@ -25,24 +25,26 @@ export const useRealTimeStore = create<RealTimeState>()(
         
         // アクション
         initializeApi: (exchangeType: ExchangeType) => {
-          // 既存のAPIクライアントがあれば切断
-          const currentApi = get().bitgetApi;
-          if (currentApi) {
-            currentApi.disconnectWebSocket();
-          }
-          
-          // 新しいAPIクライアントを作成
-          const newApi = new BitgetApiClient({}, exchangeType);
-          set({ bitgetApi: newApi });
-          
-          // リアルタイムデータが有効な場合はWebSocket接続を開始
-          if (get().useRealTimeData) {
-            get().startRealTimeUpdates();
+          try {
+            // 共通のソケットサービスを使用してAPIクライアントを初期化
+            const newApi = socketService.initializeApiClient(exchangeType);
+            set({ bitgetApi: newApi });
+            
+            // リアルタイムデータが有効な場合はWebSocket接続を開始
+            if (get().useRealTimeData) {
+              get().startRealTimeUpdates();
+            }
+          } catch (error) {
+            logger.error('API初期化エラー:', error, {
+              component: 'useRealTimeStore',
+              action: 'initializeApi'
+            });
           }
         },
         
         startRealTimeUpdates: () => {
-          let api = get().bitgetApi;
+          // 現在のAPIクライアントを取得（socketServiceから直接取得することも可能）
+          let api = get().bitgetApi || socketService.getCurrentApiClient();
           
           // APIクライアントが初期化されていない場合は初期化する
           if (!api) {
@@ -93,18 +95,25 @@ export const useRealTimeStore = create<RealTimeState>()(
         },
         
         stopRealTimeUpdates: () => {
-          const api = get().bitgetApi;
-          if (!api) {
-            logger.warn('API client not initialized when trying to stop updates.', {
+          try {
+            const api = get().bitgetApi;
+            if (!api) {
+              logger.warn('API client not initialized when trying to stop updates.', {
+                component: 'useRealTimeStore',
+                action: 'stopRealTimeUpdates',
+                note: 'This might be normal during cleanup.'
+              });
+              return;
+            }
+            
+            // WebSocket接続を停止
+            api.disconnectWebSocket();
+          } catch (error) {
+            logger.error('WebSocket切断エラー:', error, {
               component: 'useRealTimeStore',
-              action: 'stopRealTimeUpdates',
-              note: 'This might be normal during cleanup.'
+              action: 'stopRealTimeUpdates'
             });
-            return;
           }
-          
-          // WebSocket接続を停止
-          api.disconnectWebSocket();
         },
         
         toggleRealTimeData: () => {

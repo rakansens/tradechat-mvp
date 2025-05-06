@@ -1,13 +1,18 @@
 // store/market/selectors.ts
-// 作成: マーケットストア用のメモ化されたセレクター関数
-// 
-// このファイルはZustandストアのパフォーマンスを向上させるためのメモ化されたセレクター関数を提供します。
+// 更新: 基本セレクターとメモ化されたセレクターの明確な分離
+//
+// このファイルはZustandストアのパフォーマンスを向上させるためのセレクター関数を提供します。
+// 基本セレクターは単純なステート取得のみを行い、計算が必要なセレクターはメモ化されています。
 
 import { createSelector } from 'reselect';
 import type { OrderBookData, OrderBookEntry, TradeData, MarketStatsData, SymbolInfo } from '@/types/market';
 import type { ExchangeType } from '@/types/api';
 
+// ==========================================
 // 基本セレクター
+// ==========================================
+// 単純なステート取得のみを行う関数
+
 export const selectMarketCurrentSymbol = (state: { currentSymbol: string }) => state.currentSymbol;
 export const selectExchangeType = (state: { exchangeType: ExchangeType }) => state.exchangeType;
 export const selectOrderBook = (state: { orderBook: OrderBookData | null }) => state.orderBook;
@@ -18,7 +23,12 @@ export const selectMarketStats = (state: { marketStats: MarketStatsData | null }
 export const selectSymbols = (state: { symbols: SymbolInfo[] }) => state.symbols;
 export const selectIsDemoMode = (state: { isDemoMode: boolean }) => state.isDemoMode;
 
+// ==========================================
 // メモ化されたセレクター
+// ==========================================
+// 計算処理を含み、結果をメモ化する関数
+
+// オーダーブック関連のメモ化されたセレクター
 export const selectBids = createSelector(
   [selectOrderBook],
   (orderBook: OrderBookData | null): OrderBookEntry[] => {
@@ -55,7 +65,7 @@ export const selectLowestAsk = createSelector(
   }
 );
 
-// スプレッドセレクター
+// スプレッド関連のメモ化されたセレクター
 export const selectSpread = createSelector(
   [selectHighestBid, selectLowestAsk],
   (highestBid: number, lowestAsk: number): number => {
@@ -64,7 +74,6 @@ export const selectSpread = createSelector(
   }
 );
 
-// スプレッドパーセントセレクター
 export const selectSpreadPercent = createSelector(
   [selectHighestBid, selectLowestAsk],
   (highestBid: number, lowestAsk: number): number => {
@@ -72,6 +81,28 @@ export const selectSpreadPercent = createSelector(
     return ((lowestAsk - highestBid) / lowestAsk) * 100;
   }
 );
+
+// 取引統計関連のメモ化されたセレクター
+export const select24hVolume = createSelector(
+  [selectMarketStats],
+  (marketStats: MarketStatsData | null): number => {
+    if (!marketStats) return 0;
+    return marketStats.volume24h || 0;
+  }
+);
+
+export const select24hPriceChangePercent = createSelector(
+  [selectMarketStats],
+  (marketStats: MarketStatsData | null): number => {
+    if (!marketStats) return 0;
+    return marketStats.priceChangePercent24h || 0;
+  }
+);
+
+// ==========================================
+// パラメータ化されたメモ化セレクター
+// ==========================================
+// パラメータを受け取り、メモ化された結果を返す関数
 
 // 累積数量セレクター（指定価格までの累積数量を計算）
 export const selectCumulativeVolume = (side: 'bids' | 'asks', price: number) =>
@@ -129,21 +160,3 @@ export const selectAverageTradePrice = (count: number = 10) =>
       return sum / recentTrades.length;
     }
   );
-
-// 24時間取引量セレクター
-export const select24hVolume = createSelector(
-  [selectMarketStats],
-  (marketStats: MarketStatsData | null): number => {
-    if (!marketStats) return 0;
-    return marketStats.volume24h || 0;
-  }
-);
-
-// 24時間価格変化率セレクター
-export const select24hPriceChangePercent = createSelector(
-  [selectMarketStats],
-  (marketStats: MarketStatsData | null): number => {
-    if (!marketStats) return 0;
-    return marketStats.priceChangePercent24h || 0;
-  }
-);

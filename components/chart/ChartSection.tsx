@@ -1,8 +1,8 @@
 // components/chart/ChartSection.tsx
-// 更新: セレクタパターンを一貫して適用するように修正、マーケットストア機能を統合
+// 更新: UI/UXの一貫性向上 - エラーハンドリングの統一とレスポンシブデザインの実装方法の統一
 "use client"
 
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { getTimeframeDisplayName } from "@/utils/ohlcDummyData"
 import ChartCanvas from "@/components/chart/ChartCanvas"
 import type { Entry } from "@/types/entry"
@@ -12,6 +12,7 @@ import { CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { BarChart3, CandlestickChart, LineChart } from "lucide-react"
+import ErrorDisplay from "@/components/common/ErrorDisplay"
 import {
   // チャートストア
   useChartDataStore,
@@ -84,7 +85,8 @@ export default function ChartSection() {
 
   // コンポーネントのマウント時とタイムフレーム・シンボル変更時にチャートを初期化
   useEffect(() => {
-    // リアルタイム更新用のAPIクライアントを初期化
+    // 共通のソケットサービスを使用してAPIクライアントを初期化
+    // initializeApiはuseRealTimeStoreのアクションを使用
     initializeApi(exchangeType);
     
     // 初期データの取得
@@ -101,6 +103,7 @@ export default function ChartSection() {
   
   // exchangeTypeが変更されたときにリアルタイムAPIクライアントを再初期化
   useEffect(() => {
+    // 共通のソケットサービスを使用してAPIクライアントを初期化
     initializeApi(exchangeType);
     // マーケットストアの取引タイプも更新
     setMarketExchangeType(exchangeType);
@@ -139,43 +142,9 @@ export default function ChartSection() {
 
   // 型安全性を確保するためのヘルパー関数
   const isValidChartType = (type: string): type is ChartType => {
-    return ['candle', 'line', 'area'].includes(type);
+    return ['candles', 'line', 'bar', 'area'].includes(type);
   };
 
-  // 表示幅とレスポンシブ設定用の状態
-  const [chartWidth, setChartWidth] = useState(75); // チャート幅（％）
-  const [orderBookWidth, setOrderBookWidth] = useState(25); // オーダーブック幅（％）
-  const [isMobile, setIsMobile] = useState(false);
-
-  // 画面サイズに応じたレイアウト調整
-  useEffect(() => {
-    const checkIfMobile = () => {
-      const isMobileView = window.innerWidth < 768;
-      setIsMobile(isMobileView);
-      
-      if (isMobileView) {
-        // モバイルでは下部に表示
-        setChartWidth(100);
-        setOrderBookWidth(100);
-      } else if (window.innerWidth < 1024) {
-        // タブレットサイズレイアウト
-        setChartWidth(70);
-        setOrderBookWidth(30);
-      } else {
-        // デスクトップレイアウト
-        setChartWidth(75);
-        setOrderBookWidth(25);
-      }
-    };
-    
-    // 初期設定
-    checkIfMobile();
-    
-    // リサイズイベントのリスナー設定
-    window.addEventListener('resize', checkIfMobile);
-    return () => window.removeEventListener('resize', checkIfMobile);
-  }, []);
-  
   // インジケーターと価格表示の共通スタイル
   const commonStyles = useMemo(() => {
     return {
@@ -215,62 +184,43 @@ export default function ChartSection() {
       {/* ChartToolbarはメインレイアウトに移動しました */}
       
       {/* チャートとオーダーブックを横並びに配置（レスポンシブ対応） */}
-      <div className={`relative flex flex-grow ${isMobile ? 'flex-col' : 'flex-row'}`}>
+      <div className="relative flex flex-grow flex-col md:flex-row">
         {/* チャート部分 */}
-        <div style={{ position: 'relative', width: isMobile ? '100%' : `${chartWidth}%`, height: isMobile ? '50%' : '100%' }}>
+        <div className="relative w-full h-1/2 md:h-full md:w-3/4 lg:w-3/4">
           {isLoading ? (
             <div className="absolute inset-0 flex items-center justify-center bg-[#131722] bg-opacity-80">
               <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#2962FF]"></div>
             </div>
           ) : error ? (
-            <div className="absolute inset-0 flex items-center justify-center bg-[#131722] bg-opacity-80">
-              <div className="text-center p-4">
-                <p className="text-2xl font-semibold text-red-500">Error loading chart data</p>
-                <p className="text-base mt-2 mb-4">{error}</p>
-                
-                {/* 先物取引でサポートされていない銘柄の場合は現物取引に切り替えるボタンを表示 */}
-                {error?.includes('先物取引で利用できません') || error?.includes('先物取引でサポートされていません') ? (
-                  <div className="flex flex-col space-y-2 items-center">
-                    <button 
-                      className="px-6 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
-                      onClick={() => {
-                        setExchangeType('spot');
-                        fetchData(currentSymbol, currentTimeFrame);
-                      }}
-                    >
-                      現物取引に切り替える
-                    </button>
-                    <span className="text-sm text-gray-400 mt-1">または</span>
-                  </div>
-                ) : null}
-                
-                <button 
-                  className="mt-2 px-6 py-3 bg-[#2962FF] text-white rounded-md hover:bg-blue-700 transition-colors"
-                  onClick={() => fetchData(currentSymbol, currentTimeFrame)}
-                >
-                  再試行
-                </button>
-              </div>
-            </div>
+            <ErrorDisplay
+              error={error}
+              onRetry={() => fetchData(currentSymbol, currentTimeFrame)}
+              alternativeActions={
+                error?.includes('先物取引で利用できません') || error?.includes('先物取引でサポートされていません')
+                  ? [
+                      {
+                        label: '現物取引に切り替える',
+                        action: () => {
+                          setExchangeType('spot');
+                          fetchData(currentSymbol, currentTimeFrame);
+                        }
+                      }
+                    ]
+                  : undefined
+              }
+            />
           ) : (
             <ChartCanvas />
           )}
         </div>
         
         {/* オーダーブック部分 */}
-        <div 
-          style={{ 
-            width: isMobile ? '100%' : `${orderBookWidth}%`, 
-            height: isMobile ? '50%' : '100%',
-            borderLeft: '1px solid #2A2E39',
-            backgroundColor: '#131722'
-          }}
-        >
+        <div className="w-full h-1/2 md:h-full md:w-1/4 lg:w-1/4 border-t md:border-t-0 md:border-l border-[#2A2E39] bg-[#131722]">
           <div className="h-full flex flex-col">
             <OrderBook 
               depth={15} 
               className="h-full"
-              orderBookWidth={orderBookWidth}
+              orderBookWidth={25}
             />
           </div>
         </div>
