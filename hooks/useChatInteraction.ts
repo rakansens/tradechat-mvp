@@ -1,9 +1,11 @@
 // hooks/useChatInteraction.ts
 // 更新: Message型をExtendedMessage型に置き換えて型エラーを修正
+// 更新: メモ化されたセレクタを使用するように更新
 "use client"
 
 import { useState } from "react"
 import { useChat } from "ai/react"
+import { useChatStore, useEntryStore, selectLatestProposal } from "@/store"
 import type { Entry, OpenEntry } from "@/types/entry"
 import type { ExtendedMessage, ProposalType } from "@/types/chat"
 import type { ChangeEvent, FormEvent } from "react"

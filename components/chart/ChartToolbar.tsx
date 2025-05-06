@@ -13,6 +13,8 @@ import {
   // メモ化されたセレクター
   selectCurrentPrice,
   selectPriceChangePercent,
+  // エントリーストアセレクター
+  selectOpenEntries,
   // その他のストア
   useUIStore, 
   useEntryStore 
@@ -100,9 +102,9 @@ export default function ChartToolbar({
   
   // ストアからのアクションはすべて取得済み
   
-  // エントリーストアから状態を取得
-  const entries = useEntryStore((state) => state.entries);
-  const openPositionsCount = entries.filter((entry) => entry.status === "open").length;
+  // エントリーストアから状態を取得（メモ化されたセレクタを使用）
+  const openEntries = useEntryStore(selectOpenEntries);
+  const openPositionsCount = openEntries.length;
 
   return (
     <div className="flex flex-col w-full" style={{ backgroundColor: theme.background.card }}>
@@ -346,4 +348,4 @@ export default function ChartToolbar({
       </div>
     </div>
   );
-} 
+}

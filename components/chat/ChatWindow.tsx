@@ -2,10 +2,12 @@
 // 更新: 最適化されたメッセージリストコンポーネントを統合
 // 更新: スクロール管理を組み込みコンポーネントに委任
 // 更新: パフォーマンス最適化とコードシンプル化
+// 更新: メモ化されたセレクタを使用するように更新
 
 "use client"
 
-import { useState, useRef, forwardRef } from "react"
+import { useState, useRef, forwardRef, memo } from "react"
+import { useChatStore, selectMessages } from "@/store"
 import type { OpenEntry } from "@/types/entry"
 import type { ExtendedMessage } from "@/types/chat"
 import type { MessageDisplayProps, TradeActionProps } from "@/types/common-interfaces"

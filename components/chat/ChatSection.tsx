@@ -1,10 +1,13 @@
 // components/chat/ChatSection.tsx
 // 更新: ExtendedMessage型と共通インターフェースを使用するように修正
+// 更新: メモ化されたセレクタを使用するように更新
 "use client"
 
 import { MessageSquare, Send, Zap, TrendingUp, BarChart2 } from "lucide-react"
+import { memo } from "react"
 import ChatWindow from "@/components/chat/ChatWindow"
 import InputBox from "@/components/chat/InputBox"
+import { useChatStore, useEntryStore, selectMessages, selectPendingEntry } from "@/store"
 import type { OpenEntry } from "@/types/entry"
 import type { ExtendedMessage } from "@/types/chat"
 import type { MessageDisplayProps, TradeActionProps } from "@/types/common-interfaces"
