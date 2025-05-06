@@ -1,5 +1,5 @@
 // components/market/OrderBook.tsx
-// オーダーブック（板情報）表示コンポーネント
+// オーダーブック（板情報）表示コンポーネント - ChartSectionと視覚的に統一
 
 'use client';
 
@@ -7,6 +7,7 @@ import { useEffect, useState } from 'react';
 import { useMarketStore } from '../../store';
 import { OrderBookEntry } from '../../types/market';
 import { cn } from '../../lib/utils';
+import { theme } from '../../styles/colors';
 
 // 価格を表示するためのフォーマット関数
 const formatPrice = (price: number): string => {
@@ -29,11 +30,13 @@ const formatTotal = (total: number): string => {
 interface OrderBookProps {
   depth?: number; // 表示する深さ
   className?: string;
+  orderBookWidth?: number | string; // 表示幅
 }
 
 export const OrderBook: React.FC<OrderBookProps> = ({
   depth = 15, // デフォルトは15レベル
   className,
+  orderBookWidth = '33%', // デフォルトは33%
 }) => {
   // マーケットストアからデータを取得
   const {
@@ -126,62 +129,62 @@ export const OrderBook: React.FC<OrderBookProps> = ({
   }
 
   return (
-    <div className={cn("flex flex-col w-full h-full rounded border border-gray-200 dark:border-gray-800", className)}>
-      <div className="p-2 bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-        <h3 className="text-sm font-medium">オーダーブック</h3>
-        <span className="text-xs text-gray-500">{currentSymbol}</span>
+    <div className={cn("flex flex-col w-full h-full bg-[#131722] border border-[#2A2E39]", className)}>
+      <div className="p-2 bg-[#1E222D] border-b border-[#2A2E39] flex justify-between items-center">
+        <h3 className="text-sm font-medium text-white">オーダーブック</h3>
+        <span className="text-xs text-[#9CA3AF]">{currentSymbol}</span>
       </div>
       
       {/* ヘッダー */}
-      <div className="grid grid-cols-3 text-xs text-gray-500 p-2 bg-gray-50 dark:bg-gray-850">
+      <div className="grid grid-cols-3 text-xs text-[#9CA3AF] p-1.5 bg-[#131722] border-b border-[#2A2E39]">
         <div className="text-left">価格</div>
         <div className="text-right">数量</div>
         <div className="text-right">合計</div>
       </div>
       
       {/* 売り注文（asks） - 高い価格から低い価格へ */}
-      <div className="overflow-y-auto max-h-[200px] scrollbar-thin">
+      <div className="overflow-y-auto scrollbar-thin scrollbar-thumb-[#2A2E39] scrollbar-track-[#131722] flex-1">
         {processedAsks.map((ask, index) => (
           <div 
             key={`ask-${index}`} 
-            className="grid grid-cols-3 text-xs p-1 hover:bg-gray-100 dark:hover:bg-gray-800"
+            className="grid grid-cols-3 text-[0.7rem] py-0.5 px-1 dark:hover:bg-[#1C2030]"
             style={{
-              background: `linear-gradient(to left, rgba(255, 0, 0, 0.05) ${Math.min(ask.total || 0, 20) * 5}%, transparent 0%)`
+              background: `linear-gradient(to left, rgba(239, 68, 68, 0.1) ${Math.min(ask.total || 0, 20) * 5}%, transparent 0%)`
             }}
           >
-            <div className="text-left text-red-500">{formatPrice(ask.price)}</div>
-            <div className="text-right">{formatAmount(ask.amount)}</div>
-            <div className="text-right">{formatTotal(ask.total || 0)}</div>
+            <div className="text-left text-[#EF4444]">{formatPrice(ask.price)}</div>
+            <div className="text-right text-white">{formatAmount(ask.amount)}</div>
+            <div className="text-right text-[#9CA3AF]">{formatTotal(ask.total || 0)}</div>
           </div>
         ))}
       </div>
       
       {/* スプレッド */}
-      <div className="p-1 text-xs text-center bg-gray-100 dark:bg-gray-800 border-y border-gray-200 dark:border-gray-700">
-        スプレッド: {spread.value.toFixed(2)} ({spread.percent.toFixed(2)}%)
+      <div className="py-1 px-2 text-xs text-center bg-[#1E222D] border-y border-[#2A2E39] font-medium">
+        <span className="text-white">スプレッド:</span> <span className="text-[#9CA3AF]">{spread.value.toFixed(2)} ({spread.percent.toFixed(2)}%)</span>
       </div>
       
       {/* 買い注文（bids） - 高い価格から低い価格へ */}
-      <div className="overflow-y-auto max-h-[200px] scrollbar-thin">
+      <div className="overflow-y-auto scrollbar-thin scrollbar-thumb-[#2A2E39] scrollbar-track-[#131722] flex-1">
         {processedBids.map((bid, index) => (
           <div 
             key={`bid-${index}`} 
-            className="grid grid-cols-3 text-xs p-1 hover:bg-gray-100 dark:hover:bg-gray-800"
+            className="grid grid-cols-3 text-[0.7rem] py-0.5 px-1 dark:hover:bg-[#1C2030]"
             style={{
-              background: `linear-gradient(to left, rgba(0, 255, 0, 0.05) ${Math.min(bid.total || 0, 20) * 5}%, transparent 0%)`
+              background: `linear-gradient(to left, rgba(34, 197, 94, 0.1) ${Math.min(bid.total || 0, 20) * 5}%, transparent 0%)`
             }}
           >
-            <div className="text-left text-green-500">{formatPrice(bid.price)}</div>
-            <div className="text-right">{formatAmount(bid.amount)}</div>
-            <div className="text-right">{formatTotal(bid.total || 0)}</div>
+            <div className="text-left text-[#22C55E]">{formatPrice(bid.price)}</div>
+            <div className="text-right text-white">{formatAmount(bid.amount)}</div>
+            <div className="text-right text-[#9CA3AF]">{formatTotal(bid.total || 0)}</div>
           </div>
         ))}
       </div>
       
       {/* ローディング表示 */}
       {isLoadingOrderBook && (
-        <div className="absolute inset-0 flex items-center justify-center bg-white/60 dark:bg-black/60">
-          <div className="animate-spin w-6 h-6 border-2 border-gray-300 dark:border-gray-600 border-t-blue-500 rounded-full"></div>
+        <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+          <div className="animate-spin rounded-full h-10 w-10 border-2 border-b-2 border-[#2962FF]"></div>
         </div>
       )}
     </div>

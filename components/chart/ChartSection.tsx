@@ -134,22 +134,29 @@ export default function ChartSection() {
     return ['candle', 'line', 'area'].includes(type);
   };
 
-  // レスポンシブデザインのためのオーダーブック幅設定
-  const [orderBookWidth, setOrderBookWidth] = useState('30%');
-  
-  // モバイル表示かどうかの状態を追加
+  // 表示幅とレスポンシブ設定用の状態
+  const [chartWidth, setChartWidth] = useState(75); // チャート幅（％）
+  const [orderBookWidth, setOrderBookWidth] = useState(25); // オーダーブック幅（％）
   const [isMobile, setIsMobile] = useState(false);
 
   // 画面サイズに応じたレイアウト調整
   useEffect(() => {
     const checkIfMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-      if (window.innerWidth < 768) {
-        setOrderBookWidth('100%'); // モバイルでは下部に表示
+      const isMobileView = window.innerWidth < 768;
+      setIsMobile(isMobileView);
+      
+      if (isMobileView) {
+        // モバイルでは下部に表示
+        setChartWidth(100);
+        setOrderBookWidth(100);
       } else if (window.innerWidth < 1024) {
-        setOrderBookWidth('40%'); // タブレットでは少し広め
+        // タブレットサイズレイアウト
+        setChartWidth(70);
+        setOrderBookWidth(30);
       } else {
-        setOrderBookWidth('30%'); // デスクトップでは標準幅
+        // デスクトップレイアウト
+        setChartWidth(75);
+        setOrderBookWidth(25);
       }
     };
     
@@ -202,7 +209,7 @@ export default function ChartSection() {
       {/* チャートとオーダーブックを横並びに配置（レスポンシブ対応） */}
       <div className={`relative flex flex-grow ${isMobile ? 'flex-col' : 'flex-row'}`}>
         {/* チャート部分 */}
-        <div className={`relative ${isMobile ? 'w-full h-1/2' : `flex-1`}`}>
+        <div style={{ position: 'relative', width: isMobile ? '100%' : `${chartWidth}%`, height: isMobile ? '50%' : '100%' }}>
           {isLoading ? (
             <div className="absolute inset-0 flex items-center justify-center bg-[#131722] bg-opacity-80">
               <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#2962FF]"></div>
@@ -244,19 +251,19 @@ export default function ChartSection() {
         
         {/* オーダーブック部分 */}
         <div 
-          className={`${isMobile ? 'w-full h-1/2' : orderBookWidth} border-l border-[#2A2E39]`}
-          style={{ backgroundColor: '#131722' }}
+          style={{ 
+            width: isMobile ? '100%' : `${orderBookWidth}%`, 
+            height: isMobile ? '50%' : '100%',
+            borderLeft: '1px solid #2A2E39',
+            backgroundColor: '#131722'
+          }}
         >
           <div className="h-full flex flex-col">
-            <div className="text-sm font-medium p-2 border-b border-[#2A2E39] bg-[#1E222D] text-white">
-              オーダーブック
-            </div>
-            <div className="flex-grow overflow-hidden">
-              <OrderBook 
-                depth={15} 
-                className="h-full"
-              />
-            </div>
+            <OrderBook 
+              depth={15} 
+              className="h-full"
+              orderBookWidth={orderBookWidth}
+            />
           </div>
         </div>
       </div>
