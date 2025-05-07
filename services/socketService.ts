@@ -1,6 +1,6 @@
 // services/socketService.ts
 // 作成: ソケット初期化の責任を一箇所に集約するサービス
-// 更新: 時間足変更機能を追加
+// 更新: 時間足変更機能と銘柄変更機能を追加
 
 import { Socket } from 'socket.io-client';
 import { initializeSocketClient, getSocket, emitEvent } from '@/utils/socketClient';
@@ -158,6 +158,51 @@ export const socketService = {
         component: 'socketService',
         action: 'emitTimeframeChange',
         timeframe
+      });
+      return Promise.resolve(false);
+    }
+  },
+
+  /**
+   * 銘柄変更イベントを発行
+   * 
+   * @param symbol 変更する銘柄（例：BTCUSDT, ETHUSDT, SOLUSDT）
+   * @returns 成功した場合はtrue、失敗した場合はfalse
+   */
+  emitSymbolChange(symbol: string): Promise<boolean> {
+    try {
+      const socket = getSocket();
+      if (!socket) {
+        logger.warn('ソケット接続がありません。銘柄変更イベントを発行できません。', {
+          component: 'socketService',
+          action: 'emitSymbolChange',
+          symbol
+        });
+        return Promise.resolve(false);
+      }
+
+      return new Promise((resolve) => {
+        emitEvent('changeSymbol', { symbol }, (response: { success: boolean }) => {
+          if (response && response.success) {
+            logger.info(`銘柄を${symbol}に変更しました`, {
+              component: 'socketService',
+              action: 'emitSymbolChange'
+            });
+            resolve(true);
+          } else {
+            logger.warn(`銘柄${symbol}への変更に失敗しました`, {
+              component: 'socketService',
+              action: 'emitSymbolChange'
+            });
+            resolve(false);
+          }
+        });
+      });
+    } catch (error) {
+      logger.error('銘柄変更エラー:', error, {
+        component: 'socketService',
+        action: 'emitSymbolChange',
+        symbol
       });
       return Promise.resolve(false);
     }

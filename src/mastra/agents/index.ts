@@ -8,7 +8,16 @@ import { Agent } from "@mastra/core/agent";
 import { openai } from "@ai-sdk/openai";
 import { Memory } from '@mastra/memory';
 import { createClient } from '@libsql/client';  // 直接createClientをインポート
-import { mem0RememberTool, mem0MemorizeTool, chartCaptureAnalysisTool } from "../tools";
+import { 
+  mem0RememberTool, 
+  mem0MemorizeTool, 
+  chartCaptureAnalysisTool,
+  changeTimeframeTool,
+  changeSymbolTool,
+  multiTimeframeAnalysisTool,
+  entrySuggestionTool
+} from "../tools";
+import * as workflows from "../workflows";
 
 // 単純化のためにメモリベクトルストアを使用
 const memoryOptions = {
@@ -44,14 +53,50 @@ export function createChatAgent(memory?: Memory): Agent {
          - mem0-memorize: ユーザーの好みやパターンを保存
          - mem0-remember: 過去のやり取りから情報を思い出す
       
-      2. チャート分析ツール：
+      2. チャート操作ツール：
+         - change-timeframe: チャートの時間足を変更（例：1分足、5分足、15分足、1時間足、4時間足、日足）
+         - change-symbol: チャートの銘柄を変更（例：BTCUSDT、ETHUSDT、SOLUSDT）
+      
+      3. チャート分析ツール：
          - chart-capture-analysis: 現在のチャートをキャプチャして分析
+         - multi-timeframe-analysis: 複数の時間足でチャートを分析し、総合的な見解を提供
          
       【重要】チャート分析ツールの使用方法：
       - ユーザーがチャート分析や取引アドバイスを求めた場合、chart-capture-analysisツールを使用
       - このツールは分析テキストだけでなく画像データも返します
       - 返された画像データ(imageData)をメッセージに含めて返信してください
       - 画像データを含めることで、ユーザーはあなたの分析と共に実際のチャートを見ることができます
+      
+      【複数時間足分析の使用方法】
+      - ユーザーが「複数の時間足で分析して」「長期と短期の両方で見て」などと言った場合は、multi-timeframe-analysisツールを使用
+      - 標準では15分足、1時間足、4時間足、日足の4つの時間足を分析します
+      - ユーザーが特定の時間足を指定した場合は、それらを使用してください
+      - 分析結果には各時間足のチャート画像と分析テキスト、そして総合的な見解が含まれます
+      
+      
+      【エントリー提案の使用方法】
+      - ユーザーが「エントリーポイントを提案して」「取引提案をして」などと言った場合は、entry-suggestionツールを使用
+      - このツールは複数時間足分析の結果に基づいて、具体的なエントリー提案を生成します
+      - 提案には、エントリー方向（買い/売り）、価格、損切りレベル、利確目標、リスク/リワード比が含まれます
+      - 提案の根拠も詳細に説明されます
+      
+      【ワークフローの使用方法】
+      以下のワークフローを使用して、より高度な分析と提案を行うことができます：
+      
+      1. 単一時間足分析ワークフロー：
+         - ユーザーが「BTCUSDTの4時間足を分析して」などと言った場合に使用
+         - 指定された時間足のチャートを分析し、詳細な見解を提供
+         - 使用方法：analyzeTimeframeWorkflow({timeframe: '4h', symbol: 'BTCUSDT'})
+      
+      2. 複数時間足分析ワークフロー：
+         - ユーザーが「複数の時間足で分析して」「長期と短期の両方で見て」などと言った場合に使用
+         - 複数の時間足（デフォルトでは15分足、1時間足、4時間足、日足）でチャートを分析
+         - 使用方法：multiTimeframeAnalysisWorkflow({timeframes: ['15m', '1h', '4h', '1d'], symbol: 'BTCUSDT'})
+      
+      3. エントリー提案ワークフロー：
+         - ユーザーが「エントリーポイントを提案して」「取引提案をして」などと言った場合に使用
+         - 複数時間足分析に基づいて、具体的なエントリー提案を生成
+         - 使用方法：entrySuggestionWorkflow({timeframes: ['15m', '1h', '4h', '1d'], symbol: 'BTCUSDT', riskLevel: 'medium'})
       
       【チャート分析の詳細項目】
       チャート分析を行う際は、以下の項目を含む包括的な分析を提供してください：
@@ -76,6 +121,10 @@ export function createChatAgent(memory?: Memory): Agent {
       "mem0-remember": mem0RememberTool,
       "mem0-memorize": mem0MemorizeTool,
       "chart-capture-analysis": chartCaptureAnalysisTool,
+      "change-timeframe": changeTimeframeTool,
+      "change-symbol": changeSymbolTool,
+      "multi-timeframe-analysis": multiTimeframeAnalysisTool,
+      "entry-suggestion": entrySuggestionTool
     }
   });
 }
@@ -101,14 +150,49 @@ export function createDirectAgent(): Agent {
          - mem0-memorize: ユーザーの好みやパターンを保存
          - mem0-remember: 過去のやり取りから情報を思い出す
       
-      2. チャート分析ツール：
+      2. チャート操作ツール：
+         - change-timeframe: チャートの時間足を変更（例：1分足、5分足、15分足、1時間足、4時間足、日足）
+         - change-symbol: チャートの銘柄を変更（例：BTCUSDT、ETHUSDT、SOLUSDT）
+      
+      3. チャート分析ツール：
          - chart-capture-analysis: 現在のチャートをキャプチャして分析
+         - multi-timeframe-analysis: 複数の時間足でチャートを分析し、総合的な見解を提供
          
       【重要】チャート分析ツールの使用方法：
       - ユーザーがチャート分析や取引アドバイスを求めた場合、chart-capture-analysisツールを使用
       - このツールは分析テキストだけでなく画像データも返します
       - 返された画像データ(imageData)をメッセージに含めて返信してください
       - 画像データを含めることで、ユーザーはあなたの分析と共に実際のチャートを見ることができます
+      
+      【複数時間足分析の使用方法】
+      - ユーザーが「複数の時間足で分析して」「長期と短期の両方で見て」などと言った場合は、multi-timeframe-analysisツールを使用
+      - 標準では15分足、1時間足、4時間足、日足の4つの時間足を分析します
+      - ユーザーが特定の時間足を指定した場合は、それらを使用してください
+      - 分析結果には各時間足のチャート画像と分析テキスト、そして総合的な見解が含まれます
+      
+      【エントリー提案の使用方法】
+      - ユーザーが「エントリーポイントを提案して」「取引提案をして」などと言った場合は、entry-suggestionツールを使用
+      - このツールは複数時間足分析の結果に基づいて、具体的なエントリー提案を生成します
+      - 提案には、エントリー方向（買い/売り）、価格、損切りレベル、利確目標、リスク/リワード比が含まれます
+      - 提案の根拠も詳細に説明されます
+      
+      【ワークフローの使用方法】
+      以下のワークフローを使用して、より高度な分析と提案を行うことができます：
+      
+      1. 単一時間足分析ワークフロー：
+         - ユーザーが「BTCUSDTの4時間足を分析して」などと言った場合に使用
+         - 指定された時間足のチャートを分析し、詳細な見解を提供
+         - 使用方法：analyzeTimeframeWorkflow({timeframe: '4h', symbol: 'BTCUSDT'})
+      
+      2. 複数時間足分析ワークフロー：
+         - ユーザーが「複数の時間足で分析して」「長期と短期の両方で見て」などと言った場合に使用
+         - 複数の時間足（デフォルトでは15分足、1時間足、4時間足、日足）でチャートを分析
+         - 使用方法：multiTimeframeAnalysisWorkflow({timeframes: ['15m', '1h', '4h', '1d'], symbol: 'BTCUSDT'})
+      
+      3. エントリー提案ワークフロー：
+         - ユーザーが「エントリーポイントを提案して」「取引提案をして」などと言った場合に使用
+         - 複数時間足分析に基づいて、具体的なエントリー提案を生成
+         - 使用方法：entrySuggestionWorkflow({timeframes: ['15m', '1h', '4h', '1d'], symbol: 'BTCUSDT', riskLevel: 'medium'})
       
       【チャート分析の詳細項目】
       チャート分析を行う際は、以下の項目を含む包括的な分析を提供してください：
@@ -133,6 +217,10 @@ export function createDirectAgent(): Agent {
       "mem0-remember": mem0RememberTool,
       "mem0-memorize": mem0MemorizeTool,
       "chart-capture-analysis": chartCaptureAnalysisTool,
+      "change-timeframe": changeTimeframeTool,
+      "change-symbol": changeSymbolTool,
+      "multi-timeframe-analysis": multiTimeframeAnalysisTool,
+      "entry-suggestion": entrySuggestionTool
     }
   });
 }

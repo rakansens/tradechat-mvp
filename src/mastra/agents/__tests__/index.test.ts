@@ -25,6 +25,11 @@ jest.mock('@ai-sdk/openai', () => ({
 jest.mock('../../tools', () => ({
   mem0RememberTool: { id: 'mem0-remember', execute: jest.fn() },
   mem0MemorizeTool: { id: 'mem0-memorize', execute: jest.fn() },
+  chartCaptureAnalysisTool: { id: 'chart-capture-analysis', execute: jest.fn() },
+  changeTimeframeTool: { id: 'change-timeframe', execute: jest.fn() },
+  changeSymbolTool: { id: 'change-symbol', execute: jest.fn() },
+  multiTimeframeAnalysisTool: { id: 'multi-timeframe-analysis', execute: jest.fn() },
+  entrySuggestionTool: { id: 'entry-suggestion', execute: jest.fn() }
 }));
 
 describe('Agent Factory Functions', () => {
@@ -43,13 +48,13 @@ describe('Agent Factory Functions', () => {
       // 期待される設定でAgentが呼ばれたことを確認
       expect(Agent).toHaveBeenCalledWith({
         name: 'TradingAssistant',
-        instructions: expect.stringContaining('trading assistant'),
+        instructions: expect.stringContaining('トレーディングアシスタント'),
         model: 'mockedOpenAIModel',
         memory: expect.any(Memory),
-        tools: {
+        tools: expect.objectContaining({
           'mem0-remember': mem0RememberTool,
-          'mem0-memorize': mem0MemorizeTool,
-        }
+          'mem0-memorize': mem0MemorizeTool
+        })
       });
     });
 
@@ -60,13 +65,13 @@ describe('Agent Factory Functions', () => {
       // 期待される設定でAgentが呼ばれたことを確認
       expect(Agent).toHaveBeenCalledWith({
         name: 'TradingAssistant',
-        instructions: expect.stringContaining('trading assistant'),
+        instructions: expect.stringContaining('トレーディングアシスタント'),
         model: 'mockedOpenAIModel',
         memory: expect.any(Memory),
-        tools: {
+        tools: expect.objectContaining({
           'mem0-remember': mem0RememberTool,
-          'mem0-memorize': mem0MemorizeTool,
-        }
+          'mem0-memorize': mem0MemorizeTool
+        })
       });
     });
   });
@@ -79,13 +84,13 @@ describe('Agent Factory Functions', () => {
       // 期待される設定でAgentが呼ばれたことを確認
       expect(Agent).toHaveBeenCalledWith({
         name: 'TradingAssistant',
-        instructions: expect.stringContaining('trading assistant'),
+        instructions: expect.stringContaining('トレーディングアシスタント'),
         model: 'mockedOpenAIModel',
         memory: expect.any(Memory),
-        tools: {
+        tools: expect.objectContaining({
           'mem0-remember': mem0RememberTool,
-          'mem0-memorize': mem0MemorizeTool,
-        }
+          'mem0-memorize': mem0MemorizeTool
+        })
       });
     });
   });

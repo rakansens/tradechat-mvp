@@ -1,12 +1,15 @@
 // src/mastra/tools/index.ts
-// 更新：Mem0記憶ツールとチャートキャプチャツールをエクスポート
-// 長期記憶を検索・保存するためのAIツールと、チャートをキャプチャして分析するツールを実装
+// 更新：Mem0記憶ツール、チャートキャプチャツール、時間足変更ツール、銘柄変更ツール、エントリー提案ツールをエクスポート
+// 長期記憶を検索・保存するためのAIツールと、チャート操作・分析・エントリー提案ツールを実装
 
 import { createTool } from "@mastra/core/tools";
 import { z } from "zod";
 import { mem0 } from "../integrations";
 import { chartCaptureAnalysisTool } from "./chart-capture";
 import { changeTimeframeTool } from "./timeframe-tools";
+import { changeSymbolTool } from "./symbol-tools";
+import { multiTimeframeAnalysisTool } from "./multi-timeframe-tools";
+import { entrySuggestionTool } from "./entry-suggestion";
 
 /**
  * 過去に保存した記憶を検索するツール
@@ -53,5 +56,11 @@ export const mem0MemorizeTool = createTool({
   },
 });
 
-// チャートキャプチャツールとチャート時間足変更ツールをエクスポート
-export { chartCaptureAnalysisTool, changeTimeframeTool };
+// チャート関連ツールをエクスポート
+export { 
+  chartCaptureAnalysisTool, 
+  changeTimeframeTool, 
+  changeSymbolTool,
+  multiTimeframeAnalysisTool,
+  entrySuggestionTool
+};
