@@ -17,11 +17,20 @@ export function generateOHLCData(count: number, timeframe: Timeframe = "1d") {
   // 時間枠に基づいてボラティリティを調整
   const volatilityMap: Record<Timeframe, number> = {
     "1m": 0.002,
+    "3m": 0.003,
     "5m": 0.005,
     "15m": 0.008,
+    "30m": 0.009,
     "1h": 0.01,
+    "2h": 0.012,
     "4h": 0.015,
+    "6h": 0.017,
+    "8h": 0.018,
+    "12h": 0.019,
     "1d": 0.02,
+    "3d": 0.025,
+    "1w": 0.03,
+    "1M": 0.05
   }
 
   const volatility = volatilityMap[timeframe]
@@ -30,11 +39,20 @@ export function generateOHLCData(count: number, timeframe: Timeframe = "1d") {
   // 時間枠に基づいて時間間隔を設定（ミリ秒単位）
   const timeIntervalMap: Record<Timeframe, number> = {
     "1m": 60 * 1000,
+    "3m": 3 * 60 * 1000,
     "5m": 5 * 60 * 1000,
     "15m": 15 * 60 * 1000,
+    "30m": 30 * 60 * 1000,
     "1h": 60 * 60 * 1000,
+    "2h": 2 * 60 * 60 * 1000,
     "4h": 4 * 60 * 60 * 1000,
+    "6h": 6 * 60 * 60 * 1000,
+    "8h": 8 * 60 * 60 * 1000,
+    "12h": 12 * 60 * 60 * 1000,
     "1d": 24 * 60 * 60 * 1000,
+    "3d": 3 * 24 * 60 * 60 * 1000,
+    "1w": 7 * 24 * 60 * 60 * 1000,
+    "1M": 30 * 24 * 60 * 60 * 1000
   }
 
   const timeInterval = timeIntervalMap[timeframe]
@@ -79,11 +97,20 @@ export function generateOHLCData(count: number, timeframe: Timeframe = "1d") {
 export function getTimeframeDisplayName(timeframe: Timeframe): string {
   const displayNames: Record<Timeframe, string> = {
     "1m": "1分足",
+    "3m": "3分足",
     "5m": "5分足",
     "15m": "15分足",
+    "30m": "30分足",
     "1h": "1時間足",
+    "2h": "2時間足",
     "4h": "4時間足",
+    "6h": "6時間足",
+    "8h": "8時間足",
+    "12h": "12時間足",
     "1d": "日足",
+    "3d": "3日足",
+    "1w": "週足",
+    "1M": "月足"
   }
 
   return displayNames[timeframe]

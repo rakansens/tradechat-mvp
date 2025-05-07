@@ -1,4 +1,5 @@
-import { BitgetApiClient, ExchangeType } from '../../services/bitgetApi';
+import { BitgetApiClient } from '../../services/bitgetApi';
+import { ExchangeType } from '../../types/api';
 import { BitgetOrderBookResponse } from '../../types/market';
 import axios from 'axios';
 

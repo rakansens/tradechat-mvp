@@ -1,0 +1,135 @@
+// __tests__/validations/symbol.test.ts
+// 作成: シンボルバリデーションのテスト
+
+import {
+  validateSymbolInfo,
+  validateFilterOptions,
+  validateSymbolSelectorProps,
+  symbolInfoSchema,
+  filterOptionsSchema,
+  symbolSelectorPropsSchema
+} from '@/lib/validations/symbol';
+import { ExchangeType } from '@/types/api';
+
+describe('Symbol Validations', () => {
+  describe('symbolInfoSchema', () => {
+    it('有効なシンボル情報を検証できる', () => {
+      const validSymbol = {
+        symbol: 'BTCUSDT',
+        baseAsset: 'BTC',
+        quoteAsset: 'USDT',
+        pricePrecision: 2,
+        quantityPrecision: 6,
+        minNotional: '10',
+        status: 'TRADING',
+        isFavorite: true
+      };
+
+      const result = symbolInfoSchema.safeParse(validSymbol);
+      expect(result.success).toBe(true);
+    });
+
+    it('無効なシンボル情報を検出できる', () => {
+      const invalidSymbol = {
+        symbol: '', // 空文字列は無効
+        baseAsset: 'BTC',
+        quoteAsset: 'USDT',
+        pricePrecision: 2,
+        quantityPrecision: 6,
+        minNotional: '10',
+        status: 'TRADING'
+      };
+
+      const result = symbolInfoSchema.safeParse(invalidSymbol);
+      expect(result.success).toBe(false);
+    });
+
+    it('validateSymbolInfo関数が正しく動作する', () => {
+      const validSymbol = {
+        symbol: 'BTCUSDT',
+        baseAsset: 'BTC',
+        quoteAsset: 'USDT',
+        pricePrecision: 2,
+        quantityPrecision: 6,
+        minNotional: '10',
+        status: 'TRADING'
+      };
+
+      const result = validateSymbolInfo(validSymbol);
+      expect(result.success).toBe(true);
+    });
+  });
+
+  describe('filterOptionsSchema', () => {
+    it('有効なフィルターオプションを検証できる', () => {
+      const validOptions = {
+        searchTerm: 'BTC',
+        quoteAsset: 'USDT',
+        favoritesOnly: true
+      };
+
+      const result = filterOptionsSchema.safeParse(validOptions);
+      expect(result.success).toBe(true);
+    });
+
+    it('空のオブジェクトをデフォルト値で検証できる', () => {
+      const emptyOptions = {};
+
+      const result = filterOptionsSchema.safeParse(emptyOptions);
+      expect(result.success).toBe(true);
+      
+      if (result.success) {
+        expect(result.data.searchTerm).toBe('');
+        expect(result.data.quoteAsset).toBe('');
+        expect(result.data.favoritesOnly).toBe(false);
+      }
+    });
+
+    it('validateFilterOptions関数が正しく動作する', () => {
+      const validOptions = {
+        searchTerm: 'BTC',
+        quoteAsset: 'USDT',
+        favoritesOnly: true
+      };
+
+      const result = validateFilterOptions(validOptions);
+      expect(result.success).toBe(true);
+    });
+  });
+
+  describe('symbolSelectorPropsSchema', () => {
+    it('有効なプロパティを検証できる', () => {
+      const validProps = {
+        onSelect: (symbol: string) => {},
+        currentSymbol: 'BTCUSDT',
+        defaultExchangeType: 'spot' as ExchangeType,
+        onExchangeTypeChange: (type: ExchangeType) => {}
+      };
+
+      const result = symbolSelectorPropsSchema.safeParse(validProps);
+      expect(result.success).toBe(true);
+    });
+
+    it('必須プロパティが欠けている場合にエラーを検出できる', () => {
+      const invalidProps = {
+        // onSelectが欠けている
+        currentSymbol: 'BTCUSDT',
+        defaultExchangeType: 'spot' as ExchangeType
+      };
+
+      const result = symbolSelectorPropsSchema.safeParse(invalidProps);
+      expect(result.success).toBe(false);
+    });
+
+    it('validateSymbolSelectorProps関数が正しく動作する', () => {
+      const validProps = {
+        onSelect: (symbol: string) => {},
+        currentSymbol: 'BTCUSDT',
+        defaultExchangeType: 'spot' as ExchangeType
+      };
+
+      const result = validateSymbolSelectorProps(validProps);
+      expect(result.success).toBe(true);
+    });
+  });
+});

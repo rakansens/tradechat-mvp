@@ -35,17 +35,20 @@ export function HeaderSection({
         
         {currentPrice > 0 && (
           <div className="flex items-center space-x-2">
-            <PriceDisplay 
-              price={currentPrice} 
-              symbol={currentSymbol} 
-              showSymbol={true} 
+            <PriceDisplay
+              price={currentPrice}
+              symbol={currentSymbol}
+              showSymbol={true}
               size="md"
+              className="header-price"
             />
             
             {priceChangePercent !== 0 && (
-              <PriceChange 
+              <PriceChange
                 changePercent={priceChangePercent}
-                size="md" 
+                size="md"
+                className="header-price-change"
+                showPlusSign={true}
               />
             )}
           </div>

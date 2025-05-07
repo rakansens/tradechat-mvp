@@ -1,6 +1,6 @@
 // lib/supabase-settings.ts
 // Supabase設定関連ユーティリティ関数
-// 作成日: 2025/5/7
+// 更新日: 2025/5/8 - 型エラー修正
 
 import { supabase } from './supabase';
 import { Database } from '@/types/supabase';
@@ -331,7 +331,11 @@ export const getUserSettings = async (userId: string): Promise<Record<string, an
     throw error;
   }
 
-  return data?.settings || null;
+  // 型安全のために明示的に変換
+  if (data?.settings && typeof data.settings === 'object') {
+    return data.settings as Record<string, any>;
+  }
+  return null;
 };
 
 /**

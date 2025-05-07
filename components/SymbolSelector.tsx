@@ -3,6 +3,7 @@
 // components/SymbolSelector.tsx
 // 作成: 銘柄選択コンポーネント
 // 銘柄の検索、フィルタリング、選択機能を提供する
+// 更新: Zodバリデーションの適用
 
 import { useState, useEffect } from 'react';
 import { useAppStore } from '@/store';
@@ -14,20 +15,30 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Search, Star, StarOff, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  validateSymbolSelectorProps,
+  validateFilterOptions,
+  validateSymbolInfo,
+  type SymbolSelectorPropsSchema
+} from '@/lib/validations/symbol';
 
-interface SymbolSelectorProps {
-  onSelect: (symbol: string) => void;
-  currentSymbol?: string;
-  defaultExchangeType?: ExchangeType;
-  onExchangeTypeChange?: (exchangeType: ExchangeType) => void;
-}
-
-export default function SymbolSelector({ 
-  onSelect, 
+export default function SymbolSelector({
+  onSelect,
   currentSymbol = 'BTCUSDT',
   defaultExchangeType = 'spot',
   onExchangeTypeChange,
-}: SymbolSelectorProps) {
+}: SymbolSelectorPropsSchema) {
+  // プロパティのバリデーション
+  const propsValidation = validateSymbolSelectorProps({
+    onSelect,
+    currentSymbol,
+    defaultExchangeType,
+    onExchangeTypeChange
+  });
+  
+  if (!propsValidation.success) {
+    console.warn('SymbolSelector props validation failed:', propsValidation.error);
+  }
   // AppStoreから状態とアクションを取得
   const {
     filteredSymbols,
@@ -58,14 +69,26 @@ export default function SymbolSelector({
     onExchangeTypeChange?.(value as ExchangeType);
   };
   
+  // フィルターオプションのバリデーション
+  useEffect(() => {
+    const filterValidation = validateFilterOptions(filterOptions);
+    if (!filterValidation.success) {
+      console.warn('Filter options validation failed:', filterValidation.error);
+    }
+  }, [filterOptions]);
+
   // 検索処理
   const handleSearch = (term: string) => {
-    setFilterOptions({ searchTerm: term });
+    // 検索語のバリデーション
+    const searchTerm = term.trim();
+    setFilterOptions({ searchTerm });
   };
   
   // 基軸通貨フィルター処理
   const handleQuoteAssetFilter = (asset: string) => {
-    setFilterOptions({ quoteAsset: asset });
+    // 基軸通貨のバリデーション
+    const quoteAsset = asset.trim();
+    setFilterOptions({ quoteAsset });
   };
   
   // お気に入りフィルター処理
@@ -187,14 +210,22 @@ export default function SymbolSelector({
                   該当する銘柄がありません
                 </div>
               ) : (
-                filteredSymbols.map((symbol) => (
-                  <Button
-                    key={symbol.symbol}
-                    variant={currentSymbol === symbol.symbol ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => onSelect(symbol.symbol)}
-                    className="justify-between h-auto py-2"
-                  >
+                filteredSymbols.map((symbol) => {
+                  // シンボル情報のバリデーション
+                  const symbolValidation = validateSymbolInfo(symbol);
+                  if (!symbolValidation.success) {
+                    console.warn(`Symbol validation failed for ${symbol.symbol}:`, symbolValidation.error);
+                    return null; // 無効なシンボルはスキップ
+                  }
+                  
+                  return (
+                    <Button
+                      key={symbol.symbol}
+                      variant={currentSymbol === symbol.symbol ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => onSelect(symbol.symbol)}
+                      className="justify-between h-auto py-2"
+                    >
                     <div className="flex flex-col items-start">
                       <div className="flex items-center">
                         <span className="font-medium">{symbol.baseAsset}</span>
@@ -216,8 +247,9 @@ export default function SymbolSelector({
                       )}
                     </div>
                   </Button>
-                ))
-              )}
+                );
+              })
+            )}
             </div>
           </ScrollArea>
         )}

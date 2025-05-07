@@ -1,6 +1,7 @@
 // types/chart.ts
 // 作成: チャート関連の型定義
 // 更新: lightweight-charts v5 互換の型定義を追加
+// 更新: Zodスキーマから生成した型定義と一致するように修正
 
 /**
  * Nominal 型（lightweight-charts の型定義から）
@@ -42,7 +43,7 @@ export type ChartTimeCompatible = Time | number;
 /**
  * チャートのタイムフレーム
  */
-export type Timeframe = "1m" | "5m" | "15m" | "1h" | "4h" | "1d";
+export type Timeframe = "1m" | "3m" | "5m" | "15m" | "30m" | "1h" | "2h" | "4h" | "6h" | "8h" | "12h" | "1d" | "3d" | "1w" | "1M";
 
 /**
  * チャートの表示タイプ
@@ -60,6 +61,18 @@ export interface OHLCData {
   close: number;       // 終値
   volume?: number;     // 取引量（オプション）
 }
+
+// Zodスキーマから生成した型定義
+import { z } from "zod";
+import {
+  ohlcDataSchema,
+  timeframeSchema,
+  chartDataStateSchema
+} from "@/lib/validations/chart";
+
+export type OHLCDataSchema = z.infer<typeof ohlcDataSchema>;
+export type TimeframeSchema = z.infer<typeof timeframeSchema>;
+export type ChartDataStateSchema = z.infer<typeof chartDataStateSchema>;
 
 /**
  * チャート上のマーカー（注釈）の型
@@ -124,15 +137,20 @@ export interface FibonacciOptions {
  */
 export const TIMEFRAME_MAP_SPOT: Record<string, string> = {
   '1m': '1m',
+  '3m': '3m',
   '5m': '5m',
   '15m': '15m',
   '30m': '30m',
   '1h': '1H',
+  '2h': '2H',
   '4h': '4H',
   '6h': '6H',
+  '8h': '8H',
   '12h': '12H',
   '1d': '1D',
+  '3d': '3D',
   '1w': '1W',
+  '1M': '1M',
 };
 
 /**
@@ -140,15 +158,20 @@ export const TIMEFRAME_MAP_SPOT: Record<string, string> = {
  */
 export const TIMEFRAME_MAP_FUTURES: Record<string, string> = {
   '1m': '1m',
+  '3m': '3m',
   '5m': '5m',
   '15m': '15m',
   '30m': '30m',
   '1h': '1H',
+  '2h': '2H',
   '4h': '4H',
   '6h': '6H',
+  '8h': '8H',
   '12h': '12H',
   '1d': '1D',
+  '3d': '3D',
   '1w': '1W',
+  '1M': '1M',
 };
 
 export interface ChartState {

@@ -2,6 +2,7 @@
 // 更新: AppStoreを中心とした放射状の依存関係に変更
 // 更新: 動的インポートを削除し、明確な依存関係を確立
 // 更新: 循環参照を解消
+// 更新: Zodバリデーションスキーマを適用
 //
 // このストアはチャートのデータ（OHLC）と、データの取得状態を管理します。
 // リアルタイム更新用のメソッドも提供します。
@@ -18,6 +19,11 @@ import { useAppStore } from '../useAppStore';
 import { useRealTimeStore } from './useRealTimeStore';
 import { logger } from '../../utils/logger';
 import { ChartDataState } from '../../types/store';
+import {
+  validateOHLCData,
+  validateTimeframe,
+  validateChartDataState
+} from '../../lib/validations/chart';
 
 // 初期値の設定
 const initialTimeframe: Timeframe = "1d";
@@ -42,6 +48,17 @@ export const useChartDataStore = create<ChartDataState>()(
       _abortController: null as AbortController | null,
       
       fetchData: async (symbol: string, timeFrame: Timeframe, signal?: AbortSignal) => {
+        // 開発環境でのバリデーション
+        if (process.env.NODE_ENV !== 'production') {
+          const timeframeResult = validateTimeframe(timeFrame);
+          if (!timeframeResult.success) {
+            logger.warn(`Invalid timeframe: ${timeFrame}`, {
+              component: 'useChartDataStore',
+              action: 'fetchData',
+              error: timeframeResult.error
+            });
+          }
+        }
         set({ isLoading: true, error: null });
         
         // 最新の状態を取得（リフレッシュボタンが押された場合など、状態が変わっている可能性がある）
@@ -151,6 +168,17 @@ export const useChartDataStore = create<ChartDataState>()(
       
       // データを更新
       updateData: (data: OHLCData) => {
+        // 開発環境でのバリデーション
+        if (process.env.NODE_ENV !== 'production') {
+          const dataResult = validateOHLCData(data);
+          if (!dataResult.success) {
+            logger.warn('Invalid OHLC data', {
+              component: 'useChartDataStore',
+              action: 'updateData',
+              error: dataResult.error
+            });
+          }
+        }
         set((state) => ({
           data: [...state.data, data]
         }));
@@ -158,6 +186,17 @@ export const useChartDataStore = create<ChartDataState>()(
       
       // タイムフレームを更新
       updateTimeFrame: async (timeFrame: Timeframe) => {
+        // 開発環境でのバリデーション
+        if (process.env.NODE_ENV !== 'production') {
+          const timeframeResult = validateTimeframe(timeFrame);
+          if (!timeframeResult.success) {
+            logger.warn(`Invalid timeframe: ${timeFrame}`, {
+              component: 'useChartDataStore',
+              action: 'updateTimeFrame',
+              error: timeframeResult.error
+            });
+          }
+        }
         // 現在のタイムフレームと同じ場合は何もしない
         const currentTimeFrame = get().currentTimeFrame;
         if (timeFrame === currentTimeFrame) {
@@ -224,6 +263,13 @@ export const useChartDataStore = create<ChartDataState>()(
       
       // シンボルを更新
       updateSymbol: async (symbol: string) => {
+        // 開発環境でのバリデーション
+        if (process.env.NODE_ENV !== 'production' && (!symbol || typeof symbol !== 'string')) {
+          logger.warn(`Invalid symbol: ${symbol}`, {
+            component: 'useChartDataStore',
+            action: 'updateSymbol'
+          });
+        }
         // 自身のストア状態も更新（UIの即時反映のため）
         const abortController = new AbortController();
         set({
@@ -280,6 +326,17 @@ export const useChartDataStore = create<ChartDataState>()(
       
       // 最新のローソク足を更新（リアルタイムデータ用）
       updateLastCandle: (newCandle: OHLCData) => {
+        // 開発環境でのバリデーション
+        if (process.env.NODE_ENV !== 'production') {
+          const dataResult = validateOHLCData(newCandle);
+          if (!dataResult.success) {
+            logger.warn('Invalid OHLC data for last candle', {
+              component: 'useChartDataStore',
+              action: 'updateLastCandle',
+              error: dataResult.error
+            });
+          }
+        }
         set((state) => {
           // 既存のデータ配列を取得
           const data = [...state.data];

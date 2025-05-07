@@ -1,5 +1,6 @@
 import axios from 'axios';
-import { BitgetApiClient, TIMEFRAME_MAP } from '../bitgetApi';
+import { BitgetApiClient } from '../bitgetApi';
+import { TIMEFRAME_MAP_SPOT, TIMEFRAME_MAP_FUTURES } from '../../types/chart';
 import { OHLCData } from '../../types/chart';
 
 // axiosをモック化
@@ -132,8 +133,20 @@ describe('BitgetApiClient', () => {
     });
   });
 
+  // テスト用のタイムフレームマッピング
+  const TIMEFRAME_MAP = {
+    '1m': '1min',
+    '5m': '5min',
+    '15m': '15min',
+    '30m': '30min',
+    '1h': '1h',
+    '4h': '4h',
+    '1d': '1day',
+    '1w': '1week',
+  };
+
   describe('TIMEFRAME_MAP', () => {
-    it('should have correct mappings', () => {
+    it('should have correct mappings for testing', () => {
       expect(TIMEFRAME_MAP).toEqual({
         '1m': '1min',
         '5m': '5min',

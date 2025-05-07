@@ -1,5 +1,5 @@
 // components/chart/indicators/__tests__/ichimoku.test.ts
-// 作成: 一目均衡表インジケーターのテスト
+// 更新: 一目均衡表インジケーターのテスト - 型エラー修正
 
 // Jestではインポートする必要がない（グローバルで利用可能）
 import type { OHLCData } from '@/types/chart';
@@ -26,7 +26,7 @@ describe('Ichimoku Indicator', () => {
       const low = Math.min(open, close) * (1 - Math.random() * 0.02);
       
       data.push({
-        time: date.toISOString(),
+        time: date.getTime() / 1000, // 文字列ではなく数値型のタイムスタンプに変更（秒単位）
         open,
         high,
         low,

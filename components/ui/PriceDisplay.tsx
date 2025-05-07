@@ -1,27 +1,32 @@
 // components/ui/PriceDisplay.tsx
-// 更新: 価格表示用の共通コンポーネント - ハイドレーションエラー修正（$記号の表示方法を統一）
+// 更新: 価格表示用の共通コンポーネント - Zodバリデーションスキーマを適用
 
 "use client"
 
 import React from "react"
 import { Badge } from "@/components/ui/badge"
 import { theme } from "@/styles/colors"
+import {
+  PriceDisplayProps,
+  PriceChangeProps,
+  priceDisplaySchema,
+  priceChangeSchema
+} from "@/lib/validations/price"
 
-export interface PriceDisplayProps {
-  price: number
-  symbol?: string
-  showSymbol?: boolean
-  className?: string
-  size?: "sm" | "md" | "lg"
-}
-
-export function PriceDisplay({ 
-  price, 
-  symbol, 
-  showSymbol = false, 
-  className = "", 
-  size = "md" 
+export function PriceDisplay({
+  price,
+  symbol,
+  showSymbol = false,
+  className = "",
+  size = "md"
 }: PriceDisplayProps) {
+  // 入力値のバリデーション（開発環境のみ）
+  if (process.env.NODE_ENV !== 'production') {
+    const result = priceDisplaySchema.safeParse({ price, symbol, showSymbol, className, size })
+    if (!result.success) {
+      console.warn('PriceDisplay: Invalid props', result.error)
+    }
+  }
   const sizeClasses = {
     sm: "text-xs py-0.5 px-1.5",
     md: "text-sm py-1 px-2",
@@ -45,19 +50,19 @@ export function PriceDisplay({
   )
 }
 
-export interface PriceChangeProps {
-  changePercent: number
-  className?: string
-  size?: "sm" | "md" | "lg"
-  showPlusSign?: boolean
-}
-
-export function PriceChange({ 
-  changePercent, 
-  className = "", 
+export function PriceChange({
+  changePercent,
+  className = "",
   size = "md",
   showPlusSign = true
 }: PriceChangeProps) {
+  // 入力値のバリデーション（開発環境のみ）
+  if (process.env.NODE_ENV !== 'production') {
+    const result = priceChangeSchema.safeParse({ changePercent, className, size, showPlusSign })
+    if (!result.success) {
+      console.warn('PriceChange: Invalid props', result.error)
+    }
+  }
   const sizeClasses = {
     sm: "text-xs py-0.5 px-1.5",
     md: "text-sm py-1 px-2",

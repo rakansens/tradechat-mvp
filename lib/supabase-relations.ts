@@ -1,6 +1,6 @@
 // lib/supabase-relations.ts
 // Supabaseユーザー関係（フォロー/フォロワー）関連ユーティリティ関数
-// 作成日: 2025/5/7
+// 更新日: 2025/5/8 - 型エラー修正
 
 import { supabase } from './supabase';
 import { Database } from '@/types/supabase';
@@ -115,7 +115,15 @@ export const getFollowing = async (
   }
 
   // プロフィール情報を抽出
-  return data.map(item => item.profiles) as Profile[];
+  return data.map(item => {
+    // 型安全のためにプロフィールデータをチェック
+    if (item.profiles && typeof item.profiles === 'object' && 'id' in item.profiles) {
+      return item.profiles as Profile;
+    }
+    // エラーケースの場合は空のプロフィールを返す（実際の実装に応じて調整）
+    console.warn('Invalid profile data found', item);
+    return null;
+  }).filter((profile): profile is Profile => profile !== null);
 };
 
 /**
@@ -141,7 +149,15 @@ export const getFollowers = async (
   }
 
   // プロフィール情報を抽出
-  return data.map(item => item.profiles) as Profile[];
+  return data.map(item => {
+    // 型安全のためにプロフィールデータをチェック
+    if (item.profiles && typeof item.profiles === 'object' && 'id' in item.profiles) {
+      return item.profiles as Profile;
+    }
+    // エラーケースの場合は空のプロフィールを返す（実際の実装に応じて調整）
+    console.warn('Invalid profile data found', item);
+    return null;
+  }).filter((profile): profile is Profile => profile !== null);
 };
 
 /**
@@ -222,7 +238,15 @@ export const getMutualFollows = async (
   }
 
   // プロフィール情報を抽出
-  return data.map(item => item.profiles) as Profile[];
+  return data.map(item => {
+    // 型安全のためにプロフィールデータをチェック
+    if (item.profiles && typeof item.profiles === 'object' && 'id' in item.profiles) {
+      return item.profiles as Profile;
+    }
+    // エラーケースの場合は空のプロフィールを返す（実際の実装に応じて調整）
+    console.warn('Invalid profile data found', item);
+    return null;
+  }).filter((profile): profile is Profile => profile !== null);
 };
 
 /**

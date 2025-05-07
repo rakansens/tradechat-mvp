@@ -4,6 +4,7 @@
 // - シンボル変更検出の強化
 // - シンボルストアとの連携強化
 // - ポーリング管理の改善
+// 更新: Zodバリデーションの適用
 
 'use client';
 
@@ -12,6 +13,7 @@ import { useAppStore } from '../../store';
 import { OrderBookEntry } from '../../types/market';
 import { cn } from '../../lib/utils';
 import { theme } from '../../styles/colors';
+import { orderBookPropsSchema, validateOrderBookProps } from '@/lib/validations/market';
 
 // 価格を表示するためのフォーマット関数
 const formatPrice = (price: number): string => {
@@ -31,17 +33,19 @@ const formatTotal = (total: number): string => {
   return total.toFixed(4).replace(/\.?0+$/, '');
 };
 
-interface OrderBookProps {
-  depth?: number; // 表示する深さ
-  className?: string;
-  orderBookWidth?: number | string; // 表示幅
-}
+// OrderBookPropsはlib/validations/market.tsで定義されたZodスキーマを使用
+import type { OrderBookPropsSchema } from '@/lib/validations/market';
 
-export const OrderBook: React.FC<OrderBookProps> = ({
-  depth = 15, // デフォルトは15レベル
-  className,
-  orderBookWidth = '33%', // デフォルトは33%
-}) => {
+export const OrderBook: React.FC<OrderBookPropsSchema> = (props) => {
+  // Zodスキーマを使用してプロパティを検証
+  const validationResult = validateOrderBookProps(props);
+  
+  // 検証に失敗した場合はデフォルト値を使用
+  const {
+    depth = 15,
+    className,
+    orderBookWidth = '33%'
+  } = validationResult.success ? validationResult.data : props;
   // AppStoreからデータを取得
   const orderBook = useAppStore(state => state.orderBook);
   const isLoadingOrderBook = useAppStore(state => state.isLoadingOrderBook);
@@ -68,13 +72,33 @@ export const OrderBook: React.FC<OrderBookProps> = ({
     return ((lowestAsk - highestBid) / lowestAsk) * 100;
   }, [orderBook]);
   
-  // AppStoreから注文データを取得
-  const rawBids = useMemo(() => orderBook?.bids || [], [orderBook]);
-  const rawAsks = useMemo(() => orderBook?.asks || [], [orderBook]);
+  // AppStoreから注文データを取得し、Zodで検証
+  const rawBids = useMemo(() => {
+    if (!orderBook?.bids) return [];
+    return orderBook.bids;
+  }, [orderBook]);
+  
+  const rawAsks = useMemo(() => {
+    if (!orderBook?.asks) return [];
+    return orderBook.asks;
+  }, [orderBook]);
 
   // データのローカル加工
   const [processedBids, setProcessedBids] = useState<OrderBookEntry[]>([]);
   const [processedAsks, setProcessedAsks] = useState<OrderBookEntry[]>([]);
+  
+  // オーダーブックデータの検証
+  useEffect(() => {
+    if (orderBook) {
+      // orderBookDataSchemaを使用してデータを検証
+      const { orderBookDataSchema, validateOrderBookData } = require('@/lib/validations/market');
+      const validationResult = validateOrderBookData(orderBook);
+      
+      if (!validationResult.success) {
+        console.warn('OrderBook data validation failed:', validationResult.error);
+      }
+    }
+  }, [orderBook]);
 
   // メモ化された注文データ処理
   const processedData = useMemo(() => {

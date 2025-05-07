@@ -5,7 +5,8 @@
  * ts-node test-bitget-api.ts
  */
 
-import { BitgetApiClient, ExchangeType } from './services/bitgetApi';
+import { BitgetApiClient } from './services/bitgetApi';
+import { ExchangeType } from './types/api';
 import { OHLCData } from './types/chart';
 
 // テスト設定

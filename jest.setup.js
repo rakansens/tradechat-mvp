@@ -1,5 +1,5 @@
 // jest.setup.js
-// テスト前の共通セットアップ
+// 更新: テスト前の共通セットアップ - @testing-library/jest-domの型定義を追加
 
 // エラーのスタックトレースを詳細に表示
 Error.stackTraceLimit = Infinity;
@@ -52,6 +52,9 @@ process.env.MEM0_API_KEY = process.env.MEM0_API_KEY || 'test_mem0_key';
 // Jest-DOMのセットアップ（CommonJS形式で）
 try {
   require('@testing-library/jest-dom');
+  
+  // __tests__/setup.tsで定義した型拡張を読み込む
+  require('./__tests__/setup.ts');
 } catch (e) {
   console.warn('jest-domが見つかりません。DOM関連のテストに影響する可能性があります。');
 }

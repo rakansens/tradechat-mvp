@@ -1,7 +1,7 @@
 // types/market.ts
 // 市場データ関連の型定義
 
-import { ExchangeType } from '../services/bitgetApi';
+import { ExchangeType } from './api';
 
 // オーダーブック関連の型
 export interface OrderBookEntry {

@@ -1,4 +1,5 @@
 // utils/__tests__/screenshotUtils.test.ts
+// 更新: Symbol.hasInstanceの型エラー修正
 // スクリーンショットユーティリティのテスト
 
 import { captureElementAsBase64, captureWithMultipleSelectors, captureChartAsBase64 } from '../screenshotUtils';
@@ -80,13 +81,17 @@ describe('スクリーンショットユーティリティ', () => {
       });
       
       // instanceofをオーバーライド
-      const originalInstanceOf = Object.prototype[Symbol.hasInstance];
-      Function.prototype[Symbol.hasInstance] = function(instance) {
+      // 型安全のために適切な型アサーションを使用
+      const originalInstanceOf = Object.getOwnPropertyDescriptor(Object.prototype, Symbol.hasInstance)?.value as Function;
+      Object.defineProperty(Function.prototype, Symbol.hasInstance, {
+        value: function(instance: any): boolean {
         if (this.name === 'HTMLCanvasElement' && instance === mockCanvas) {
           return true;
         }
-        return originalInstanceOf.call(this, instance);
-      };
+          return originalInstanceOf.call(this, instance);
+        },
+        configurable: true
+      });
       
       const result = await captureElementAsBase64('#canvas');
       
@@ -94,7 +99,11 @@ describe('スクリーンショットユーティリティ', () => {
       expect(mockCanvas.toDataURL).toHaveBeenCalledWith('image/png');
       
       // 元に戻す
-      Function.prototype[Symbol.hasInstance] = originalInstanceOf;
+      // 型安全のために再度Object.definePropertyを使用
+      Object.defineProperty(Function.prototype, Symbol.hasInstance, {
+        value: originalInstanceOf,
+        configurable: true
+      });
     });
     
     it('HTML要素がある場合はhtml2canvasを使用する', async () => {
