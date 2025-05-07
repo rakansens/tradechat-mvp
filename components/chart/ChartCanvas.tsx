@@ -238,6 +238,47 @@ export default function ChartCanvas() {
     };
   }, [redrawChart]);
 
+  // Socket.IOイベントリスナーの設定
+  useEffect(() => {
+    // 時間足変更イベントのリスナー
+    const handleTimeframeChange = (event: CustomEvent) => {
+      const { timeframe } = event.detail;
+      logger.info(`時間足変更イベントを受信: ${timeframe}`, {
+        component: 'ChartCanvas',
+        action: 'handleTimeframeChange'
+      });
+      
+      // チャートデータストアの時間足を更新
+      useChartDataStore.getState().updateTimeFrame(timeframe as Timeframe);
+      
+      // ツールバーの選択状態を更新するためのカスタムイベント
+      const updateEvent = new CustomEvent('updateToolbarTimeframe', { detail: { timeframe } });
+      window.dispatchEvent(updateEvent);
+    };
+    
+    // 銘柄変更イベントのリスナー
+    const handleSymbolChange = (event: CustomEvent) => {
+      const { symbol } = event.detail;
+      logger.info(`銘柄変更イベントを受信: ${symbol}`, {
+        component: 'ChartCanvas',
+        action: 'handleSymbolChange'
+      });
+      
+      // チャートデータストアの銘柄を更新
+      useChartDataStore.getState().updateSymbol(symbol);
+    };
+    
+    // イベントリスナーを登録
+    window.addEventListener('timeframeChanged', handleTimeframeChange as EventListener);
+    window.addEventListener('symbolChanged', handleSymbolChange as EventListener);
+    
+    // クリーンアップ関数
+    return () => {
+      window.removeEventListener('timeframeChanged', handleTimeframeChange as EventListener);
+      window.removeEventListener('symbolChanged', handleSymbolChange as EventListener);
+    };
+  }, []);
+
   // チャートの初期化と更新
   useEffect(() => {
     if (!chartRef.current) return;

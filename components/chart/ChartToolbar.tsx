@@ -2,7 +2,7 @@
 // 更新: Homeコンポーネントのヘッダー機能を統合、銘柄選択モーダルを追加
 "use client"
 
-import React, { memo, useMemo } from 'react';
+import React, { memo, useMemo, useEffect } from 'react';
 import {
   // 分割されたチャートストア
   useChartDataStore,
@@ -59,6 +59,26 @@ const ChartToolbarComponent = memo(function ChartToolbar({
   activeTab,
   onTabChange
 }: ChartToolbarProps) {
+  // Socket.IOイベントリスナーの設定
+  useEffect(() => {
+    // 時間足変更イベントのリスナー
+    const handleTimeframeUpdate = (event: CustomEvent) => {
+      const { timeframe } = event.detail;
+      console.log(`ツールバーの時間足を更新: ${timeframe}`);
+      // チャートデータストアの時間足を更新
+      // データの再取得は行わず、UIの更新のみ行う
+      useChartDataStore.setState({ currentTimeFrame: timeframe as Timeframe });
+    };
+    
+    // イベントリスナーを登録
+    window.addEventListener('updateToolbarTimeframe', handleTimeframeUpdate as EventListener);
+    
+    // クリーンアップ関数
+    return () => {
+      window.removeEventListener('updateToolbarTimeframe', handleTimeframeUpdate as EventListener);
+    };
+  }, []);
+  
   // 分割されたチャートストアから状態とアクションを取得
 
   // チャートデータ関連

@@ -1,5 +1,7 @@
 // utils/socketClient.ts
 // Socket.ioクライアント接続の管理
+// 更新: 2025-05-07 - ソケット初期化ロジックの信頼性を向上し、Mastraツールからの利用を改善
+// 変更内容: 初期化状態のチェックを強化、エラーハンドリングの向上
 
 import { Socket, io } from 'socket.io-client';
 import { captureChartAsBase64 } from './screenshotUtils';
@@ -7,22 +9,47 @@ import { captureChartAsBase64 } from './screenshotUtils';
 // シングルトンソケットインスタンス
 let socket: Socket | null = null;
 
-// ソケット初期化状態
+// ソケット初期化状態と接続試行回数
 let isInitialized = false;
 let clientId = '';
+let initializationAttempts = 0;
+const MAX_INITIALIZATION_ATTEMPTS = 3;
 
 /**
  * Socket.ioクライアントを初期化
  * チャートキャプチャのイベントハンドラを設定
  */
-export function initializeSocketClient() {
-  if (isInitialized) return;
+export function initializeSocketClient(forceReinitialize = false): boolean {
+  // 既に初期化済みで、強制再初期化フラグがない場合は早期リターン
+  if (isInitialized && !forceReinitialize) {
+    console.log('Socket.IOは既に初期化済みです');
+    return true;
+  }
+  
+  // 初期化試行回数が上限を超えている場合
+  if (initializationAttempts >= MAX_INITIALIZATION_ATTEMPTS && !forceReinitialize) {
+    console.warn(`Socket.IO初期化が${MAX_INITIALIZATION_ATTEMPTS}回失敗しました。forceReinitializeフラグを使用してください`);
+    return false;
+  }
   
   // ブラウザ環境かどうかを確認
   if (typeof window === 'undefined') {
     console.warn('socketClientはブラウザ環境でのみ初期化できます');
-    return;
+    return false;
   }
+  
+  // 既存のソケットインスタンスがある場合は切断
+  if (socket) {
+    try {
+      socket.disconnect();
+      socket = null;
+    } catch (e) {
+      console.warn('既存のSocket.IO接続の切断に失敗しました:', e);
+    }
+  }
+  
+  // 初期化カウンタをインクリメント
+  initializationAttempts++;
   
   try {
     // Socket.io接続を初期化 - 接続設定を改善
@@ -39,6 +66,38 @@ export function initializeSocketClient() {
       console.log('Socket.IO接続成功:', data);
       clientId = data.clientId;
       isInitialized = true;
+    });
+    
+    // 時間足変更イベントのリスナー
+    socket.on('changeTimeframe', (data: { timeframe: string }) => {
+      console.log('時間足変更イベント受信:', data);
+      
+      // グローバルイベントを発行して、チャートコンポーネントに通知
+      const event = new CustomEvent('timeframeChanged', { detail: data });
+      window.dispatchEvent(event);
+      
+      // ローカルストレージに最新の時間足を保存
+      try {
+        localStorage.setItem('selectedTimeframe', data.timeframe);
+      } catch (error) {
+        console.warn('ローカルストレージへの時間足保存に失敗しました:', error);
+      }
+    });
+    
+    // 銘柄変更イベントのリスナー
+    socket.on('changeSymbol', (data: { symbol: string }) => {
+      console.log('銘柄変更イベント受信:', data);
+      
+      // グローバルイベントを発行して、チャートコンポーネントに通知
+      const event = new CustomEvent('symbolChanged', { detail: data });
+      window.dispatchEvent(event);
+      
+      // ローカルストレージに最新の銘柄を保存
+      try {
+        localStorage.setItem('selectedSymbol', data.symbol);
+      } catch (error) {
+        console.warn('ローカルストレージへの銘柄保存に失敗しました:', error);
+      }
     });
     
     // タイムアウト後のレスポンス処理
@@ -216,7 +275,11 @@ export function initializeSocketClient() {
     console.log('Socket.IO初期化完了');
   } catch (error) {
     console.error('Socket.IO初期化エラー:', error);
+    isInitialized = false;
+    return false;
   }
+  
+  return isInitialized;
 }
 
 /**
@@ -269,10 +332,14 @@ export function requestCaptureFromClient(): Promise<string | null> {
 }
 
 /**
- * ソケット接続を取得
+ * ソケット接続を取得し、必要に応じて初期化を試みる
+ * @param attemptInitialize 接続がない場合に初期化を試みるかどうか
  * @returns ソケットインスタンス
  */
-export function getSocket(): Socket | null {
+export function getSocket(attemptInitialize = false): Socket | null {
+  if (!socket && attemptInitialize) {
+    initializeSocketClient();
+  }
   return socket;
 }
 

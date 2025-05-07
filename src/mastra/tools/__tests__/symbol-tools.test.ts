@@ -1,15 +1,25 @@
 // src/mastra/tools/__tests__/symbol-tools.test.ts
 // 銘柄変更ツールのテスト
+// 更新: 2025-05-07 - Socket.IO直接使用からAPIエンドポイント使用に変更
 
 import { changeSymbolTool } from '@/src/mastra/tools/symbol-tools';
-import { socketService } from '@/services/socketService';
+import fetch from 'node-fetch';
 
-// socketServiceのモック
-jest.mock('@/services/socketService', () => ({
-  socketService: {
-    emitSymbolChange: jest.fn().mockResolvedValue(true),
-  },
-}));
+// fetchのモック
+jest.mock('node-fetch', () => {
+  return {
+    __esModule: true,
+    default: jest.fn()
+  };
+});
+
+// レスポンスのモック
+const mockJsonPromise = jest.fn().mockResolvedValue({ success: true });
+const mockFetchPromise = jest.fn().mockResolvedValue({
+  json: mockJsonPromise,
+  ok: true,
+  status: 200,
+});
 
 // loggerのモック
 jest.mock('@/utils/logger', () => ({
@@ -40,76 +50,99 @@ describe('changeSymbolTool', () => {
   });
 
   it('should successfully change symbol', async () => {
-    // 直接内部実装をテスト
+    // テストデータ
     const symbol = 'BTCUSDT';
     
-    // 内部実装を直接呼び出す
-    await socketService.emitSymbolChange(symbol);
+    // fetchのモックを設定
+    (fetch as unknown as jest.Mock).mockImplementationOnce(() => mockFetchPromise());
+    mockJsonPromise.mockResolvedValueOnce({ success: true, symbol });
     
-    // socketServiceが正しく呼ばれたことを確認
-    expect(socketService.emitSymbolChange).toHaveBeenCalledWith(symbol);
+    // ツールを実行
+    const result = await changeSymbolTool.execute({
+      context: { symbol },
+      runtimeContext: {} as any
+    });
+    
+    // fetchが正しく呼ばれたことを確認
+    expect(fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/api/chart/symbol'),
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ symbol }),
+      })
+    );
+    
+    // 結果を確認
+    expect(result).toEqual({
+      success: true,
+      symbol
+    });
   });
 
-  it('should handle errors gracefully', async () => {
-    // モックを一時的にエラーを投げるように変更
-    (socketService.emitSymbolChange as jest.Mock).mockRejectedValueOnce(new Error('Connection error'));
-
-    // 実際のexecuteメソッドをモックして、内部実装だけをテスト
-    const originalExecute = changeSymbolTool.execute;
-    changeSymbolTool.execute = jest.fn().mockImplementation(async () => {
-      try {
-        await socketService.emitSymbolChange('ETHUSDT');
-        return {
-          success: true,
-          symbol: 'ETHUSDT'
-        };
-      } catch (error) {
-        return {
-          success: false,
-          symbol: 'ETHUSDT'
-        };
-      }
-    });
-
-    // 内部実装をテスト
-    const result = await changeSymbolTool.execute({} as any);
+  it('should handle API errors gracefully', async () => {
+    // テストデータ
+    const symbol = 'ETHUSDT';
+    const errorMessage = 'API connection error';
     
-    // socketServiceが正しく呼ばれたことを確認
-    expect(socketService.emitSymbolChange).toHaveBeenCalledWith('ETHUSDT');
+    // fetchのモックを設定 - エラーレスポンス
+    (fetch as unknown as jest.Mock).mockImplementationOnce(() => mockFetchPromise());
+    mockJsonPromise.mockResolvedValueOnce({ 
+      success: false, 
+      symbol,
+      error: errorMessage 
+    });
+    
+    // ツールを実行
+    const result = await changeSymbolTool.execute({
+      context: { symbol },
+      runtimeContext: {} as any
+    });
+    
+    // fetchが正しく呼ばれたことを確認
+    expect(fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/api/chart/symbol'),
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ symbol }),
+      })
+    );
+    
+    // 結果を確認
     expect(result).toEqual({
       success: false,
-      symbol: 'ETHUSDT'
+      symbol,
+      error: errorMessage
     });
-    
-    // モックを元に戻す
-    changeSymbolTool.execute = originalExecute;
   });
-
-  it('should handle failed symbol change', async () => {
-    // モックを一時的に失敗を返すように変更
-    (socketService.emitSymbolChange as jest.Mock).mockResolvedValueOnce(false);
-
-    // 実際のexecuteメソッドをモックして、内部実装だけをテスト
-    const originalExecute = changeSymbolTool.execute;
-    changeSymbolTool.execute = jest.fn().mockImplementation(async () => {
-      const success = await socketService.emitSymbolChange('SOLUSDT');
-      return {
-        success,
-        symbol: 'SOLUSDT'
-      };
-    });
-
-    // 内部実装をテスト
-    const result = await changeSymbolTool.execute({} as any);
+  
+  it('should handle network errors gracefully', async () => {
+    // テストデータ
+    const symbol = 'SOLUSDT';
+    const networkError = new Error('Network error');
     
-    // socketServiceが正しく呼ばれたことを確認
-    expect(socketService.emitSymbolChange).toHaveBeenCalledWith('SOLUSDT');
+    // fetchのモックを設定 - ネットワークエラー
+    (fetch as unknown as jest.Mock).mockRejectedValueOnce(networkError);
+    
+    // ツールを実行
+    const result = await changeSymbolTool.execute({
+      context: { symbol },
+      runtimeContext: {} as any
+    });
+    
+    // fetchが正しく呼ばれたことを確認
+    expect(fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/api/chart/symbol'),
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ symbol }),
+      })
+    );
+    
+    // 結果を確認
     expect(result).toEqual({
       success: false,
-      symbol: 'SOLUSDT'
+      symbol,
+      error: 'Network error'
     });
-    
-    // モックを元に戻す
-    changeSymbolTool.execute = originalExecute;
   });
 });

@@ -9,6 +9,45 @@ const { v4: uuidv4 } = require('uuid');
 const fs = require('fs');
 const path = require('path');
 
+// Socket.IOイベント発行用のグローバル関数を定義
+// TypeScriptの実装を直接参照するのではなく、サーバー自体に実装
+
+/**
+ * Socket.IOイベントを全クライアントに送信する関数
+ * 
+ * @param {string} eventName イベント名
+ * @param {any} data 送信データ
+ * @returns {Promise<{success: boolean, error?: string, clientCount?: number}>} 成功したかどうかと追加情報
+ */
+global.emitSocketEvent = async (eventName, data) => {
+  try {
+    if (!global.io) {
+      console.warn(`Socket.IOサーバーが初期化されていません。イベント ${eventName} を送信できません。`);
+      return { success: false, error: 'Socket.IOサーバーが初期化されていません' };
+    }
+
+    const connectedClients = global.io.sockets.sockets.size;
+    
+    if (connectedClients === 0) {
+      console.warn(`接続中のクライアントがありません。イベント ${eventName} を送信できません。`);
+      return { success: false, error: '接続中のクライアントがありません', clientCount: 0 };
+    }
+
+    // 全クライアントにイベントを送信
+    global.io.emit(eventName, data);
+
+    console.log(`イベント ${eventName} を ${connectedClients} クライアントに送信しました`);
+
+    return { success: true, clientCount: connectedClients };
+  } catch (error) {
+    console.error(`イベント ${eventName} の送信中にエラーが発生しました:`, error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : '不明なエラー'
+    };
+  }
+};
+
 // 環境変数の設定
 const dev = process.env.NODE_ENV !== 'production';
 const PORT = process.env.PORT || 3000;
@@ -115,6 +154,14 @@ app.prepare().then(() => {
   });
   
   console.log('Socket.IOサーバーを初期化中...');
+  
+  // グローバル変数としてioを設定（APIエンドポイントからアクセスできるように）
+  global.io = io;
+  
+  console.log('Socket.IOサーバーが正常に初期化されました');
+  console.log(`現在の接続数: ${io.engine.clientsCount}`);
+  console.log('グローバルemitSocketEvent関数が利用可能になりました');
+
   
   // 接続イベントハンドラ
   io.on('connection', (socket) => {

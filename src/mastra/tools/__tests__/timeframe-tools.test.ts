@@ -1,15 +1,25 @@
 // src/mastra/tools/__tests__/timeframe-tools.test.ts
 // 時間足変更ツールのテスト
+// 更新: 2025-05-07 - Socket.IO直接使用からAPIエンドポイント使用に変更
 
 import { changeTimeframeTool } from '@/src/mastra/tools/timeframe-tools';
-import { socketService } from '@/services/socketService';
+import fetch from 'node-fetch';
 
-// socketServiceのモック
-jest.mock('@/services/socketService', () => ({
-  socketService: {
-    emitTimeframeChange: jest.fn().mockResolvedValue(true),
-  },
-}));
+// fetchのモック
+jest.mock('node-fetch', () => {
+  return {
+    __esModule: true,
+    default: jest.fn()
+  };
+});
+
+// レスポンスのモック
+const mockJsonPromise = jest.fn().mockResolvedValue({ success: true });
+const mockFetchPromise = jest.fn().mockResolvedValue({
+  json: mockJsonPromise,
+  ok: true,
+  status: 200,
+});
 
 describe('changeTimeframeTool', () => {
   beforeEach(() => {
@@ -31,48 +41,99 @@ describe('changeTimeframeTool', () => {
   });
 
   it('should successfully change timeframe', async () => {
-    // 直接内部実装をテスト
+    // テストデータ
     const timeframe = '1h';
     
-    // 内部実装を直接呼び出す
-    await socketService.emitTimeframeChange(timeframe);
+    // fetchのモックを設定
+    (fetch as unknown as jest.Mock).mockImplementationOnce(() => mockFetchPromise());
+    mockJsonPromise.mockResolvedValueOnce({ success: true, timeframe });
     
-    // socketServiceが正しく呼ばれたことを確認
-    expect(socketService.emitTimeframeChange).toHaveBeenCalledWith(timeframe);
+    // ツールを実行
+    const result = await changeTimeframeTool.execute({
+      context: { timeframe },
+      runtimeContext: {} as any
+    });
+    
+    // fetchが正しく呼ばれたことを確認
+    expect(fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/api/chart/timeframe'),
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ timeframe }),
+      })
+    );
+    
+    // 結果を確認
+    expect(result).toEqual({
+      success: true,
+      timeframe
+    });
   });
 
-  it('should handle errors gracefully', async () => {
-    // モックを一時的にエラーを投げるように変更
-    (socketService.emitTimeframeChange as jest.Mock).mockRejectedValueOnce(new Error('Connection error'));
-
-    // 実際のexecuteメソッドをモックして、内部実装だけをテスト
-    const originalExecute = changeTimeframeTool.execute;
-    changeTimeframeTool.execute = jest.fn().mockImplementation(async () => {
-      try {
-        await socketService.emitTimeframeChange('4h');
-        return {
-          success: true,
-          timeframe: '4h'
-        };
-      } catch (error) {
-        return {
-          success: false,
-          timeframe: '4h'
-        };
-      }
-    });
-
-    // 内部実装をテスト
-    const result = await changeTimeframeTool.execute({} as any);
+  it('should handle API errors gracefully', async () => {
+    // テストデータ
+    const timeframe = '4h';
+    const errorMessage = 'API connection error';
     
-    // socketServiceが正しく呼ばれたことを確認
-    expect(socketService.emitTimeframeChange).toHaveBeenCalledWith('4h');
+    // fetchのモックを設定 - エラーレスポンス
+    (fetch as unknown as jest.Mock).mockImplementationOnce(() => mockFetchPromise());
+    mockJsonPromise.mockResolvedValueOnce({ 
+      success: false, 
+      timeframe,
+      error: errorMessage 
+    });
+    
+    // ツールを実行
+    const result = await changeTimeframeTool.execute({
+      context: { timeframe },
+      runtimeContext: {} as any
+    });
+    
+    // fetchが正しく呼ばれたことを確認
+    expect(fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/api/chart/timeframe'),
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ timeframe }),
+      })
+    );
+    
+    // 結果を確認
     expect(result).toEqual({
       success: false,
-      timeframe: '4h'
+      timeframe,
+      error: errorMessage
+    });
+  });
+  
+  it('should handle network errors gracefully', async () => {
+    // テストデータ
+    const timeframe = '4h';
+    const networkError = new Error('Network error');
+    
+    // fetchのモックを設定 - ネットワークエラー
+    (fetch as unknown as jest.Mock).mockRejectedValueOnce(networkError);
+    
+    // ツールを実行
+    const result = await changeTimeframeTool.execute({
+      context: { timeframe },
+      runtimeContext: {} as any
     });
     
-    // モックを元に戻す
-    changeTimeframeTool.execute = originalExecute;
+    // fetchが正しく呼ばれたことを確認
+    expect(fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/api/chart/timeframe'),
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ timeframe }),
+      })
+    );
+    
+    // 結果を確認
+    expect(result).toEqual({
+      success: false,
+      timeframe,
+      error: 'Network error'
+    });
   });
 });

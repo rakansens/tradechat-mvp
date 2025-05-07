@@ -3,10 +3,10 @@
 // 更新: 時間足変更機能と銘柄変更機能を追加
 
 import { Socket } from 'socket.io-client';
-import { initializeSocketClient, getSocket, emitEvent } from '@/utils/socketClient';
-import { BitgetApiClient } from '@/services/bitgetApi';
-import { ExchangeType } from '@/types/api';
-import { logger } from '@/utils/logger';
+import { initializeSocketClient, getSocket, emitEvent } from '../utils/socketClient';
+import { BitgetApiClient } from './bitgetApi';
+import { ExchangeType } from '../types/api';
+import { logger } from '../utils/logger';
 
 // シングルトンインスタンス
 let bitgetApi: BitgetApiClient | null = null;
@@ -126,14 +126,25 @@ export const socketService = {
    */
   emitTimeframeChange(timeframe: string): Promise<boolean> {
     try {
-      const socket = getSocket();
+      // 自動初期化を試みるフラグをtrueにしてgetSocketを呼び出す
+      const socket = getSocket(true);
       if (!socket) {
+        // 自動初期化も失敗した場合
         logger.warn('ソケット接続がありません。時間足変更イベントを発行できません。', {
           component: 'socketService',
           action: 'emitTimeframeChange',
           timeframe
         });
         return Promise.resolve(false);
+      }
+      
+      // 接続確認
+      if (!socket.connected) {
+        logger.warn('ソケットは初期化されていますが、接続されていません。', {
+          component: 'socketService',
+          action: 'emitTimeframeChange',
+          timeframe
+        });
       }
 
       return new Promise((resolve) => {
@@ -171,14 +182,25 @@ export const socketService = {
    */
   emitSymbolChange(symbol: string): Promise<boolean> {
     try {
-      const socket = getSocket();
+      // 自動初期化を試みるフラグをtrueにしてgetSocketを呼び出す
+      const socket = getSocket(true);
       if (!socket) {
+        // 自動初期化も失敗した場合
         logger.warn('ソケット接続がありません。銘柄変更イベントを発行できません。', {
           component: 'socketService',
           action: 'emitSymbolChange',
           symbol
         });
         return Promise.resolve(false);
+      }
+      
+      // 接続確認
+      if (!socket.connected) {
+        logger.warn('ソケットは初期化されていますが、接続されていません。', {
+          component: 'socketService',
+          action: 'emitSymbolChange',
+          symbol
+        });
       }
 
       return new Promise((resolve) => {
