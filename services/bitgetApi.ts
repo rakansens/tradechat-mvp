@@ -124,13 +124,31 @@ export class BitgetApiClient {
       // 先物取引の場合の処理
       let sanitizedSymbol = formattedSymbol;
       
+      console.log(`BitgetApiClient: getHistoricalCandles called with symbol: ${symbol} (formatted: ${formattedSymbol}), timeframe: ${timeframe}, exchangeType: ${this.exchangeType}`);
+      
+      logger.info(`getHistoricalCandles called with symbol: ${symbol} (formatted: ${formattedSymbol})`, {
+        component: 'BitgetApiClient',
+        action: 'getHistoricalCandles',
+        timeframe,
+        exchangeType: this.exchangeType
+      });
+      
       if (this.exchangeType === 'futures') {
         // 正規化（_UMCBL サフィックスを削除）
         sanitizedSymbol = this.normalizeFuturesSymbol(formattedSymbol);
         
+        logger.info(`Normalized futures symbol: ${sanitizedSymbol} (original: ${formattedSymbol})`, {
+          component: 'BitgetApiClient',
+          action: 'getHistoricalCandles'
+        });
+        
         // 先物取引でサポートされているかチェック
         if (!this.isSupportedFuturesSymbol(sanitizedSymbol)) {
           // サポートされていない場合は明示的なエラーを投げる
+          logger.warn(`Unsupported symbol for futures: ${sanitizedSymbol}`, {
+            component: 'BitgetApiClient',
+            action: 'getHistoricalCandles'
+          });
           throw new Error(`この銘柄は先物取引でサポートされていません: ${sanitizedSymbol}`);
         }
       }
@@ -1078,4 +1096,4 @@ export class BitgetApiClient {
       this.ws = null;
     }
   }
-} 
+}

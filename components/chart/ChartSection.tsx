@@ -1,5 +1,9 @@
 // components/chart/ChartSection.tsx
-// 更新: UI/UXの一貫性向上 - エラーハンドリングの統一とレスポンシブデザインの実装方法の統一
+// 更新: シンボルストアを使用するように修正
+// 変更内容:
+// 1. シンボルストアを使用してシンボル管理を一元化
+// 2. 循環参照を解消
+// 3. 非同期処理の問題を解決
 "use client"
 
 import React, { useMemo, useEffect } from 'react';
@@ -8,6 +12,7 @@ import ChartCanvas from "@/components/chart/ChartCanvas"
 import type { Entry } from "@/types/entry"
 import type { Timeframe, ChartType } from "@/types/chart"
 import type { ChartViewProps, TimeframeControlProps, ChartTypeControlProps } from "@/types/common-interfaces"
+import type { SymbolState } from "@/store/useSymbolStore"
 import { CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -33,7 +38,9 @@ import {
   selectSetChartType,
   selectStopRealTimeUpdates,
   // マーケットデータストア
-  useMarketStore
+  useMarketStore,
+  // シンボルストア
+  useSymbolStore
 } from "@/store"
 import { theme } from "@/styles/colors"
 import ChartToolbar from "./ChartToolbar"
@@ -90,7 +97,13 @@ export default function ChartSection() {
     initializeApi(exchangeType);
     
     // 初期データの取得
-    fetchData(currentSymbol, currentTimeFrame);
+    // 最新のシンボルとタイムフレームを取得して使用
+    const latestSymbol = useChartDataStore.getState().currentSymbol;
+    const latestTimeFrame = useChartDataStore.getState().currentTimeFrame;
+    
+    console.log(`ChartSection: Fetching data with latest symbol: ${latestSymbol}, timeframe: ${latestTimeFrame}`);
+    fetchData(latestSymbol, latestTimeFrame);
+    
     // 依存配列に関数と状態を追加して不要な再実行を防止
   }, [fetchData, currentSymbol, currentTimeFrame, initializeApi, exchangeType]);
 
@@ -109,13 +122,9 @@ export default function ChartSection() {
     setMarketExchangeType(exchangeType);
   }, [exchangeType, initializeApi, setMarketExchangeType]);
   
-  // シンボルが変更されたときにオーダーブックも更新
-  useEffect(() => {
-    // マーケットストアのシンボルを更新
-    setMarketSymbol(currentSymbol);
-    // オーダーブックデータを取得
-    fetchOrderBook();
-  }, [currentSymbol, setMarketSymbol, fetchOrderBook]);
+  // 注意: このuseEffectは削除
+  // シンボル更新は handleSymbolChange メソッドで一元管理するため、
+  // このuseEffectによる二重更新を防止する
 
   const handleTimeframeChange = (timeframe: string) => {
     // 型安全な実装に変更
@@ -130,7 +139,14 @@ export default function ChartSection() {
   };
 
   const handleSymbolChange = (symbol: string) => {
-    updateSymbol(symbol);
+    console.log(`ChartSection: handleSymbolChange called with symbol: ${symbol}`);
+    
+    // シンボルストアを使用して一元管理
+    // 各ストアはシンボルストアを購読しているため、自動的に更新される
+    useSymbolStore.getState().setCurrentSymbol(symbol);
+    
+    // デバッグログ
+    console.log(`ChartSection: Symbol updated in symbol store to ${symbol}`);
   };
 
   // 型安全な実装に変更
@@ -139,6 +155,22 @@ export default function ChartSection() {
       setChartType(type);
     }
   };
+  
+  // シンボルストアの変更を監視
+  useEffect(() => {
+    // シンボルストアを購読
+    const unsubscribe = useSymbolStore.subscribe((symbolState: SymbolState, prevState: SymbolState) => {
+      // 取引種別が変更された場合、チャート設定ストアも更新
+      if (symbolState.exchangeType !== prevState.exchangeType) {
+        setExchangeType(symbolState.exchangeType);
+      }
+    });
+    
+    // クリーンアップ関数
+    return () => {
+      unsubscribe();
+    };
+  }, [setExchangeType]);
 
   // 型安全性を確保するためのヘルパー関数
   const isValidChartType = (type: string): type is ChartType => {
@@ -194,7 +226,13 @@ export default function ChartSection() {
           ) : error ? (
             <ErrorDisplay
               error={error}
-              onRetry={() => fetchData(currentSymbol, currentTimeFrame)}
+              onRetry={() => {
+                // 最新のシンボルとタイムフレームを取得して使用
+                const latestSymbol = useChartDataStore.getState().currentSymbol;
+                const latestTimeFrame = useChartDataStore.getState().currentTimeFrame;
+                console.log(`ChartSection: Retrying with latest symbol: ${latestSymbol}, timeframe: ${latestTimeFrame}`);
+                fetchData(latestSymbol, latestTimeFrame);
+              }}
               alternativeActions={
                 error?.includes('先物取引で利用できません') || error?.includes('先物取引でサポートされていません')
                   ? [

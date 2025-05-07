@@ -1,5 +1,8 @@
 // components/chart/ChartToolbar.tsx
-// 更新: Homeコンポーネントのヘッダー機能を統合、銘柄選択モーダルを追加
+// 更新: シンボルストアを使用するように修正
+// 変更内容:
+// 1. シンボルストアを使用してシンボル管理を一元化
+// 2. リフレッシュボタンの処理を改善
 "use client"
 
 import React, { memo, useMemo, useEffect } from 'react';
@@ -10,6 +13,7 @@ import {
   useIndicatorStore,
   useDrawingToolStore,
   useRealTimeStore,
+  useMarketStore,
   // メモ化されたセレクター
   selectCurrentPrice,
   selectPriceChangePercent,
@@ -18,8 +22,11 @@ import {
   selectOpenEntries,
   // その他のストア
   useUIStore,
-  useEntryStore
+  useEntryStore,
+  // シンボルストア
+  useSymbolStore
 } from '@/store';
+import type { SymbolState } from '@/store/useSymbolStore';
 import { Wifi, WifiOff, TrendingUp, Landmark, BarChart2, LineChart, Layers, BarChart3, CandlestickChart } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -139,6 +146,17 @@ const ChartToolbarComponent = memo(function ChartToolbar({
   const entries = useEntryStore((state) => state.entries);
   const openPositionsCount = entries.filter((entry) => entry.status === "open").length;
 
+  // マーケットストアのアクション
+  const setMarketSymbol = useMarketStore((state) => state.setCurrentSymbol);
+  const setMarketExchangeType = useMarketStore((state) => state.setExchangeType);
+
+  // シンボル変更を一元管理
+  const handleSymbolChange = (symbol: string) => {
+    // シンボルストアを使用して一元管理
+    // 各ストアはシンボルストアを購読しているため、自動的に更新される
+    useSymbolStore.getState().setCurrentSymbol(symbol);
+  };
+
   return (
     <div className="flex flex-col w-full" style={{ backgroundColor: theme.background.card }}>
       {/* エラーメッセージ表示エリア */}
@@ -154,8 +172,11 @@ const ChartToolbarComponent = memo(function ChartToolbar({
           <SymbolSelectorModal
             currentSymbol={currentSymbol}
             exchangeType={exchangeType}
-            onSymbolSelect={updateSymbol}
-            onExchangeTypeChange={setExchangeType}
+            onSymbolSelect={handleSymbolChange}
+            onExchangeTypeChange={(type) => {
+              setExchangeType(type);
+              setMarketExchangeType(type);
+            }}
             trigger={
               <Button variant="outline" size="sm" className="gap-1">
                 <CandlestickChart className="h-4 w-4" />
@@ -347,7 +368,9 @@ const ChartToolbarComponent = memo(function ChartToolbar({
           <div className="flex items-center">
             <button
               onClick={() => {
-                setExchangeType('spot');
+                // シンボルストアを使用して取引種別を更新
+                useSymbolStore.getState().setExchangeType('spot');
+                // データを再取得
                 fetchData(currentSymbol, currentTimeFrame);
               }}
               className={`flex items-center px-2 py-1 text-xs rounded-l ${
@@ -360,7 +383,9 @@ const ChartToolbarComponent = memo(function ChartToolbar({
             </button>
             <button
               onClick={() => {
-                setExchangeType('futures');
+                // シンボルストアを使用して取引種別を更新
+                useSymbolStore.getState().setExchangeType('futures');
+                // データを再取得
                 fetchData(currentSymbol, currentTimeFrame);
               }}
               className={`flex items-center px-2 py-1 text-xs rounded-r ${

@@ -1,20 +1,25 @@
 // components/market/OrderBook.tsx
 // オーダーブック（板情報）表示コンポーネント - ChartSectionと視覚的に統一
+// 更新: シンボル更新問題の根本的な解決
+// - シンボル変更検出の強化
+// - シンボルストアとの連携強化
+// - ポーリング管理の改善
 
 'use client';
 
-import { useEffect, useState, useMemo, useRef } from 'react';
-import { 
-  useMarketStore, 
-  selectOrderBook, 
-  selectIsLoadingOrderBook, 
-  selectOrderBookError, 
+import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
+import {
+  useMarketStore,
+  selectOrderBook,
+  selectIsLoadingOrderBook,
+  selectOrderBookError,
   selectMarketCurrentSymbol,
   selectBids,
   selectAsks,
   selectSpread,
   selectSpreadPercent
 } from '../../store';
+import { useSymbolStore } from '../../store/useSymbolStore';
 import { OrderBookEntry } from '../../types/market';
 import { cn } from '../../lib/utils';
 import { theme } from '../../styles/colors';
@@ -110,56 +115,103 @@ export const OrderBook: React.FC<OrderBookProps> = ({
     }
   }, [processedData]);
 
-  // ポーリングを setTimeout + AbortController に変更
+  // シンボルストアから直接シンボルを取得（二重購読によるシンボル同期の強化）
+  const symbolStoreSymbol = useSymbolStore(state => state.currentSymbol);
+  
+  // シンボル変更を検出するための参照
+  const prevSymbolRef = useRef(currentSymbol);
+  const prevSymbolStoreSymbolRef = useRef(symbolStoreSymbol);
+  
+  // シンボル正規化関数（一貫性のある正規化処理のため）
+  const normalizeSymbol = useCallback((symbol: string) => {
+    return symbol.replace('/', '');
+  }, []);
+  
+  // オーダーブック取得関数（正規化処理を含む）
+  const fetchOrderBookWithSymbol = useCallback((symbol: string) => {
+    console.log(`OrderBook: Fetching orderbook for symbol: ${symbol}`);
+    const normalizedSymbol = normalizeSymbol(symbol);
+    console.log(`OrderBook: Normalized symbol for fetch: ${normalizedSymbol}`);
+    
+    // 新しいAbortControllerを作成
+    const abortController = new AbortController();
+    
+    // 明示的に正規化したシンボルを渡す
+    fetchOrderBook(normalizedSymbol, abortController.signal);
+    
+    return abortController;
+  }, [fetchOrderBook, normalizeSymbol]);
+  
+  // シンボル変更を監視して、変更があった場合にオーダーブックを再取得
   useEffect(() => {
-    const symbol = currentSymbol;
+    console.log(`OrderBook: currentSymbol=${currentSymbol}, symbolStoreSymbol=${symbolStoreSymbol}`);
+    
+    // シンボルストアとマーケットストアのシンボルを正規化して比較
+    const normalizedCurrentSymbol = normalizeSymbol(currentSymbol);
+    const normalizedSymbolStoreSymbol = normalizeSymbol(symbolStoreSymbol);
+    
+    // シンボルの不一致を検出（マーケットストアとシンボルストアの同期ずれを検出）
+    if (normalizedCurrentSymbol !== normalizedSymbolStoreSymbol) {
+      console.log(`OrderBook: Symbol mismatch detected! market=${normalizedCurrentSymbol}, symbol=${normalizedSymbolStoreSymbol}`);
+      
+      // マーケットストアのシンボルを強制的にシンボルストアと同期
+      useMarketStore.setState({ currentSymbol: symbolStoreSymbol });
+      
+      // 強制的にシンボルストアのシンボルでオーダーブックを取得
+      fetchOrderBookWithSymbol(symbolStoreSymbol);
+      return;
+    }
+    
+    // 前回のシンボルと比較して変更があった場合のみ処理
+    const prevSymbol = prevSymbolRef.current;
+    const normalizedPrevSymbol = normalizeSymbol(prevSymbol);
+    
+    if (normalizedCurrentSymbol !== normalizedPrevSymbol) {
+      console.log(`OrderBook: Symbol changed from ${prevSymbol} to ${currentSymbol}`);
+      
+      // オーダーブックを即時取得（遅延なし）
+      const abortController = fetchOrderBookWithSymbol(currentSymbol);
+      
+      // クリーンアップ関数でAbortControllerをキャンセル
+      return () => {
+        abortController.abort();
+        console.log(`OrderBook: Aborted fetch for symbol change from ${prevSymbol} to ${currentSymbol}`);
+      };
+    }
+    
+    // 参照を更新
+    prevSymbolRef.current = currentSymbol;
+    prevSymbolStoreSymbolRef.current = symbolStoreSymbol;
+  }, [currentSymbol, symbolStoreSymbol, fetchOrderBookWithSymbol, normalizeSymbol]);
 
-    // Refs to manage timeout & abort controller
-    const timeoutRef = { current: null as NodeJS.Timeout | null };
-    const abortRef = { current: null as AbortController | null };
-
-    const poll = async () => {
-      // 既存リクエストをキャンセル
-      if (abortRef.current) {
-        abortRef.current.abort();
-      }
-
-      // 新しい AbortController を生成
-      const controller = new AbortController();
-      abortRef.current = controller;
-
-      console.log(`OrderBook: Fetching data for ${symbol}`);
-      try {
-        await fetchOrderBook(controller.signal as any);
-      } catch (err: any) {
-        if (err?.name === 'AbortError') {
-          console.log(`OrderBook: Fetch for ${symbol} was aborted`);
-        } else {
-          console.error(err);
-        }
-      }
-
-      // 次回ポーリングを予約
-      timeoutRef.current = setTimeout(() => {
-        const storeState = useMarketStore.getState();
-        if (storeState.currentSymbol === symbol) {
-          poll();
-        } else {
-          console.log(`OrderBook: Symbol changed to ${storeState.currentSymbol}, stop polling ${symbol}`);
-          console.trace('OrderBook symbol mismatch stack trace');
-        }
-      }, 10000);
-    };
-
-    // 初回呼び出し
-    poll();
-
+  // ポーリングをストアのポーリング機能を使用
+  useEffect(() => {
+    // ポーリング関連のアクションを取得
+    const { startPolling, stopPolling, isPolling } = useMarketStore.getState();
+    
+    console.log('OrderBook: Component mounted, checking polling status');
+    
+    // 現在のシンボルを取得して正規化
+    const symbol = useMarketStore.getState().currentSymbol;
+    const normalizedSymbol = normalizeSymbol(symbol);
+    
+    console.log(`OrderBook: Starting polling for ${normalizedSymbol} (original: ${symbol})`);
+    
+    // 既存のポーリングを停止してから再開始（クリーンな状態で開始）
+    stopPolling();
+    
+    // 少し遅延させてから再開始（確実に停止するのを待つ）
+    const timer = setTimeout(() => {
+      startPolling();
+      console.log(`OrderBook: Polling started for ${normalizedSymbol}`);
+    }, 200);
+    
+    // コンポーネントアンマウント時にタイマーをクリア
     return () => {
-      console.log(`OrderBook: Cleanup polling for ${symbol}`);
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-      if (abortRef.current) abortRef.current.abort();
+      clearTimeout(timer);
+      console.log('OrderBook: Component unmounted');
     };
-  }, [currentSymbol, fetchOrderBook]);
+  }, [normalizeSymbol]); // 依存配列にnormalizeSymbolを追加
 
   // エラー表示
   if (orderBookError) {
@@ -174,7 +226,13 @@ export const OrderBook: React.FC<OrderBookProps> = ({
     <div className={cn("flex flex-col w-full h-full bg-[#131722] border border-[#2A2E39]", className)}>
       <div className="p-2 bg-[#1E222D] border-b border-[#2A2E39] flex justify-between items-center">
         <h3 className="text-sm font-medium text-white">オーダーブック</h3>
-        <span className="text-xs text-[#9CA3AF]">{currentSymbol}</span>
+        <span className="text-xs text-[#9CA3AF]">
+          {currentSymbol}
+          {/* デバッグ用：シンボルストアとの同期状態を表示 */}
+          {normalizeSymbol(currentSymbol) !== normalizeSymbol(symbolStoreSymbol) && (
+            <span className="ml-1 text-red-500">(!)</span>
+          )}
+        </span>
       </div>
       
       {/* ヘッダー */}

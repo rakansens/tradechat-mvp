@@ -1,3 +1,4 @@
+// Added server-side caching for candle data to reduce API calls to Bitget
 import { NextRequest, NextResponse } from 'next/server';
 import axios from 'axios';
 
@@ -6,6 +7,18 @@ const BITGET_API_BASE_URL = 'https://api.bitget.com';
 
 // デバッグモード
 const DEBUG = true;
+
+// キャッシュ設定
+interface CandleCache {
+  data: any;
+  lastFetch: number;
+}
+
+// キャッシュTTL (30秒)
+const CACHE_TTL = 30 * 1000;
+
+// キャッシュストレージ
+const CANDLE_CACHE: Record<string, CandleCache> = {};
 
 /**
  * Bitget API プロキシエンドポイント
@@ -38,6 +51,30 @@ export async function GET(req: NextRequest) {
       console.log('Error: Symbol and timeframe are required');
       return NextResponse.json({ error: 'Symbol and timeframe are required' }, { status: 400 });
     }
+    
+  // シンボルの正規化（BNBUSDTとBNB/USDTを同じように扱う）
+  const normalizedSymbol = symbol.replace('/', '');
+  console.log(`Normalized symbol: ${normalizedSymbol} (original: ${symbol})`);
+  
+  // デバッグ用：リクエストの詳細をログに出力
+  console.log(`Candles API request details:
+  - Symbol: ${symbol}
+  - Normalized Symbol: ${normalizedSymbol}
+  - Type: ${type}
+  - Timeframe: ${timeframe}
+  - Limit: ${limit}`);
+    
+    // キャッシュキーの生成
+    const cacheKey = `${type}_${normalizedSymbol}_${timeframe}_${limit}_${endTime || 'latest'}`;
+    const now = Date.now();
+    
+    // キャッシュチェック
+    const cachedData = CANDLE_CACHE[cacheKey];
+    if (cachedData && now - cachedData.lastFetch < CACHE_TTL) {
+      // キャッシュが有効な場合はキャッシュデータを返す
+      console.log(`Using cached candle data for ${symbol} (${timeframe})`); 
+      return NextResponse.json(cachedData.data);
+    }
 
     let endpoint: string;
     let params: Record<string, string> = {};
@@ -47,7 +84,7 @@ export async function GET(req: NextRequest) {
       // スポット取引用V2 API
       endpoint = '/api/v2/spot/market/candles';
       params = {
-        symbol: symbol,         // V2 APIではシンボルはそのまま
+        symbol: normalizedSymbol,         // 正規化されたシンボルを使用
         granularity: convertTimeframeForBitgetV2(timeframe),
         limit,
         ...(endTime ? { endTime } : {})
@@ -56,7 +93,7 @@ export async function GET(req: NextRequest) {
       // 先物取引用V2 API
       endpoint = '/api/v2/mix/market/candles';
       // V2ではsymbolにサフィックスを付けず、productTypeで契約タイプを指定する
-      const futuresSymbol = symbol; // "BTCUSDT" など
+      const futuresSymbol = normalizedSymbol; // 正規化されたシンボルを使用
       const productType = 'umcbl'; // USDT無期限
       params = {
         symbol: futuresSymbol,
@@ -109,6 +146,12 @@ export async function GET(req: NextRequest) {
       if (response.data && response.data.data) {
         console.log('Response data sample:', response.data.data.slice(0, 2));
       }
+      
+      // キャッシュに保存
+      CANDLE_CACHE[cacheKey] = {
+        data: response.data,
+        lastFetch: now
+      };
       
       // レスポンスをそのまま返す
       return NextResponse.json(response.data);
@@ -237,4 +280,4 @@ function convertTimeframeForFutures(timeframe: string): string {
   };
   
   return mapping[timeframe] || '1m';
-} 
+}
