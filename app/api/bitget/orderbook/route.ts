@@ -1,6 +1,8 @@
 // Added server-side caching for order book data to reduce API calls to Bitget
+// 更新: デバッグログの強化とシンボル正規化処理の統一
 import { NextRequest, NextResponse } from 'next/server';
 import axios from 'axios';
+import { normalizeSymbol } from '@/lib/utils';
 
 // API設定
 const BITGET_API_BASE_URL = 'https://api.bitget.com';
@@ -96,6 +98,9 @@ export async function GET(request: NextRequest) {
   const symbol = searchParams.get('symbol');
   const type = searchParams.get('type') || 'spot';
   const limit = searchParams.get('limit') || '150';
+  
+  // 変数を関数スコープで宣言（try-catchブロック外でアクセスできるようにする）
+  let normalizedSymbol = '';
 
   // バリデーション
   if (!symbol) {
@@ -113,19 +118,23 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // デバッグ情報を出力
-    console.log(`Request for orderbook: symbol=${symbol}, type=${type}`);
+    // デバッグ情報を出力（詳細化）
+    console.log(`Request for orderbook: symbol=${symbol}, type=${type}, limit=${limit}`);
     
-    // シンボルの正規化（BNBUSDTとBNB/USDTを同じように扱う）
-    const normalizedSymbol = symbol.replace('/', '');
+    // 共通のnormalizeSymbol関数を使用してシンボルを正規化
+    normalizedSymbol = normalizeSymbol(symbol);
     console.log(`Normalized symbol: ${normalizedSymbol} (original: ${symbol})`);
     
-    // デバッグ用：リクエストの詳細をログに出力
+    // デバッグ用：リクエストの詳細をログに出力（拡張）
     console.log(`OrderBook API request details:
     - Symbol: ${symbol}
     - Normalized Symbol: ${normalizedSymbol}
     - Type: ${type}
-    - Limit: ${limit}`);
+    - Limit: ${limit}
+    - Request Time: ${new Date().toISOString()}
+    - Request ID: ${Math.random().toString(36).substring(2, 15)}
+    - Client IP: ${request.headers.get('x-forwarded-for') || 'unknown'}
+    - User Agent: ${request.headers.get('user-agent') || 'unknown'}`);
     
     // -------------------------
     // サポートペアのバリデーション
@@ -149,7 +158,12 @@ export async function GET(request: NextRequest) {
     const cachedData = ORDERBOOK_CACHE[cacheKey];
     if (cachedData && now - cachedData.lastFetch < ORDERBOOK_CACHE_TTL) {
       // キャッシュが有効な場合はキャッシュデータを返す
-      console.log(`Using cached orderbook data for ${normalizedSymbol} (${type})`); 
+      console.log(`Using cached orderbook data for ${normalizedSymbol} (${type})`);
+      console.log(`Cache details:
+      - Cache Key: ${cacheKey}
+      - Cache Age: ${now - cachedData.lastFetch}ms
+      - Cache TTL: ${ORDERBOOK_CACHE_TTL}ms
+      - Remaining TTL: ${ORDERBOOK_CACHE_TTL - (now - cachedData.lastFetch)}ms`);
       return NextResponse.json(cachedData.data);
     }
 
@@ -178,28 +192,58 @@ export async function GET(request: NextRequest) {
     console.log(`API params: ${JSON.stringify(params)}`);
 
     console.log(`Fetching fresh orderbook data for ${normalizedSymbol} (${type})`);
+    
+    // リクエスト開始時間を記録（パフォーマンス測定用）
+    const requestStartTime = Date.now();
     // Bitget APIへリクエスト送信
     const response = await axios.get(`${BITGET_API_BASE_URL}${endpoint}`, {
       params,
     });
+    
+    // リクエスト完了時間を記録（パフォーマンス測定用）
+    const requestEndTime = Date.now();
+    const requestDuration = requestEndTime - requestStartTime;
+    
+    console.log(`API request completed in ${requestDuration}ms for ${normalizedSymbol} (${type})`);
     
     // キャッシュに保存
     ORDERBOOK_CACHE[cacheKey] = {
       data: response.data,
       lastFetch: now
     };
+    
+    console.log(`Cached orderbook data for ${normalizedSymbol} (${type}) with key: ${cacheKey}`);
 
     // レスポンスをそのまま返す
     return NextResponse.json(response.data);
   } catch (error: any) {
     console.error('Error fetching order book from Bitget:', error);
     
+    // エラーの詳細をログに出力
+    console.error('Error details:', {
+      message: error.message,
+      stack: error.stack,
+      response: error.response?.data,
+      status: error.response?.status,
+      symbol,
+      normalizedSymbol,
+      type,
+      limit
+    });
+    
     // エラー応答の構築
     const status = error.response?.status || 500;
     const errorMessage = error.response?.data?.msg || error.message || 'Unknown error';
     
     return NextResponse.json(
-      { error: errorMessage },
+      {
+        error: errorMessage,
+        timestamp: Date.now(),
+        symbol,
+        normalizedSymbol,
+        type,
+        requestId: Math.random().toString(36).substring(2, 15)
+      },
       { status }
     );
   }

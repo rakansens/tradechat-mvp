@@ -21,6 +21,7 @@ import { dataFetchService } from '../services/dataFetchService';
 import { BitgetApiClient } from '../services/bitgetApi';
 import { OHLCData, Timeframe } from '../types/chart';
 import { OrderBookData } from '../types/market';
+import { normalizeSymbol } from '../lib/utils';
 
 // シンボル情報の型定義
 export interface SymbolInfo {
@@ -152,7 +153,7 @@ const mockSymbols: SymbolInfo[] = [
 ];
 
 // ポーリング間隔（ミリ秒）
-const POLLING_INTERVAL = 10000; // 10秒
+const POLLING_INTERVAL = 30000; // 30秒
 
 // Zustandストア作成
 export const useAppStore = create<AppState>()(
@@ -214,7 +215,8 @@ export const useAppStore = create<AppState>()(
       
       // シンボル正規化関数（一貫性のある正規化処理のため）
       _normalizeSymbol: (symbol: string) => {
-        return symbol.replace('/', '');
+        // 共通のnormalizeSymbol関数を使用
+        return normalizeSymbol(symbol);
       },
       
       // 現在のシンボルを設定

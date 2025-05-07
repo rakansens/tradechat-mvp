@@ -11,7 +11,7 @@
 import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import { useAppStore } from '../../store';
 import { OrderBookEntry } from '../../types/market';
-import { cn } from '../../lib/utils';
+import { cn, normalizeSymbol } from '../../lib/utils';
 import { theme } from '../../styles/colors';
 import { orderBookPropsSchema, validateOrderBookProps } from '@/lib/validations/market';
 
@@ -150,13 +150,14 @@ export const OrderBook: React.FC<OrderBookPropsSchema> = (props) => {
   const prevSymbolRef = useRef(currentSymbol);
   const prevAppStoreSymbolRef = useRef(appStoreSymbol);
   
-  // シンボル正規化関数（一貫性のある正規化処理のため）
-  const normalizeSymbol = useCallback((symbol: string) => {
-    return symbol.replace('/', '');
-  }, []);
-  
   // オーダーブック取得関数（正規化処理を含む）
   const fetchOrderBookWithSymbol = useCallback((symbol: string) => {
+    // シンボルが空の場合は処理を行わない
+    if (!symbol) {
+      console.warn('OrderBook: Cannot fetch orderbook with empty symbol');
+      return new AbortController();
+    }
+    
     console.log(`OrderBook: Fetching orderbook for symbol: ${symbol}`);
     const normalizedSymbol = normalizeSymbol(symbol);
     console.log(`OrderBook: Normalized symbol for fetch: ${normalizedSymbol}`);
@@ -169,13 +170,13 @@ export const OrderBook: React.FC<OrderBookPropsSchema> = (props) => {
     fetchOrderBook(normalizedSymbol);
     
     return abortController;
-  }, [fetchOrderBook, normalizeSymbol]);
+  }, [fetchOrderBook]);
   
   // シンボル変更を監視して、変更があった場合にオーダーブックを再取得
   useEffect(() => {
     console.log(`OrderBook: currentSymbol=${currentSymbol}, appStoreSymbol=${appStoreSymbol}`);
     
-    // AppStoreのシンボルを正規化して比較
+    // AppStoreのシンボルを正規化して比較（共通ユーティリティ関数を使用）
     const normalizedCurrentSymbol = normalizeSymbol(currentSymbol);
     const normalizedAppStoreSymbol = normalizeSymbol(appStoreSymbol);
     
