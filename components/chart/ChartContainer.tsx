@@ -4,34 +4,31 @@
 // このファイルは新しく分割されたチャートストアを使用する方法を示すサンプルコンポーネントです。
 
 import React, { useEffect } from 'react';
-import { 
-  useChartDataStore,
-  useChartConfigStore, 
-  useIndicatorStore,
-  useDrawingToolStore,
-  useRealTimeStore
-} from '../../store';
+import { useAppStore } from '../../store';
+import { useChartConfigStore, useIndicatorStore, useDrawingToolStore, useRealTimeStore } from '../../store/chart';
 import type { Timeframe } from '../../types/chart';
 import type { ExchangeType } from '../../types/api';
+import type { IndicatorType } from '../../types/store';
 
 export const ChartContainer: React.FC = () => {
-  // 各ストアから状態を取得
-  const { 
-    data, 
-    currentSymbol, 
-    currentTimeFrame, 
-    isLoading, 
-    error,
-    fetchData,
-    updateTimeFrame,
-    updateSymbol
-  } = useChartDataStore();
+  // AppStoreから状態を取得
+  const currentSymbol = useAppStore(state => state.currentSymbol);
+  const currentTimeFrame = useAppStore(state => state.currentTimeFrame);
+  const isLoading = useAppStore(state => state.isLoadingChartData);
+  const error = useAppStore(state => state.chartError);
+  const chartData = useAppStore(state => state.chartData);
+  const exchangeType = useAppStore(state => state.exchangeType);
   
+  // AppStoreからアクションを取得
+  const updateTimeFrame = useAppStore(state => state.updateTimeFrame);
+  const setCurrentSymbol = useAppStore(state => state.setCurrentSymbol);
+  const fetchChartData = useAppStore(state => state.fetchChartData);
+  const setExchangeType = useAppStore(state => state.setExchangeType);
+  
+  // チャート関連のストアから状態を取得
   const {
     chartType,
-    exchangeType,
-    setChartType,
-    setExchangeType
+    setChartType
   } = useChartConfigStore();
   
   const {
@@ -52,54 +49,16 @@ export const ChartContainer: React.FC = () => {
   } = useRealTimeStore();
   
   // コンポーネントマウント時にデータを取得 (setTimeout + AbortController)
+  // コンポーネントマウント時にリアルタイムデータの設定を確認
   useEffect(() => {
-    const symbol = currentSymbol;
-    const timeframe = currentTimeFrame;
-
-    let lastPollTime = 0;
-    const timeoutRef = { current: null as NodeJS.Timeout | null };
-    const abortRef = { current: null as AbortController | null };
-
-    const poll = async () => {
-      // シンボル / timeframe チェック
-      const storeState = useChartDataStore.getState();
-      if (storeState.currentSymbol !== symbol || storeState.currentTimeFrame !== timeframe) {
-        console.log('ChartContainer: symbol/timeframe changed, stop polling');
-        console.trace('ChartContainer mismatch stack');
-        return;
-      }
-
-      // 最低 15 秒間隔
-      const now = Date.now();
-      if (now - lastPollTime < 15000) {
-        timeoutRef.current = setTimeout(poll, 15000 - (now - lastPollTime));
-        return;
-      }
-
-      // Abort previous
-      if (abortRef.current) abortRef.current.abort();
-      const controller = new AbortController();
-      abortRef.current = controller;
-
-      try {
-        await fetchData(symbol, timeframe, controller.signal as any);
-        lastPollTime = Date.now();
-      } catch (err: any) {
-        if (err?.name !== 'AbortError') console.error(err);
-      }
-
-      timeoutRef.current = setTimeout(poll, 15000);
-    };
-
-    // 初期ロード
-    poll();
-
+    // リアルタイムデータが有効な場合のみ、クリーンアップ関数を設定
     return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-      if (abortRef.current) abortRef.current.abort();
       if (useRealTimeData) useRealTimeStore.getState().stopRealTimeUpdates();
     };
-  }, [currentSymbol, currentTimeFrame]);
+  }, [useRealTimeData]);
+  
+  // 注意: チャートデータのポーリングはuseAppStoreで一元管理されるため、
+  // このコンポーネントでのポーリング実装は削除されました
 
   // タイムフレーム変更ハンドラー
   const handleTimeFrameChange = (newTimeFrame: Timeframe) => {
@@ -108,7 +67,7 @@ export const ChartContainer: React.FC = () => {
   
   // シンボル変更ハンドラー
   const handleSymbolChange = (newSymbol: string) => {
-    updateSymbol(newSymbol);
+    setCurrentSymbol(newSymbol);
   };
   
   // 取引種別変更ハンドラー
@@ -123,7 +82,7 @@ export const ChartContainer: React.FC = () => {
   
   // インジケーター切り替えハンドラー
   const handleToggleIndicator = (indicator: 'rsi' | 'macd' | 'ichimoku') => {
-    toggleIndicator(indicator);
+    toggleIndicator(indicator as IndicatorType);
   };
   
   // 描画ツール切り替えハンドラー
@@ -248,12 +207,12 @@ export const ChartContainer: React.FC = () => {
           <p>Chart for {currentSymbol} ({currentTimeFrame})</p>
           <p>Chart Type: {chartType}</p>
           <p>Exchange Type: {exchangeType}</p>
-          <p>Data Points: {data.length}</p>
+          <p>Data Points: {chartData ? chartData.length : 0}</p>
           <p>
             Active Indicators: 
             {activeIndicators.length === 0 
               ? ' None' 
-              : ` ${activeIndicators.join(', ')}`
+              : ` ${activeIndicators.map(ind => ind.type).join(', ')}`
             }
           </p>
           <p>
@@ -270,19 +229,19 @@ export const ChartContainer: React.FC = () => {
         <div className="indicator-controls">
           <h4>Indicators</h4>
           <button 
-            className={activeIndicators.includes('rsi') ? 'active' : ''} 
+            className={activeIndicators.some(ind => ind.type === 'rsi') ? 'active' : ''} 
             onClick={() => handleToggleIndicator('rsi')}
           >
             RSI
           </button>
           <button 
-            className={activeIndicators.includes('macd') ? 'active' : ''} 
+            className={activeIndicators.some(ind => ind.type === 'macd') ? 'active' : ''} 
             onClick={() => handleToggleIndicator('macd')}
           >
             MACD
           </button>
           <button 
-            className={activeIndicators.includes('ichimoku') ? 'active' : ''} 
+            className={activeIndicators.some(ind => ind.type === 'ichimoku') ? 'active' : ''} 
             onClick={() => handleToggleIndicator('ichimoku')}
           >
             Ichimoku

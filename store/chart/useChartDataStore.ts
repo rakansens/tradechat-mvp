@@ -1,11 +1,11 @@
 // store/chart/useChartDataStore.ts
-// 更新: シンボルストアへの依存関係を追加、循環参照を解消
-// 更新: `updateSymbol`から循環呼び出しと内部購読を削除。
-// 更新: `initializeSymbolStoreSubscription`が`updateSymbol`を呼び出してデータ取得をトリガーするように修正。
+// 更新: AppStoreを中心とした放射状の依存関係に変更
+// 更新: 動的インポートを削除し、明確な依存関係を確立
+// 更新: 循環参照を解消
 //
 // このストアはチャートのデータ（OHLC）と、データの取得状態を管理します。
 // リアルタイム更新用のメソッドも提供します。
-// シンボル管理はuseSymbolStoreに委譲し、循環参照を解消しました。
+// シンボル管理はuseAppStoreに委譲し、循環参照を解消しました。
 
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
@@ -14,7 +14,8 @@ import { dataFetchService } from '../../services/dataFetchService';
 import { OHLCData, Timeframe } from '../../types/chart';
 import { generateOHLCData } from '../../utils/ohlcDummyData';
 import { useChartConfigStore } from './useChartConfigStore';
-import { useSymbolStore } from '../useSymbolStore';
+import { useAppStore } from '../useAppStore';
+import { useRealTimeStore } from './useRealTimeStore';
 import { logger } from '../../utils/logger';
 import { ChartDataState } from '../../types/store';
 
@@ -33,7 +34,7 @@ export const useChartDataStore = create<ChartDataState>()(
       data: initialOhlcData,
       isLoading: false,
       error: null,
-      currentSymbol: useSymbolStore.getState().currentSymbol,
+      currentSymbol: useAppStore.getState().currentSymbol,
       currentTimeFrame: initialTimeframe,
       
       // アクション
@@ -47,17 +48,17 @@ export const useChartDataStore = create<ChartDataState>()(
         const currentState = get();
         const latestTimeFrame = currentState.currentTimeFrame;
         
-        // シンボルストアから最新のシンボルを取得
-        const symbolState = useSymbolStore.getState();
-        const latestSymbol = symbolState.currentSymbol;
+        // AppStoreから最新のシンボルを取得
+        const appState = useAppStore.getState();
+        const latestSymbol = appState.currentSymbol;
         
         // 明示的に渡されたシンボルとタイムフレームを使用するか、最新の状態を使用する
         const finalSymbol = symbol || latestSymbol;
         const finalTimeFrame = timeFrame || latestTimeFrame;
         
         try {
-          // シンボルストアから現在の取引タイプを取得
-          const { exchangeType } = symbolState;
+          // AppStoreから現在の取引タイプを取得
+          const { exchangeType } = appState;
           
           if (process.env.NODE_ENV !== 'production') {
             console.log('[fetchData] exchangeType:', exchangeType, 'symbol:', finalSymbol, 'timeframe:', finalTimeFrame);
@@ -194,7 +195,7 @@ export const useChartDataStore = create<ChartDataState>()(
               
               // リアルタイム更新を再開
               try {
-                const { startRealTimeUpdates, useRealTimeData } = (await import('./useRealTimeStore')).useRealTimeStore.getState();
+                const { startRealTimeUpdates, useRealTimeData } = useRealTimeStore.getState();
                 if (useRealTimeData) {
                   startRealTimeUpdates();
                 }
@@ -240,14 +241,21 @@ export const useChartDataStore = create<ChartDataState>()(
           // 新しいデータを取得（AbortControllerのsignalを渡す）
           await get().fetchData(symbol, currentTimeFrame, abortController.signal);
           
-          // リアルタイム更新を再開
+          // AppStoreのポーリング機能を使用
           try {
-            const { startRealTimeUpdates, useRealTimeData } = (await import('./useRealTimeStore')).useRealTimeStore.getState();
+            // ポーリングはAppStoreで一元管理されるため、ここでは何もしない
+            logger.info('Chart data polling is now managed by AppStore', {
+              component: 'useChartDataStore',
+              action: 'updateSymbol'
+            });
+            
+            // リアルタイム更新を再開（既存の機能を維持）
+            const { startRealTimeUpdates, useRealTimeData } = useRealTimeStore.getState();
             if (useRealTimeData) {
               startRealTimeUpdates();
             }
           } catch (e) {
-            logger.warn('Failed to update real-time updates', {
+            logger.warn('Failed to start polling via AppStore', {
               component: 'useChartDataStore',
               action: 'updateSymbol',
               error: e
@@ -301,30 +309,41 @@ export const useChartDataStore = create<ChartDataState>()(
   )
 );
 
-// シンボルストアの変更を監視して自動的に更新する
+// AppStoreの変更を監視して自動的に更新する
 // コンポーネントのマウント時に一度だけ実行される初期化コード
-const initializeSymbolStoreSubscription = () => {
-  // シンボルストアを購読
-  const unsubscribe = useSymbolStore.subscribe((symbolState, prevState) => {
-    const chartDataStore = useChartDataStore.getState();
-    const currentSymbolInChartStore = chartDataStore.currentSymbol;
-    const newSymbolFromSymbolStore = symbolState.currentSymbol;
-    
-    // シンボルが変更された場合のみ更新
-    if (currentSymbolInChartStore !== newSymbolFromSymbolStore) {
-      logger.info(`Symbol changed in SymbolStore to ${newSymbolFromSymbolStore}, triggering update in ChartDataStore`, {
-        component: 'useChartDataStore',
-        action: 'symbolStoreSubscription'
-      });
+const initializeAppStoreSubscription = () => {
+  try {
+    // AppStoreを購読
+    const unsubscribe = useAppStore.subscribe((appState) => {
+      const chartDataStore = useChartDataStore.getState();
+      const currentSymbolInChartStore = chartDataStore.currentSymbol;
+      const newSymbolFromAppStore = appState.currentSymbol;
       
-      // UIを更新し、データ取得をトリガーするために `updateSymbol` を呼び出す
-      chartDataStore.updateSymbol(newSymbolFromSymbolStore);
-    }
-  });
-  
-  // 購読解除関数は返さない（アプリケーションのライフサイクル全体で有効）
-  // TODO: アプリケーション終了時やストアが不要になった場合に購読解除する仕組みを検討
+      // シンボルが変更された場合のみ更新
+      if (currentSymbolInChartStore !== newSymbolFromAppStore) {
+        logger.info(`Symbol changed in AppStore to ${newSymbolFromAppStore}, triggering update in ChartDataStore`, {
+          component: 'useChartDataStore',
+          action: 'appStoreSubscription'
+        });
+        
+        // UIを更新し、データ取得をトリガーするために `updateSymbol` を呼び出す
+        chartDataStore.updateSymbol(newSymbolFromAppStore);
+      }
+    });
+    
+    // 購読解除関数は返さない（アプリケーションのライフサイクル全体で有効）
+    logger.info(`Successfully initialized AppStore subscription`, {
+      component: 'useChartDataStore',
+      action: 'initializeAppStoreSubscription'
+    });
+  } catch (error) {
+    logger.error(`Failed to initialize AppStore subscription: ${error}`, {
+      component: 'useChartDataStore',
+      action: 'initializeAppStoreSubscription',
+      error
+    });
+  }
 };
 
 // 初期化を実行
-initializeSymbolStoreSubscription();
+initializeAppStoreSubscription();

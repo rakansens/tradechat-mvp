@@ -8,18 +8,7 @@
 'use client';
 
 import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
-import {
-  useMarketStore,
-  selectOrderBook,
-  selectIsLoadingOrderBook,
-  selectOrderBookError,
-  selectMarketCurrentSymbol,
-  selectBids,
-  selectAsks,
-  selectSpread,
-  selectSpreadPercent
-} from '../../store';
-import { useSymbolStore } from '../../store/useSymbolStore';
+import { useAppStore } from '../../store';
 import { OrderBookEntry } from '../../types/market';
 import { cn } from '../../lib/utils';
 import { theme } from '../../styles/colors';
@@ -53,20 +42,35 @@ export const OrderBook: React.FC<OrderBookProps> = ({
   className,
   orderBookWidth = '33%', // デフォルトは33%
 }) => {
-  // メモ化されたセレクタを使用してストアからデータを取得
-  const orderBook = useMarketStore(selectOrderBook);
-  const isLoadingOrderBook = useMarketStore(selectIsLoadingOrderBook);
-  const orderBookError = useMarketStore(selectOrderBookError);
-  const currentSymbol = useMarketStore(selectMarketCurrentSymbol);
-  const fetchOrderBook = useMarketStore((state) => state.fetchOrderBook);
+  // AppStoreからデータを取得
+  const orderBook = useAppStore(state => state.orderBook);
+  const isLoadingOrderBook = useAppStore(state => state.isLoadingOrderBook);
+  const orderBookError = useAppStore(state => state.orderBookError);
+  const currentSymbol = useAppStore(state => state.currentSymbol);
+  const fetchOrderBook = useAppStore((state) => state.fetchOrderBook);
   
-  // メモ化されたセレクタを使用してスプレッド情報を取得
-  const spread = useMarketStore(selectSpread);
-  const spreadPercent = useMarketStore(selectSpreadPercent);
+  // AppStoreからスプレッド情報を計算
+  const spread = useMemo(() => {
+    if (!orderBook || !orderBook.asks || !orderBook.bids || orderBook.asks.length === 0 || orderBook.bids.length === 0) {
+      return 0;
+    }
+    const lowestAsk = orderBook.asks[0].price;
+    const highestBid = orderBook.bids[0].price;
+    return lowestAsk - highestBid;
+  }, [orderBook]);
   
-  // メモ化されたセレクタを使用して注文データを取得
-  const rawBids = useMarketStore(selectBids);
-  const rawAsks = useMarketStore(selectAsks);
+  const spreadPercent = useMemo(() => {
+    if (!orderBook || !orderBook.asks || !orderBook.bids || orderBook.asks.length === 0 || orderBook.bids.length === 0) {
+      return 0;
+    }
+    const lowestAsk = orderBook.asks[0].price;
+    const highestBid = orderBook.bids[0].price;
+    return ((lowestAsk - highestBid) / lowestAsk) * 100;
+  }, [orderBook]);
+  
+  // AppStoreから注文データを取得
+  const rawBids = useMemo(() => orderBook?.bids || [], [orderBook]);
+  const rawAsks = useMemo(() => orderBook?.asks || [], [orderBook]);
 
   // データのローカル加工
   const [processedBids, setProcessedBids] = useState<OrderBookEntry[]>([]);
@@ -115,12 +119,12 @@ export const OrderBook: React.FC<OrderBookProps> = ({
     }
   }, [processedData]);
 
-  // シンボルストアから直接シンボルを取得（二重購読によるシンボル同期の強化）
-  const symbolStoreSymbol = useSymbolStore(state => state.currentSymbol);
+  // AppStoreから直接シンボルを取得
+  const appStoreSymbol = useAppStore(state => state.currentSymbol);
   
   // シンボル変更を検出するための参照
   const prevSymbolRef = useRef(currentSymbol);
-  const prevSymbolStoreSymbolRef = useRef(symbolStoreSymbol);
+  const prevAppStoreSymbolRef = useRef(appStoreSymbol);
   
   // シンボル正規化関数（一貫性のある正規化処理のため）
   const normalizeSymbol = useCallback((symbol: string) => {
@@ -137,28 +141,26 @@ export const OrderBook: React.FC<OrderBookProps> = ({
     const abortController = new AbortController();
     
     // 明示的に正規化したシンボルを渡す
-    fetchOrderBook(normalizedSymbol, abortController.signal);
+    // useAppStoreのfetchOrderBookは1つの引数しか受け付けない
+    fetchOrderBook(normalizedSymbol);
     
     return abortController;
   }, [fetchOrderBook, normalizeSymbol]);
   
   // シンボル変更を監視して、変更があった場合にオーダーブックを再取得
   useEffect(() => {
-    console.log(`OrderBook: currentSymbol=${currentSymbol}, symbolStoreSymbol=${symbolStoreSymbol}`);
+    console.log(`OrderBook: currentSymbol=${currentSymbol}, appStoreSymbol=${appStoreSymbol}`);
     
-    // シンボルストアとマーケットストアのシンボルを正規化して比較
+    // AppStoreのシンボルを正規化して比較
     const normalizedCurrentSymbol = normalizeSymbol(currentSymbol);
-    const normalizedSymbolStoreSymbol = normalizeSymbol(symbolStoreSymbol);
+    const normalizedAppStoreSymbol = normalizeSymbol(appStoreSymbol);
     
-    // シンボルの不一致を検出（マーケットストアとシンボルストアの同期ずれを検出）
-    if (normalizedCurrentSymbol !== normalizedSymbolStoreSymbol) {
-      console.log(`OrderBook: Symbol mismatch detected! market=${normalizedCurrentSymbol}, symbol=${normalizedSymbolStoreSymbol}`);
+    // シンボルの不一致を検出（コンポーネントとAppStoreの同期ずれを検出）
+    if (normalizedCurrentSymbol !== normalizedAppStoreSymbol) {
+      console.log(`OrderBook: Symbol mismatch detected! component=${normalizedCurrentSymbol}, appStore=${normalizedAppStoreSymbol}`);
       
-      // マーケットストアのシンボルを強制的にシンボルストアと同期
-      useMarketStore.setState({ currentSymbol: symbolStoreSymbol });
-      
-      // 強制的にシンボルストアのシンボルでオーダーブックを取得
-      fetchOrderBookWithSymbol(symbolStoreSymbol);
+      // 強制的にAppStoreのシンボルでオーダーブックを取得
+      fetchOrderBookWithSymbol(appStoreSymbol);
       return;
     }
     
@@ -181,37 +183,10 @@ export const OrderBook: React.FC<OrderBookProps> = ({
     
     // 参照を更新
     prevSymbolRef.current = currentSymbol;
-    prevSymbolStoreSymbolRef.current = symbolStoreSymbol;
-  }, [currentSymbol, symbolStoreSymbol, fetchOrderBookWithSymbol, normalizeSymbol]);
+    prevAppStoreSymbolRef.current = appStoreSymbol;
+  }, [currentSymbol, appStoreSymbol, fetchOrderBookWithSymbol, normalizeSymbol]);
 
-  // ポーリングをストアのポーリング機能を使用
-  useEffect(() => {
-    // ポーリング関連のアクションを取得
-    const { startPolling, stopPolling, isPolling } = useMarketStore.getState();
-    
-    console.log('OrderBook: Component mounted, checking polling status');
-    
-    // 現在のシンボルを取得して正規化
-    const symbol = useMarketStore.getState().currentSymbol;
-    const normalizedSymbol = normalizeSymbol(symbol);
-    
-    console.log(`OrderBook: Starting polling for ${normalizedSymbol} (original: ${symbol})`);
-    
-    // 既存のポーリングを停止してから再開始（クリーンな状態で開始）
-    stopPolling();
-    
-    // 少し遅延させてから再開始（確実に停止するのを待つ）
-    const timer = setTimeout(() => {
-      startPolling();
-      console.log(`OrderBook: Polling started for ${normalizedSymbol}`);
-    }, 200);
-    
-    // コンポーネントアンマウント時にタイマーをクリア
-    return () => {
-      clearTimeout(timer);
-      console.log('OrderBook: Component unmounted');
-    };
-  }, [normalizeSymbol]); // 依存配列にnormalizeSymbolを追加
+  // ポーリングはuseAppStoreで一元管理されるため、コンポーネント側での実装は削除
 
   // エラー表示
   if (orderBookError) {
@@ -228,8 +203,8 @@ export const OrderBook: React.FC<OrderBookProps> = ({
         <h3 className="text-sm font-medium text-white">オーダーブック</h3>
         <span className="text-xs text-[#9CA3AF]">
           {currentSymbol}
-          {/* デバッグ用：シンボルストアとの同期状態を表示 */}
-          {normalizeSymbol(currentSymbol) !== normalizeSymbol(symbolStoreSymbol) && (
+          {/* デバッグ用：AppStoreとの同期状態を表示 */}
+          {normalizeSymbol(currentSymbol) !== normalizeSymbol(appStoreSymbol) && (
             <span className="ml-1 text-red-500">(!)</span>
           )}
         </span>

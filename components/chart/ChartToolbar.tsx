@@ -7,13 +7,13 @@
 
 import React, { memo, useMemo, useEffect } from 'react';
 import {
+  // アプリストア（一元化されたストア）
+  useAppStore,
   // 分割されたチャートストア
-  useChartDataStore,
   useChartConfigStore,
   useIndicatorStore,
   useDrawingToolStore,
   useRealTimeStore,
-  useMarketStore,
   // メモ化されたセレクター
   selectCurrentPrice,
   selectPriceChangePercent,
@@ -22,11 +22,8 @@ import {
   selectOpenEntries,
   // その他のストア
   useUIStore,
-  useEntryStore,
-  // シンボルストア
-  useSymbolStore
+  useEntryStore
 } from '@/store';
-import type { SymbolState } from '@/store/useSymbolStore';
 import { Wifi, WifiOff, TrendingUp, Landmark, BarChart2, LineChart, Layers, BarChart3, CandlestickChart } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -72,18 +69,18 @@ const ChartToolbarComponent = memo(function ChartToolbar({
     const handleTimeframeUpdate = (event: CustomEvent) => {
       const { timeframe } = event.detail;
       console.log(`ツールバーの時間足を更新: ${timeframe}`);
-      // チャートデータストアの時間足を更新
+      // AppStoreの時間足を更新
       // データの再取得は行わず、UIの更新のみ行う
-      useChartDataStore.setState({ currentTimeFrame: timeframe as Timeframe });
+      useAppStore.setState({ currentTimeFrame: timeframe as Timeframe });
     };
     
     // 銘柄変更イベントのリスナー
     const handleSymbolUpdate = (event: CustomEvent) => {
       const { symbol } = event.detail;
       console.log(`ツールバーの銘柄を更新: ${symbol}`);
-      // チャートデータストアの銘柄を更新
+      // AppStoreの銘柄を更新
       // データの再取得は行わず、UIの更新のみ行う
-      useChartDataStore.setState({ currentSymbol: symbol });
+      useAppStore.setState({ currentSymbol: symbol });
     };
     
     // イベントリスナーを登録
@@ -97,28 +94,35 @@ const ChartToolbarComponent = memo(function ChartToolbar({
     };
   }, []);
   
-  // 分割されたチャートストアから状態とアクションを取得
-
-  // チャートデータ関連
-  const {
-    currentSymbol,
-    currentTimeFrame,
-    error,
-    updateTimeFrame,
-    updateSymbol,
-    fetchData
-  } = useChartDataStore();
-
-  // メモ化されたセレクターを使用
-  const currentPrice = useChartDataStore(selectCurrentPrice);
-  const priceChangePercent = useChartDataStore(selectPriceChangePercent);
-
+  // AppStoreから状態とアクションを取得
+  const currentSymbol = useAppStore(state => state.currentSymbol);
+  const currentTimeFrame = useAppStore(state => state.currentTimeFrame);
+  const error = useAppStore(state => state.chartError);
+  const updateTimeFrame = useAppStore(state => state.updateTimeFrame);
+  const setCurrentSymbol = useAppStore(state => state.setCurrentSymbol);
+  const fetchChartData = useAppStore(state => state.fetchChartData);
+  const exchangeType = useAppStore(state => state.exchangeType);
+  const setExchangeType = useAppStore(state => state.setExchangeType);
+  const chartData = useAppStore(state => state.chartData);
+  
+  // 価格情報を計算
+  const currentPrice = useMemo(() => {
+    if (!chartData || chartData.length === 0) return 0;
+    return chartData[chartData.length - 1].close;
+  }, [chartData]);
+  
+  // 価格変化率を計算
+  const priceChangePercent = useMemo(() => {
+    if (!chartData || chartData.length < 2) return 0;
+    const lastPrice = chartData[chartData.length - 1].close;
+    const firstPrice = chartData[0].open;
+    return ((lastPrice - firstPrice) / firstPrice) * 100;
+  }, [chartData]);
+  
   // チャート設定関連
   const {
     chartType,
-    exchangeType,
-    setChartType,
-    setExchangeType
+    setChartType
   } = useChartConfigStore();
 
   // インジケーター関連
@@ -146,15 +150,10 @@ const ChartToolbarComponent = memo(function ChartToolbar({
   const entries = useEntryStore((state) => state.entries);
   const openPositionsCount = entries.filter((entry) => entry.status === "open").length;
 
-  // マーケットストアのアクション
-  const setMarketSymbol = useMarketStore((state) => state.setCurrentSymbol);
-  const setMarketExchangeType = useMarketStore((state) => state.setExchangeType);
-
   // シンボル変更を一元管理
   const handleSymbolChange = (symbol: string) => {
-    // シンボルストアを使用して一元管理
-    // 各ストアはシンボルストアを購読しているため、自動的に更新される
-    useSymbolStore.getState().setCurrentSymbol(symbol);
+    // AppStoreを使用して一元管理
+    setCurrentSymbol(symbol);
   };
 
   return (
@@ -175,7 +174,6 @@ const ChartToolbarComponent = memo(function ChartToolbar({
             onSymbolSelect={handleSymbolChange}
             onExchangeTypeChange={(type) => {
               setExchangeType(type);
-              setMarketExchangeType(type);
             }}
             trigger={
               <Button variant="outline" size="sm" className="gap-1">
@@ -366,13 +364,13 @@ const ChartToolbarComponent = memo(function ChartToolbar({
         <div className="flex items-center">
           {/* 取引種別切り替えボタン */}
           <div className="flex items-center">
-            <button
-              onClick={() => {
-                // シンボルストアを使用して取引種別を更新
-                useSymbolStore.getState().setExchangeType('spot');
-                // データを再取得
-                fetchData(currentSymbol, currentTimeFrame);
-              }}
+          <button
+            onClick={() => {
+              // AppStoreを使用して取引種別を更新
+              setExchangeType('spot');
+              // データを再取得
+              fetchChartData(currentSymbol, currentTimeFrame);
+            }}
               className={`flex items-center px-2 py-1 text-xs rounded-l ${
                 exchangeType === 'spot'
                   ? 'bg-blue-600 text-white'
@@ -381,13 +379,13 @@ const ChartToolbarComponent = memo(function ChartToolbar({
             >
               現物
             </button>
-            <button
-              onClick={() => {
-                // シンボルストアを使用して取引種別を更新
-                useSymbolStore.getState().setExchangeType('futures');
-                // データを再取得
-                fetchData(currentSymbol, currentTimeFrame);
-              }}
+          <button
+            onClick={() => {
+              // AppStoreを使用して取引種別を更新
+              setExchangeType('futures');
+              // データを再取得
+              fetchChartData(currentSymbol, currentTimeFrame);
+            }}
               className={`flex items-center px-2 py-1 text-xs rounded-r ${
                 exchangeType === 'futures'
                   ? 'bg-blue-600 text-white'

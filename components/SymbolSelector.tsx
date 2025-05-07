@@ -5,7 +5,7 @@
 // 銘柄の検索、フィルタリング、選択機能を提供する
 
 import { useState, useEffect } from 'react';
-import { useSymbolStore } from '@/store/useSymbolStore';
+import { useAppStore } from '@/store';
 import { ExchangeType } from '@/types/api';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -28,17 +28,17 @@ export default function SymbolSelector({
   defaultExchangeType = 'spot',
   onExchangeTypeChange,
 }: SymbolSelectorProps) {
-  // ストアから状態とアクションを取得
-  const { 
-    filteredSymbols, 
-    isLoading, 
-    error,
-    fetchSymbols, 
+  // AppStoreから状態とアクションを取得
+  const {
+    filteredSymbols,
+    isLoadingSymbols: isLoading,
+    symbolError: error,
+    fetchSymbols,
     setFilterOptions,
     toggleFavorite,
     clearFilters,
     filterOptions
-  } = useSymbolStore();
+  } = useAppStore();
   
   // 取引タイプの状態
   const [exchangeType, setExchangeType] = useState<ExchangeType>(defaultExchangeType);

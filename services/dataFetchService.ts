@@ -6,6 +6,7 @@
  * - AbortControllerサポート
  * - シンボル正規化処理の強化
  * - シンボル変更時のキャッシュ管理改善
+ * - デバッグ機能の追加（アクティブなリクエスト可視化など）
  */
 
 import { BitgetApiClient } from './bitgetApi';
@@ -17,9 +18,54 @@ import { logger } from '../utils/logger';
 // 進行中のリクエストを追跡
 const pendingRequests = new Map<string, Promise<any>>();
 
+// リクエスト統計情報
+interface RequestStats {
+  key: string;
+  startTime: number;
+  endTime?: number;
+  status: 'pending' | 'completed' | 'error' | 'aborted';
+  duration?: number;
+  error?: any;
+}
+
+// 最近のリクエスト履歴（デバッグ用）
+const requestHistory: RequestStats[] = [];
+const MAX_HISTORY_SIZE = 50; // 最大50件の履歴を保持
+
 // シンプルなキャッシュ実装
 const cache = new Map<string, { data: any, timestamp: number }>();
 const CACHE_TTL = 30000; // 30秒キャッシュ
+
+// 開発モードかどうか
+const isDevelopment = process.env.NODE_ENV === 'development';
+
+// リクエスト統計を追加
+const addRequestStat = (key: string): RequestStats => {
+  const stat: RequestStats = {
+    key,
+    startTime: Date.now(),
+    status: 'pending'
+  };
+  
+  // 履歴が最大サイズを超えたら古いものを削除
+  if (requestHistory.length >= MAX_HISTORY_SIZE) {
+    requestHistory.shift();
+  }
+  
+  requestHistory.push(stat);
+  return stat;
+};
+
+// リクエスト統計を更新
+const updateRequestStat = (stat: RequestStats, status: 'completed' | 'error' | 'aborted', error?: any) => {
+  stat.status = status;
+  stat.endTime = Date.now();
+  stat.duration = stat.endTime - stat.startTime;
+  
+  if (error) {
+    stat.error = error;
+  }
+};
 
 export const dataFetchService = {
   /**
@@ -81,6 +127,53 @@ export const dataFetchService = {
   },
   
   /**
+   * アクティブなリクエストの情報を取得（デバッグ用）
+   */
+  getActiveFetchRequests: (): { key: string, duration: number }[] => {
+    const now = Date.now();
+    return Array.from(pendingRequests.keys()).map(key => {
+      // 対応する統計情報を検索
+      const stat = requestHistory.find(s => s.key === key && s.status === 'pending');
+      const startTime = stat ? stat.startTime : now;
+      
+      return {
+        key,
+        duration: now - startTime
+      };
+    });
+  },
+  
+  /**
+   * リクエスト履歴を取得（デバッグ用）
+   */
+  getRequestHistory: (): RequestStats[] => {
+    return [...requestHistory];
+  },
+  
+  /**
+   * キャッシュ統計情報を取得（デバッグ用）
+   */
+  getCacheStats: () => {
+    const now = Date.now();
+    const stats = Array.from(cache.entries()).map(([key, { timestamp }]) => {
+      const age = now - timestamp;
+      const isExpired = age > CACHE_TTL;
+      
+      return {
+        key,
+        age,
+        isExpired,
+        expiresIn: Math.max(0, CACHE_TTL - age)
+      };
+    });
+    
+    return {
+      totalEntries: cache.size,
+      entries: stats
+    };
+  },
+  
+  /**
    * オーダーブックデータ取得
    * - 同一リクエストの重複を防止
    * - キャッシュ機能
@@ -123,6 +216,9 @@ export const dataFetchService = {
       action: 'fetchOrderBook'
     });
     
+    // リクエスト統計を追加
+    const requestStat = isDevelopment ? addRequestStat(requestKey) : null;
+    
     const api = new BitgetApiClient({}, exchangeType);
     const requestPromise = api.getOrderBook(normalizedSymbol, exchangeType)
       .then(data => {
@@ -130,7 +226,20 @@ export const dataFetchService = {
         if (useCache) {
           dataFetchService.setToCache(requestKey, data);
         }
+        
+        // リクエスト統計を更新
+        if (isDevelopment && requestStat) {
+          updateRequestStat(requestStat, 'completed');
+        }
+        
         return data;
+      })
+      .catch(error => {
+        // リクエスト統計を更新
+        if (isDevelopment && requestStat) {
+          updateRequestStat(requestStat, 'error', error);
+        }
+        throw error;
       })
       .finally(() => {
         // リクエスト完了後にpendingRequestsから削除
@@ -141,6 +250,12 @@ export const dataFetchService = {
     if (signal) {
       signal.addEventListener('abort', () => {
         pendingRequests.delete(requestKey);
+        
+        // リクエスト統計を更新
+        if (isDevelopment && requestStat) {
+          updateRequestStat(requestStat, 'aborted');
+        }
+        
         logger.info(`Request aborted for ${requestKey}`, {
           component: 'dataFetchService',
           action: 'fetchOrderBook'
@@ -196,6 +311,9 @@ export const dataFetchService = {
       action: 'fetchChartData'
     });
     
+    // リクエスト統計を追加
+    const requestStat = isDevelopment ? addRequestStat(requestKey) : null;
+    
     const api = new BitgetApiClient({}, exchangeType);
     // BitgetApiClientのメソッドを正しく呼び出す（正規化したシンボルを使用）
     const requestPromise = api.getHistoricalCandles(normalizedSymbol, timeFrame, 100)
@@ -204,7 +322,20 @@ export const dataFetchService = {
         if (useCache) {
           dataFetchService.setToCache(requestKey, data);
         }
+        
+        // リクエスト統計を更新
+        if (isDevelopment && requestStat) {
+          updateRequestStat(requestStat, 'completed');
+        }
+        
         return data;
+      })
+      .catch(error => {
+        // リクエスト統計を更新
+        if (isDevelopment && requestStat) {
+          updateRequestStat(requestStat, 'error', error);
+        }
+        throw error;
       })
       .finally(() => {
         // リクエスト完了後にpendingRequestsから削除
@@ -215,6 +346,12 @@ export const dataFetchService = {
     if (signal) {
       signal.addEventListener('abort', () => {
         pendingRequests.delete(requestKey);
+        
+        // リクエスト統計を更新
+        if (isDevelopment && requestStat) {
+          updateRequestStat(requestStat, 'aborted');
+        }
+        
         logger.info(`Request aborted for ${requestKey}`, {
           component: 'dataFetchService',
           action: 'fetchChartData'
