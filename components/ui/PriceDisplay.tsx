@@ -1,5 +1,5 @@
 // components/ui/PriceDisplay.tsx
-// 作成: 価格表示用の共通コンポーネント（app/page.tsxとcomponents/chart/ChartToolbar.tsxの重複コードを統一）
+// 更新: 価格表示用の共通コンポーネント - ハイドレーションエラー修正（$記号の表示方法を統一）
 
 "use client"
 
@@ -29,8 +29,8 @@ export function PriceDisplay({
   }
 
   return (
-    <Badge 
-      variant="outline" 
+    <Badge
+      variant="outline"
       className={`font-mono font-bold ${sizeClasses[size]} ${className}`}
       style={{
         backgroundColor: theme.background.tertiary,
@@ -40,7 +40,7 @@ export function PriceDisplay({
       }}
     >
       {showSymbol && symbol ? `${symbol}: ` : ""}
-      ${price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+      {"$"}{price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
     </Badge>
   )
 }
