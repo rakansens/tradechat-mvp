@@ -35,7 +35,7 @@ export const useChartDataStore = create<ChartDataState>()(
         currentTimeFrame: initialTimeframe,
         
         // アクション
-        fetchData: async (symbol: string, timeFrame: Timeframe) => {
+        fetchData: async (symbol: string, timeFrame: Timeframe, signal?: AbortSignal) => {
           set({ isLoading: true, error: null });
           
           try {
@@ -135,30 +135,151 @@ export const useChartDataStore = create<ChartDataState>()(
         },
         
         updateTimeFrame: async (timeFrame: Timeframe) => {
+          // 現在のタイムフレームと同じ場合は何もしない
+          const currentTimeFrame = get().currentTimeFrame;
+          if (timeFrame === currentTimeFrame) {
+            logger.info(`Timeframe already set to ${timeFrame}, skipping update`, {
+              component: 'useChartDataStore',
+              action: 'updateTimeFrame'
+            });
+            return;
+          }
+          
+          // ログ出力
+          logger.info(`Changing timeframe from ${currentTimeFrame} to ${timeFrame}`, {
+            component: 'useChartDataStore',
+            action: 'updateTimeFrame'
+          });
+          
           // 先にタイムフレームを更新してUIに即反映
-          set({ currentTimeFrame: timeFrame });
+          set({ 
+            currentTimeFrame: timeFrame,
+            isLoading: true,
+            error: null
+          });
           
-          // 現在のシンボルと新しいタイムフレームでデータを取得
-          await get().fetchData(get().currentSymbol, timeFrame);
+          // 現在のシンボルと新しいタイムフレームを保存
+          const symbol = get().currentSymbol;
           
-          // WebSocket購読を更新
-          try {
-            const { startRealTimeUpdates } = (await import('./useRealTimeStore')).useRealTimeStore.getState();
-            startRealTimeUpdates();
-          } catch {}
+          // 非同期で実行してUIのブロックを避ける
+          setTimeout(async () => {
+            try {
+              // 最新の状態を取得
+              const state = get();
+              
+              // 非同期処理中にシンボルが変更されていないか確認
+              if (symbol !== state.currentSymbol) {
+                logger.info(`Symbol changed during async operation from ${symbol} to ${state.currentSymbol}, using new symbol`, {
+                  component: 'useChartDataStore',
+                  action: 'updateTimeFrame'
+                });
+              }
+              
+              // 最新のタイムフレームが変更されていないか確認
+              if (timeFrame !== state.currentTimeFrame) {
+                logger.info(`Timeframe changed during async operation from ${timeFrame} to ${state.currentTimeFrame}, skipping fetch`, {
+                  component: 'useChartDataStore',
+                  action: 'updateTimeFrame'
+                });
+                return;
+              }
+              
+              await get().fetchData(state.currentSymbol, timeFrame);
+              
+              // WebSocket購読を更新
+              try {
+                const { startRealTimeUpdates } = (await import('./useRealTimeStore')).useRealTimeStore.getState();
+                startRealTimeUpdates();
+              } catch (e) {
+                logger.warn('Failed to update real-time updates', {
+                  component: 'useChartDataStore',
+                  action: 'updateTimeFrame',
+                  error: e
+                });
+              }
+            } catch (e) {
+              logger.error('Failed to fetch data after timeframe update', {
+                component: 'useChartDataStore',
+                action: 'updateTimeFrame',
+                error: e
+              });
+            }
+          }, 50); // 状態更新後に実行するために少し遅延させる
         },
         
         updateSymbol: async (symbol: string) => {
+          // 現在のシンボルと同じ場合は何もしない
+          const currentSymbol = get().currentSymbol;
+          if (symbol === currentSymbol) {
+            logger.info(`Symbol already set to ${symbol}, skipping update`, {
+              component: 'useChartDataStore',
+              action: 'updateSymbol'
+            });
+            return;
+          }
+          
+          // ログ出力
+          logger.info(`Changing symbol from ${currentSymbol} to ${symbol}`, {
+            component: 'useChartDataStore',
+            action: 'updateSymbol'
+          });
+          
+          // 現在のタイムフレームを保存
+          const timeFrame = get().currentTimeFrame;
+          
           // 先にシンボルを更新してUIに即反映
-          set({ currentSymbol: symbol });
+          set({ 
+            currentSymbol: symbol,
+            isLoading: true,
+            error: null
+          });
           
           // 新しいシンボルと現在のタイムフレームでデータを取得
-          await get().fetchData(symbol, get().currentTimeFrame);
-          
-          try {
-            const { startRealTimeUpdates } = (await import('./useRealTimeStore')).useRealTimeStore.getState();
-            startRealTimeUpdates();
-          } catch {}
+          // 非同期で実行してUIのブロックを避ける
+          setTimeout(async () => {
+            try {
+              // 最新の状態を取得
+              const state = get();
+              
+              // 非同期処理中にシンボルが再度変更されていないか確認
+              if (symbol !== state.currentSymbol) {
+                logger.info(`Symbol changed again during async operation from ${symbol} to ${state.currentSymbol}, skipping fetch`, {
+                  component: 'useChartDataStore',
+                  action: 'updateSymbol'
+                });
+                return;
+              }
+              
+              // 非同期処理中にタイムフレームが変更されていないか確認
+              if (timeFrame !== state.currentTimeFrame) {
+                logger.info(`Timeframe changed during async operation from ${timeFrame} to ${state.currentTimeFrame}, using new timeframe`, {
+                  component: 'useChartDataStore',
+                  action: 'updateSymbol'
+                });
+              }
+              
+              // 最新のシンボルとタイムフレームでデータを取得
+              await get().fetchData(state.currentSymbol, state.currentTimeFrame);
+              
+              // WebSocket購読を更新
+              try {
+                const { startRealTimeUpdates } = (await import('./useRealTimeStore')).useRealTimeStore.getState();
+                startRealTimeUpdates();
+              } catch (e) {
+                logger.warn('Failed to update real-time updates', {
+                  component: 'useChartDataStore',
+                  action: 'updateSymbol',
+                  error: e
+                });
+              }
+            } catch (e) {
+              logger.error('Failed to fetch data after symbol update', {
+                component: 'useChartDataStore',
+                action: 'updateSymbol',
+                error: e
+              });
+            }
+          }, 50); // 状態更新後に実行するために少し遅延させる
         },
         
         // リアルタイム更新用のメソッド

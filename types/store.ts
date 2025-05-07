@@ -39,7 +39,7 @@ export interface ChartDataState {
   currentTimeFrame: Timeframe;
   
   // アクション
-  fetchData: (symbol: string, timeFrame: Timeframe) => Promise<void>;
+  fetchData: (symbol: string, timeFrame: Timeframe, signal?: AbortSignal) => Promise<void>;
   updateData: (data: OHLCData) => void;
   updateTimeFrame: (timeFrame: Timeframe) => Promise<void>;
   updateSymbol: (symbol: string) => Promise<void>;

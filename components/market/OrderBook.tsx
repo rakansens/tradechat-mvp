@@ -3,7 +3,7 @@
 
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { 
   useMarketStore, 
   selectOrderBook, 
@@ -110,17 +110,55 @@ export const OrderBook: React.FC<OrderBookProps> = ({
     }
   }, [processedData]);
 
-  // コンポーネントマウント時とシンボル変更時にデータ取得
+  // ポーリングを setTimeout + AbortController に変更
   useEffect(() => {
-    fetchOrderBook();
-    
-    // 定期的にデータを更新（3秒ごと）
-    const intervalId = setInterval(() => {
-      fetchOrderBook();
-    }, 3000);
-    
-    // クリーンアップ
-    return () => clearInterval(intervalId);
+    const symbol = currentSymbol;
+
+    // Refs to manage timeout & abort controller
+    const timeoutRef = { current: null as NodeJS.Timeout | null };
+    const abortRef = { current: null as AbortController | null };
+
+    const poll = async () => {
+      // 既存リクエストをキャンセル
+      if (abortRef.current) {
+        abortRef.current.abort();
+      }
+
+      // 新しい AbortController を生成
+      const controller = new AbortController();
+      abortRef.current = controller;
+
+      console.log(`OrderBook: Fetching data for ${symbol}`);
+      try {
+        await fetchOrderBook(controller.signal as any);
+      } catch (err: any) {
+        if (err?.name === 'AbortError') {
+          console.log(`OrderBook: Fetch for ${symbol} was aborted`);
+        } else {
+          console.error(err);
+        }
+      }
+
+      // 次回ポーリングを予約
+      timeoutRef.current = setTimeout(() => {
+        const storeState = useMarketStore.getState();
+        if (storeState.currentSymbol === symbol) {
+          poll();
+        } else {
+          console.log(`OrderBook: Symbol changed to ${storeState.currentSymbol}, stop polling ${symbol}`);
+          console.trace('OrderBook symbol mismatch stack trace');
+        }
+      }, 10000);
+    };
+
+    // 初回呼び出し
+    poll();
+
+    return () => {
+      console.log(`OrderBook: Cleanup polling for ${symbol}`);
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      if (abortRef.current) abortRef.current.abort();
+    };
   }, [currentSymbol, fetchOrderBook]);
 
   // エラー表示

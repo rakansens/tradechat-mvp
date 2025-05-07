@@ -51,23 +51,56 @@ export const ChartContainer: React.FC = () => {
     toggleRealTimeData
   } = useRealTimeStore();
   
-  // コンポーネントマウント時にデータを取得
+  // コンポーネントマウント時にデータを取得 (setTimeout + AbortController)
   useEffect(() => {
-    // APIクライアントを初期化
-    const initializeChart = async () => {
-      await fetchData(currentSymbol, currentTimeFrame);
-    };
-    
-    initializeChart();
-    
-    // コンポーネントアンマウント時にリアルタイム更新を停止
-    return () => {
-      if (useRealTimeData) {
-        useRealTimeStore.getState().stopRealTimeUpdates();
+    const symbol = currentSymbol;
+    const timeframe = currentTimeFrame;
+
+    let lastPollTime = 0;
+    const timeoutRef = { current: null as NodeJS.Timeout | null };
+    const abortRef = { current: null as AbortController | null };
+
+    const poll = async () => {
+      // シンボル / timeframe チェック
+      const storeState = useChartDataStore.getState();
+      if (storeState.currentSymbol !== symbol || storeState.currentTimeFrame !== timeframe) {
+        console.log('ChartContainer: symbol/timeframe changed, stop polling');
+        console.trace('ChartContainer mismatch stack');
+        return;
       }
+
+      // 最低 15 秒間隔
+      const now = Date.now();
+      if (now - lastPollTime < 15000) {
+        timeoutRef.current = setTimeout(poll, 15000 - (now - lastPollTime));
+        return;
+      }
+
+      // Abort previous
+      if (abortRef.current) abortRef.current.abort();
+      const controller = new AbortController();
+      abortRef.current = controller;
+
+      try {
+        await fetchData(symbol, timeframe, controller.signal as any);
+        lastPollTime = Date.now();
+      } catch (err: any) {
+        if (err?.name !== 'AbortError') console.error(err);
+      }
+
+      timeoutRef.current = setTimeout(poll, 15000);
     };
-  }, []);
-  
+
+    // 初期ロード
+    poll();
+
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      if (abortRef.current) abortRef.current.abort();
+      if (useRealTimeData) useRealTimeStore.getState().stopRealTimeUpdates();
+    };
+  }, [currentSymbol, currentTimeFrame]);
+
   // タイムフレーム変更ハンドラー
   const handleTimeFrameChange = (newTimeFrame: Timeframe) => {
     updateTimeFrame(newTimeFrame);
