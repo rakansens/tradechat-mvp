@@ -70,12 +70,23 @@ const ChartToolbarComponent = memo(function ChartToolbar({
       useChartDataStore.setState({ currentTimeFrame: timeframe as Timeframe });
     };
     
+    // 銘柄変更イベントのリスナー
+    const handleSymbolUpdate = (event: CustomEvent) => {
+      const { symbol } = event.detail;
+      console.log(`ツールバーの銘柄を更新: ${symbol}`);
+      // チャートデータストアの銘柄を更新
+      // データの再取得は行わず、UIの更新のみ行う
+      useChartDataStore.setState({ currentSymbol: symbol });
+    };
+    
     // イベントリスナーを登録
     window.addEventListener('updateToolbarTimeframe', handleTimeframeUpdate as EventListener);
+    window.addEventListener('updateToolbarSymbol', handleSymbolUpdate as EventListener);
     
     // クリーンアップ関数
     return () => {
       window.removeEventListener('updateToolbarTimeframe', handleTimeframeUpdate as EventListener);
+      window.removeEventListener('updateToolbarSymbol', handleSymbolUpdate as EventListener);
     };
   }, []);
   

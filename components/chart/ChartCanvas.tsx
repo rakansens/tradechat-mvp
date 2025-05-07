@@ -266,6 +266,10 @@ export default function ChartCanvas() {
       
       // チャートデータストアの銘柄を更新
       useChartDataStore.getState().updateSymbol(symbol);
+      
+      // ツールバーの選択状態を更新するためのカスタムイベント
+      const updateEvent = new CustomEvent('updateToolbarSymbol', { detail: { symbol } });
+      window.dispatchEvent(updateEvent);
     };
     
     // イベントリスナーを登録

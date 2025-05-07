@@ -95,12 +95,17 @@ export interface RealTimeState {
   // 状態
   useRealTimeData: boolean;
   bitgetApi: BitgetApiClient | null;
+  lastSubscriptionKey: string; // 最後に購読したキー
   
-  // アクション
+  // 公開アクション
   startRealTimeUpdates: () => void;
   stopRealTimeUpdates: () => void;
   toggleRealTimeData: () => void;
   initializeApi: (exchangeType: ExchangeType) => void;
+  
+  // 内部アクション
+  _debouncedStartRealTimeUpdates: () => void;
+  _startRealTimeUpdatesImpl: () => void;
 }
 
 /**

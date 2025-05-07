@@ -18,7 +18,7 @@ declare global {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { symbol } = body;
+    let { symbol } = body;
 
     if (!symbol) {
       logger.warn('銘柄変更リクエストに必要なパラメータがありません', {
@@ -29,6 +29,20 @@ export async function POST(request: Request) {
         { success: false, error: '銘柄パラメータが必要です' },
         { status: 400 }
       );
+    }
+    
+    // 銘柄名の形式をチェックして必要に応じて変換
+    if (!symbol.includes('/') && !symbol.includes('USDT') && !symbol.includes('usdt')) {
+      // 単一の銘柄名の場合は自動的にUSDTを付加
+      const originalSymbol = symbol;
+      symbol = `${symbol}USDT`;
+      
+      logger.info(`銘柄名を変換しました: ${originalSymbol} -> ${symbol}`, {
+        component: 'api/chart/symbol',
+        action: 'POST',
+        originalSymbol,
+        convertedSymbol: symbol
+      });
     }
 
     logger.info(`銘柄変更APIが呼び出されました: ${symbol}`, {
