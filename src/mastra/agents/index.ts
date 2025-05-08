@@ -14,6 +14,7 @@ import {
   chartCaptureAnalysisTool,
   changeTimeframeTool,
   changeSymbolTool,
+  changeInstrumentTypeTool,
   multiTimeframeAnalysisTool,
   entrySuggestionTool
 } from "../tools";
@@ -55,6 +56,7 @@ export function createChatAgent(memory?: Memory): Agent {
       
       2. チャート操作ツール：
          - change-timeframe: チャートの時間足を変更（例：1分足、5分足、15分足、1時間足、4時間足、日足）
+         - change-instrument-type: 取引タイプを切り替え（現物 'spot' または先物 'futures'）
          - change-symbol: チャートの銘柄を変更（例：BTCUSDT、ETHUSDT、SOLUSDT）
       
       3. チャート分析ツール：
@@ -121,7 +123,7 @@ export function createChatAgent(memory?: Memory): Agent {
       "mem0-remember": mem0RememberTool,
       "mem0-memorize": mem0MemorizeTool,
       "chart-capture-analysis": chartCaptureAnalysisTool,
-      "change-timeframe": changeTimeframeTool,
+      "change-instrument-type": changeInstrumentTypeTool,      "change-timeframe": changeTimeframeTool,
       "change-symbol": changeSymbolTool,
       "multi-timeframe-analysis": multiTimeframeAnalysisTool,
       "entry-suggestion": entrySuggestionTool
@@ -151,7 +153,7 @@ export function createDirectAgent(): Agent {
          - mem0-remember: 過去のやり取りから情報を思い出す
       
       2. チャート操作ツール：
-         - change-timeframe: チャートの時間足を変更（例：1分足、5分足、15分足、1時間足、4時間足、日足）
+         - change-instrument-type: 取引タイプを切り替え（現物 'spot' または先物 'futures'）         - change-timeframe: チャートの時間足を変更（例：1分足、5分足、15分足、1時間足、4時間足、日足）
          - change-symbol: チャートの銘柄を変更（例：BTCUSDT、ETHUSDT、SOLUSDT）
       
       3. チャート分析ツール：
@@ -217,7 +219,7 @@ export function createDirectAgent(): Agent {
       "mem0-remember": mem0RememberTool,
       "mem0-memorize": mem0MemorizeTool,
       "chart-capture-analysis": chartCaptureAnalysisTool,
-      "change-timeframe": changeTimeframeTool,
+      "change-instrument-type": changeInstrumentTypeTool,      "change-timeframe": changeTimeframeTool,
       "change-symbol": changeSymbolTool,
       "multi-timeframe-analysis": multiTimeframeAnalysisTool,
       "entry-suggestion": entrySuggestionTool

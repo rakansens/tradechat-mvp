@@ -104,6 +104,33 @@ export function initializeSocketClient(forceReinitialize = false, namespace?: st
       }
     });
     
+    // 取引タイプ変更イベントのリスナー
+    socket.on('instrument-type-change', (data: { type: 'spot' | 'futures' }) => {
+      console.log('取引タイプ変更イベント受信:', data);
+      console.log('イベント受信時のSocket状態:', socket?.connected, 'クライアントID:', clientId);
+      
+      try {
+        // グローバルイベントを発行して、チャートコンポーネントに通知
+        const event = new CustomEvent('instrumentTypeChanged', { detail: data });
+        window.dispatchEvent(event);
+        console.log('グローバルイベントを発行しました:', 'instrumentTypeChanged', data);
+      } catch (error) {
+        console.error('グローバルイベントの発行に失敗しました:', error);
+      }
+      
+      // ローカルストレージに最新の取引タイプを保存
+      try {
+        // アプリストアで使用されるキー
+        localStorage.setItem('lastUsedExchangeType', data.type);
+        // 互換性のためのキー
+        localStorage.setItem('selectedInstrumentType', data.type);
+        
+        console.log('取引タイプをローカルストレージに保存しました:', data.type);
+      } catch (error) {
+        console.warn('ローカルストレージへの取引タイプ保存に失敗しました:', error);
+      }
+    });
+    
     // タイムアウト後のレスポンス処理
     socket.on('delayed_capture_success', (data: { requestId: string, imageId: string, message: string }) => {
       console.log('タイムアウト後のキャプチャ成功通知受信:', data);

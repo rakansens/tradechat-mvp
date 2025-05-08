@@ -8,6 +8,7 @@ import { mem0 } from "../integrations";
 import { chartCaptureAnalysisTool } from "./chart-capture";
 import { changeTimeframeTool } from "./timeframe-tools";
 import { changeSymbolTool } from "./symbol-tools";
+import { changeInstrumentTypeTool } from "./instrument-type-tools";
 import { multiTimeframeAnalysisTool } from "./multi-timeframe-tools";
 import { entrySuggestionTool } from "./entry-suggestion";
 
@@ -61,6 +62,7 @@ export {
   chartCaptureAnalysisTool, 
   changeTimeframeTool, 
   changeSymbolTool,
+  changeInstrumentTypeTool,
   multiTimeframeAnalysisTool,
   entrySuggestionTool
 };

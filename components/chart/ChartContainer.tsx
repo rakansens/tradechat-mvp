@@ -72,7 +72,9 @@ export const ChartContainer: React.FC = () => {
   
   // 取引種別変更ハンドラー
   const handleExchangeTypeChange = (newType: ExchangeType) => {
+    // AppStoreのsetExchangeType関数を呼び出してグローバル状態を更新
     setExchangeType(newType);
+    console.log(`取引種別を変更しました: ${newType}`);
   };
   
   // チャートタイプ変更ハンドラー
