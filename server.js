@@ -50,7 +50,10 @@ global.emitSocketEvent = async (eventName, data) => {
 
 // 環境変数の設定
 const dev = process.env.NODE_ENV !== 'production';
-const PORT = process.env.PORT || 3000;
+let PORT = process.env.PORT || 3000;
+
+// 実際に使用されているポート番号を追跡する変数
+let ACTUAL_PORT = PORT;
 
 // Nextアプリの初期化
 const app = next({ dev });
@@ -412,10 +415,12 @@ app.prepare().then(() => {
   // サーバー起動のエラーハンドリング
   server.on('error', (error) => {
     if (error.code === 'EADDRINUSE') {
-      console.error(`ポート ${PORT} は既に使用されています。別のポートを試します...`);
+      // 新しいポート番号を設定
+      ACTUAL_PORT = PORT + 1;
+      console.error(`ポート ${PORT} は既に使用されています。ポート ${ACTUAL_PORT} を試します...`);
       setTimeout(() => {
         server.close();
-        server.listen(PORT + 1);
+        server.listen(ACTUAL_PORT);
       }, 1000);
     } else {
       console.error('サーバー起動エラー:', error);
@@ -426,8 +431,16 @@ app.prepare().then(() => {
   // サーバー起動
   server.listen(PORT, (err) => {
     if (err) throw err;
-    console.log(`> Next.jsサーバー起動完了: http://localhost:${PORT}`);
-    console.log(`> チャート画像API: http://localhost:${PORT}/api/chart-image/{imageId}`);
+    
+    // 実際に使用されているポートを記録
+    ACTUAL_PORT = server.address().port;
+    
+    console.log(`> Next.jsサーバー起動完了: http://localhost:${ACTUAL_PORT}`);
+    console.log(`> チャート画像API: http://localhost:${ACTUAL_PORT}/api/chart-image/{imageId}`);
+    
+    // クライアント側がポート番号を知るための環境変数を設定
+    process.env.NEXT_PUBLIC_SERVER_PORT = ACTUAL_PORT.toString();
+    
     setupComplete = true;
   });
 });

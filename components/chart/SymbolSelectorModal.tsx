@@ -2,8 +2,9 @@
 
 // components/chart/SymbolSelectorModal.tsx
 // 作成: 銘柄選択モーダルコンポーネント
+// 更新: ハイドレーションエラーの修正
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ExchangeType } from '@/types/api';
 import {
   Dialog,
@@ -32,6 +33,13 @@ export default function SymbolSelectorModal({
   trigger
 }: SymbolSelectorModalProps) {
   const [open, setOpen] = useState(false);
+  // クライアントサイドでのみシンボルを表示するための状態
+  const [mounted, setMounted] = useState(false);
+  
+  // クライアントサイドでのみ実行される処理
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleSymbolSelect = (symbol: string) => {
     onSymbolSelect(symbol);
@@ -44,7 +52,7 @@ export default function SymbolSelectorModal({
         {trigger || (
           <Button variant="outline" size="sm" className="gap-1">
             <CandlestickChart className="h-4 w-4" />
-            <span>{currentSymbol}</span>
+            <span>{mounted ? currentSymbol : ''}</span>
           </Button>
         )}
       </DialogTrigger>

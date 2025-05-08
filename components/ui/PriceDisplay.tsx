@@ -3,7 +3,7 @@
 
 "use client"
 
-import React from "react"
+import React, { useState, useEffect } from "react"
 import { Badge } from "@/components/ui/badge"
 import { theme } from "@/styles/colors"
 import {
@@ -20,6 +20,14 @@ export function PriceDisplay({
   className = "",
   size = "md"
 }: PriceDisplayProps) {
+  // クライアントサイドレンダリングのためのステート
+  const [isClient, setIsClient] = useState(false)
+  
+  // クライアントサイドでのみ実行
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
+  
   // 入力値のバリデーション（開発環境のみ）
   if (process.env.NODE_ENV !== 'production') {
     const result = priceDisplaySchema.safeParse({ price, symbol, showSymbol, className, size })
@@ -27,12 +35,16 @@ export function PriceDisplay({
       console.warn('PriceDisplay: Invalid props', result.error)
     }
   }
+  
   const sizeClasses = {
     sm: "text-xs py-0.5 px-1.5",
     md: "text-sm py-1 px-2",
     lg: "text-base py-1.5 px-2.5"
   }
 
+  // サーバーサイドレンダリングとクライアントサイドレンダリングで一貫した出力を保証
+  const formattedPrice = price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  
   return (
     <Badge
       variant="outline"
@@ -44,8 +56,10 @@ export function PriceDisplay({
         boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
       }}
     >
-      {showSymbol && symbol ? `${symbol}: ` : ""}
-      {"$"}{price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+      <span suppressHydrationWarning>
+        {isClient && showSymbol && symbol ? `${symbol}: ` : ""}
+        ${formattedPrice}
+      </span>
     </Badge>
   )
 }
