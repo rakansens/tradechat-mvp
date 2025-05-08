@@ -50,6 +50,11 @@
 - [ ] テスト戦略のドキュメント作成（`docs/testing-strategy.md`）
 
 ## 次のステップ
+1. **WebSocketベースのデータ取得システムの最適化**
+   - WebSocketの接続安定性のさらなる向上
+   - 複数取引所のサポート拡張
+   - Redis Pub/Subを使用したインスタンス間通信の実装
+   - 水平スケーリングのサポート強化
 
 1. **メモ化戦略の全コンポーネントへの適用**
    - 残りの再利用可能なUIコンポーネントにメモ化を適用
@@ -89,12 +94,33 @@
 ## 実装スケジュール
 
 | タスク | 予定期間 | ステータス |
+| | WebSocketベースのデータ取得システムの実装 | 2025/5/1 - 2025/5/8 | 完了 |
+| | WebSocketベースのデータ取得システムの最適化 | 2025/5/20 - 2025/5/25 | 未着手 |
 |-------|---------|----------|
 | セレクタパターンの一貫した適用 | 2025/5/6 - 2025/5/7 | 完了 |
 | メモ化戦略の全コンポーネントへの適用 | 2025/5/7 - 2025/5/10 | 進行中 |
 | 型安全性のさらなる向上 | 2025/5/10 - 2025/5/13 | 進行中 |
 | スタイリングのさらなる改善 | 2025/5/13 - 2025/5/15 | 未着手 |
 | テストと品質向上 | 2025/5/15 - 2025/5/20 | 進行中 |
+### WebSocketベースのデータ取得システムの実装
+
+- [x] WebSocket関連の型定義の作成
+  - [x] `types/websocket.ts`の実装
+- [x] サーバーサイドコンポーネントの実装
+  - [x] `server/bitgetWebSocketManager.ts` - Bitget WebSocketとの単一接続管理
+  - [x] `server/socketDataBroadcaster.ts` - Socket.IOを使用したデータ配信
+  - [x] `server/cacheManager.ts` - LRUキャッシュによるデータ管理
+- [x] クライアントサイドコンポーネントの実装
+  - [x] `services/socketService.ts` - Socket.IO接続管理
+  - [x] `services/dataFetchService.ts` - WebSocket/RESTAPIハイブリッド機能
+- [x] サーバーとの統合
+  - [x] `server.js`の修正 - WebSocketマネージャーとデータブロードキャスターの統合
+- [x] テストの実装
+  - [x] `__tests__/server/bitgetWebSocketManager.test.ts`
+  - [x] `__tests__/server/cacheManager.test.ts`
+  - [x] `__tests__/services/socketService.test.ts`
+- [x] パフォーマンステストの実装
+  - [x] `scripts/websocket-performance-test.js`
 
 ## 実装の注意点
 

@@ -426,6 +426,279 @@ export async function createSomeResource(data: any) {
   return apiClient.postData('/some-resource', data)
 }
 \`\`\`
+### 5.3 WebSocket統合
+
+WebSocketを使用してリアルタイムデータを取得する場合は、以下のパターンに従ってください：
+
+#### 5.3.1 socketService.tsの使用方法
+
+`socketService.ts`は、Socket.IOを使用してサーバーとのWebSocket接続を管理するサービスです：
+
+```typescript
+// services/socketService.ts
+import { Socket, io } from 'socket.io-client';
+import type { OrderBookData, OHLCData, TradeData, ExchangeType, Timeframe } from '@/types';
+
+// Socket.IOの名前空間
+const NAMESPACE = {
+  MARKET: '/market'
+};
+
+// チャネル名の定数
+const CHANNEL = {
+  ORDERBOOK: 'orderbook',
+  KLINE: 'kline',
+  TRADE: 'trade',
+  SUBSCRIBE: 'subscribe',
+  UNSUBSCRIBE: 'unsubscribe'
+};
+
+// マーケットデータ用のSocket.IO接続を初期化
+export function initializeMarketSocket(): Socket | null {
+  try {
+    const socket = io(NAMESPACE.MARKET, {
+      transports: ['websocket'],
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+      timeout: 10000
+    });
+    
+    socket.on('connect', () => {
+      console.log('Market socket connected');
+    });
+    
+    socket.on('disconnect', (reason) => {
+      console.log(`Market socket disconnected: ${reason}`);
+    });
+    
+    socket.on('connect_error', (error) => {
+      console.error('Market socket connection error:', error);
+    });
+    
+    return socket;
+  } catch (error) {
+    console.error('Failed to initialize market socket:', error);
+    return null;
+  }
+}
+
+// オーダーブックデータを購読
+export function subscribeOrderBook(
+  symbol: string,
+  callback: (data: OrderBookData) => void,
+  exchangeType: ExchangeType = 'spot'
+): () => void {
+  const socket = initializeMarketSocket();
+  if (!socket) {
+    console.error('Socket not initialized');
+    return () => {};
+  }
+  
+  const channelName = `${CHANNEL.ORDERBOOK}:${symbol}:${exchangeType}`;
+  
+  socket.emit(CHANNEL.SUBSCRIBE, { channel: channelName });
+  socket.on(channelName, callback);
+  
+  return () => {
+    socket.emit(CHANNEL.UNSUBSCRIBE, { channel: channelName });
+    socket.off(channelName, callback);
+    socket.disconnect();
+  };
+}
+
+// ローソク足データを購読
+export function subscribeKline(
+  symbol: string,
+  timeframe: Timeframe,
+  callback: (data: OHLCData) => void,
+  exchangeType: ExchangeType = 'spot'
+): () => void {
+  const socket = initializeMarketSocket();
+  if (!socket) {
+    console.error('Socket not initialized');
+    return () => {};
+  }
+  
+  const channelName = `${CHANNEL.KLINE}:${symbol}:${timeframe}:${exchangeType}`;
+  
+  socket.emit(CHANNEL.SUBSCRIBE, { channel: channelName });
+  socket.on(channelName, callback);
+  
+  return () => {
+    socket.emit(CHANNEL.UNSUBSCRIBE, { channel: channelName });
+    socket.off(channelName, callback);
+    socket.disconnect();
+  };
+}
+```
+
+#### 5.3.2 WebSocketとRESTAPIのハイブリッド機能
+
+`dataFetchService.ts`は、WebSocketとRESTAPIを組み合わせたハイブリッドアプローチを提供します：
+
+```typescript
+// services/dataFetchService.ts
+import { socketService } from './socketService';
+import { bitgetApi } from './bitgetApi';
+import type { OrderBookData, OHLCData, ExchangeType, Timeframe } from '@/types';
+
+// WebSocketサブスクリプション管理
+const subscriptions = new Map<string, () => void>();
+
+// オーダーブックデータ取得（WebSocketとRESTAPIのハイブリッド）
+export async function fetchOrderBook(
+  symbol: string,
+  exchangeType: ExchangeType,
+  signal?: AbortSignal,
+  useCache: boolean = true
+): Promise<OrderBookData> {
+  try {
+    // WebSocketが接続されているか確認
+    if (socketService.isConnected()) {
+      // WebSocketからデータを取得
+      return new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          // タイムアウト時はRESTAPIにフォールバック
+          console.warn('WebSocket timeout, falling back to REST API');
+          bitgetApi.getOrderBook(symbol, exchangeType, signal, useCache)
+            .then(resolve)
+            .catch(reject);
+        }, 3000);
+        
+        const unsubscribe = socketService.subscribeOrderBook(
+          symbol,
+          (data) => {
+            clearTimeout(timeout);
+            resolve(data);
+            unsubscribe();
+          },
+          exchangeType
+        );
+        
+        // AbortSignalのハンドリング
+        if (signal) {
+          signal.addEventListener('abort', () => {
+            clearTimeout(timeout);
+            unsubscribe();
+            reject(new Error('Request aborted'));
+          });
+        }
+      });
+    } else {
+      // WebSocketが接続されていない場合はRESTAPIを使用
+      return bitgetApi.getOrderBook(symbol, exchangeType, signal, useCache);
+    }
+  } catch (error) {
+    console.error('Error fetching order book:', error);
+    // エラー時はRESTAPIにフォールバック
+    return bitgetApi.getOrderBook(symbol, exchangeType, signal, useCache);
+  }
+}
+
+// リアルタイムオーダーブック購読
+export function subscribeOrderBookRealtime(
+  symbol: string,
+  callback: (data: OrderBookData) => void,
+  exchangeType: ExchangeType = 'spot'
+): () => void {
+  const key = `orderbook:${symbol}:${exchangeType}`;
+  
+  // 既存のサブスクリプションがあれば解除
+  if (subscriptions.has(key)) {
+    const unsubscribe = subscriptions.get(key)!;
+    unsubscribe();
+    subscriptions.delete(key);
+  }
+  
+  // 新しいサブスクリプションを作成
+  const unsubscribe = socketService.subscribeOrderBook(symbol, callback, exchangeType);
+  subscriptions.set(key, unsubscribe);
+  
+  return () => {
+    if (subscriptions.has(key)) {
+      const unsubscribe = subscriptions.get(key)!;
+      unsubscribe();
+      subscriptions.delete(key);
+    }
+  };
+}
+```
+
+#### 5.3.3 エラーハンドリングとフォールバック戦略
+
+WebSocket接続で問題が発生した場合のエラーハンドリングとフォールバック戦略は以下のパターンに従ってください：
+
+```typescript
+// エラーハンドリングの例
+try {
+  // WebSocketを使用したデータ取得
+  const data = await dataFetchService.fetchOrderBook(symbol, 'spot');
+  // 成功時の処理
+  updateUI(data);
+} catch (error) {
+  console.error('WebSocket error:', error);
+  
+  try {
+    // RESTAPIにフォールバック
+    const fallbackData = await bitgetApi.getOrderBook(symbol, 'spot');
+    // フォールバック成功時の処理
+    updateUI(fallbackData);
+    // ユーザーに通知
+    showNotification('リアルタイム接続に問題が発生しました。通常モードで動作しています。');
+  } catch (fallbackError) {
+    console.error('Fallback error:', fallbackError);
+    // 完全に失敗した場合の処理
+    showError('データの取得に失敗しました。後でもう一度お試しください。');
+  }
+} finally {
+  // ローディング状態の解除など
+  setLoading(false);
+}
+```
+
+#### 5.3.4 WebSocketの再接続戦略
+
+WebSocket接続が切断された場合の再接続戦略は以下のパターンに従ってください：
+
+```typescript
+// 指数バックオフ+ジッターによる再接続
+function reconnectWithBackoff(attempt: number, maxAttempts: number = 10): void {
+  if (attempt > maxAttempts) {
+    console.error('Maximum reconnection attempts reached');
+    return;
+  }
+  
+  // 指数バックオフ（2^attempt * 1000ms）
+  const backoff = Math.min(30000, Math.pow(2, attempt) * 1000);
+  // ジッター（±30%）を追加
+  const jitter = backoff * 0.3 * (Math.random() * 2 - 1);
+  const delay = backoff + jitter;
+  
+  console.log(`Reconnecting in ${Math.round(delay / 1000)}s (attempt ${attempt}/${maxAttempts})`);
+  
+  setTimeout(() => {
+    try {
+      // 再接続を試みる
+      const socket = initializeMarketSocket();
+      
+      socket.on('connect', () => {
+        console.log('Reconnected successfully');
+        // 再接続成功時の処理（サブスクリプションの再開など）
+        resubscribeAll();
+      });
+      
+      socket.on('connect_error', () => {
+        // 再接続失敗時は次の試行をスケジュール
+        reconnectWithBackoff(attempt + 1, maxAttempts);
+      });
+    } catch (error) {
+      console.error('Reconnection attempt failed:', error);
+      // 再接続失敗時は次の試行をスケジュール
+      reconnectWithBackoff(attempt + 1, maxAttempts);
+    }
+  }, delay);
+}
+```
 
 ## 6. パフォーマンス最適化
 
