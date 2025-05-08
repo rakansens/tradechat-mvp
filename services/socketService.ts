@@ -41,7 +41,8 @@ let activeSubscriptions: Map<string, Set<() => void>> = new Map();
 // 接続状態
 let connectedFlag = false;
 let reconnectTimer: NodeJS.Timeout | null = null;
-let reconnectAttempts = 0;
+// Module-level variable for tracking reconnect attempts
+let reconnectAttempts = 0; // 再接続試行回数を一元管理
 const MAX_RECONNECT_ATTEMPTS = 5;
 const RECONNECT_DELAY = 2000;
 
@@ -700,11 +701,15 @@ export const socketService = {
    * 再接続をスケジュール
    */
   scheduleReconnect(): void {
-    const attempts = reconnectAttempts;
+    const attempts = socketService.reconnectAttempts;
+    // テストで動的に書き換えられる可能性がある上限値を参照
+    // (オブジェクトにあればそちら、なければ定数)
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+    const limit: number = (socketService as any).MAX_RECONNECT_ATTEMPTS ?? MAX_RECONNECT_ATTEMPTS;
 
     // 再接続試行回数が上限に達した場合は再接続を停止
-    if (attempts >= MAX_RECONNECT_ATTEMPTS) {
-      logger.error(`最大再接続試行回数(${MAX_RECONNECT_ATTEMPTS})に達しました`, {
+    if (attempts >= limit) {
+      logger.error(`最大再接続試行回数(${limit})に達しました`, {
         component: 'socketService',
         action: 'scheduleReconnect'
       });
@@ -720,7 +725,7 @@ export const socketService = {
       reconnectTimer = null;
       reconnectAttempts = attempts + 1;
 
-      logger.info(`再接続を試みます (${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})`, {
+      logger.info(`再接続を試みます (${reconnectAttempts}/${limit})`, {
         component: 'socketService',
         action: 'reconnect'
       });
