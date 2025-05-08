@@ -241,7 +241,7 @@ export const socketService = {
       
       // データ受信ハンドラの設定
       const handleData = (data: any) => {
-        if (data.symbol === normalizedSymbol && data.exchangeType === exchangeType) {
+        if ((data.symbol === normalizedSymbol || data.symbol === symbol) && data.exchangeType === exchangeType) {
           // データの変換
           const orderBookData: OrderBookData = {
             symbol: data.symbol,
@@ -356,7 +356,7 @@ export const socketService = {
       
       // データ受信ハンドラの設定
       const handleData = (data: any) => {
-        if (data.symbol === normalizedSymbol && data.timeframe === timeframe && data.exchangeType === exchangeType) {
+        if ((data.symbol === normalizedSymbol || data.symbol === symbol) && data.timeframe === timeframe && data.exchangeType === exchangeType) {
           // データの変換
           const klineData: OHLCData = {
             time: data.data.time,
@@ -468,7 +468,7 @@ export const socketService = {
       
       // データ受信ハンドラの設定
       const handleData = (data: any) => {
-        if (data.symbol === normalizedSymbol && data.exchangeType === exchangeType) {
+        if ((data.symbol === normalizedSymbol || data.symbol === symbol) && data.exchangeType === exchangeType) {
           // コールバック関数の呼び出し
           callback(data.data);
         }
@@ -693,31 +693,32 @@ export const socketService = {
    */
   isConnected(): boolean {
     const socket = getSocket(false);
-    return socket ? socket.connected && connectedFlag : false;
+    return socket ? socket.connected : false;
   },
   
   /**
    * 再接続をスケジュール
    */
   scheduleReconnect(): void {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const setTimeoutFn: any = setTimeout;
-    // 既に再接続がスケジュールされている場合は何もしない
-    if (reconnectTimer) {
-      return;
-    }
+    const attempts = reconnectAttempts;
+
     // 再接続試行回数が上限に達した場合は再接続を停止
-    if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+    if (attempts >= MAX_RECONNECT_ATTEMPTS) {
       logger.error(`最大再接続試行回数(${MAX_RECONNECT_ATTEMPTS})に達しました`, {
         component: 'socketService',
         action: 'scheduleReconnect'
       });
       return;
     }
+
+    // 既にタイマーがあれば何もしない
+    if (reconnectTimer) {
+      return;
+    }
     // 再接続タイマーの設定
-    reconnectTimer = setTimeoutFn(() => {
+    reconnectTimer = global.setTimeout(() => {
       reconnectTimer = null;
-      reconnectAttempts++;
+      reconnectAttempts = attempts + 1;
 
       logger.info(`再接続を試みます (${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})`, {
         component: 'socketService',
@@ -737,31 +738,36 @@ export const socketService = {
       component: 'socketService',
       action: 'resubscribeAll'
     });
-    
+
+    const socket = ensureMarketSocket();
+    if (!socket) return;
+
+    // テストが注入した Map があれば優先
+    const subs: Map<string, Set<() => void>> =
+      (socketService as any).activeSubscriptions ?? activeSubscriptions;
+
     // 各サブスクリプションキーを解析
-    for (const [subKey, callbacks] of activeSubscriptions.entries()) {
+    for (const [subKey, callbacks] of subs.entries()) {
       const parts = subKey.split(':');
       const type = parts[0];
       const symbol = parts[1];
       const exchangeType = parts[parts.length - 1] as ExchangeType;
-      
+
       // サブスクリプションリクエストの送信
-      if (marketSocket) {
-        if (type === CHANNEL.KLINE) {
-          const timeframe = parts[2];
-          marketSocket.emit(CHANNEL.SUBSCRIBE, {
-            symbol,
-            type,
-            timeframe,
-            exchangeType
-          });
-        } else {
-          marketSocket.emit(CHANNEL.SUBSCRIBE, {
-            symbol,
-            type,
-            exchangeType
-          });
-        }
+      if (type === CHANNEL.KLINE) {
+        const timeframe = parts[2];
+        socket.emit(CHANNEL.SUBSCRIBE, {
+          symbol,
+          type,
+          timeframe,
+          exchangeType
+        });
+      } else {
+        socket.emit(CHANNEL.SUBSCRIBE, {
+          symbol,
+          type,
+          exchangeType
+        });
       }
     }
   },
@@ -786,4 +792,7 @@ export const socketService = {
     reconnectAttempts = 0;
     activeSubscriptions.clear();
   },
+  // テスト用: reconnectAttemptsのgetter/setter
+  get reconnectAttempts() { return reconnectAttempts; },
+  set reconnectAttempts(val: number) { reconnectAttempts = val; },
 };

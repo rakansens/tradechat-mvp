@@ -331,6 +331,9 @@ describe('socketService', () => {
       // タイマーをモック
       jest.useFakeTimers();
       
+      // setTimeoutをスパイ
+      jest.spyOn(global, 'setTimeout');
+      
       // 関数を実行
       socketService.scheduleReconnect();
       
@@ -343,19 +346,18 @@ describe('socketService', () => {
       // 再接続が試行されることを確認
       expect(initializeSocketClient).toHaveBeenCalled();
       
-      // タイマーをリセット
+      // タイマーとスパイをリセット
       jest.useRealTimers();
+      jest.restoreAllMocks();
     });
     
     it('再接続試行回数が上限に達した場合は再接続を停止すること', () => {
       // 内部状態を設定
-      Object.defineProperty(socketService, 'reconnectAttempts', {
-        value: 5,
-        writable: true
-      });
+      socketService.reconnectAttempts = 5;
       
+      const MAX_RECONNECT_ATTEMPTS = 5;
       Object.defineProperty(socketService, 'MAX_RECONNECT_ATTEMPTS', {
-        value: 5,
+        value: MAX_RECONNECT_ATTEMPTS,
         writable: true
       });
       
@@ -381,9 +383,11 @@ describe('socketService', () => {
         ['kline:ETHUSDT:1h:spot', new Set([() => {}])]
       ]);
       
+      // socketServiceのactiveSubscriptionsを直接設定
       Object.defineProperty(socketService, 'activeSubscriptions', {
         value: activeSubscriptions,
-        writable: true
+        writable: true,
+        configurable: true
       });
       
       // 関数を実行
