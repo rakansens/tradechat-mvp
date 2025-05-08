@@ -61,8 +61,9 @@ export function initializeSocketClient(forceReinitialize = false, namespace?: st
       transports: ['websocket', 'polling'] // WebSocketとポーリングの両方を使用
     };
     
-    // 名前空間が指定されている場合は、その名前空間に接続
-    socket = namespace ? io(namespace, options) : io(options);
+    // 名前空間の問題を回避するため、デフォルトの名前空間のみを使用
+    const baseUrl = window.location.origin; // 現在のオリジンを使用
+    socket = io(baseUrl, options);
     
     // 接続成功時の処理
     socket.on('connected', (data: { clientId: string }) => {
@@ -339,9 +340,9 @@ export function requestCaptureFromClient(): Promise<string | null> {
  * @param attemptInitialize 接続がない場合に初期化を試みるかどうか
  * @returns ソケットインスタンス
  */
-export function getSocket(attemptInitialize = false, namespace?: string): Socket | null {
+export function getSocket(attemptInitialize = false): Socket | null {
   if (!socket && attemptInitialize) {
-    initializeSocketClient(false, namespace);
+    initializeSocketClient(false);
   }
   return socket;
 }

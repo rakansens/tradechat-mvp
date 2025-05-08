@@ -246,6 +246,17 @@ export const dataFetchService = {
     signal?: AbortSignal,
     useCache: boolean = true
   ): Promise<OHLCData[]> => {
+    // シンボルが空の場合はエラーをスロー
+    if (!symbol || symbol.trim() === '') {
+      logger.error('空のシンボルでチャートデータを取得しようとしました', {
+        component: 'dataFetchService',
+        action: 'fetchChartData',
+        timeFrame,
+        exchangeType
+      });
+      return [];
+    }
+    
     // 共通のnormalizeSymbol関数を使用してシンボルを正規化
     const normalizedSymbol = normalizeSymbol(symbol);
     

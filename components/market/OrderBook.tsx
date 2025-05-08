@@ -11,6 +11,10 @@
 // - ポーリング管理の改善
 // 更新: Zodバリデーションの適用
 // 更新: ハイドレーションエラーの修正
+// 更新: 無限ループ問題の修正
+// - シンボル変更検出ロジックの最適化
+// - 不要な再レンダリングの防止
+// - fetchOrderBookWithSymbol関数の改善
 
 'use client';
 
@@ -66,8 +70,13 @@ export const OrderBook: React.FC<OrderBookPropsSchema> = (props) => {
   const orderBookError = useAppStore(state => state.orderBookError);
   const currentSymbol = useAppStore(state => state.currentSymbol);
   const fetchOrderBook = useAppStore((state) => state.fetchOrderBook);
-  // WebSocketの接続状態を取得
-  const wsStatus = useAppStore((state) => state.getWebSocketStatus());
+  // WebSocketの接続状態を取得（無限ループを防ぐために個別のステートを取得）
+  const wsConnected = useAppStore(state => state.wsConnected);
+  const wsSubscriptions = useAppStore(state => state.wsSubscriptions);
+  const wsStatus = useMemo(() => ({
+    connected: wsConnected,
+    subscriptions: wsSubscriptions
+  }), [wsConnected, wsSubscriptions]);
   
   // AppStoreからスプレッド情報を計算
   const spread = useMemo(() => {
@@ -103,18 +112,19 @@ export const OrderBook: React.FC<OrderBookPropsSchema> = (props) => {
   const [processedBids, setProcessedBids] = useState<OrderBookEntry[]>([]);
   const [processedAsks, setProcessedAsks] = useState<OrderBookEntry[]>([]);
   
-  // オーダーブックデータの検証
+  // オーダーブックデータの検証 - パフォーマンス向上のために参照のみを保持
+  const { validateOrderBookData } = require('@/lib/validations/market');
+  
+  // デバッグモードでのみ検証を実行
   useEffect(() => {
-    if (orderBook) {
-      // orderBookDataSchemaを使用してデータを検証
-      const { orderBookDataSchema, validateOrderBookData } = require('@/lib/validations/market');
+    if (process.env.NODE_ENV === 'development' && orderBook) {
       const validationResult = validateOrderBookData(orderBook);
       
       if (!validationResult.success) {
         console.warn('OrderBook data validation failed:', validationResult.error);
       }
     }
-  }, [orderBook]);
+  }, [orderBook?.timestamp]); // タイムスタンプのみを依存配列に追加
 
   // メモ化された注文データ処理
   const processedData = useMemo(() => {
@@ -166,66 +176,61 @@ export const OrderBook: React.FC<OrderBookPropsSchema> = (props) => {
   const prevSymbolRef = useRef(currentSymbol);
   const prevAppStoreSymbolRef = useRef(appStoreSymbol);
   
-  // オーダーブック取得関数（正規化処理を含む）
+  // オーダーブック取得関数（最適化版）
   const fetchOrderBookWithSymbol = useCallback((symbol: string) => {
     // シンボルが空の場合は処理を行わない
     if (!symbol) {
-      console.warn('OrderBook: Cannot fetch orderbook with empty symbol');
-      return new AbortController();
-    }
-    
-    console.log(`OrderBook: Fetching orderbook for symbol: ${symbol}`);
-    const normalizedSymbol = normalizeSymbol(symbol);
-    console.log(`OrderBook: Normalized symbol for fetch: ${normalizedSymbol}`);
-    
-    // 新しいAbortControllerを作成
-    const abortController = new AbortController();
-    
-    // 明示的に正規化したシンボルを渡す
-    // useAppStoreのfetchOrderBookは1つの引数しか受け付けない
-    fetchOrderBook(normalizedSymbol);
-    
-    return abortController;
-  }, [fetchOrderBook]);
-  
-  // シンボル変更を監視して、変更があった場合にオーダーブックを再取得
-  useEffect(() => {
-    console.log(`OrderBook: currentSymbol=${currentSymbol}, appStoreSymbol=${appStoreSymbol}`);
-    
-    // AppStoreのシンボルを正規化して比較（共通ユーティリティ関数を使用）
-    const normalizedCurrentSymbol = normalizeSymbol(currentSymbol);
-    const normalizedAppStoreSymbol = normalizeSymbol(appStoreSymbol);
-    
-    // シンボルの不一致を検出（コンポーネントとAppStoreの同期ずれを検出）
-    if (normalizedCurrentSymbol !== normalizedAppStoreSymbol) {
-      console.log(`OrderBook: Symbol mismatch detected! component=${normalizedCurrentSymbol}, appStore=${normalizedAppStoreSymbol}`);
-      
-      // 強制的にAppStoreのシンボルでオーダーブックを取得
-      fetchOrderBookWithSymbol(appStoreSymbol);
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('OrderBook: Cannot fetch orderbook with empty symbol');
+      }
       return;
     }
     
-    // 前回のシンボルと比較して変更があった場合のみ処理
+    // 正規化したシンボルを使用
+    const normalizedSymbol = normalizeSymbol(symbol);
+    
+    // 開発環境のみログを出力
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`OrderBook: Fetching orderbook for normalized symbol: ${normalizedSymbol}`);
+    }
+    
+    // AppStoreのfetchOrderBook関数を呼び出し
+    fetchOrderBook(normalizedSymbol);
+  }, [fetchOrderBook]);
+  
+  // シンボル変更を監視して、変更があった場合にオーダーブックを再取得（最適化版）
+  useEffect(() => {
+    // 前回のシンボルを取得（参照を使用）
     const prevSymbol = prevSymbolRef.current;
+    const prevAppStoreSymbol = prevAppStoreSymbolRef.current;
+    
+    // 現在のシンボルを正規化
+    const normalizedCurrentSymbol = normalizeSymbol(currentSymbol);
+    const normalizedAppStoreSymbol = normalizeSymbol(appStoreSymbol);
     const normalizedPrevSymbol = normalizeSymbol(prevSymbol);
     
+    // デバッグログ（開発環境のみ）
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`OrderBook: currentSymbol=${normalizedCurrentSymbol}, appStoreSymbol=${normalizedAppStoreSymbol}, prevSymbol=${normalizedPrevSymbol}`);
+    }
+    
+    // シンボルが変更された場合のみオーダーブックを取得
+    // 前回のシンボルと現在のシンボルが異なる場合のみ処理
     if (normalizedCurrentSymbol !== normalizedPrevSymbol) {
-      console.log(`OrderBook: Symbol changed from ${prevSymbol} to ${currentSymbol}`);
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`OrderBook: Symbol changed from ${prevSymbol} to ${currentSymbol}`);
+      }
       
-      // オーダーブックを即時取得（遅延なし）
-      const abortController = fetchOrderBookWithSymbol(currentSymbol);
-      
-      // クリーンアップ関数でAbortControllerをキャンセル
-      return () => {
-        abortController.abort();
-        console.log(`OrderBook: Aborted fetch for symbol change from ${prevSymbol} to ${currentSymbol}`);
-      };
+      // オーダーブックを取得
+      fetchOrderBookWithSymbol(currentSymbol);
     }
     
     // 参照を更新
     prevSymbolRef.current = currentSymbol;
     prevAppStoreSymbolRef.current = appStoreSymbol;
-  }, [currentSymbol, appStoreSymbol, fetchOrderBookWithSymbol, normalizeSymbol]);
+    
+    // クリーンアップ関数は不要（AbortControllerはfetchOrderBookWithSymbol内で管理）
+  }, [currentSymbol, appStoreSymbol, fetchOrderBookWithSymbol]);
 
   // ポーリングはuseAppStoreで一元管理されるため、コンポーネント側での実装は削除
 

@@ -22,7 +22,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
     
     // 共通のソケットサービスを使用してSocket.ioクライアントを初期化
     if (typeof window !== 'undefined') {
-      socketService.initializeBaseSocket();
+      socketService.initializeMarketSocket();
       
       // アプリケーション初期化時にuseAppStoreを初期化
       try {

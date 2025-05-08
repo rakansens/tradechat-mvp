@@ -35,8 +35,15 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
-    // エラーをロギング
-    logger.error('コンポーネントエラー', error, {
+    // エラーをロギング - エラーオブジェクトの適切な処理を追加
+    const errorDetails = {
+      message: error.message || 'Unknown error',
+      stack: error.stack || '',
+      name: error.name,
+      componentStack: errorInfo.componentStack
+    };
+    
+    logger.error('コンポーネントエラー', errorDetails, {
       component: 'ErrorBoundary',
       errorInfo: errorInfo.componentStack
     });

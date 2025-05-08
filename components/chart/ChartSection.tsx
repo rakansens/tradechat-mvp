@@ -253,10 +253,10 @@ export default function ChartSection() {
         {/* オーダーブック部分 */}
         <div className="w-full h-1/2 md:h-full md:w-1/4 lg:w-1/4 border-t md:border-t-0 md:border-l border-[#2A2E39] bg-[#131722]">
           <div className="h-full flex flex-col">
-            <OrderBook 
-              depth={15} 
+            <OrderBook
+              depth={15}
               className="h-full"
-              orderBookWidth={25}
+              orderBookWidth="25%"
             />
           </div>
         </div>

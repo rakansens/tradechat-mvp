@@ -64,8 +64,8 @@ export function setupGlobalErrorHandlers() {
   console.error = (...args) => {
     // Reactのエラーメッセージを検出（典型的なパターン）
     const errorMessage = args[0];
-    if (typeof errorMessage === 'string' && 
-        (errorMessage.includes('React will try to recreate this component tree') || 
+    if (typeof errorMessage === 'string' &&
+        (errorMessage.includes('React will try to recreate this component tree') ||
          errorMessage.includes('Error boundaries should catch all errors'))) {
       
       const error = args.find(arg => arg instanceof Error) || new Error(errorMessage);
@@ -73,9 +73,9 @@ export function setupGlobalErrorHandlers() {
       logger.error('React Error', error, {
         component: 'GlobalErrorHandler',
         action: 'reactError',
-        args: args.map(arg => 
-          arg instanceof Error 
-            ? { message: arg.message, stack: arg.stack } 
+        args: args.map(arg =>
+          arg instanceof Error
+            ? { message: arg.message, stack: arg.stack }
             : arg
         )
       });
@@ -87,8 +87,19 @@ export function setupGlobalErrorHandlers() {
       });
     }
     
-    // 元のconsole.errorを呼び出す
-    originalConsoleError.apply(console, args);
+    // 元のconsole.errorを呼び出す - 安全に処理
+    try {
+      // argsが有効な配列であることを確認
+      if (Array.isArray(args) && args.length > 0) {
+        originalConsoleError.apply(console, args);
+      } else {
+        // 無効な引数の場合はフォールバック
+        originalConsoleError.call(console, "Invalid console.error arguments", args);
+      }
+    } catch (e) {
+      // console.errorの呼び出しに失敗した場合のフォールバック
+      originalConsoleError.call(console, "Error in console.error override:", e);
+    }
   };
 
   logger.info('Global error handlers initialized', {

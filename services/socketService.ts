@@ -20,7 +20,7 @@ import { normalizeSymbol } from '../lib/utils';
 
 // Socket.IOの名前空間
 const NAMESPACE = {
-  MARKET: '/market'
+  MARKET: '' // デフォルトの名前空間を使用
 };
 
 // チャンネル名の定数
@@ -69,9 +69,9 @@ const _socketServiceBase = {
         return null;
       }
       
-      // Socket.io接続を初期化（マーケットデータ用の名前空間を指定）
-      initializeSocketClient(false, NAMESPACE.MARKET);
-      marketSocket = getSocket(true, NAMESPACE.MARKET);
+      // Socket.io接続を初期化（デフォルトの名前空間を使用）
+      initializeSocketClient(false);
+      marketSocket = getSocket(true);
       
       // 接続イベントのハンドラを設定
       if (marketSocket) {
@@ -142,10 +142,10 @@ const _socketServiceBase = {
  */
 function ensureMarketSocket(): Socket | null {
   if (marketSocket && marketSocket.connected) return marketSocket;
-  marketSocket = getSocket(true, NAMESPACE.MARKET) as Socket | null;
+  marketSocket = getSocket(true) as Socket | null;
   if (!marketSocket) {
     socketService.initializeMarketSocket();
-    marketSocket = getSocket(false, NAMESPACE.MARKET) as Socket | null;
+    marketSocket = getSocket(false) as Socket | null;
   }
   return marketSocket;
 }
