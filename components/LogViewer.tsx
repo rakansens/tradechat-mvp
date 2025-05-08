@@ -410,7 +410,7 @@ export default function LogViewer() {
 // ログリストコンポーネント
 function LogList({ logs }: { logs: StoredLog[] }) {
   if (logs.length === 0) {
-    return <div className="text-center py-8 text-gray-500">保存されたログはありません</div>;
+    return <div className="text-center py-8 text-gray-400">保存されたログはありません</div>;
   }
   
   return (
@@ -445,7 +445,7 @@ function LogItem({ log }: { log: StoredLog }) {
   };
   
   return (
-    <div className={`p-4 rounded-lg border ${log.level === 'error' ? 'bg-red-50 border-red-200' : log.level === 'warn' ? 'bg-yellow-50 border-yellow-200' : 'bg-white border-gray-200'}`}>
+    <div className={`p-4 rounded-lg border ${log.level === 'error' ? 'bg-red-900/20 border-red-800 text-red-300' : log.level === 'warn' ? 'bg-yellow-900/20 border-yellow-800 text-yellow-300' : 'bg-gray-800/50 border-gray-700 text-gray-200'}`}>
       <div className="flex justify-between items-start mb-2">
         <div>
           <Badge variant={getBadgeVariant(log.level) as any} className="mb-1">
@@ -453,7 +453,7 @@ function LogItem({ log }: { log: StoredLog }) {
           </Badge>
           <div className="text-sm font-medium">{log.message}</div>
         </div>
-        <div className="text-xs text-gray-500">
+        <div className="text-xs text-gray-400">
           {new Date(log.timestamp).toLocaleString()}
         </div>
       </div>
@@ -473,8 +473,8 @@ function LogItem({ log }: { log: StoredLog }) {
         <div className="mt-2 space-y-2">
           {log.context && (
             <div>
-              <div className="text-xs font-medium mb-1">コンテキスト:</div>
-              <pre className="text-xs bg-gray-100 p-2 rounded overflow-x-auto">
+              <div className="text-xs font-medium mb-1 text-gray-300">コンテキスト:</div>
+              <pre className="text-xs bg-gray-800 text-gray-200 p-2 rounded overflow-x-auto">
                 {JSON.stringify(log.context, null, 2)}
               </pre>
             </div>
@@ -482,8 +482,8 @@ function LogItem({ log }: { log: StoredLog }) {
           
           {log.error && (
             <div>
-              <div className="text-xs font-medium mb-1 text-red-600">エラー詳細:</div>
-              <pre className="text-xs bg-gray-100 p-2 rounded overflow-x-auto">
+              <div className="text-xs font-medium mb-1 text-red-400">エラー詳細:</div>
+              <pre className="text-xs bg-gray-800 text-red-300 p-2 rounded overflow-x-auto">
                 {log.error}
               </pre>
             </div>

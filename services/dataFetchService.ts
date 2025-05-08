@@ -1,6 +1,7 @@
 /**
  * dataFetchService.ts
  * 最小限の実装を提供して、エラーを回避する
+ * 更新: デバッグ機能のためのメソッドを追加
  */
 
 import { BitgetApiClient } from './bitgetApi';
@@ -14,7 +15,48 @@ import { normalizeSymbol } from '../lib/utils';
 const cache = new Map<string, { data: any, timestamp: number }>();
 const CACHE_TTL = 30000; // 30秒キャッシュ
 
+// リクエスト履歴を保存する配列
+const requestHistory: Array<{
+  url: string;
+  method: string;
+  timestamp: number;
+  duration: number;
+  status: number;
+  success: boolean;
+}> = [];
+
 export const dataFetchService = {
+  /**
+   * キャッシュの統計情報を取得
+   */
+  getCacheStats: () => {
+    const stats = {
+      totalEntries: cache.size,
+      entries: [] as Array<{
+        key: string;
+        age: number;
+        size: number;
+      }>
+    };
+    
+    for (const [key, value] of cache.entries()) {
+      stats.entries.push({
+        key,
+        age: Date.now() - value.timestamp,
+        size: JSON.stringify(value.data).length
+      });
+    }
+    
+    return stats;
+  },
+  
+  /**
+   * リクエスト履歴を取得
+   */
+  getRequestHistory: () => {
+    return [...requestHistory];
+  },
+  
   /**
    * キャッシュからデータを取得
    */
@@ -78,8 +120,25 @@ export const dataFetchService = {
     }
     
     try {
+      const startTime = Date.now();
       const api = new BitgetApiClient({}, exchangeType);
       const data = await api.getOrderBook(normalizedSymbol, exchangeType);
+      const endTime = Date.now();
+      
+      // リクエスト履歴に追加
+      requestHistory.push({
+        url: `bitget/orderbook/${normalizedSymbol}`,
+        method: 'GET',
+        timestamp: startTime,
+        duration: endTime - startTime,
+        status: 200,
+        success: true
+      });
+      
+      // 履歴が100件を超えたら古いものを削除
+      if (requestHistory.length > 100) {
+        requestHistory.shift();
+      }
       
       // 成功したらキャッシュに保存
       if (useCache) {
@@ -88,6 +147,16 @@ export const dataFetchService = {
       
       return data;
     } catch (error) {
+      // エラー時もリクエスト履歴に追加
+      requestHistory.push({
+        url: `bitget/orderbook/${normalizedSymbol}`,
+        method: 'GET',
+        timestamp: Date.now(),
+        duration: 0,
+        status: 500,
+        success: false
+      });
+      
       logger.error(`オーダーブック取得エラー: ${error}`, {
         component: 'dataFetchService',
         action: 'fetchOrderBook',
