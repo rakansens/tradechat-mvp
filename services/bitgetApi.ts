@@ -520,7 +520,11 @@ export class BitgetApiClient {
           pricePrecision: symbol.priceScale || 8,
           quantityPrecision: symbol.quantityScale || 8,
           minNotional: symbol.minTradeAmount || '0',
-          status: symbol.status === 'online' ? 'TRADING' : 'BREAK'
+          status: symbol.status === 'online' ? 'TRADING' : 'BREAK',
+          // 取引量データを追加
+          volume24h: symbol.volume24h || symbol.usdtVolume || '0',
+          priceChangePercent24h: symbol.priceChangePercent || symbol.chg24h || '0',
+          lastPrice: symbol.lastPr || symbol.close || '0'
         } as SymbolInfo;
       }
 
@@ -533,7 +537,11 @@ export class BitgetApiClient {
         pricePrecision: symbol.priceEndStep || 8,
         quantityPrecision: symbol.sizeMultiplier || 8,
         minNotional: symbol.minTradeAmount || '0',
-        status: symbol.status === 'normal' ? 'TRADING' : 'BREAK'
+        status: symbol.status === 'normal' ? 'TRADING' : 'BREAK',
+        // 取引量データを追加
+        volume24h: symbol.volume24h || symbol.volume || '0',
+        priceChangePercent24h: symbol.priceChangePercent || symbol.chg24h || '0',
+        lastPrice: symbol.lastPr || symbol.last || '0'
       } as SymbolInfo;
     });
   }
@@ -562,6 +570,15 @@ export class BitgetApiClient {
         // 同じ通貨同士のペアは除外
         if (base === quote) return;
         
+        // 主要銘柄かどうかによってダミーの取引量を調整
+        const isPrioritySymbol = ['BTC', 'ETH', 'SOL', 'XRP', 'DOGE', 'AVAX', 'MATIC', 'ADA'].includes(base);
+        const volume = isPrioritySymbol ? 
+          (Math.random() * 10000 + 5000).toFixed(2) : 
+          (Math.random() * 1000 + 100).toFixed(2);
+        
+        const priceChange = (Math.random() * 10 - 5).toFixed(2); // -5%から10%の間
+        const lastPrice = (Math.random() * 100 + 1).toFixed(2);
+        
         symbols.push({
           symbol: `${base}${quote}`,
           baseAsset: base,
@@ -570,7 +587,11 @@ export class BitgetApiClient {
           pricePrecision: 8,
           quantityPrecision: 6,
           minNotional: '10',
-          status: 'TRADING'
+          status: 'TRADING',
+          // 取引量データを追加
+          volume24h: volume,
+          priceChangePercent24h: priceChange,
+          lastPrice: lastPrice
         });
       });
     });

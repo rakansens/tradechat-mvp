@@ -3,6 +3,7 @@
 
 /**
  * 銘柄情報の型定義
+ * 更新: 取引量データのプロパティを追加
  */
 export interface SymbolInfo {
   /** 銘柄のシンボル (例: BTCUSDT) */
@@ -23,6 +24,12 @@ export interface SymbolInfo {
   status: string;
   /** お気に入りフラグ */
   isFavorite?: boolean;
+  /** 24時間取引量 */
+  volume24h?: string;
+  /** 24時間価格変動率 */
+  priceChangePercent24h?: string;
+  /** 最新価格 */
+  lastPrice?: string;
 }
 
 /**

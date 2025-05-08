@@ -29,6 +29,10 @@ export interface SymbolInfo {
   baseAsset: string;
   quoteAsset: string;
   isFavorite: boolean;
+  // 取引量データ
+  volume24h?: string; // 24時間取引量
+  priceChangePercent24h?: string; // 24時間価格変動率
+  lastPrice?: string; // 最新価格
 }
 
 // フィルターオプションの型定義
@@ -394,9 +398,66 @@ export const useAppStore = create<AppState>()(
             };
           });
           
+          // 優先順位付けの設定
+          const prioritySymbols = ['BTC', 'ETH', 'SOL', 'XRP', 'DOGE', 'AVAX', 'MATIC', 'ADA', 'DOT', 'LINK'];
+          
+          // 銘柄を優先順位でソート
+          const sortedSymbols = [...mergedSymbols].sort((a, b) => {
+            // お気に入りを最優先
+            if (a.isFavorite && !b.isFavorite) return -1;
+            if (!a.isFavorite && b.isFavorite) return 1;
+            
+            // 基軸通貨がUSDTの銘柄を優先
+            if (a.quoteAsset === 'USDT' && b.quoteAsset !== 'USDT') return -1;
+            if (a.quoteAsset !== 'USDT' && b.quoteAsset === 'USDT') return 1;
+            
+            // 同じ基軸通貨の場合の並べ替えロジック
+            if (a.quoteAsset === b.quoteAsset) {
+              // 優先銘柄リストにある場合
+              const aIndex = prioritySymbols.indexOf(a.baseAsset);
+              const bIndex = prioritySymbols.indexOf(b.baseAsset);
+              
+              // 両方がリストにある場合はリスト順
+              if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex;
+              // 片方だけリストにある場合はそちらを優先
+              if (aIndex !== -1) return -1;
+              if (bIndex !== -1) return 1;
+              
+              // 取引量データがあれば、取引量の多い順に並べ替え
+              if (a.volume24h && b.volume24h) {
+                const aVolume = parseFloat(a.volume24h);
+                const bVolume = parseFloat(b.volume24h);
+                
+                // 有効な数値の場合のみ比較
+                if (!isNaN(aVolume) && !isNaN(bVolume) && aVolume !== bVolume) {
+                  return bVolume - aVolume; // 取引量の多い順
+                }
+              }
+              
+              // 価格変動率があれば、変動率の大きい順に並べ替え
+              if (a.priceChangePercent24h && b.priceChangePercent24h) {
+                const aChange = Math.abs(parseFloat(a.priceChangePercent24h));
+                const bChange = Math.abs(parseFloat(b.priceChangePercent24h));
+                
+                // 有効な数値の場合のみ比較
+                if (!isNaN(aChange) && !isNaN(bChange) && aChange !== bChange) {
+                  return bChange - aChange; // 変動率の大きい順
+                }
+              }
+            }
+            
+            // それ以外はアルファベット順
+            return a.symbol.localeCompare(b.symbol);
+          });
+          
+          logger.info(`Sorted ${sortedSymbols.length} symbols by priority`, {
+            component: 'useAppStore',
+            action: 'fetchSymbols'
+          });
+          
           set({
-            symbols: mergedSymbols,
-            filteredSymbols: mergedSymbols,
+            symbols: sortedSymbols,
+            filteredSymbols: sortedSymbols,
             isLoadingSymbols: false
           });
           

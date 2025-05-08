@@ -4,6 +4,7 @@
 // 作成: 銘柄選択コンポーネント
 // 銘柄の検索、フィルタリング、選択機能を提供する
 // 更新: Zodバリデーションの適用
+// 更新: 人気銘柄セクションの追加
 
 import { useState, useEffect } from 'react';
 import { useAppStore } from '@/store';
@@ -57,6 +58,9 @@ export default function SymbolSelector({
   // 一般的な基軸通貨
   const commonQuoteAssets = ['USDT', 'USD', 'BTC', 'ETH'];
   
+  // 人気銘柄リスト（USDTペア）
+  const popularSymbols = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'XRPUSDT', 'DOGEUSDT', 'AVAXUSDT', 'MATICUSDT', 'ADAUSDT'];
+  
   // 初回レンダリング時に銘柄を取得
   useEffect(() => {
     fetchSymbols(exchangeType);
@@ -94,6 +98,67 @@ export default function SymbolSelector({
   // お気に入りフィルター処理
   const handleFavoritesToggle = () => {
     setFilterOptions({ favoritesOnly: !filterOptions.favoritesOnly });
+  };
+  
+  // 人気銘柄を取得する関数
+  const getPopularSymbols = () => {
+    // フィルターが適用されている場合は空配列を返す
+    if (filterOptions.searchTerm || filterOptions.quoteAsset || filterOptions.favoritesOnly) {
+      return [];
+    }
+    
+    return filteredSymbols.filter(symbol => 
+      popularSymbols.includes(symbol.symbol)
+    );
+  };
+  
+  // 人気銘柄リストをレンダリングする関数
+  const renderPopularSymbols = () => {
+    const symbols = getPopularSymbols();
+    
+    // フィルターが適用されている場合や人気銘柄が見つからない場合は表示しない
+    if (symbols.length === 0) return null;
+    
+    return (
+      <div className="border rounded-md mb-4">
+        <div className="p-2 bg-muted/50 border-b flex justify-between items-center">
+          <span className="text-sm font-medium">人気銘柄</span>
+          <Badge variant="outline">{symbols.length}件</Badge>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-2">
+          {symbols.map((symbol) => (
+            <Button
+              key={symbol.symbol}
+              variant={currentSymbol === symbol.symbol ? "default" : "outline"}
+              size="sm"
+              onClick={() => onSelect(symbol.symbol)}
+              className="justify-between h-auto py-2"
+            >
+              <div className="flex flex-col items-start">
+                <div className="flex items-center">
+                  <span className="font-medium">{symbol.baseAsset}</span>
+                  <span className="text-muted-foreground text-xs ml-1">/{symbol.quoteAsset}</span>
+                </div>
+                <span className="text-xs text-muted-foreground">{symbol.symbol}</span>
+              </div>
+              <div
+                className="inline-flex items-center justify-center h-6 w-6 ml-1 rounded-md hover:bg-accent hover:text-accent-foreground cursor-pointer"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleFavorite(symbol.symbol);
+                }}
+              >
+                {symbol.isFavorite ? (
+                  <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
+                ) : (
+                  <StarOff className="h-3.5 w-3.5" />
+                )}
+              </div>
+            </Button>
+          ))}
+        </div>
+      </div>
+    );
   };
   
   return (
@@ -186,6 +251,9 @@ export default function SymbolSelector({
           </Button>
         </div>
       )}
+      
+      {/* 人気銘柄セクション */}
+      {!isLoading && renderPopularSymbols()}
       
       {/* 銘柄リスト */}
       <div className="border rounded-md">
