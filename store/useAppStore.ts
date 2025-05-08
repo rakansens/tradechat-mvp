@@ -1,5 +1,5 @@
 // store/useAppStore.ts
-// 更新: デバッグ機能の追加
+// 更新: WebSocketの共有データ方式に対応
 //
 // このストアはシンボルと取引タイプの管理を一元化し、
 // データフェッチの制御も担当します。
@@ -11,7 +11,9 @@
 // 3. シンボル変更通知の提供
 // 4. シンボル正規化処理の統一
 // 5. 最後に使用したシンボルの保存と読み込み
-// 6. デバッグ情報の提供（アクティブなフェッチリクエスト、ポーリング状態など）
+// 6. WebSocketからのデータを保存・管理
+// 7. WebSocketとRESTAPIのフォールバック機能
+// 8. デバッグ情報の提供（アクティブなフェッチリクエスト、ポーリング状態など）
 
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
@@ -22,6 +24,7 @@ import { BitgetApiClient } from '../services/bitgetApi';
 import { OHLCData, Timeframe } from '../types/chart';
 import { OrderBookData } from '../types/market';
 import { normalizeSymbol } from '../lib/utils';
+import { socketService } from '../services/socketService';
 
 // シンボル情報の型定義
 export interface SymbolInfo {
@@ -98,9 +101,17 @@ export interface AppState {
     chart: PollingInfo;
   };
   
+  // WebSocket関連の状態
+  wsConnected: boolean;
+  wsSubscriptions: {
+    orderbook: boolean;
+    chart: boolean;
+  };
+  
   // 内部ポーリング状態
   _pollingActive: boolean;
   _pollingTimers: Record<string, NodeJS.Timeout>;
+  _wsUnsubscribeFunctions: Record<string, () => void>;
   
   // 内部ユーティリティ関数
   _normalizeSymbol: (symbol: string) => string;
@@ -133,6 +144,8 @@ export interface AppState {
   getActiveFetchesInfo: () => ActiveFetch[];
   getPollingStatus: () => { orderbook: PollingInfo; chart: PollingInfo };
   getSymbolChangeHistory: () => Array<{ from: string; to: string; timestamp: number; reason?: string }>;
+  getWebSocketStatus: () => { connected: boolean; subscriptions: { orderbook: boolean; chart: boolean } };
+  unsubscribeAllWebSockets: () => void;
   
   // チャートデータポーリング関連のアクション
   startChartDataPolling: () => void;
@@ -280,6 +293,9 @@ export const useAppStore = create<AppState>()(
         get().stopOrderBookPolling();
         get().stopChartDataPolling();
         
+        // WebSocketの購読を解除
+        get().unsubscribeAllWebSockets();
+        
         // シンボル変更前に明示的にキャッシュをクリア
         logger.info(`Clearing cache for symbol change from ${currentSymbol} to ${symbol}`, {
           component: 'useAppStore',
@@ -337,6 +353,9 @@ export const useAppStore = create<AppState>()(
         // すべてのポーリングを停止
         get().stopOrderBookPolling();
         get().stopChartDataPolling();
+        
+        // WebSocketの購読を解除
+        get().unsubscribeAllWebSockets();
         
         // 取引種別を更新
         // 最後に使用した取引種別をローカルストレージに保存
@@ -1052,6 +1071,42 @@ export const useAppStore = create<AppState>()(
         set({ activeFetches: [] });
       },
       
+      /**
+       * WebSocketの購読を解除
+       */
+      unsubscribeAllWebSockets: () => {
+        const { _wsUnsubscribeFunctions } = get();
+        
+        // すべての購読解除関数を実行
+        Object.values(_wsUnsubscribeFunctions).forEach(unsubscribe => {
+          if (typeof unsubscribe === 'function') {
+            unsubscribe();
+          }
+        });
+        
+        // 購読解除関数をクリア
+        set({
+          _wsUnsubscribeFunctions: {},
+          wsSubscriptions: {
+            orderbook: false,
+            chart: false
+          }
+        });
+        
+        logger.info('すべてのWebSocket購読を解除しました', {
+          component: 'useAppStore',
+          action: 'unsubscribeAllWebSockets'
+        });
+      },
+      
+      /**
+       * WebSocketの接続状態を取得
+       */
+      getWebSocketStatus: () => {
+        const { wsConnected, wsSubscriptions } = get();
+        return { connected: wsConnected, subscriptions: wsSubscriptions };
+      },
+      
       // アプリケーション初期化時に呼び出す関数
       initializeApp: () => {
         const state = get();
@@ -1086,11 +1141,115 @@ export const useAppStore = create<AppState>()(
         state.fetchOrderBook();
         state.fetchChartData();
         
-        // オーダーブックのポーリングを開始
-        state.startOrderBookPolling();
+        // WebSocketの接続状態を監視
+        const checkWebSocketConnection = () => {
+          const isConnected = socketService.isConnected();
+          set({ wsConnected: isConnected });
+          
+          // 正規化したシンボル
+          const normalizedSymbol = normalizeSymbol(lastUsedSymbol);
+          
+          // WebSocketが接続されている場合はWebSocketを使用
+          if (isConnected) {
+            // オーダーブックのWebSocket購読を開始
+            const orderBookUnsubscribe = dataFetchService.subscribeOrderBookRealtime(
+              normalizedSymbol,
+              (data) => {
+                set({
+                  orderBook: data,
+                  isLoadingOrderBook: false,
+                  orderBookError: null
+                });
+              },
+              lastUsedExchangeType
+            );
+            
+            // チャートデータのWebSocket購読を開始
+            const chartDataUnsubscribe = dataFetchService.subscribeKlineRealtime(
+              normalizedSymbol,
+              state.currentTimeFrame,
+              (data) => {
+                state.updateLastCandle(data);
+              },
+              lastUsedExchangeType
+            );
+            
+            // 購読解除関数を保存
+            set(state => ({
+              _wsUnsubscribeFunctions: {
+                ...state._wsUnsubscribeFunctions,
+                orderbook: orderBookUnsubscribe,
+                chart: chartDataUnsubscribe
+              },
+              wsSubscriptions: {
+                orderbook: true,
+                chart: true
+              }
+            }));
+            
+            logger.info('WebSocketを使用したリアルタイムデータ購読を開始しました', {
+              component: 'useAppStore',
+              action: 'initializeApp',
+              symbol: normalizedSymbol
+            });
+          } else {
+            // WebSocketが接続されていない場合はポーリングを使用
+            state.startOrderBookPolling();
+            state.startChartDataPolling();
+            
+            logger.info('ポーリングを使用したデータ取得を開始しました', {
+              component: 'useAppStore',
+              action: 'initializeApp',
+              symbol: normalizedSymbol
+            });
+          }
+        };
         
-        // チャートデータのポーリングも開始（一元管理）
-        state.startChartDataPolling();
+        // 初回チェック
+        checkWebSocketConnection();
+        
+        // 定期的にWebSocketの接続状態を確認
+        const wsCheckInterval = setInterval(() => {
+          const currentConnected = socketService.isConnected();
+          const prevConnected = get().wsConnected;
+          
+          // 接続状態が変わった場合
+          if (currentConnected !== prevConnected) {
+            set({ wsConnected: currentConnected });
+            
+            if (currentConnected) {
+              // 接続された場合はポーリングを停止してWebSocketを使用
+              get().stopOrderBookPolling();
+              get().stopChartDataPolling();
+              
+              // WebSocketの購読を開始
+              checkWebSocketConnection();
+              
+              logger.info('WebSocketが接続されました。WebSocketを使用したデータ取得に切り替えます', {
+                component: 'useAppStore',
+                action: 'wsConnectionCheck'
+              });
+            } else {
+              // 切断された場合はWebSocketの購読を解除してポーリングを使用
+              get().unsubscribeAllWebSockets();
+              get().startOrderBookPolling();
+              get().startChartDataPolling();
+              
+              logger.info('WebSocketが切断されました。ポーリングを使用したデータ取得に切り替えます', {
+                component: 'useAppStore',
+                action: 'wsConnectionCheck'
+              });
+            }
+          }
+        }, 10000); // 10秒ごとにチェック
+        
+        // タイマーを保存
+        set(state => ({
+          _pollingTimers: {
+            ...state._pollingTimers,
+            wsCheck: wsCheckInterval as unknown as NodeJS.Timeout
+          }
+        }));
         
         return {
           symbol: lastUsedSymbol,

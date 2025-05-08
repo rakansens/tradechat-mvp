@@ -1,7 +1,12 @@
 /**
  * dataFetchService.ts
- * 最小限の実装を提供して、エラーを回避する
- * 更新: デバッグ機能のためのメソッドを追加
+ * WebSocketの共有データ方式に対応したデータフェッチサービス
+ *
+ * 更新内容:
+ * - WebSocketからのデータを利用するように変更
+ * - キャッシュ戦略の見直しと最適化
+ * - WebSocketとRESTAPIのフォールバック機能を実装
+ * - エラーハンドリングの強化
  */
 
 import { BitgetApiClient } from './bitgetApi';
@@ -10,10 +15,12 @@ import { OrderBookData } from '../types/market';
 import { OHLCData, Timeframe } from '../types/chart';
 import { logger } from '../utils/logger';
 import { normalizeSymbol } from '../lib/utils';
+import { socketService } from './socketService';
 
 // シンプルなキャッシュ実装
-const cache = new Map<string, { data: any, timestamp: number }>();
+const cache = new Map<string, { data: any, timestamp: number, source: 'websocket' | 'rest' }>();
 const CACHE_TTL = 30000; // 30秒キャッシュ
+const WS_CACHE_TTL = 60000; // WebSocketデータは60秒キャッシュ
 
 // リクエスト履歴を保存する配列
 const requestHistory: Array<{
@@ -64,8 +71,9 @@ export const dataFetchService = {
     const item = cache.get(key);
     if (!item) return null;
     
-    // キャッシュ有効期限チェック
-    if (Date.now() - item.timestamp > CACHE_TTL) {
+    // キャッシュ有効期限チェック（ソースによって有効期限を変える）
+    const ttl = item.source === 'websocket' ? WS_CACHE_TTL : CACHE_TTL;
+    if (Date.now() - item.timestamp > ttl) {
       cache.delete(key);
       return null;
     }
@@ -76,8 +84,8 @@ export const dataFetchService = {
   /**
    * キャッシュにデータを保存
    */
-  setToCache: <T>(key: string, data: T): void => {
-    cache.set(key, { data, timestamp: Date.now() });
+  setToCache: <T>(key: string, data: T, source: 'websocket' | 'rest' = 'rest'): void => {
+    cache.set(key, { data, timestamp: Date.now(), source });
   },
   
   /**
@@ -98,7 +106,7 @@ export const dataFetchService = {
   },
   
   /**
-   * オーダーブックデータ取得
+   * オーダーブックデータ取得（WebSocketとRESTAPIのハイブリッド）
    */
   fetchOrderBook: async (
     symbol: string,
@@ -120,6 +128,63 @@ export const dataFetchService = {
     }
     
     try {
+      // WebSocketが接続されているか確認
+      if (socketService.isConnected()) {
+        try {
+          // WebSocketからデータを取得（Promise化）
+          const wsData = await new Promise<OrderBookData>((resolve, reject) => {
+            // タイムアウト設定
+            const timeoutId = setTimeout(() => {
+              reject(new Error('WebSocketからのデータ取得がタイムアウトしました'));
+            }, 5000); // 5秒でタイムアウト
+            
+            // 一時的なサブスクリプション
+            const unsubscribe = socketService.subscribeOrderBook(
+              normalizedSymbol,
+              (data) => {
+                clearTimeout(timeoutId);
+                unsubscribe(); // 一度データを受け取ったら購読解除
+                resolve(data);
+              },
+              exchangeType
+            );
+          });
+          
+          // WebSocketからデータを取得できた場合
+          if (wsData) {
+            // リクエスト履歴に追加
+            requestHistory.push({
+              url: `websocket/orderbook/${normalizedSymbol}`,
+              method: 'WS',
+              timestamp: Date.now(),
+              duration: 0,
+              status: 200,
+              success: true
+            });
+            
+            // 成功したらキャッシュに保存（WebSocketソース）
+            if (useCache) {
+              cache.set(requestKey, {
+                data: wsData,
+                timestamp: Date.now(),
+                source: 'websocket'
+              });
+            }
+            
+            return wsData;
+          }
+        } catch (wsError) {
+          // WebSocketエラーをログに記録（フォールバックのため例外はスローしない）
+          logger.warn(`WebSocketからのオーダーブック取得に失敗、RESTAPIにフォールバック: ${wsError}`, {
+            component: 'dataFetchService',
+            action: 'fetchOrderBook',
+            symbol: normalizedSymbol,
+            error: wsError
+          });
+        }
+      }
+      
+      // WebSocketが失敗した場合またはWebSocketが接続されていない場合はRESTAPIを使用
       const startTime = Date.now();
       const api = new BitgetApiClient({}, exchangeType);
       const data = await api.getOrderBook(normalizedSymbol, exchangeType);
@@ -140,9 +205,13 @@ export const dataFetchService = {
         requestHistory.shift();
       }
       
-      // 成功したらキャッシュに保存
+      // 成功したらキャッシュに保存（RESTソース）
       if (useCache) {
-        dataFetchService.setToCache(requestKey, data);
+        cache.set(requestKey, {
+          data,
+          timestamp: Date.now(),
+          source: 'rest'
+        });
       }
       
       return data;
@@ -168,7 +237,7 @@ export const dataFetchService = {
   },
   
   /**
-   * チャートデータ取得
+   * チャートデータ取得（WebSocketとRESTAPIのハイブリッド）
    */
   fetchChartData: async (
     symbol: string,
@@ -191,19 +260,114 @@ export const dataFetchService = {
     }
     
     try {
+      // WebSocketが接続されているか確認
+      if (socketService.isConnected()) {
+        try {
+          // WebSocketからデータを取得（Promise化）
+          // 注意: ローソク足データは配列で返されるため、複数のデータを受け取る必要がある
+          const wsData = await new Promise<OHLCData[]>((resolve, reject) => {
+            // タイムアウト設定
+            const timeoutId = setTimeout(() => {
+              reject(new Error('WebSocketからのデータ取得がタイムアウトしました'));
+            }, 5000); // 5秒でタイムアウト
+            
+            // 受信したデータを格納する配列
+            const receivedData: OHLCData[] = [];
+            let dataCount = 0;
+            
+            // 一時的なサブスクリプション
+            const unsubscribe = socketService.subscribeKline(
+              normalizedSymbol,
+              timeFrame,
+              (data) => {
+                receivedData.push(data);
+                dataCount++;
+                
+                // 十分なデータが集まったら完了
+                if (dataCount >= 10) { // 最低10件のデータを受信
+                  clearTimeout(timeoutId);
+                  unsubscribe(); // データを受け取ったら購読解除
+                  resolve(receivedData);
+                }
+              },
+              exchangeType
+            );
+            
+            // 一定時間後にデータが少なくても返す
+            setTimeout(() => {
+              if (receivedData.length > 0) {
+                clearTimeout(timeoutId);
+                unsubscribe();
+                resolve(receivedData);
+              }
+            }, 3000); // 3秒待機
+          });
+          
+          // WebSocketからデータを取得できた場合
+          if (wsData && wsData.length > 0) {
+            // リクエスト履歴に追加
+            requestHistory.push({
+              url: `websocket/chart/${normalizedSymbol}/${timeFrame}`,
+              method: 'WS',
+              timestamp: Date.now(),
+              duration: 0,
+              status: 200,
+              success: true
+            });
+            
+            // 成功したらキャッシュに保存（WebSocketソース）
+            if (useCache) {
+              cache.set(requestKey, {
+                data: wsData,
+                timestamp: Date.now(),
+                source: 'websocket'
+              });
+            }
+            
+            return wsData;
+          }
+        } catch (wsError) {
+          // WebSocketエラーをログに記録（フォールバックのため例外はスローしない）
+          logger.warn(`WebSocketからのチャートデータ取得に失敗、RESTAPIにフォールバック: ${wsError}`, {
+            component: 'dataFetchService',
+            action: 'fetchChartData',
+            symbol: normalizedSymbol,
+            timeFrame,
+            error: wsError
+          });
+        }
+      }
+      
+      // WebSocketが失敗した場合またはWebSocketが接続されていない場合はRESTAPIを使用
       const api = new BitgetApiClient({}, exchangeType);
       const data = await api.getHistoricalCandles(normalizedSymbol, timeFrame, 100);
       
-      // 成功したらキャッシュに保存
+      // リクエスト履歴に追加
+      requestHistory.push({
+        url: `bitget/chart/${normalizedSymbol}/${timeFrame}`,
+        method: 'GET',
+        timestamp: Date.now(),
+        duration: 0,
+        status: 200,
+        success: true
+      });
+      
+      // 成功したらキャッシュに保存（RESTソース）
       if (useCache) {
-        dataFetchService.setToCache(requestKey, data);
+        cache.set(requestKey, {
+          data,
+          timestamp: Date.now(),
+          source: 'rest'
+        });
       }
       
       return data;
     } catch (error) {
-      logger.error(`エラー: ${error}`, {
+      logger.error(`チャートデータ取得エラー: ${error}`, {
         component: 'dataFetchService',
         action: 'fetchChartData',
+        symbol: normalizedSymbol,
+        timeFrame,
         error
       });
       throw error;
@@ -228,6 +392,121 @@ export const dataFetchService = {
         }
       }
     }
+  },
+  
+  /**
+   * WebSocketを使用してオーダーブックデータをリアルタイム購読
+   *
+   * @param symbol シンボル
+   * @param callback データ受信時のコールバック関数
+   * @param exchangeType 取引タイプ
+   * @returns 購読解除用の関数
+   */
+  subscribeOrderBookRealtime: (
+    symbol: string,
+    callback: (data: OrderBookData) => void,
+    exchangeType: ExchangeType = 'spot'
+  ): () => void => {
+    // シンボルを正規化
+    const normalizedSymbol = normalizeSymbol(symbol);
+    
+    // WebSocketが接続されているか確認
+    if (!socketService.isConnected()) {
+      // WebSocketが接続されていない場合は接続を試みる
+      socketService.initializeMarketSocket();
+    }
+    
+    // WebSocketを使用してオーダーブックを購読
+    const unsubscribe = socketService.subscribeOrderBook(
+      normalizedSymbol,
+      (data) => {
+        // データをキャッシュに保存
+        const requestKey = `orderbook-${normalizedSymbol}-${exchangeType}`;
+        cache.set(requestKey, {
+          data,
+          timestamp: Date.now(),
+          source: 'websocket'
+        });
+        
+        // コールバック関数を呼び出し
+        callback(data);
+      },
+      exchangeType
+    );
+    
+    return unsubscribe;
+  },
+  
+  /**
+   * WebSocketを使用してローソク足データをリアルタイム購読
+   *
+   * @param symbol シンボル
+   * @param timeFrame タイムフレーム
+   * @param callback データ受信時のコールバック関数
+   * @param exchangeType 取引タイプ
+   * @returns 購読解除用の関数
+   */
+  subscribeKlineRealtime: (
+    symbol: string,
+    timeFrame: Timeframe,
+    callback: (data: OHLCData) => void,
+    exchangeType: ExchangeType = 'spot'
+  ): () => void => {
+    // シンボルを正規化
+    const normalizedSymbol = normalizeSymbol(symbol);
+    
+    // WebSocketが接続されているか確認
+    if (!socketService.isConnected()) {
+      // WebSocketが接続されていない場合は接続を試みる
+      socketService.initializeMarketSocket();
+    }
+    
+    // WebSocketを使用してローソク足データを購読
+    const unsubscribe = socketService.subscribeKline(
+      normalizedSymbol,
+      timeFrame,
+      (data) => {
+        // データをキャッシュに保存（既存のキャッシュがあれば更新）
+        const requestKey = `chart-${normalizedSymbol}-${timeFrame}-${exchangeType}`;
+        const cachedData = dataFetchService.getFromCache<OHLCData[]>(requestKey);
+        
+        if (cachedData) {
+          // 既存のデータがある場合は更新
+          const updatedData = [...cachedData];
+          
+          // 同じ時間のデータがあれば更新、なければ追加
+          const existingIndex = updatedData.findIndex(item => item.time === data.time);
+          if (existingIndex !== -1) {
+            updatedData[existingIndex] = data;
+          } else {
+            updatedData.push(data);
+            
+            // 時間順にソート
+            updatedData.sort((a, b) => a.time - b.time);
+          }
+          
+          // キャッシュを更新
+          cache.set(requestKey, {
+            data: updatedData,
+            timestamp: Date.now(),
+            source: 'websocket'
+          });
+        } else {
+          // 既存のデータがない場合は新規作成
+          cache.set(requestKey, {
+            data: [data],
+            timestamp: Date.now(),
+            source: 'websocket'
+          });
+        }
+        
+        // コールバック関数を呼び出し
+        callback(data);
+      },
+      exchangeType
+    );
+    
+    return unsubscribe;
   }
 };
 

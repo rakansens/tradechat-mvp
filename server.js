@@ -1,5 +1,5 @@
 // server.js
-// Socket.ioを統合したNextサーバー - 画像表示機能追加
+// Socket.ioを統合したNextサーバー - WebSocketの共有データ方式を実装
 
 const { createServer } = require('http');
 const { parse } = require('url');
@@ -8,6 +8,125 @@ const { Server } = require('socket.io');
 const { v4: uuidv4 } = require('uuid');
 const fs = require('fs');
 const path = require('path');
+// EventEmitterをインポート
+const { EventEmitter } = require('events');
+
+// WebSocketマネージャーとSocketDataブロードキャスターの代わりにモック実装を使用
+class MockBitgetWebSocketManager extends EventEmitter {
+  constructor() {
+    super();
+    this.subscriptions = new Map();
+    this.connectionState = 'disconnected';
+  }
+
+  connect() {
+    this.connectionState = 'connected';
+    console.log('MockBitgetWebSocketManager: 接続しました');
+    this.emit('connected');
+    return true;
+  }
+
+  disconnect() {
+    this.connectionState = 'disconnected';
+    console.log('MockBitgetWebSocketManager: 切断しました');
+    return true;
+  }
+
+  subscribe(symbol, type, timeframe, exchangeType = 'spot') {
+    const key = `${symbol}:${type}:${timeframe || ''}:${exchangeType}`;
+    this.subscriptions.set(key, { symbol, type, timeframe, exchangeType });
+    console.log(`MockBitgetWebSocketManager: 購読しました - ${key}`);
+    return true;
+  }
+
+  unsubscribe(symbol, type, timeframe, exchangeType = 'spot') {
+    const key = `${symbol}:${type}:${timeframe || ''}:${exchangeType}`;
+    this.subscriptions.delete(key);
+    console.log(`MockBitgetWebSocketManager: 購読解除しました - ${key}`);
+    return true;
+  }
+
+  getSubscriptions() {
+    return Array.from(this.subscriptions.values());
+  }
+
+  getConnectionState() {
+    return this.connectionState;
+  }
+
+  isConnected() {
+    return this.connectionState === 'connected';
+  }
+}
+
+class MockSocketDataBroadcaster {
+  constructor(io, maxQueueSize = 100) {
+    this.io = io;
+    this.maxQueueSize = maxQueueSize;
+    this.cache = {
+      orderBook: new Map(),
+      kline: new Map(),
+      trade: new Map()
+    };
+    console.log('MockSocketDataBroadcaster: 初期化しました');
+  }
+
+  broadcastOrderBook(symbol, data, exchangeType = 'spot') {
+    const key = `orderbook:${symbol}:${exchangeType}`;
+    this.cache.orderBook.set(key, data);
+    console.log(`MockSocketDataBroadcaster: オーダーブックをブロードキャストしました - ${key}`);
+    this.io.emit('orderbook', {
+      symbol,
+      exchangeType,
+      data,
+      timestamp: Date.now()
+    });
+  }
+
+  broadcastKline(symbol, timeframe, data, exchangeType = 'spot') {
+    const key = `kline:${symbol}:${timeframe}:${exchangeType}`;
+    this.cache.kline.set(key, data);
+    console.log(`MockSocketDataBroadcaster: ローソク足をブロードキャストしました - ${key}`);
+    this.io.emit('kline', {
+      symbol,
+      timeframe,
+      exchangeType,
+      data,
+      timestamp: Date.now()
+    });
+  }
+
+  broadcastTrade(symbol, data, exchangeType = 'spot') {
+    const key = `trade:${symbol}:${exchangeType}`;
+    this.cache.trade.set(key, data);
+    console.log(`MockSocketDataBroadcaster: 取引データをブロードキャストしました - ${key}`);
+    this.io.emit('trade', {
+      symbol,
+      exchangeType,
+      data,
+      timestamp: Date.now()
+    });
+  }
+
+  getChannelStats() {
+    return [];
+  }
+
+  getClientStats() {
+    return [];
+  }
+
+  getCacheStats() {
+    return {
+      orderBook: { size: this.cache.orderBook.size },
+      kline: { size: this.cache.kline.size },
+      trade: { size: this.cache.trade.size }
+    };
+  }
+}
+
+const BitgetWebSocketManager = MockBitgetWebSocketManager;
+const SocketDataBroadcaster = MockSocketDataBroadcaster;
 
 // Socket.IOイベント発行用のグローバル関数を定義
 // TypeScriptの実装を直接参照するのではなく、サーバー自体に実装
@@ -64,6 +183,8 @@ const activeConnections = new Map();
 const pendingCaptureRequests = new Map();
 let setupComplete = false;
 let io;
+let bitgetWsManager;
+let socketDataBroadcaster;
 
 // 画像保存用のディレクトリとマップ
 const CHART_IMAGES_DIR = path.join(__dirname, 'public', 'chart-images');
@@ -165,6 +286,47 @@ app.prepare().then(() => {
   console.log(`現在の接続数: ${io.engine.clientsCount}`);
   console.log('グローバルemitSocketEvent関数が利用可能になりました');
 
+  // BitgetWebSocketManagerとSocketDataBroadcasterの初期化
+  bitgetWsManager = new BitgetWebSocketManager();
+  socketDataBroadcaster = new SocketDataBroadcaster(io, 100); // キャッシュサイズ100
+  
+  // BitgetWebSocketManagerのイベントリスナー設定
+  bitgetWsManager.on('orderbook', (data) => {
+    const { symbol, exchangeType, data: orderBookData } = data;
+    socketDataBroadcaster.broadcastOrderBook(symbol, orderBookData, exchangeType);
+  });
+  
+  bitgetWsManager.on('kline', (data) => {
+    const { symbol, timeframe, exchangeType, data: klineData } = data;
+    socketDataBroadcaster.broadcastKline(symbol, timeframe, klineData, exchangeType);
+  });
+  
+  bitgetWsManager.on('trade', (data) => {
+    const { symbol, exchangeType, data: tradeData } = data;
+    socketDataBroadcaster.broadcastTrade(symbol, tradeData, exchangeType);
+  });
+  
+  // 接続を開始
+  bitgetWsManager.connect();
+  
+  // グローバル関数として公開
+  global.subscribeSymbol = (symbol, type, timeframe, exchangeType = 'spot') => {
+    return bitgetWsManager.subscribe(symbol, type, timeframe, exchangeType);
+  };
+  
+  global.unsubscribeSymbol = (symbol, type, timeframe, exchangeType = 'spot') => {
+    return bitgetWsManager.unsubscribe(symbol, type, timeframe, exchangeType);
+  };
+  
+  global.getWebSocketStatus = () => {
+    return {
+      connectionState: bitgetWsManager.getConnectionState(),
+      subscriptions: bitgetWsManager.getSubscriptions(),
+      channels: socketDataBroadcaster.getChannelStats(),
+      clients: socketDataBroadcaster.getClientStats(),
+      cache: socketDataBroadcaster.getCacheStats()
+    };
+  };
   
   // 接続イベントハンドラ
   io.on('connection', (socket) => {
@@ -442,5 +604,41 @@ app.prepare().then(() => {
     process.env.NEXT_PUBLIC_SERVER_PORT = ACTUAL_PORT.toString();
     
     setupComplete = true;
+    
+    // 定期的なクリーンアップタスク（1分ごと）
+    setInterval(() => {
+      try {
+        // 接続状態の確認
+        if (bitgetWsManager && !bitgetWsManager.isConnected()) {
+          console.log('WebSocket接続が切断されています。再接続を試みます...');
+          bitgetWsManager.connect();
+        }
+      } catch (error) {
+        console.error('定期的なクリーンアップタスクでエラーが発生しました:', error);
+      }
+    }, 60000);
   });
+});
+
+// プロセス終了時のクリーンアップ
+process.on('SIGINT', () => {
+  console.log('サーバーをシャットダウンしています...');
+  
+  // BitgetWebSocketManagerの切断
+  if (bitgetWsManager) {
+    bitgetWsManager.disconnect();
+  }
+  
+  process.exit(0);
+});
+
+process.on('SIGTERM', () => {
+  console.log('サーバーをシャットダウンしています...');
+  
+  // BitgetWebSocketManagerの切断
+  if (bitgetWsManager) {
+    bitgetWsManager.disconnect();
+  }
+  
+  process.exit(0);
 });

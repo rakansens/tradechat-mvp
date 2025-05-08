@@ -19,7 +19,7 @@ const MAX_INITIALIZATION_ATTEMPTS = 3;
  * Socket.ioクライアントを初期化
  * チャートキャプチャのイベントハンドラを設定
  */
-export function initializeSocketClient(forceReinitialize = false): boolean {
+export function initializeSocketClient(forceReinitialize = false, namespace?: string): boolean {
   // 既に初期化済みで、強制再初期化フラグがない場合は早期リターン
   if (isInitialized && !forceReinitialize) {
     console.log('Socket.IOは既に初期化済みです');
@@ -53,13 +53,16 @@ export function initializeSocketClient(forceReinitialize = false): boolean {
   
   try {
     // Socket.io接続を初期化 - 接続設定を改善
-    socket = io({
+    const options = {
       reconnectionAttempts: 10,
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
       timeout: 20000,
       transports: ['websocket', 'polling'] // WebSocketとポーリングの両方を使用
-    });
+    };
+    
+    // 名前空間が指定されている場合は、その名前空間に接続
+    socket = namespace ? io(namespace, options) : io(options);
     
     // 接続成功時の処理
     socket.on('connected', (data: { clientId: string }) => {
@@ -336,9 +339,9 @@ export function requestCaptureFromClient(): Promise<string | null> {
  * @param attemptInitialize 接続がない場合に初期化を試みるかどうか
  * @returns ソケットインスタンス
  */
-export function getSocket(attemptInitialize = false): Socket | null {
+export function getSocket(attemptInitialize = false, namespace?: string): Socket | null {
   if (!socket && attemptInitialize) {
-    initializeSocketClient();
+    initializeSocketClient(false, namespace);
   }
   return socket;
 }

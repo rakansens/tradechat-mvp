@@ -1,5 +1,10 @@
 // components/market/OrderBook.tsx
 // オーダーブック（板情報）表示コンポーネント - ChartSectionと視覚的に統一
+// 更新: WebSocketの共有データ方式に対応
+// - WebSocketからのデータを利用するように変更
+// - WebSocketの接続状態を表示する機能を追加
+// - データ表示の最適化とパフォーマンス向上
+// - WebSocketとRESTAPIのフォールバック機能を実装
 // 更新: シンボル更新問題の根本的な解決
 // - シンボル変更検出の強化
 // - シンボルストアとの連携強化
@@ -61,6 +66,8 @@ export const OrderBook: React.FC<OrderBookPropsSchema> = (props) => {
   const orderBookError = useAppStore(state => state.orderBookError);
   const currentSymbol = useAppStore(state => state.currentSymbol);
   const fetchOrderBook = useAppStore((state) => state.fetchOrderBook);
+  // WebSocketの接続状態を取得
+  const wsStatus = useAppStore((state) => state.getWebSocketStatus());
   
   // AppStoreからスプレッド情報を計算
   const spread = useMemo(() => {
@@ -234,7 +241,25 @@ export const OrderBook: React.FC<OrderBookPropsSchema> = (props) => {
   return (
     <div className={cn("flex flex-col w-full h-full bg-[#131722] border border-[#2A2E39]", className)}>
       <div className="p-2 bg-[#1E222D] border-b border-[#2A2E39] flex justify-between items-center">
-        <h3 className="text-sm font-medium text-white">オーダーブック</h3>
+        <div className="flex items-center">
+          <h3 className="text-sm font-medium text-white">オーダーブック</h3>
+          {/* WebSocketの接続状態を表示 */}
+          {mounted && (
+            <div className="ml-2 flex items-center">
+              <div
+                className={cn(
+                  "w-2 h-2 rounded-full mr-1",
+                  wsStatus.connected ? "bg-green-500" : "bg-red-500"
+                )}
+              />
+              <span className="text-xs text-[#9CA3AF]">
+                {wsStatus.connected ? (
+                  wsStatus.subscriptions.orderbook ? "WS" : "REST"
+                ) : "REST"}
+              </span>
+            </div>
+          )}
+        </div>
         <span className="text-xs text-[#9CA3AF]">
           {mounted ? currentSymbol : ''}
           {/* デバッグ用：AppStoreとの同期状態を表示 */}
