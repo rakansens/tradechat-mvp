@@ -1,7 +1,10 @@
+"use client"
+
 // components/chart/ChartContainer.tsx
 // 作成: 分割されたチャートストアを使用するコンポーネント
 // 
 // このファイルは新しく分割されたチャートストアを使用する方法を示すサンプルコンポーネントです。
+// クライアントコンポーネントとして明示的に宣言し、ハイドレーションエラーを回避
 
 import React, { useEffect } from 'react';
 import { useAppStore } from '../../store';

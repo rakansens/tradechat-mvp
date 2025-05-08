@@ -1,10 +1,11 @@
+"use client"
+
 // components/chart/ChartToolbar.tsx
 // 更新: シンボルストアを使用するように修正
 // 変更内容:
 // 1. シンボルストアを使用してシンボル管理を一元化
 // 2. リフレッシュボタンの処理を改善
-// 3. ハイドレーションエラーの修正
-"use client"
+// 3. クライアントコンポーネントとして明示的に宣言し、ハイドレーションエラーを回避
 
 import React, { memo, useMemo, useEffect, useState } from 'react';
 import {
