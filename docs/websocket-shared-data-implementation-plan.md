@@ -1,13 +1,40 @@
 # WebSocketの共有データ方式の実装計画
 
-## 1. 現状分析
+## 1. 現状分析と移行概要
+
+### 1.1 移行前：クライアント個別接続方式（ポーリングベース）
 
 現在のシステムは「クライアント個別接続方式」を採用しており、以下の特徴があります：
 
-- 各クライアントが個別にBitget WebSocketに接続
+- 各クライアントが個別にBitget REST APIにリクエストを送信
 - サーバーサイドでは5秒間のキャッシュ機能あり
 - クライアントサイドでは30秒間のキャッシュ機能あり
-- 複数クライアントが同じシンボルを表示する場合でも、各クライアントが個別にAPIリクエストを実行
+- 同じデータに対する重複リクエストが多発
+
+### 1.2 移行後：共有データ方式（WebSocketベース）
+
+新しいアーキテクチャでは以下の特徴があります：
+
+- サーバー側で単一のWebSocket接続を管理
+- Socket.IOを使用してクライアントにリアルタイムデータを配信
+- LRUキャッシュによるデータの効率的な管理
+- 接続障害時のRESTAPIフォールバック機能
+
+### 1.3 アーキテクチャの比較
+
+**移行前のアーキテクチャ**
+```
+クライアント1 → BitgetApiClient → サーバーキャッシュ → Bitget REST API
+クライアント2 → BitgetApiClient → サーバーキャッシュ → Bitget REST API
+クライアント3 → BitgetApiClient → サーバーキャッシュ → Bitget REST API
+```
+
+**移行後のアーキテクチャ**
+```
+                                 ┌→ socketService1 → dataFetchService1 → クライアント1
+Bitget WebSocket → BitgetWebSocketManager → SocketDataBroadcaster →  socketService2 → dataFetchService2 → クライアント2
+                                 └→ socketService3 → dataFetchService3 → クライアント3
+```
 
 ## 2. 設計要件
 
@@ -36,23 +63,25 @@
 - APIフォールバック機能
 - バックプレッシャー制御
 
-## 3. 実装計画
+## 3. 実装計画と実装状況
 
 ### 3.1 ディレクトリ構造とファイル変更
 
-#### 3.1.1 新規作成するファイル
+#### 3.1.1 新規作成したファイル
 - `server/bitgetWebSocketManager.ts` - サーバーサイドでBitget WebSocketとの単一接続を管理
 - `server/socketDataBroadcaster.ts` - Socket.IOを使用したデータ配信を管理
 - `server/cacheManager.ts` - LRUキャッシュ管理を実装
 - `types/websocket.ts` - WebSocket関連の型定義
+- `scripts/websocket-performance-test.js` - WebSocketパフォーマンステスト用スクリプト
 
-#### 3.1.2 修正が必要な既存ファイル
+#### 3.1.2 修正した既存ファイル
 - `server.js` - WebSocketマネージャーとデータブロードキャスターの統合
 - `services/socketService.ts` - クライアント側のSocket.IO接続管理の修正
 - `services/bitgetApi.ts` - WebSocket接続部分の修正
-- `services/dataFetchService.ts` - キャッシュ戦略の見直し
+- `services/dataFetchService.ts` - キャッシュ戦略の見直しとWebSocket/REST APIハイブリッド機能の実装
 - `components/market/OrderBook.tsx` - データ取得方法の修正
 - `store/useAppStore.ts` - データフェッチロジックの修正
+- `utils/errorHandlers.ts` - WebSocket関連のエラーハンドリング強化
 
 ### 3.2 サーバーサイドの実装
 
@@ -256,6 +285,35 @@ graph TD
     L -->|データ受信| I
 ```
 
+### 3.6 主要コンポーネントの実装状況
+
+#### 3.6.1 BitgetWebSocketManager
+- Bitget WebSocketとの単一接続を管理
+- サブスクリプション管理と自動再接続機能を実装
+- 指数バックオフ+ジッターによる再接続戦略を導入
+- データ受信時にイベントを発行する機能を実装
+
+#### 3.6.2 SocketDataBroadcaster
+- Socket.IOを使用したデータ配信機能を実装
+- シンボルごとのデータ配信チャネル管理を実装
+- クライアント購読管理（クライアントIDとチャネルの関連付け）を実装
+- バックプレッシャー制御機能を導入
+
+#### 3.6.3 cacheManager
+- LRUキャッシュによるデータの効率的な管理を実装
+- キャッシュサイズの制限と有効期限管理機能を実装
+- キャッシュ統計情報の提供機能を追加
+
+#### 3.6.4 socketService (クライアント側)
+- Socket.IO接続の管理とデータの購読機能を実装
+- 接続状態の監視と再接続処理を実装
+- 購読解除機能の提供
+
+#### 3.6.5 dataFetchService (クライアント側)
+- WebSocketとRESTAPIのハイブリッド機能を実装
+- WebSocket接続が切断された場合のフォールバック機能を実装
+- キャッシュ戦略の最適化
+
 ## 4. スケーラビリティとメンテナンス性の強化
 
 ### 4.1 スケーラビリティの強化
@@ -330,28 +388,33 @@ classDiagram
    - パフォーマンス最適化 - キャッシュ戦略の調整
    - エラーハンドリングの強化 - エッジケースの対応
 
-## 6. 期待される効果
+## 6. 実装による改善効果
 
 1. **APIレートリミット回避**
-   - Bitgetとのソケットは1本のみなのでAPI制限を最小化
+   - Bitgetとの接続は1本のみになり、API制限を回避
+   - 複数クライアントからの重複リクエストを排除
 
 2. **レイテンシ低減**
-   - クライアントはSocket.IO 1 hopだけで最新データを受信
-   - 数秒の遅延は許容可能
+   - ポーリング間隔による遅延がなくなり、リアルタイム性が向上
+   - クライアントはSocket.IO経由で即座にデータを受信
 
 3. **スケーラビリティ向上**
-   - 接続処理がサーバー側に閉じるため、後からEdge/Serverlessにも対応可能
-   - 水平スケールによる高負荷対応
+   - サーバー側で接続を一元管理することで、水平スケールが容易に
+   - 将来的にEdge/Serverlessへの対応も可能
 
 4. **コード責務分離**
-   - BitgetWebSocketManagerとSocketDataBroadcasterにより「取引所↔サーバ」と「サーバ↔クライアント」を分離
+   - 「取引所↔サーバ」と「サーバ↔クライアント」の明確な分離
+   - 各コンポーネントの変更が他に影響しにくい設計
 
-5. **メンテナンス性向上**
-   - 明確な責務分離により、各コンポーネントの変更が他に影響しにくい設計
-   - インターフェースベースの設計によるテスト容易性
+5. **信頼性向上**
+   - 自動再接続機能
+   - RESTAPIへのフォールバック機能
+   - バックプレッシャー制御
 
 6. **型安全性の向上**
    - WebSocketメッセージの型定義による早期エラー検出
 
-7. **バックプレッシャー制御**
-   - クライアント送信キューのオーバーフロー検出と対応
+7. **メンテナンス性向上**
+   - 明確な責務分離により、各コンポーネントの変更が他に影響しにくい設計
+   - インターフェースベースの設計によるテスト容易性
+   - 単体テストの充実（bitgetWebSocketManager.test.ts、cacheManager.test.tsなど）
