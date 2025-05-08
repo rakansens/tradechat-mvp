@@ -5,6 +5,7 @@
 // - シンボルストアとの連携強化
 // - ポーリング管理の改善
 // 更新: Zodバリデーションの適用
+// 更新: ハイドレーションエラーの修正
 
 'use client';
 
@@ -37,6 +38,14 @@ const formatTotal = (total: number): string => {
 import type { OrderBookPropsSchema } from '@/lib/validations/market';
 
 export const OrderBook: React.FC<OrderBookPropsSchema> = (props) => {
+  // クライアントサイドでのみシンボルを表示するための状態
+  const [mounted, setMounted] = useState(false);
+  
+  // クライアントサイドでのみ実行される処理
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  
   // Zodスキーマを使用してプロパティを検証
   const validationResult = validateOrderBookProps(props);
   
@@ -227,9 +236,9 @@ export const OrderBook: React.FC<OrderBookPropsSchema> = (props) => {
       <div className="p-2 bg-[#1E222D] border-b border-[#2A2E39] flex justify-between items-center">
         <h3 className="text-sm font-medium text-white">オーダーブック</h3>
         <span className="text-xs text-[#9CA3AF]">
-          {currentSymbol}
+          {mounted ? currentSymbol : ''}
           {/* デバッグ用：AppStoreとの同期状態を表示 */}
-          {normalizeSymbol(currentSymbol) !== normalizeSymbol(appStoreSymbol) && (
+          {mounted && normalizeSymbol(currentSymbol) !== normalizeSymbol(appStoreSymbol) && (
             <span className="ml-1 text-red-500">(!)</span>
           )}
         </span>

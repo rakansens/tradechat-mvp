@@ -4,9 +4,10 @@
 // 1. シンボルストアを使用してシンボル管理を一元化
 // 2. 循環参照を解消
 // 3. 非同期処理の問題を解決
+// 4. ハイドレーションエラーの修正
 "use client"
 
-import React, { useMemo, useEffect } from 'react';
+import React, { useMemo, useEffect, useState } from 'react';
 import { getTimeframeDisplayName } from "@/utils/ohlcDummyData"
 import ChartCanvas from "@/components/chart/ChartCanvas"
 import type { Entry } from "@/types/entry"
@@ -49,6 +50,14 @@ interface ChartSectionProps extends ChartViewProps, Pick<TimeframeControlProps, 
 }
 
 export default function ChartSection() {
+  // クライアントサイドでのみシンボルを表示するための状態
+  const [mounted, setMounted] = useState(false);
+  
+  // クライアントサイドでのみ実行される処理
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  
   // AppStoreからデータと状態を取得
   const currentSymbol = useAppStore(state => state.currentSymbol);
   const currentTimeFrame = useAppStore(state => state.currentTimeFrame);
@@ -181,8 +190,8 @@ export default function ChartSection() {
       <div className="px-4 py-2 bg-[#131722] border-b border-[#2A2E39]">
         <div className="flex items-center justify-between">
           <div className="flex items-center">
-            <h2 className="text-lg font-semibold text-white">{currentSymbol}</h2>
-            {currentPrice > 0 && (
+            <h2 className="text-lg font-semibold text-white">{mounted ? currentSymbol : ''}</h2>
+            {mounted && currentPrice > 0 && (
               <span className="ml-2 text-lg font-mono">
                 ${currentPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </span>
