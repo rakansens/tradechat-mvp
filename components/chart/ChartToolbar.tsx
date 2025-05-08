@@ -3,9 +3,10 @@
 // 変更内容:
 // 1. シンボルストアを使用してシンボル管理を一元化
 // 2. リフレッシュボタンの処理を改善
+// 3. ハイドレーションエラーの修正
 "use client"
 
-import React, { memo, useMemo, useEffect } from 'react';
+import React, { memo, useMemo, useEffect, useState } from 'react';
 import {
   // アプリストア（一元化されたストア）
   useAppStore,
@@ -63,6 +64,14 @@ const ChartToolbarComponent = memo(function ChartToolbar({
   activeTab,
   onTabChange
 }: ChartToolbarProps) {
+  // クライアントサイドでのみシンボルを表示するための状態
+  const [mounted, setMounted] = useState(false);
+  
+  // クライアントサイドでのみ実行される処理
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  
   // Socket.IOイベントリスナーの設定
   useEffect(() => {
     // 時間足変更イベントのリスナー
@@ -178,7 +187,7 @@ const ChartToolbarComponent = memo(function ChartToolbar({
             trigger={
               <Button variant="outline" size="sm" className="gap-1">
                 <CandlestickChart className="h-4 w-4" />
-                <span>{currentSymbol}</span>
+                <span>{mounted ? currentSymbol : ''}</span>
               </Button>
             }
           />
