@@ -40,7 +40,7 @@ export interface ChartDataState {
   _abortController: AbortController | null; // リクエストキャンセル用
   
   // アクション
-  fetchData: (symbol: string, timeFrame: Timeframe, signal?: AbortSignal) => Promise<OHLCData[]>;
+  fetchData: (symbol: string, timeFrame: Timeframe, signal?: AbortSignal, useCache?: boolean) => Promise<OHLCData[]>;
   updateData: (data: OHLCData) => void;
   updateTimeFrame: (timeFrame: Timeframe) => Promise<void>;
   updateSymbol: (symbol: string) => Promise<void>;

@@ -407,7 +407,7 @@ export default function ChartCanvas() {
       if (chikouSeries.current) chikouSeries.current = null;
       if (cloudSeries.current) cloudSeries.current = null;
     };
-  }, [chartType]);
+  }, [chartType, currentTimeFrame]);
 
   // データの更新を監視
   useEffect(() => {
@@ -457,7 +457,7 @@ export default function ChartCanvas() {
         }))
       );
     }
-  }, [data, chartType]);
+  }, [data, chartType, currentTimeFrame]);
 
   // ウィンドウサイズの変更を監視
   useEffect(() => {

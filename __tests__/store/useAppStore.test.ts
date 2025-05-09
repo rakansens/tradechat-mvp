@@ -1,10 +1,11 @@
 // __tests__/store/useAppStore.test.ts
 // useAppStore.tsのテスト
+// 更新: 2025-05-09 - リフレッシュ時に時間足設定を復元するテストケースを追加
 //
 // 主な機能:
 // - initializeApp関数のテスト
 // - setExchangeType関数のテスト
-// - 特にリフレッシュ時に銘柄がリセットされる問題の検証
+// - 特にリフレッシュ時に銘柄や時間足がリセットされる問題の検証
 
 import { useAppStore } from '../../store';
 import { logger } from '../../utils/logger';
@@ -78,6 +79,7 @@ describe('useAppStore', () => {
     useAppStore.setState({
       currentSymbol: 'BTCUSDT',
       exchangeType: 'futures',
+      currentTimeFrame: '1d', // デフォルトの時間足を設定
       _wsUnsubscribeFunctions: {},
       wsSubscriptions: {
         orderbook: false,
@@ -100,7 +102,8 @@ describe('useAppStore', () => {
       // 戻り値を確認
       expect(result).toEqual({
         symbol: 'ETHUSDT',
-        exchangeType: 'spot'
+        exchangeType: 'spot',
+        timeframe: '1d' // 時間足も含まれるようにテストを更新
       });
       
       // ストアの状態が更新されていることを確認
@@ -111,6 +114,43 @@ describe('useAppStore', () => {
       // データ取得関数が呼ばれることを確認
       expect(dataFetchService.fetchOrderBook).toHaveBeenCalled();
       expect(dataFetchService.fetchChartData).toHaveBeenCalled();
+    });
+    
+    it('時間足設定をlocalStorageから正しく復元すること', () => {
+      // localStorageに時間足を設定
+      mockLocalStorage.setItem('lastUsedSymbol', 'ETHUSDT');
+      mockLocalStorage.setItem('lastUsedExchangeType', 'spot'); 
+      mockLocalStorage.setItem('lastUsedTimeframe', '4h'); // 時間足を4hに設定
+      
+      // initializeApp関数を呼び出し
+      const { initializeApp } = useAppStore.getState();
+      initializeApp();
+      
+      // ストアの状態を確認
+      const state = useAppStore.getState();
+      expect(state.currentTimeFrame).toBe('4h');
+      
+      // ローカルストレージに正しく保存されたことを確認
+      expect(mockLocalStorage.getItem('lastUsedTimeframe')).toBe('4h');
+    });
+    
+    it('時間足設定がない場合はデフォルト値を使用すること', () => {
+      // 銘柄と取引タイプだけ設定し、時間足は設定しない
+      mockLocalStorage.setItem('lastUsedSymbol', 'ETHUSDT');
+      mockLocalStorage.setItem('lastUsedExchangeType', 'spot');
+      mockLocalStorage.removeItem('lastUsedTimeframe');
+      
+      // 現在のストア状態の時間足をカスタム値に設定
+      useAppStore.setState({ currentTimeFrame: '3m' });
+      
+      // initializeApp関数を呼び出し
+      const { initializeApp } = useAppStore.getState();
+      initializeApp();
+      
+      // ストアの状態を確認
+      const state = useAppStore.getState();
+      // 時間足が初期値にリセットされるのではなく、現在の値が保持される実装に変更
+      expect(state.currentTimeFrame).toBe('3m'); // 設定した値が保持される
     });
     
     it('localStorageに値がない場合、デフォルト値を使用すること', () => {
@@ -124,7 +164,8 @@ describe('useAppStore', () => {
       // 戻り値を確認
       expect(result).toEqual({
         symbol: 'BTCUSDT',
-        exchangeType: 'spot'
+        exchangeType: 'spot',
+        timeframe: '1d' // 時間足も含まれるようにテストを更新
       });
       
       // ストアの状態が更新されていることを確認

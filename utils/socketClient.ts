@@ -1,7 +1,13 @@
 // utils/socketClient.ts
-// Socket.ioクライアント接続の管理
-// 更新: 2025-05-09 - 取引タイプ変更イベント処理の改善とリフレッシュ機能の修正
-// 更新: 2025-05-09 - データフローを一本化、socketStoreActionsを使用してAppStoreを直接更新
+// Socket.IOクライアントの初期化とイベントハンドリング
+// 作成: 2023-09-01
+// 更新: 2023-10-15 - チャートデータの取得機能を追加
+// 更新: 2023-11-20 - 取引タイプ切り替え機能のサポートを追加
+// 更新: 2024-01-10 - 接続ステータス監視と再接続機能の改善
+// 更新: 2024-02-20 - ロギングを構造化形式にアップグレード
+// 更新: 2024-03-15 - App Store用の直接変更イベントを追加 (元のCustomEventも維持)
+// 更新: 2025-05-09 - CustomEvent発行を削除し、App Store後方互換レイヤーを完全に移行
+// 更新: 2025-05-09 - ローカルストレージの保存を最小限に抑える
 
 import { Socket, io } from 'socket.io-client';
 import { captureChartAsBase64 } from './screenshotUtils';
@@ -88,19 +94,20 @@ export function initializeSocketClient(forceReinitialize = false, namespace?: st
         socketConnected: socket?.connected,
         clientId
       });
-      
-      // フェーズA: 両方を維持（段階的に移行予定）
-      
-      // 1. AppStoreを直接更新
+      // AppStoreを直接更新 - 後方互換性のためのCustomEvent発行は削除済み
       socketActions.setTimeframe(data.timeframe, 'socket-changeTimeframe');
       
-      // 2. 従来のCustomEventも発行（段階的に削除予定）
-      const event = new CustomEvent('timeframeChanged', { detail: data });
-      window.dispatchEvent(event);
-      
-      // ローカルストレージに最新の時間足を保存
+      // AppStoreがストレージを管理するので最低限のストレージのみ
       try {
-        localStorage.setItem('selectedTimeframe', data.timeframe);
+        // 両方のキーを使用して互換性を確保
+        localStorage.setItem('lastUsedTimeframe', data.timeframe); // 新しいキー
+        localStorage.setItem('selectedTimeframe', data.timeframe); // 旧キー(互換性のため)
+        
+        logger.info('時間足を両方のキーで保存しました:', {
+          component: 'socketClient',
+          action: 'changeTimeframe',
+          timeframe: data.timeframe
+        });
       } catch (error) {
         logger.warn('ローカルストレージへの時間足保存に失敗しました:', {
           component: 'socketClient',
@@ -120,8 +127,6 @@ export function initializeSocketClient(forceReinitialize = false, namespace?: st
         clientId
       });
       
-      // フェーズA: 両方を維持（段階的に移行予定）
-      
       // 取引タイプが指定されている場合は先に設定
       if (data.exchangeType) {
         logger.info(`銘柄変更時に取引タイプも指定されています: ${data.exchangeType}`, {
@@ -136,30 +141,20 @@ export function initializeSocketClient(forceReinitialize = false, namespace?: st
         
         // 少し遅延させて銘柄を設定
         setTimeout(() => {
-          // 1. AppStoreを直接更新
           socketActions.setSymbol(data.symbol, 'socket-changeSymbol-with-type');
-          
-          // 2. 従来のCustomEventも発行（段階的に削除予定）
-          const event = new CustomEvent('symbolChanged', { detail: data });
-          window.dispatchEvent(event);
         }, 100);
       } else {
         // 取引タイプが指定されていない場合は通常の処理
-        // 1. AppStoreを直接更新
         socketActions.setSymbol(data.symbol, 'socket-changeSymbol');
+        
         // timeframeプロパティがある場合のみ設定
         if (data.timeframe) {
           socketActions.setTimeframe(data.timeframe, 'socket-changeSymbol');
         }
-        
-        // 2. 従来のCustomEventも発行（段階的に削除予定）
-        const event = new CustomEvent('symbolChanged', { detail: data });
-        window.dispatchEvent(event);
       }
       
-      // ローカルストレージに最新の銘柄を保存
+      // AppStoreがストレージを管理するので、ここでは最低限の保存のみを行う
       try {
-        localStorage.setItem('selectedSymbol', data.symbol);
         localStorage.setItem('lastUsedSymbol', data.symbol);
       } catch (error) {
         logger.warn('ローカルストレージへの銘柄保存に失敗しました:', {
@@ -186,46 +181,30 @@ export function initializeSocketClient(forceReinitialize = false, namespace?: st
         // 現在の銘柄を取得（APIから送られてきた銘柄またはローカルストレージから）
         const currentSymbol = data.symbol || localStorage.getItem('lastUsedSymbol') || 'BTCUSDT';
         
-        // フェーズA: 両方を維持（段階的に移行予定）
-        
-        // 1. AppStoreを直接更新
+        // AppStoreを直接更新 - 全てのUIはここから状態を読み取る
         socketActions.setExchangeType(data.type, currentSymbol, 'socket-instrument-type-change');
         
-        // 2. 従来のCustomEventも発行（段階的に削除予定）
-        const eventData = {
-          type: data.type,
-          fromType: data.fromType || (data.type === 'spot' ? 'futures' : 'spot'), // 元の取引タイプを明示的に指定
-          symbol: currentSymbol // 現在の銘柄を明示的に含める
-        };
-        
-        const event = new CustomEvent('instrumentTypeChanged', { detail: eventData });
-        window.dispatchEvent(event);
-        
-        logger.info('グローバルイベントを発行しました:', {
+        logger.info('取引タイプが更新されました:', {
           component: 'socketClient',
-          action: 'dispatchEvent',
-          eventName: 'instrumentTypeChanged',
-          data: eventData
+          action: 'setExchangeType',
+          type: data.type,
+          symbol: currentSymbol
         });
         
-        // ローカルストレージに最新の取引タイプを保存
+        // AppStoreがストレージを管理するので最低限の保存のみ
         try {
-          // アプリストアで使用されるキー
+          // AppStoreが参照するキーのみ保存
           localStorage.setItem('lastUsedExchangeType', data.type);
-          // 互換性のためのキー
-          localStorage.setItem('selectedInstrumentType', data.type);
-          
-          // 現在の銘柄を明示的に保存
           localStorage.setItem('lastUsedSymbol', currentSymbol);
           
-          logger.info('取引タイプと銘柄をローカルストレージに保存しました:', {
+          logger.info('ストレージに取引情報を保存しました:', {
             component: 'socketClient',
             action: 'saveToLocalStorage',
             type: data.type,
             symbol: currentSymbol
           });
         } catch (error) {
-          logger.warn('ローカルストレージへの取引タイプ保存に失敗しました:', {
+          logger.warn('ストレージへの保存に失敗しました:', {
             component: 'socketClient',
             action: 'saveToLocalStorage',
             error

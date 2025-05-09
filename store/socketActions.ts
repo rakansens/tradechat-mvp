@@ -129,8 +129,35 @@ export const setTimeframe = (timeframe: Timeframe, source: string = 'socket-even
     source
   });
   try {
+    const appStore = useAppStore.getState();
     // AppStoreの状態を更新
-    useAppStore.getState().updateTimeFrame(timeframe);
+    appStore.updateTimeFrame(timeframe);
+    
+    // 現在のシンボルと取引タイプを取得
+    const currentSymbol = appStore.currentSymbol;
+    const exchangeType = appStore.exchangeType;
+    
+    // キャッシュもクリアする
+    // 循環依存を避けるために動的インポートを使用
+    import('../services/dataFetchService').then(module => {
+      const dataFetchService = module.default;
+      if (typeof dataFetchService.handleTimeframeChange === 'function') {
+        dataFetchService.handleTimeframeChange(currentSymbol, timeframe, exchangeType);
+        logger.info(`socketActions: 時間足変更に伴いキャッシュをクリアしました`, {
+          component: 'socketActions',
+          action: 'setTimeframe',
+          symbol: currentSymbol,
+          timeframe,
+          exchangeType
+        });
+      }
+    }).catch(e => {
+      logger.warn(`socketActions: キャッシュクリアに失敗しました`, {
+        component: 'socketActions',
+        action: 'setTimeframe',
+        error: e
+      });
+    });
     
     logger.info(`socketActions: 時間足を${timeframe}に更新しました`, {
       component: 'socketActions',

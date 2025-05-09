@@ -11,7 +11,7 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { BitgetApiClient } from '../../services/bitgetApi';
-import { dataFetchService } from '../../services/dataFetchService';
+import dataFetchService from '../../services/dataFetchService';
 import { OHLCData, Timeframe } from '../../types/chart';
 import { generateOHLCData } from '../../utils/ohlcDummyData';
 import { useChartConfigStore } from './useChartConfigStore';
@@ -25,12 +25,46 @@ import {
   validateChartDataState
 } from '../../lib/validations/chart';
 
-// 初期値の設定
-const initialTimeframe: Timeframe = "1d";
+// ローカルストレージから直接設定を取得
+// リフレッシュ時にも設定が保持されるように
+let initialTimeframe: Timeframe = "1d"; // デフォルト値
+
+// ブラウザ環境の場合はローカルストレージから取得
+if (typeof window !== 'undefined') {
+  // 両方のキーを個別に取得して、どちらが最新かを確認
+  const lastUsedTimeframeValue = localStorage.getItem('lastUsedTimeframe');
+  const selectedTimeframeValue = localStorage.getItem('selectedTimeframe');
+  
+  // selectedTimeframeを優先する（これが最新の値）
+  const storedTimeframe = selectedTimeframeValue || lastUsedTimeframeValue;
+  
+  if (storedTimeframe && ['1m', '5m', '15m', '30m', '1h', '4h', '1d', '1w'].includes(storedTimeframe)) {
+    initialTimeframe = storedTimeframe as Timeframe;
+  }
+}
+
+// AppStoreの状態も確認
+const appState = useAppStore.getState();
+// AppStoreの値がある場合は、それを使用（ただし、ローカルストレージの値を優先）
+if (!initialTimeframe && appState.currentTimeFrame) {
+  initialTimeframe = appState.currentTimeFrame;
+}
+
 const initialOhlcData: OHLCData[] = generateOHLCData(
   100,
   initialTimeframe
 );
+
+// 初期化時に現在の時間足設定をログ出力
+logger.info(`チャートデータストアの初期化、時間足: ${initialTimeframe}`, {
+  component: 'useChartDataStore',
+  action: 'initialize',
+  source: 'localStorage',
+  appStateCurrentTimeFrame: appState.currentTimeFrame,
+  appStateInitialized: !!appState.currentTimeFrame,
+  localStorage_lastUsedTimeframe: typeof window !== 'undefined' ? localStorage.getItem('lastUsedTimeframe') : null,
+  localStorage_selectedTimeframe: typeof window !== 'undefined' ? localStorage.getItem('selectedTimeframe') : null
+});
 
 // チャートデータストアの作成
 export const useChartDataStore = create<ChartDataState>()(
@@ -47,7 +81,7 @@ export const useChartDataStore = create<ChartDataState>()(
       // 現在のリクエストをキャンセルするためのAbortController
       _abortController: null as AbortController | null,
       
-      fetchData: async (symbol: string, timeFrame: Timeframe, signal?: AbortSignal) => {
+      fetchData: async (symbol: string, timeFrame: Timeframe, signal?: AbortSignal, useCache: boolean = true) => {
         // 開発環境でのバリデーション
         if (process.env.NODE_ENV !== 'production') {
           const timeframeResult = validateTimeframe(timeFrame);
@@ -82,13 +116,34 @@ export const useChartDataStore = create<ChartDataState>()(
             console.log('[fetchData] original symbol:', symbol, 'latest symbol:', latestSymbol);
           }
           
+          // データ取得前のデータ内容を記録
+          logger.debug(`データ取得前のデータ内容:`, {
+            component: 'useChartDataStore',
+            action: 'fetchData',
+            symbol: finalSymbol,
+            timeFrame: finalTimeFrame,
+            dataCount: get().data.length,
+            dataSample: get().data.slice(-3) // 最後の3件のデータをサンプルとして記録
+          });
+          
           // 共通サービスを使用してチャートデータを取得
           const data = await dataFetchService.fetchChartData(
             finalSymbol,
             finalTimeFrame,
             exchangeType,
-            signal
+            signal,
+            useCache
           );
+          
+          // 取得したデータの内容を記録
+          logger.debug(`取得したデータの内容:`, {
+            component: 'useChartDataStore',
+            action: 'fetchData',
+            symbol: finalSymbol,
+            timeFrame: finalTimeFrame,
+            dataCount: data.length,
+            dataSample: data.slice(-3) // 最後の3件のデータをサンプルとして記録
+          });
           
           // 重要: 現在のシンボルとリクエストされたシンボルが一致するか確認
           // これにより古いリクエストの結果が新しいシンボルを上書きするのを防止
@@ -107,6 +162,16 @@ export const useChartDataStore = create<ChartDataState>()(
             isLoading: false,
             currentSymbol: finalSymbol,
             currentTimeFrame: finalTimeFrame
+          });
+          
+          // 状態更新後のデータ内容を記録
+          logger.debug(`状態更新後のデータ内容:`, {
+            component: 'useChartDataStore',
+            action: 'fetchData',
+            symbol: finalSymbol,
+            timeFrame: finalTimeFrame,
+            dataCount: get().data.length,
+            dataSample: get().data.slice(-3) // 最後の3件のデータをサンプルとして記録
           });
           
           return data;
@@ -213,6 +278,78 @@ export const useChartDataStore = create<ChartDataState>()(
           action: 'updateTimeFrame'
         });
         
+        // 重要: AppStoreにも時間足の変更を反映する
+        // これによりリフレッシュ後も設定が保持される
+        try {
+          const appStore = useAppStore.getState();
+          if (typeof appStore.updateTimeFrame === 'function') {
+            // AppStoreのupdateTimeFrameメソッドを使用して更新
+            appStore.updateTimeFrame(timeFrame);
+            logger.info(`Updated timeframe in AppStore to ${timeFrame}`, {
+              component: 'useChartDataStore',
+              action: 'updateTimeFrame'
+            });
+          } else {
+            // AppStoreのメソッドが見つからない場合は直接保存
+            try {
+              localStorage.setItem('lastUsedTimeframe', timeFrame);
+              localStorage.setItem('selectedTimeframe', timeFrame); // 互換性のため
+              logger.info(`Directly saved timeframe to localStorage: ${timeFrame}`, {
+                component: 'useChartDataStore',
+                action: 'updateTimeFrame'
+              });
+            } catch (e) {
+              logger.warn('Failed to save timeframe to localStorage', {
+                component: 'useChartDataStore',
+                action: 'updateTimeFrame',
+                error: e
+              });
+            }
+          }
+          
+          // 重要: データフェッチサービスのキャッシュをクリア
+          // これにより時間足変更時に古いキャッシュが使われないようにする
+          try {
+            const { currentSymbol } = get();
+            const { exchangeType } = appStore;
+            
+            logger.info(`タイムフレーム変更前のキャッシュクリア準備`, {
+              component: 'useChartDataStore',
+              action: 'updateTimeFrame',
+              currentSymbol,
+              timeFrame,
+              exchangeType,
+              localStorage_lastUsedTimeframe: typeof window !== 'undefined' ? localStorage.getItem('lastUsedTimeframe') : null,
+              localStorage_selectedTimeframe: typeof window !== 'undefined' ? localStorage.getItem('selectedTimeframe') : null
+            });
+            
+            import('../../services/dataFetchService').then(module => {
+              const dataFetchService = module.default;
+              if (typeof dataFetchService.handleTimeframeChange === 'function') {
+                dataFetchService.handleTimeframeChange(currentSymbol, timeFrame, exchangeType);
+                logger.info(`Cleared chart cache for timeframe change to ${timeFrame}`, {
+                  component: 'useChartDataStore',
+                  action: 'updateTimeFrame',
+                  symbol: currentSymbol,
+                  exchangeType
+                });
+              }
+            });
+          } catch (e) {
+            logger.warn('Failed to clear cache for timeframe change', {
+              component: 'useChartDataStore',
+              action: 'updateTimeFrame',
+              error: e
+            });
+          }
+        } catch (e) {
+          logger.warn('Failed to update AppStore with new timeframe', {
+            component: 'useChartDataStore',
+            action: 'updateTimeFrame',
+            error: e
+          });
+        }
+        
         // 先にタイムフレームを更新してUIに即反映
         set({ 
           currentTimeFrame: timeFrame,
@@ -227,10 +364,43 @@ export const useChartDataStore = create<ChartDataState>()(
             // 最新のシンボルとタイムフレームを取得（非同期処理中に変更された可能性がある）
             const { currentSymbol, currentTimeFrame } = get();
             
+            // データ取得前のデータ内容を記録
+            logger.debug(`タイムフレーム変更前のデータ内容:`, {
+              component: 'useChartDataStore',
+              action: 'updateTimeFrame',
+              currentTimeFrame,
+              newTimeFrame: timeFrame,
+              dataCount: get().data.length,
+              dataSample: get().data.slice(-5) // 最後の5件のデータをサンプルとして記録
+            });
+            
             // タイムフレームが変更されていないことを確認
             if (timeFrame === currentTimeFrame) {
-              // 新しいデータを取得
-              await get().fetchData(currentSymbol, timeFrame);
+              // 最初にキャッシュをしっかりクリアする
+              logger.info(`タイムフレーム変更に伴いキャッシュをクリアします: ${currentSymbol} ${timeFrame}`, {
+                component: 'useChartDataStore',
+                action: 'updateTimeFrame'
+              });
+              
+              // シンボル、タイムフレーム、取引種別を指定してキャッシュをクリア
+              const appState = useAppStore.getState();
+              dataFetchService.handleTimeframeChange(currentSymbol, timeFrame, appState.exchangeType);
+              
+              // キャッシュを使用せずに新しいデータを取得
+              logger.info(`新しい時間足データを取得します: ${currentSymbol} ${timeFrame}`, {
+                component: 'useChartDataStore',
+                action: 'updateTimeFrame'
+              });
+              await get().fetchData(currentSymbol, timeFrame, undefined, false);
+              
+              // データ取得後のデータ内容を記録
+              logger.debug(`タイムフレーム変更後のデータ内容:`, {
+                component: 'useChartDataStore',
+                action: 'updateTimeFrame',
+                currentTimeFrame: get().currentTimeFrame,
+                dataCount: get().data.length,
+                dataSample: get().data.slice(-5) // 最後の5件のデータをサンプルとして記録
+              });
               
               // リアルタイム更新を再開
               try {
@@ -285,7 +455,7 @@ export const useChartDataStore = create<ChartDataState>()(
           const { currentTimeFrame } = get();
           
           // 新しいデータを取得（AbortControllerのsignalを渡す）
-          await get().fetchData(symbol, currentTimeFrame, abortController.signal);
+          await get().fetchData(symbol, currentTimeFrame, abortController.signal, true);
           
           // AppStoreのポーリング機能を使用
           try {

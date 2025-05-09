@@ -194,7 +194,7 @@ export const useAppStore = create<AppState>()(
       
       // 初期状態 - チャート関連
       chartData: [],
-      currentTimeFrame: '1d',
+      currentTimeFrame: '15m', // デフォルト値を15mに設定
       isLoadingChartData: false,
       chartError: null,
       
@@ -610,6 +610,15 @@ export const useAppStore = create<AppState>()(
       updateTimeFrame: async (timeFrame: Timeframe) => {
         // 現在のタイムフレームと同じ場合は何もしない
         const currentTimeFrame = get().currentTimeFrame;
+        logger.info(`updateTimeFrame呼び出し: ${currentTimeFrame} -> ${timeFrame}`, {
+          component: 'useAppStore',
+          action: 'updateTimeFrame',
+          currentTimeFrame,
+          newTimeFrame: timeFrame,
+          localStorage_lastUsedTimeframe: typeof window !== 'undefined' ? localStorage.getItem('lastUsedTimeframe') : null,
+          localStorage_selectedTimeframe: typeof window !== 'undefined' ? localStorage.getItem('selectedTimeframe') : null
+        });
+        
         if (timeFrame === currentTimeFrame) {
           logger.info(`Timeframe already set to ${timeFrame}, skipping update`, {
             component: 'useAppStore',
@@ -624,11 +633,22 @@ export const useAppStore = create<AppState>()(
           action: 'updateTimeFrame'
         });
         
+        // ローカルストレージに保存
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('lastUsedTimeframe', timeFrame);
+          localStorage.setItem('selectedTimeframe', timeFrame); // 互換性のため
+          
+          logger.info(`タイムフレームをローカルストレージに保存しました: ${timeFrame}`, {
+            component: 'useAppStore',
+            action: 'updateTimeFrame'
+          });
+        }
+        
         // チャートデータ取得をキャンセル
         get().cancelFetch('chart');
         
         // 先にタイムフレームを更新してUIに即反映
-        set({ 
+        set({
           currentTimeFrame: timeFrame,
           isLoadingChartData: true,
           chartError: null
@@ -1163,9 +1183,10 @@ export const useAppStore = create<AppState>()(
       initializeApp: () => {
         const state = get();
         
-        // 最後に使用したシンボルと取引種別を取得
+        // 最後に使用したシンボル、取引種別、時間足を取得
         let lastUsedSymbol = state.currentSymbol;
         let lastUsedExchangeType: ExchangeType = 'spot'; // デフォルト値を'spot'に設定
+        let lastUsedTimeframe = state.currentTimeFrame || '15m'; // デフォルトの時間足初期値として現在のストアから読み込む
         
         // ローカルストレージから値を取得（ブラウザ環境の場合）
         if (typeof window !== 'undefined') {
@@ -1187,6 +1208,55 @@ export const useAppStore = create<AppState>()(
               action: 'initializeApp'
             });
           }
+          
+          // 時間足の取得（複数のキーをチェック）
+          // 両方のキーを個別に取得して、どちらが最新かを確認
+          const lastUsedTimeframeValue = localStorage.getItem('lastUsedTimeframe');
+          const selectedTimeframeValue = localStorage.getItem('selectedTimeframe');
+          
+          logger.info(`ローカルストレージからの時間足読み込み試行`, {
+            component: 'useAppStore',
+            action: 'initializeApp',
+            lastUsedTimeframe: lastUsedTimeframeValue,
+            selectedTimeframe: selectedTimeframeValue,
+            currentTimeFrameBeforeUpdate: lastUsedTimeframe
+          });
+          
+          // 明示的に選択されたタイムフレームを優先し、両方未設定の場合は現在の値を維持
+          const validTimeframes = ['1m', '3m', '5m', '15m', '30m', '1h', '2h', '4h', '6h', '8h', '12h', '1d', '3d', '1w', '1M'];
+          
+          // まず selectedTimeframe を確認
+          if (selectedTimeframeValue && validTimeframes.includes(selectedTimeframeValue)) {
+            lastUsedTimeframe = selectedTimeframeValue as Timeframe;
+            logger.info(`selectedTimeframe から時間足を取得: ${selectedTimeframeValue}`, {
+              component: 'useAppStore',
+              action: 'initializeApp'
+            });
+          } 
+          // 次に lastUsedTimeframe を確認
+          else if (lastUsedTimeframeValue && validTimeframes.includes(lastUsedTimeframeValue)) {
+            lastUsedTimeframe = lastUsedTimeframeValue as Timeframe;
+            logger.info(`lastUsedTimeframe から時間足を取得: ${lastUsedTimeframeValue}`, {
+              component: 'useAppStore',
+              action: 'initializeApp'
+            });
+          }
+          // どちらも無いか無効な場合は、デフォルトの'15m'を使用
+          else if (!lastUsedTimeframe || !validTimeframes.includes(lastUsedTimeframe)) {
+            lastUsedTimeframe = '15m';
+            logger.info(`有効な時間足が見つからないため、デフォルトの15mを設定します`, {
+              component: 'useAppStore',
+              action: 'initializeApp'
+            });
+          }
+          
+          logger.info(`最終的な時間足設定: ${lastUsedTimeframe}`, {
+            component: 'useAppStore',
+            action: 'initializeApp',
+            source: selectedTimeframeValue ? 'selectedTimeframe' : 
+                    lastUsedTimeframeValue ? 'lastUsedTimeframe' : 'default',
+            currentTimeFrameAfterUpdate: lastUsedTimeframe
+          });
         }
         
         // シンボルが空の場合はデフォルト値を設定
@@ -1212,7 +1282,8 @@ export const useAppStore = create<AppState>()(
         // 明示的に状態を更新
         set({
           currentSymbol: lastUsedSymbol,
-          exchangeType: lastUsedExchangeType
+          exchangeType: lastUsedExchangeType,
+          currentTimeFrame: lastUsedTimeframe // 時間足も更新
         });
         
         // ローカルストレージに保存（値が変更された場合）
@@ -1220,22 +1291,35 @@ export const useAppStore = create<AppState>()(
           localStorage.setItem('lastUsedSymbol', lastUsedSymbol);
           localStorage.setItem('lastUsedExchangeType', lastUsedExchangeType);
           localStorage.setItem('selectedInstrumentType', lastUsedExchangeType); // 互換性のため
+          localStorage.setItem('lastUsedTimeframe', lastUsedTimeframe); // 新キー
+          localStorage.setItem('selectedTimeframe', lastUsedTimeframe); // 旧キー（互換性のため）
           
-          // リフレッシュ時に銘柄が保持されるように、明示的に保存
-          logger.info(`リフレッシュ時の銘柄保持のため、明示的に保存: ${lastUsedSymbol}`, {
+          // リフレッシュ時に設定が保持されるように、明示的に保存
+          logger.info(`リフレッシュ時の設定保持のため、明示的に保存: 銘柄=${lastUsedSymbol}, 時間足=${lastUsedTimeframe}`, {
             component: 'useAppStore',
             action: 'initializeApp'
           });
         }
         
-        logger.info(`Initializing app with symbol: ${lastUsedSymbol}, exchange type: ${lastUsedExchangeType}`, {
+        logger.info(`Initializing app with symbol: ${lastUsedSymbol}, exchange type: ${lastUsedExchangeType}, timeframe: ${lastUsedTimeframe}`, {
           component: 'useAppStore',
           action: 'initializeApp'
         });
         
-        // データを取得
-        state.fetchOrderBook();
-        state.fetchChartData();
+        // データフェッチの初期化
+        const { fetchOrderBook, fetchChartData } = get();
+        if (lastUsedSymbol && lastUsedExchangeType) {
+          // オーダーブックとチャートデータをフェッチ
+          fetchOrderBook(lastUsedSymbol); // 正しい引数形式で呼び出し
+          fetchChartData(lastUsedSymbol, lastUsedTimeframe); // 正しい引数形式で呼び出し
+        }
+        
+        // 初期化結果を返す
+        return {
+          symbol: lastUsedSymbol,
+          exchangeType: lastUsedExchangeType,
+          timeframe: lastUsedTimeframe as Timeframe
+        };  
         
         // WebSocketの接続状態を監視
         const checkWebSocketConnection = () => {

@@ -262,10 +262,27 @@ export const dataFetchService = {
     
     const requestKey = `chart-${normalizedSymbol}-${timeFrame}-${exchangeType}`;
     
+    logger.debug(`チャートデータ取得開始:`, {
+      component: 'dataFetchService',
+      action: 'fetchChartData',
+      symbol: normalizedSymbol,
+      timeFrame,
+      exchangeType,
+      useCache,
+      requestKey
+    });
+    
     // キャッシュをチェック
     if (useCache) {
       const cachedData = dataFetchService.getFromCache<OHLCData[]>(requestKey);
       if (cachedData) {
+        logger.debug(`キャッシュからデータを取得:`, {
+          component: 'dataFetchService',
+          action: 'fetchChartData',
+          requestKey,
+          dataCount: cachedData.length,
+          dataSample: cachedData.slice(-3) // 最後の3件のデータをサンプルとして記録
+        });
         return cachedData;
       }
     }
@@ -333,6 +350,14 @@ export const dataFetchService = {
                 timestamp: Date.now(),
                 source: 'websocket'
               });
+              
+              logger.debug(`WebSocketからのデータをキャッシュに保存:`, {
+                component: 'dataFetchService',
+                action: 'fetchChartData',
+                requestKey,
+                dataCount: wsData.length,
+                dataSample: wsData.slice(-3) // 最後の3件のデータをサンプルとして記録
+              });
             }
             
             return wsData;
@@ -370,6 +395,14 @@ export const dataFetchService = {
           timestamp: Date.now(),
           source: 'rest'
         });
+        
+        logger.debug(`RESTAPIからのデータをキャッシュに保存:`, {
+          component: 'dataFetchService',
+          action: 'fetchChartData',
+          requestKey,
+          dataCount: data.length,
+          dataSample: data.slice(-3) // 最後の3件のデータをサンプルとして記録
+        });
       }
       
       return data;
@@ -384,25 +417,122 @@ export const dataFetchService = {
       throw error;
     }
   },
-  
   /**
    * シンボル変更時にキャッシュをクリア
    */
   handleSymbolChange: (newSymbol: string): void => {
-    // 共通のnormalizeSymbol関数を使用してシンボルを正規化
+    // 正規化したシンボルを使用
     const normalizedSymbol = normalizeSymbol(newSymbol);
     
-    // 古いシンボルに関連するキャッシュをすべてクリア
+    // 当該シンボルに関連するキャッシュをすべてクリア
+    dataFetchService.clearCache(`chart-${normalizedSymbol}`);
+    dataFetchService.clearCache(`orderbook-${normalizedSymbol}`);
+    
+    logger.info(`シンボル変更: ${newSymbol} のキャッシュをクリアしました`, {
+      component: 'dataFetchService',
+      action: 'handleSymbolChange',
+      symbol: newSymbol,
+      normalizedSymbol
+    });
+  },
+  
+  /**
+   * 時間足変更時にキャッシュをクリア
+   * タイムフレームが変更されたときに古いキャッシュが使われないようにする
+   */
+  handleTimeframeChange: (symbol: string, newTimeframe: Timeframe, exchangeType: ExchangeType = 'spot'): void => {
+    // 正規化したシンボルを使用
+    const normalizedSymbol = normalizeSymbol(symbol);
+    
+    // キャッシュを終了前にすべてクリアするため、すべてのキャッシュおよびその状態を確認
+    const allCacheEntries = [] as {key: string}[];
     for (const key of cache.keys()) {
-      // キーがシンボルを含む形式かチェック
-      if (key.includes('-')) {
-        const parts = key.split('-');
-        // 新しいシンボルに関連するキャッシュ以外をすべてクリア
-        if (!key.includes(`-${normalizedSymbol}-`) && !key.includes(`-${newSymbol}-`)) {
-          cache.delete(key);
-        }
+      allCacheEntries.push({key});
+    }
+    
+    // キャッシュクリア前のキャッシュ内容を詳細に記録
+    const cacheContentsBeforeClear = [] as {key: string, data: any, timestamp: number, source: string}[];
+    for (const [key, value] of cache.entries()) {
+      if (key.startsWith(`chart-${normalizedSymbol}`)) {
+        cacheContentsBeforeClear.push({
+          key,
+          data: value.data,
+          timestamp: value.timestamp,
+          source: value.source
+        });
       }
     }
+    logger.debug(`タイムフレーム変更前のキャッシュ内容:`, {
+      component: 'dataFetchService',
+      action: 'handleTimeframeChange',
+      cacheContentsBeforeClear,
+      newTimeframe
+    });
+    
+    // 全キャッシュエントリ記録
+    logger.debug(`キャッシュクリア前のキャッシュエントリ:`, {
+      component: 'dataFetchService',
+      action: 'handleTimeframeChange',
+      allCacheEntries
+    });
+    
+    // 1. 厳密なキャッシュキーをクリア - タイムフレームと取引種別を含む
+    const exactCacheKey = `chart-${normalizedSymbol}-${newTimeframe}-${exchangeType}`;
+    dataFetchService.clearCache(exactCacheKey);
+    
+    // 2. このシンボルのすべてのタイムフレームをクリア
+    const symbolBaseKey = `chart-${normalizedSymbol}`;
+    
+    // このシンボルに関連するキャッシュエントリを手動でクリア
+    for (const key of cache.keys()) {
+      // シンボルに関連するすべてのキャッシュを削除
+      if (key.startsWith(symbolBaseKey)) {
+        cache.delete(key);
+        logger.debug(`キャッシュキー削除: ${key}`, {
+          component: 'dataFetchService',
+          action: 'handleTimeframeChange'
+        });
+      }
+    }
+    
+    // 3. 事後チェック: 該当シンボルのキャッシュがクリアされたか確認
+    const remainingCacheKeys = [] as string[];
+    for (const key of cache.keys()) {
+      if (key.startsWith(symbolBaseKey)) {
+        remainingCacheKeys.push(key);
+      }
+    }
+    
+    // キャッシュクリア後のキャッシュ内容を詳細に記録
+    const cacheContentsAfterClear = [] as {key: string, data: any, timestamp: number, source: string}[];
+    for (const [key, value] of cache.entries()) {
+      if (key.startsWith(`chart-${normalizedSymbol}`)) {
+        cacheContentsAfterClear.push({
+          key,
+          data: value.data,
+          timestamp: value.timestamp,
+          source: value.source
+        });
+      }
+    }
+    logger.debug(`タイムフレーム変更後のキャッシュ内容:`, {
+      component: 'dataFetchService',
+      action: 'handleTimeframeChange',
+      cacheContentsAfterClear,
+      newTimeframe
+    });
+    
+    logger.info(`時間足変更: ${symbol} ${newTimeframe} (${exchangeType}) のキャッシュをクリアしました`, {
+      component: 'dataFetchService',
+      action: 'handleTimeframeChange',
+      symbol,
+      normalizedSymbol,
+      timeframe: newTimeframe,
+      exchangeType,
+      clearedExactKey: exactCacheKey,
+      clearedSymbolBaseKey: symbolBaseKey,
+      remainingCacheKeys: remainingCacheKeys // クリア後に残っているキャッシュがあれば表示
+    });
   },
   
   /**
