@@ -12,6 +12,7 @@ import { useChartConfigStore, useIndicatorStore, useDrawingToolStore, useRealTim
 import type { Timeframe } from '../../types/chart';
 import type { ExchangeType } from '../../types/api';
 import type { IndicatorType } from '../../types/store';
+import { logger } from '../../utils/logger';
 
 export const ChartContainer: React.FC = () => {
   // AppStoreから状態を取得
@@ -59,6 +60,121 @@ export const ChartContainer: React.FC = () => {
       if (useRealTimeData) useRealTimeStore.getState().stopRealTimeUpdates();
     };
   }, [useRealTimeData]);
+  
+  // WebSocketからの取引タイプ変更イベントをリッスン
+  useEffect(() => {
+    const handleInstrumentTypeChange = (event: CustomEvent) => {
+      const { type, fromType, symbol } = event.detail;
+      logger.info(`WebSocketから取引タイプ変更イベントを受信: ${type}`, {
+        component: 'ChartContainer',
+        action: 'handleInstrumentTypeChange',
+        data: event.detail,
+        timestamp: Date.now(),
+        currentExchangeType: exchangeType,
+        currentSymbol: symbol,
+        fromFuturesToSpot: type === 'spot' && (fromType === 'futures' || exchangeType === 'futures') ? '先物→現物の切り替え検出' : '他の切り替えパターン'
+      });
+      
+      if (type === 'spot' || type === 'futures') {
+        // イベントから銘柄を取得、なければ現在の銘柄を使用
+        const targetSymbol = symbol || useAppStore.getState().currentSymbol || 'BTCUSDT';
+        
+        logger.info(`取引タイプ変更時の銘柄: ${targetSymbol}`, {
+          component: 'ChartContainer',
+          action: 'handleInstrumentTypeChange',
+          type,
+          fromType,
+          targetSymbol
+        });
+        
+        // 先物から現物への切り替えの場合、明示的に銘柄を先に設定
+        if (type === 'spot' && (fromType === 'futures' || exchangeType === 'futures')) {
+          logger.info(`先物から現物への切り替えを検出、銘柄を先に設定: ${targetSymbol}`, {
+            component: 'ChartContainer',
+            action: 'handleInstrumentTypeChange',
+            targetSymbol
+          });
+          
+          // 銘柄を即座に設定
+          useAppStore.getState().setCurrentSymbol(targetSymbol, '先物→現物切り替え前の銘柄設定');
+        }
+        
+        // AppStoreの取引タイプを更新（銘柄を明示的に指定）
+        logger.info(`取引タイプを${exchangeType}から${type}に変更します`, {
+          component: 'ChartContainer',
+          action: 'handleInstrumentTypeChange',
+          fromType: exchangeType,
+          toType: type,
+          symbol: targetSymbol
+        });
+        
+        // 取引タイプを更新
+        setExchangeType(type);
+        
+        // 現物から先物への切り替えの場合、または銘柄が変更された場合は、取引タイプ変更後に銘柄を再設定
+        if ((type === 'futures' && fromType === 'spot') || targetSymbol !== currentSymbol) {
+          logger.info(`取引タイプ変更後に銘柄を再設定: ${targetSymbol}`, {
+            component: 'ChartContainer',
+            action: 'handleInstrumentTypeChange',
+            targetSymbol
+          });
+          
+          // 少し遅延させて銘柄を再設定
+          setTimeout(() => {
+            useAppStore.getState().setCurrentSymbol(targetSymbol, '取引タイプ変更後の銘柄再設定');
+          }, 100);
+        }
+      }
+    };
+    
+    // グローバルイベントリスナーを追加
+    window.addEventListener('instrumentTypeChanged', handleInstrumentTypeChange as EventListener);
+    
+    // クリーンアップ関数
+    return () => {
+      window.removeEventListener('instrumentTypeChanged', handleInstrumentTypeChange as EventListener);
+    };
+  }, [setExchangeType, exchangeType, currentSymbol]);
+  
+  // 銘柄変更イベントをリッスン
+  useEffect(() => {
+    const handleSymbolChanged = (event: CustomEvent) => {
+      const { symbol } = event.detail;
+      
+      logger.info(`カスタムイベントから銘柄変更イベントを受信: ${symbol}`, {
+        component: 'ChartContainer',
+        action: 'handleSymbolChanged',
+        currentSymbol,
+        newSymbol: symbol,
+        timestamp: new Date().toISOString()
+      });
+      
+      if (symbol && symbol !== currentSymbol) {
+        logger.info(`銘柄を${currentSymbol}から${symbol}に変更します`, {
+          component: 'ChartContainer',
+          action: 'handleSymbolChanged',
+          fromSymbol: currentSymbol,
+          toSymbol: symbol
+        });
+        
+        // AppStoreの銘柄を更新
+        setCurrentSymbol(symbol, 'カスタムイベントからの銘柄変更');
+        
+        // データを再取得
+        setTimeout(() => {
+          fetchChartData(symbol);
+        }, 100);
+      }
+    };
+    
+    // グローバルイベントリスナーを追加
+    window.addEventListener('symbolChanged', handleSymbolChanged as EventListener);
+    
+    // クリーンアップ関数
+    return () => {
+      window.removeEventListener('symbolChanged', handleSymbolChanged as EventListener);
+    };
+  }, [currentSymbol, setCurrentSymbol, fetchChartData]);
   
   // 注意: チャートデータのポーリングはuseAppStoreで一元管理されるため、
   // このコンポーネントでのポーリング実装は削除されました

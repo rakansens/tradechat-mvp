@@ -1,10 +1,14 @@
 // utils/socketClient.ts
 // Socket.ioクライアント接続の管理
-// 更新: 2025-05-07 - ソケット初期化ロジックの信頼性を向上し、Mastraツールからの利用を改善
-// 変更内容: 初期化状態のチェックを強化、エラーハンドリングの向上
+// 更新: 2025-05-09 - 取引タイプ変更イベント処理の改善とリフレッシュ機能の修正
+// 更新: 2025-05-09 - データフローを一本化、socketStoreActionsを使用してAppStoreを直接更新
 
 import { Socket, io } from 'socket.io-client';
 import { captureChartAsBase64 } from './screenshotUtils';
+import { logger } from './logger';
+import * as socketActions from '../store/socketActions';
+import { Timeframe } from '@/types/chart';
+import { ExchangeType } from '@/types/api';
 
 // シングルトンソケットインスタンス
 let socket: Socket | null = null;
@@ -70,13 +74,27 @@ export function initializeSocketClient(forceReinitialize = false, namespace?: st
       console.log('Socket.IO接続成功:', data);
       clientId = data.clientId;
       isInitialized = true;
+      // 2. setSocketConnected を呼び出す
+      socketActions.setConnected(true, 'connect-event');
+      socketActions.setSocketId(clientId, 'connect-event');
     });
     
     // 時間足変更イベントのリスナー
-    socket.on('changeTimeframe', (data: { timeframe: string }) => {
-      console.log('時間足変更イベント受信:', data);
+    socket.on('changeTimeframe', (data: { timeframe: Timeframe }) => {
+      logger.info('時間足変更イベント受信:', {
+        component: 'socketClient',
+        action: 'changeTimeframe',
+        data,
+        socketConnected: socket?.connected,
+        clientId
+      });
       
-      // グローバルイベントを発行して、チャートコンポーネントに通知
+      // フェーズA: 両方を維持（段階的に移行予定）
+      
+      // 1. AppStoreを直接更新
+      socketActions.setTimeframe(data.timeframe, 'socket-changeTimeframe');
+      
+      // 2. 従来のCustomEventも発行（段階的に削除予定）
       const event = new CustomEvent('timeframeChanged', { detail: data });
       window.dispatchEvent(event);
       
@@ -84,50 +102,141 @@ export function initializeSocketClient(forceReinitialize = false, namespace?: st
       try {
         localStorage.setItem('selectedTimeframe', data.timeframe);
       } catch (error) {
-        console.warn('ローカルストレージへの時間足保存に失敗しました:', error);
+        logger.warn('ローカルストレージへの時間足保存に失敗しました:', {
+          component: 'socketClient',
+          action: 'changeTimeframe',
+          error
+        });
       }
     });
     
     // 銘柄変更イベントのリスナー
-    socket.on('changeSymbol', (data: { symbol: string }) => {
-      console.log('銘柄変更イベント受信:', data);
+    socket.on('changeSymbol', (data: { symbol: string, exchangeType?: ExchangeType, timeframe?: Timeframe }) => {
+      logger.info('銘柄変更イベント受信:', {
+        component: 'socketClient',
+        action: 'changeSymbol',
+        data,
+        socketConnected: socket?.connected,
+        clientId
+      });
       
-      // グローバルイベントを発行して、チャートコンポーネントに通知
-      const event = new CustomEvent('symbolChanged', { detail: data });
-      window.dispatchEvent(event);
+      // フェーズA: 両方を維持（段階的に移行予定）
+      
+      // 取引タイプが指定されている場合は先に設定
+      if (data.exchangeType) {
+        logger.info(`銘柄変更時に取引タイプも指定されています: ${data.exchangeType}`, {
+          component: 'socketClient',
+          action: 'changeSymbol',
+          exchangeType: data.exchangeType,
+          symbol: data.symbol
+        });
+        
+        // 取引タイプを先に設定
+        socketActions.setExchangeType(data.exchangeType, data.symbol, 'socket-changeSymbol');
+        
+        // 少し遅延させて銘柄を設定
+        setTimeout(() => {
+          // 1. AppStoreを直接更新
+          socketActions.setSymbol(data.symbol, 'socket-changeSymbol-with-type');
+          
+          // 2. 従来のCustomEventも発行（段階的に削除予定）
+          const event = new CustomEvent('symbolChanged', { detail: data });
+          window.dispatchEvent(event);
+        }, 100);
+      } else {
+        // 取引タイプが指定されていない場合は通常の処理
+        // 1. AppStoreを直接更新
+        socketActions.setSymbol(data.symbol, 'socket-changeSymbol');
+        // timeframeプロパティがある場合のみ設定
+        if (data.timeframe) {
+          socketActions.setTimeframe(data.timeframe, 'socket-changeSymbol');
+        }
+        
+        // 2. 従来のCustomEventも発行（段階的に削除予定）
+        const event = new CustomEvent('symbolChanged', { detail: data });
+        window.dispatchEvent(event);
+      }
       
       // ローカルストレージに最新の銘柄を保存
       try {
         localStorage.setItem('selectedSymbol', data.symbol);
+        localStorage.setItem('lastUsedSymbol', data.symbol);
       } catch (error) {
-        console.warn('ローカルストレージへの銘柄保存に失敗しました:', error);
+        logger.warn('ローカルストレージへの銘柄保存に失敗しました:', {
+          component: 'socketClient',
+          action: 'changeSymbol',
+          error
+        });
       }
     });
     
     // 取引タイプ変更イベントのリスナー
-    socket.on('instrument-type-change', (data: { type: 'spot' | 'futures' }) => {
-      console.log('取引タイプ変更イベント受信:', data);
-      console.log('イベント受信時のSocket状態:', socket?.connected, 'クライアントID:', clientId);
+    socket.on('instrument-type-change', (data: { type: ExchangeType, fromType?: ExchangeType, symbol?: string }) => {
+      logger.info('取引タイプ変更イベント受信:', {
+        component: 'socketClient',
+        action: 'instrument-type-change',
+        data,
+        socketConnected: socket?.connected,
+        clientId,
+        timestamp: Date.now(),
+        fromFuturesToSpot: data.type === 'spot' ? '先物→現物の切り替え検出' : '現物→先物の切り替え検出'
+      });
       
       try {
-        // グローバルイベントを発行して、チャートコンポーネントに通知
-        const event = new CustomEvent('instrumentTypeChanged', { detail: data });
-        window.dispatchEvent(event);
-        console.log('グローバルイベントを発行しました:', 'instrumentTypeChanged', data);
-      } catch (error) {
-        console.error('グローバルイベントの発行に失敗しました:', error);
-      }
-      
-      // ローカルストレージに最新の取引タイプを保存
-      try {
-        // アプリストアで使用されるキー
-        localStorage.setItem('lastUsedExchangeType', data.type);
-        // 互換性のためのキー
-        localStorage.setItem('selectedInstrumentType', data.type);
+        // 現在の銘柄を取得（APIから送られてきた銘柄またはローカルストレージから）
+        const currentSymbol = data.symbol || localStorage.getItem('lastUsedSymbol') || 'BTCUSDT';
         
-        console.log('取引タイプをローカルストレージに保存しました:', data.type);
+        // フェーズA: 両方を維持（段階的に移行予定）
+        
+        // 1. AppStoreを直接更新
+        socketActions.setExchangeType(data.type, currentSymbol, 'socket-instrument-type-change');
+        
+        // 2. 従来のCustomEventも発行（段階的に削除予定）
+        const eventData = {
+          type: data.type,
+          fromType: data.fromType || (data.type === 'spot' ? 'futures' : 'spot'), // 元の取引タイプを明示的に指定
+          symbol: currentSymbol // 現在の銘柄を明示的に含める
+        };
+        
+        const event = new CustomEvent('instrumentTypeChanged', { detail: eventData });
+        window.dispatchEvent(event);
+        
+        logger.info('グローバルイベントを発行しました:', {
+          component: 'socketClient',
+          action: 'dispatchEvent',
+          eventName: 'instrumentTypeChanged',
+          data: eventData
+        });
+        
+        // ローカルストレージに最新の取引タイプを保存
+        try {
+          // アプリストアで使用されるキー
+          localStorage.setItem('lastUsedExchangeType', data.type);
+          // 互換性のためのキー
+          localStorage.setItem('selectedInstrumentType', data.type);
+          
+          // 現在の銘柄を明示的に保存
+          localStorage.setItem('lastUsedSymbol', currentSymbol);
+          
+          logger.info('取引タイプと銘柄をローカルストレージに保存しました:', {
+            component: 'socketClient',
+            action: 'saveToLocalStorage',
+            type: data.type,
+            symbol: currentSymbol
+          });
+        } catch (error) {
+          logger.warn('ローカルストレージへの取引タイプ保存に失敗しました:', {
+            component: 'socketClient',
+            action: 'saveToLocalStorage',
+            error
+          });
+        }
       } catch (error) {
-        console.warn('ローカルストレージへの取引タイプ保存に失敗しました:', error);
+        logger.error('グローバルイベントの発行に失敗しました:', {
+          component: 'socketClient',
+          action: 'dispatchEvent',
+          error
+        });
       }
     });
     
@@ -292,17 +401,56 @@ export function initializeSocketClient(forceReinitialize = false, namespace?: st
     });
     
     // 切断時の処理
-    socket.on('disconnect', () => {
-      console.log('Socket.IO切断');
+    socket.on('disconnect', (reason) => {
+      logger.warn('Socket.IO切断:', {
+        component: 'socketClient',
+        action: 'disconnect',
+        socketConnected: socket?.connected, // 切断直前はtrueかもしれないが、イベント後はfalse扱い
+        clientId
+      });
       isInitialized = false;
+      clientId = '';
+      socketActions.setConnected(false, 'disconnect-event');
+      isInitialized = false; // 切断時は初期化フラグもリセット
+      // socket = null; // ソケットインスタンスをクリア (再接続ロジックに影響する可能性あり)
+
+      // 接続エラーハンドリング: UIに通知するか、再接続を試みるかなど
+      // 現時点ではログ出力のみ
+      logger.warn('socketClient: WebSocket接続が失われました。アプリケーションの状態に影響する可能性があります。', {
+        component: 'socketClient',
+        function: 'handleDisconnect',
+        disconnectReason: reason // Changed from shorthand 'reason' to 'disconnectReason: reason'
+      });
+
+      // TODO: 必要であれば再接続ロジックをここに追加
+      // 例: setTimeout(() => initializeSocketClient(), 5000); // 5秒後に再接続試行
+
+      // 関連する状態をリセット (例: 購読中のデータストリームなど)
+      // socketStoreActions.resetSubscriptions(); // 仮の関数
     });
-    
-    // エラー発生時の処理
-    socket.on('connect_error', (error) => {
-      console.error('Socket.IO接続エラー:', error);
-      isInitialized = false;
+
+    // 再接続試行時の処理
+    socket.on('reconnect_attempt', () => {
+      logger.info('Socket.IO再接続試行:', {
+        component: 'socketClient',
+        action: 'reconnect_attempt',
+        socketConnected: socket?.connected,
+        clientId
+      });
     });
-    
+
+    // 再接続成功時の処理
+    socket.on('reconnect', () => {
+      logger.info('Socket.IO再接続成功:', {
+        component: 'socketClient',
+        action: 'reconnect',
+        socketConnected: socket?.connected,
+        clientId
+      });
+      isInitialized = true;
+      socketActions.setConnected(true, 'reconnect-event');
+    });
+
     console.log('Socket.IO初期化完了');
   } catch (error) {
     console.error('Socket.IO初期化エラー:', error);

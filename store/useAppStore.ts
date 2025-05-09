@@ -181,9 +181,7 @@ export const useAppStore = create<AppState>()(
       currentSymbol: typeof window !== 'undefined'
         ? localStorage.getItem('lastUsedSymbol') || ''
         : '',
-      exchangeType: typeof window !== 'undefined'
-        ? (localStorage.getItem('lastUsedExchangeType') as ExchangeType) || 'spot'
-        : 'spot',
+      exchangeType: 'spot',
       symbols: [],
       filteredSymbols: [],
       filterOptions: {
@@ -339,12 +337,22 @@ export const useAppStore = create<AppState>()(
       setExchangeType: (type: ExchangeType) => {
         // 現在の取引種別と同じ場合は何もしない
         if (get().exchangeType === type) {
+          logger.info(`取引種別が既に${type}に設定されているため、更新をスキップします`, {
+            component: 'useAppStore',
+            action: 'setExchangeType',
+            timestamp: Date.now()
+          });
           return;
         }
         
-        logger.info(`Changing exchange type from ${get().exchangeType} to ${type}`, {
+        const currentType = get().exchangeType;
+        const fromFuturesToSpot = currentType === 'futures' && type === 'spot';
+        
+        logger.info(`取引種別を${currentType}から${type}に変更します`, {
           component: 'useAppStore',
-          action: 'setExchangeType'
+          action: 'setExchangeType',
+          timestamp: Date.now(),
+          fromFuturesToSpot: fromFuturesToSpot ? '先物→現物の切り替え検出' : '他の切り替えパターン'
         });
         
         // 進行中のリクエストをキャンセル
@@ -361,16 +369,42 @@ export const useAppStore = create<AppState>()(
         // 最後に使用した取引種別をローカルストレージに保存
         if (typeof window !== 'undefined') {
           localStorage.setItem('lastUsedExchangeType', type);
+          localStorage.setItem('selectedInstrumentType', type); // 互換性のため
+          
+          // 現在の銘柄も保存して、リフレッシュ時に保持されるようにする
+          const currentSymbol = get().currentSymbol;
+          if (currentSymbol) {
+            localStorage.setItem('lastUsedSymbol', currentSymbol);
+            
+            logger.info(`取引種別変更時に銘柄を保存: ${currentSymbol}`, {
+              component: 'useAppStore',
+              action: 'setExchangeType',
+              type,
+              currentSymbol
+            });
+          }
         }
+        
+        // 現在の銘柄を保持
+        const currentSymbol = get().currentSymbol;
         
         set({
           exchangeType: type,
+          // 現在の銘柄を明示的に保持
+          currentSymbol: currentSymbol,
           // ローディング状態をリセット
           isLoadingOrderBook: true,
           isLoadingChartData: true,
           // エラー状態をリセット
           orderBookError: null,
           chartError: null
+        });
+        
+        logger.info(`取引種別変更時に銘柄を保持: ${currentSymbol}`, {
+          component: 'useAppStore',
+          action: 'setExchangeType',
+          type,
+          currentSymbol
         });
         
         // データを再取得
@@ -1077,26 +1111,44 @@ export const useAppStore = create<AppState>()(
       unsubscribeAllWebSockets: () => {
         const { _wsUnsubscribeFunctions } = get();
         
-        // すべての購読解除関数を実行
-        Object.values(_wsUnsubscribeFunctions).forEach(unsubscribe => {
-          if (typeof unsubscribe === 'function') {
-            unsubscribe();
-          }
-        });
-        
-        // 購読解除関数をクリア
-        set({
-          _wsUnsubscribeFunctions: {},
-          wsSubscriptions: {
-            orderbook: false,
-            chart: false
-          }
-        });
-        
-        logger.info('すべてのWebSocket購読を解除しました', {
-          component: 'useAppStore',
-          action: 'unsubscribeAllWebSockets'
-        });
+        // _wsUnsubscribeFunctionsが存在する場合のみ処理を実行
+        if (_wsUnsubscribeFunctions && typeof _wsUnsubscribeFunctions === 'object') {
+          // すべての購読解除関数を実行
+          Object.values(_wsUnsubscribeFunctions).forEach(unsubscribe => {
+            if (typeof unsubscribe === 'function') {
+              unsubscribe();
+            }
+          });
+          
+          // 購読解除関数をクリア
+          set({
+            _wsUnsubscribeFunctions: {},
+            wsSubscriptions: {
+              orderbook: false,
+              chart: false
+            }
+          });
+          
+          logger.info('すべてのWebSocket購読を解除しました', {
+            component: 'useAppStore',
+            action: 'unsubscribeAllWebSockets'
+          });
+        } else {
+          // _wsUnsubscribeFunctionsが存在しない場合は初期化だけ行う
+          logger.warn('WebSocket購読関数が存在しません', {
+            component: 'useAppStore',
+            action: 'unsubscribeAllWebSockets',
+            wsUnsubscribeFunctions: _wsUnsubscribeFunctions
+          });
+          
+          set({
+            _wsUnsubscribeFunctions: {},
+            wsSubscriptions: {
+              orderbook: false,
+              chart: false
+            }
+          });
+        }
       },
       
       /**
@@ -1113,20 +1165,64 @@ export const useAppStore = create<AppState>()(
         
         // 最後に使用したシンボルと取引種別を取得
         let lastUsedSymbol = state.currentSymbol;
-        const lastUsedExchangeType = state.exchangeType;
+        let lastUsedExchangeType: ExchangeType = 'spot'; // デフォルト値を'spot'に設定
+        
+        // ローカルストレージから値を取得（ブラウザ環境の場合）
+        if (typeof window !== 'undefined') {
+          // シンボルの取得
+          const storedSymbol = localStorage.getItem('lastUsedSymbol');
+          if (storedSymbol) {
+            lastUsedSymbol = storedSymbol;
+          }
+          
+          // 取引種別の取得（複数のキーをチェック）
+          const storedExchangeType =
+            localStorage.getItem('lastUsedExchangeType') ||
+            localStorage.getItem('selectedInstrumentType');
+            
+          if (storedExchangeType && (storedExchangeType === 'spot' || storedExchangeType === 'futures')) {
+            lastUsedExchangeType = storedExchangeType as ExchangeType;
+            logger.info(`ローカルストレージから取引種別を読み込みました: ${lastUsedExchangeType}`, {
+              component: 'useAppStore',
+              action: 'initializeApp'
+            });
+          }
+        }
         
         // シンボルが空の場合はデフォルト値を設定
         if (!lastUsedSymbol) {
-          lastUsedSymbol = 'BTC/USDT';
-          // 明示的にシンボルを設定
-          set({ currentSymbol: lastUsedSymbol });
+          lastUsedSymbol = 'BTCUSDT';
           
-          // ローカルストレージにも保存
-          if (typeof window !== 'undefined') {
-            localStorage.setItem('lastUsedSymbol', lastUsedSymbol);
-          }
+          logger.info(`シンボルが見つかりません、デフォルト値を設定します: ${lastUsedSymbol}`, {
+            component: 'useAppStore',
+            action: 'initializeApp'
+          });
+        }
+        
+        // 取引種別が空の場合はデフォルト値を設定
+        if (!lastUsedExchangeType) {
+          lastUsedExchangeType = 'spot';
           
-          logger.info(`No symbol found, setting default: ${lastUsedSymbol}`, {
+          logger.info(`取引種別が見つかりません、デフォルト値を設定します: ${lastUsedExchangeType}`, {
+            component: 'useAppStore',
+            action: 'initializeApp'
+          });
+        }
+        
+        // 明示的に状態を更新
+        set({
+          currentSymbol: lastUsedSymbol,
+          exchangeType: lastUsedExchangeType
+        });
+        
+        // ローカルストレージに保存（値が変更された場合）
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('lastUsedSymbol', lastUsedSymbol);
+          localStorage.setItem('lastUsedExchangeType', lastUsedExchangeType);
+          localStorage.setItem('selectedInstrumentType', lastUsedExchangeType); // 互換性のため
+          
+          // リフレッシュ時に銘柄が保持されるように、明示的に保存
+          logger.info(`リフレッシュ時の銘柄保持のため、明示的に保存: ${lastUsedSymbol}`, {
             component: 'useAppStore',
             action: 'initializeApp'
           });

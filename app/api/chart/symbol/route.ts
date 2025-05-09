@@ -5,6 +5,7 @@
 
 import { NextResponse } from 'next/server';
 import { logger } from '@/utils/logger';
+import { ExchangeType } from '@/types/api';
 
 // server.jsで定義されたグローバル関数の型定義
 declare global {
@@ -18,7 +19,7 @@ declare global {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    let { symbol } = body;
+    let { symbol, exchangeType } = body;
 
     if (!symbol) {
       logger.warn('銘柄変更リクエストに必要なパラメータがありません', {
@@ -52,7 +53,7 @@ export async function POST(request: Request) {
     });
 
     // server.jsで定義されたグローバル関数を使用してイベントを送信
-    const result = await global.emitSocketEvent('changeSymbol', { symbol });
+    const result = await global.emitSocketEvent('changeSymbol', { symbol, exchangeType });
 
     if (result.success) {
       logger.info(`銘柄変更イベントを送信しました: ${symbol}`, {

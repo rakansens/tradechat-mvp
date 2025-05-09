@@ -73,6 +73,14 @@ const ChartToolbarComponent = memo(function ChartToolbar({
     setMounted(true);
   }, []);
   
+  // クライアントサイドレンダリングのフラグ
+  const [isClient, setIsClient] = useState(false);
+  
+  // クライアントサイドでのみ実行される処理
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+  
   // Socket.IOイベントリスナーの設定
   useEffect(() => {
     // 時間足変更イベントのリスナー
@@ -382,6 +390,7 @@ const ChartToolbarComponent = memo(function ChartToolbar({
               fetchChartData(currentSymbol, currentTimeFrame);
             }}
               className={`flex items-center px-2 py-1 text-xs rounded-l ${
+                !isClient ? 'bg-dark-800 text-gray-300' : // 初期レンダリング時はデフォルトスタイル
                 exchangeType === 'spot'
                   ? 'bg-blue-600 text-white'
                   : 'bg-dark-800 text-gray-300 hover:bg-dark-700'
@@ -397,6 +406,7 @@ const ChartToolbarComponent = memo(function ChartToolbar({
               fetchChartData(currentSymbol, currentTimeFrame);
             }}
               className={`flex items-center px-2 py-1 text-xs rounded-r ${
+                !isClient ? 'bg-dark-800 text-gray-300' : // 初期レンダリング時はデフォルトスタイル
                 exchangeType === 'futures'
                   ? 'bg-blue-600 text-white'
                   : 'bg-dark-800 text-gray-300 hover:bg-dark-700'
