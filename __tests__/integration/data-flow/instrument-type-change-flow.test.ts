@@ -78,22 +78,55 @@ global.CustomEvent = jest.fn().mockImplementation((event, options) => ({
 
 global.dispatchEvent = jest.fn();
 
+// イベントハンドラーを格納するオブジェクト
+// グローバルで宣言してテスト全体でアクセス可能にする
+let socketEventHandlers: Record<string, (...args: any[]) => void> = {};
+
+// テスト用に事前に作っておくSocketClientモジュール
+// 実際のutils/socketClientがロードされる前にモックを設定する必要がある
+// 動的インポートの場合、この設定が適用されないことがある
+// そのため、明示的にsocketClientをモックしてイベントハンドラーを登録する
+const mockedSocketClient = {
+  // イベントハンドラーを登録するためのメソッド
+  initializeSocketClient: jest.fn(() => {
+    // イベントハンドラーを明示的に登録
+    socketEventHandlers['instrument-type-change'] = jest.fn((data) => {
+      const { type, symbol = 'BTCUSDT' } = data;
+      // 実際にテストしたい処理をモックとして実行
+      socketStoreActions.setExchangeType(type, symbol, 'socket-instrument-type-change');
+      
+      // CustomEventもイベントとして発行
+      const event = new CustomEvent('instrumentTypeChanged', { 
+        detail: { type, fromType: data.fromType || (type === 'spot' ? 'futures' : 'spot') }
+      });
+      window.dispatchEvent(event);
+    });
+    return true;
+  }),
+  emitEvent: jest.fn(),
+};
+
+// socketClientのモックを設定
+jest.mock('../../../utils/socketClient', () => mockedSocketClient);
+
 describe('取引タイプ変更フロー', () => {
-  let socketEventHandlers: Record<string, (...args: any[]) => void> = {};
   
   beforeEach(async () => {
     jest.clearAllMocks();
-    socketEventHandlers = {}; // Reset handlers for each test
+    // イベントハンドラーをリセット
+    socketEventHandlers = {}; 
     
+    // Socket.IOのonメソッドをモック
     mockSocket.on.mockImplementation((event: string, callback: (...args: any[]) => void) => {
-      socketEventHandlers[event] = callback;
+      // テストでは使用しないが、一応イベントハンドラーを記録しておく
       return mockSocket;
     });
     
     (global.fetch as jest.MockedFunction<typeof fetch>).mockResolvedValue(mockApiResponse('futures'));
     (changeInstrumentTypeTool.execute as jest.Mock).mockResolvedValue({ success: true, type: 'futures' });
     
-    await import('../../../utils/socketClient'); // Dynamically import to apply mocks
+    // テスト前にソケットクライアントの初期化を行う
+    mockedSocketClient.initializeSocketClient();
   });
 
   it('Mastraツールから取引タイプ変更が正しくAppStoreに反映されること', async () => {

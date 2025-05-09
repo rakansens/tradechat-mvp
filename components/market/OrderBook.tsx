@@ -259,7 +259,7 @@ export const OrderBook: React.FC<OrderBookPropsSchema> = (props) => {
               />
               <span className="text-xs text-[#9CA3AF]">
                 {wsStatus.connected ? (
-                  wsStatus.subscriptions.orderbook ? "WS" : "REST"
+                  wsStatus.subscriptions?.orderbook ? "WS" : "REST"
                 ) : "REST"}
               </span>
             </div>
