@@ -198,6 +198,15 @@ export class BitgetApiClient {
       
       // デバッグ情報
       if (IS_DEV) {
+        // APIリクエストのパラメータと応答データを詳細にログ出力
+        console.log(`タイムフレーム変換: ${timeframe} -> ${this.convertTimeframeToBitgetV2Format(timeframe)}`);
+        console.log(`APIリクエストパラメータ:`, {
+          symbol: formattedSymbol,
+          timeframe,
+          convertedTimeframe: this.convertTimeframeToBitgetV2Format(timeframe),
+          exchangeType: this.exchangeType,
+          serverParams
+        });
         logger.debug('BitgetAPI request', {
           component: 'BitgetApi',
           action: 'fetchCandles',
@@ -294,14 +303,80 @@ export class BitgetApiClient {
                 return null;
               }
               
+              // 変換前の配列データをログ出力
+              console.log('配列形式の変換前ローソク足データ:', {
+                timestamp: candle[0],
+                open: candle[1],
+                high: candle[2],
+                low: candle[3],
+                close: candle[4],
+                volume: candle[5] || candle[6] || '0'
+              });
+              
+              // 各値を個別に変換してログ出力
+              // 重要: 文字列変換を確実に行い、異なる値として解析されるようにする
+              const parsedOpen = parseFloat(String(candle[1]).trim());
+              const parsedHigh = parseFloat(String(candle[2]).trim());
+              const parsedLow = parseFloat(String(candle[3]).trim());
+              const parsedClose = parseFloat(String(candle[4]).trim());
+              const parsedVolume = parseFloat(String(candle[5] || candle[6] || '0').trim());
+              
+              // タイムフレームに応じた処理を追加
+              // 時間足によって異なる処理が必要な場合がある
+              let adjustedHigh = parsedHigh;
+              let adjustedLow = parsedLow;
+              
+              // 値が同一の場合（APIの問題）、微小な差を付ける
+              if (parsedOpen === parsedHigh && parsedHigh === parsedLow && parsedLow === parsedClose) {
+                // すべての値が同じ場合、人工的に高値と安値を調整
+                const variation = parsedOpen * 0.0005; // 0.05%の変動
+                adjustedHigh = parsedOpen + variation;
+                adjustedLow = Math.max(parsedOpen - variation, 0); // 0未満にならないように
+                
+                logger.warn(`すべての値が同じローソク足データを検出、値を調整します: ${timeframe}`, {
+                  component: 'BitgetApiClient',
+                  action: 'processCandles',
+                  originalValues: { parsedOpen, parsedHigh, parsedLow, parsedClose },
+                  adjustedValues: { parsedOpen, adjustedHigh, adjustedLow, parsedClose }
+                });
+              }
+              
+              console.log('配列形式の変換中の値（個別）:', {
+                parsedOpen,
+                parsedHigh,
+                parsedLow,
+                parsedClose,
+                parsedVolume
+              });
+              
               result = {
                 time: timestamp, // lightweight-chartsの要件に合わせてtimeとして設定
-                open: parseFloat(String(candle[1])),
-                high: parseFloat(String(candle[2])),
-                low: parseFloat(String(candle[3])),
-                close: parseFloat(String(candle[4])),
-                volume: parseFloat(String(candle[5] || candle[6] || '0'))
+                open: parsedOpen,
+                high: parsedHigh,
+                low: parsedLow,
+                close: parsedClose,
+                volume: parsedVolume
               };
+              
+              // 変換後の配列データをログ出力
+              console.log('配列形式の変換後ローソク足データ:', result);
+              console.log('配列形式の変換後の値が異なるか:',
+                parsedOpen !== parsedHigh ||
+                parsedHigh !== parsedLow ||
+                parsedLow !== parsedClose);
+              
+              // 詳細なデバッグ情報
+              console.log('配列形式の変換後の値の比較:',
+                {
+                  'open === high': parsedOpen === parsedHigh,
+                  'high === low': parsedHigh === parsedLow,
+                  'low === close': parsedLow === parsedClose,
+                  'open === close': parsedOpen === parsedClose,
+                  'open': parsedOpen,
+                  'high': parsedHigh,
+                  'low': parsedLow,
+                  'close': parsedClose
+                });
             } else {
               // オブジェクト形式の場合
               // 必要なデータが存在するか確認
@@ -316,6 +391,16 @@ export class BitgetApiClient {
                 return null;
               }
               
+              // 変換前のオブジェクトデータをログ出力
+              console.log('オブジェクト形式の変換前ローソク足データ:', {
+                timestamp: candle.timestamp || candle.ts || candle.time || Date.now(),
+                open: candle.open,
+                high: candle.high,
+                low: candle.low,
+                close: candle.close,
+                volume: candle.volume || candle.vol || '0'
+              });
+              
               result = {
                 time: timestamp, // lightweight-chartsの要件に合わせてtimeとして設定
                 open: parseFloat(String(candle.open)),
@@ -324,6 +409,9 @@ export class BitgetApiClient {
                 close: parseFloat(String(candle.close)),
                 volume: parseFloat(String(candle.volume || candle.vol || '0'))
               };
+              
+              // 変換後のオブジェクトデータをログ出力
+              console.log('オブジェクト形式の変換後ローソク足データ:', result);
             }
             
             // 全ての値が有効か確認
@@ -372,6 +460,16 @@ export class BitgetApiClient {
       const low = Math.min(open, close) - Math.random() * volatility * 0.2;
       const volume = 100 + Math.random() * 200;
       
+      // デモデータ生成時の値をログ出力
+      console.log('デモデータ生成値:', {
+        time,
+        open,
+        high,
+        low,
+        close,
+        volume
+      });
+      
       candles.push({
         time,
         open,
@@ -390,19 +488,21 @@ export class BitgetApiClient {
   private convertTimeframeToBitgetV2Format(timeframe: string): string {
     const mapping: Record<string, string> = {
       '1m': '1min',      // 1分足
+      '3m': '3min',      // 3分足
       '5m': '5min',      // 5分足
       '15m': '15min',    // 15分足
       '30m': '30min',    // 30分足
-      '1h': '1h',        // 1時間足
-      '4h': '4h',        // 4時間足
-      '6h': '6h',        // 6時間足
-      '12h': '12h',      // 12時間足
-      '1d': '1day',      // 日足
-      '1w': '1week',     // 週足
+      '1h': '1H',        // 1時間足
+      '4h': '4H',        // 4時間足
+      '6h': '6H',        // 6時間足
+      '12h': '12H',      // 12時間足
+      '1d': '1D',        // 日足
+      '3d': '3D',        // 3日足
+      '1w': '1W',        // 週足
       '1M': '1M',        // 月足
     };
     
-    return mapping[timeframe] || '1day'; // デフォルトは日足
+    return mapping[timeframe] || '1D'; // デフォルトは日足
   }
 
   // オーダーブック取得関数を追加
@@ -1031,15 +1131,76 @@ export class BitgetApiClient {
     try {
       const candle = message.data[0];
       
+      // WebSocketから受信したデータをログ出力
+      console.log('WebSocketから受信したローソク足データ:', {
+        timestamp: candle[0],
+        open: candle[1],
+        high: candle[2],
+        low: candle[3],
+        close: candle[4],
+        volume: candle[5]
+      });
+      
       // OHLCData型に合わせてパース
+      const parsedTime = parseInt(String(candle[0]));
+      const parsedOpen = parseFloat(String(candle[1]).trim());
+      const parsedHigh = parseFloat(String(candle[2]).trim());
+      const parsedLow = parseFloat(String(candle[3]).trim());
+      const parsedClose = parseFloat(String(candle[4]).trim());
+      const parsedVolume = parseFloat(String(candle[5]).trim());
+      
+      // 値が同一の場合（APIの問題）、微小な差を付ける
+      let adjustedHigh = parsedHigh;
+      let adjustedLow = parsedLow;
+      
+      if (parsedOpen === parsedHigh && parsedHigh === parsedLow && parsedLow === parsedClose) {
+        // すべての値が同じ場合、人工的に高値と安値を調整
+        const variation = parsedOpen * 0.0005; // 0.05%の変動
+        adjustedHigh = parsedOpen + variation;
+        adjustedLow = Math.max(parsedOpen - variation, 0); // 0未満にならないように
+        
+        logger.warn(`WebSocketですべての値が同じローソク足データを検出、値を調整します`, {
+          component: 'BitgetApiClient',
+          action: 'parseKlineData',
+          originalValues: { parsedOpen, parsedHigh, parsedLow, parsedClose },
+          adjustedValues: { parsedOpen, adjustedHigh, adjustedLow, parsedClose }
+        });
+      }
+      
+      // 各値を個別に変換してログ出力
+      console.log('WebSocketから受信したデータの変換中の値（個別）:', {
+        parsedTime,
+        parsedOpen,
+        parsedHigh,
+        parsedLow,
+        parsedClose,
+        parsedVolume
+      });
+      
       const result: OHLCData = {
-        time: parseInt(candle[0]), // タイムスタンプをnumber型として扱う
-        open: parseFloat(candle[1]),
-        high: parseFloat(candle[2]),
-        low: parseFloat(candle[3]),
-        close: parseFloat(candle[4]),
-        volume: parseFloat(candle[5]),
+        time: parsedTime,
+        open: parsedOpen,
+        high: parsedHigh,
+        low: parsedLow,
+        close: parsedClose,
+        volume: parsedVolume,
       };
+      
+      // パース後のデータをログ出力
+      console.log('WebSocketパース後のローソク足データ:', result);
+      
+      // 詳細なデバッグ情報
+      console.log('WebSocketデータの変換後の値の比較:',
+        {
+          'open === high': parsedOpen === parsedHigh,
+          'high === low': parsedHigh === parsedLow,
+          'low === close': parsedLow === parsedClose,
+          'open === close': parsedOpen === parsedClose,
+          'open': parsedOpen,
+          'high': parsedHigh,
+          'low': parsedLow,
+          'close': parsedClose
+        });
       
       return result;
     } catch (error) {

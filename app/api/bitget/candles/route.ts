@@ -14,7 +14,7 @@ interface CandleCache {
   lastFetch: number;
 }
 
-// キャッシュTTL (30秒)
+// キャッシュTTL (30秒 - 開発中は短くして常に最新データを取得)
 const CACHE_TTL = 30 * 1000;
 
 // キャッシュストレージ

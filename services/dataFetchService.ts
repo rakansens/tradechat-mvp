@@ -244,8 +244,15 @@ export const dataFetchService = {
     timeFrame: Timeframe,
     exchangeType: ExchangeType,
     signal?: AbortSignal,
-    useCache: boolean = true
+    useCache: boolean = true // デフォルトでキャッシュを使用する
   ): Promise<OHLCData[]> => {
+    // デバッグ用：リクエスト情報を詳細に記録
+    console.log(`[DEBUG] fetchChartData called:`, {
+      symbol,
+      timeFrame,
+      exchangeType,
+      useCache
+    });
     // シンボルが空の場合はエラーをスロー
     if (!symbol || symbol.trim() === '') {
       logger.error('空のシンボルでチャートデータを取得しようとしました', {
@@ -281,9 +288,27 @@ export const dataFetchService = {
           action: 'fetchChartData',
           requestKey,
           dataCount: cachedData.length,
+          timeFrame,
+          exchangeType,
           dataSample: cachedData.slice(-3) // 最後の3件のデータをサンプルとして記録
         });
+        
+        // キャッシュヒットの詳細をログ出力
+        console.log(`キャッシュヒット: ${requestKey}`, {
+          timeFrame,
+          exchangeType,
+          dataLength: cachedData.length,
+          firstCandle: cachedData[0],
+          lastCandle: cachedData[cachedData.length - 1]
+        });
+        
         return cachedData;
+      } else {
+        // キャッシュミスをログ出力
+        console.log(`キャッシュミス: ${requestKey}`, {
+          timeFrame,
+          exchangeType
+        });
       }
     }
     
@@ -495,7 +520,18 @@ export const dataFetchService = {
       }
     }
     
-    // 3. 事後チェック: 該当シンボルのキャッシュがクリアされたか確認
+    // 3. 全てのチャート関連キャッシュをクリア（より確実にするため）
+    for (const key of cache.keys()) {
+      if (key.startsWith('chart-')) {
+        cache.delete(key);
+        logger.debug(`追加のキャッシュキー削除: ${key}`, {
+          component: 'dataFetchService',
+          action: 'handleTimeframeChange'
+        });
+      }
+    }
+    
+    // 4. 事後チェック: 該当シンボルのキャッシュがクリアされたか確認
     const remainingCacheKeys = [] as string[];
     for (const key of cache.keys()) {
       if (key.startsWith(symbolBaseKey)) {

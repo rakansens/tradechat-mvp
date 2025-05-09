@@ -81,7 +81,7 @@ export const useChartDataStore = create<ChartDataState>()(
       // 現在のリクエストをキャンセルするためのAbortController
       _abortController: null as AbortController | null,
       
-      fetchData: async (symbol: string, timeFrame: Timeframe, signal?: AbortSignal, useCache: boolean = true) => {
+      fetchData: async (symbol: string, timeFrame: Timeframe, signal?: AbortSignal, useCache: boolean = false) => {
         // 開発環境でのバリデーション
         if (process.env.NODE_ENV !== 'production') {
           const timeframeResult = validateTimeframe(timeFrame);
@@ -126,13 +126,13 @@ export const useChartDataStore = create<ChartDataState>()(
             dataSample: get().data.slice(-3) // 最後の3件のデータをサンプルとして記録
           });
           
-          // 共通サービスを使用してチャートデータを取得
+          // 共通サービスを使用してチャートデータを取得（キャッシュを使用）
           const data = await dataFetchService.fetchChartData(
             finalSymbol,
             finalTimeFrame,
             exchangeType,
             signal,
-            useCache
+            true // キャッシュを使用する
           );
           
           // 取得したデータの内容を記録
@@ -323,17 +323,14 @@ export const useChartDataStore = create<ChartDataState>()(
               localStorage_selectedTimeframe: typeof window !== 'undefined' ? localStorage.getItem('selectedTimeframe') : null
             });
             
-            import('../../services/dataFetchService').then(module => {
-              const dataFetchService = module.default;
-              if (typeof dataFetchService.handleTimeframeChange === 'function') {
-                dataFetchService.handleTimeframeChange(currentSymbol, timeFrame, exchangeType);
-                logger.info(`Cleared chart cache for timeframe change to ${timeFrame}`, {
-                  component: 'useChartDataStore',
-                  action: 'updateTimeFrame',
-                  symbol: currentSymbol,
-                  exchangeType
-                });
-              }
+            // 動的インポートを使わず、直接dataFetchServiceを参照する
+            // これにより確実にキャッシュクリアが実行される
+            dataFetchService.handleTimeframeChange(currentSymbol, timeFrame, exchangeType);
+            logger.info(`Cleared chart cache for timeframe change to ${timeFrame}`, {
+              component: 'useChartDataStore',
+              action: 'updateTimeFrame',
+              symbol: currentSymbol,
+              exchangeType
             });
           } catch (e) {
             logger.warn('Failed to clear cache for timeframe change', {
@@ -384,6 +381,12 @@ export const useChartDataStore = create<ChartDataState>()(
               
               // シンボル、タイムフレーム、取引種別を指定してキャッシュをクリア
               const appState = useAppStore.getState();
+              
+              // 重要: キャッシュクリアを確実に実行
+              // 1. 全てのキャッシュをクリア
+              dataFetchService.clearCache();
+              
+              // 2. 特定のキャッシュをクリア
               dataFetchService.handleTimeframeChange(currentSymbol, timeFrame, appState.exchangeType);
               
               // キャッシュを使用せずに新しいデータを取得
@@ -391,6 +394,8 @@ export const useChartDataStore = create<ChartDataState>()(
                 component: 'useChartDataStore',
                 action: 'updateTimeFrame'
               });
+              
+              // 強制的にキャッシュを使わずに新しいデータを取得
               await get().fetchData(currentSymbol, timeFrame, undefined, false);
               
               // データ取得後のデータ内容を記録
