@@ -7,7 +7,8 @@
 // クライアントコンポーネントとして明示的に宣言し、ハイドレーションエラーを回避
 
 import React, { useEffect } from 'react';
-import { useAppStore } from '../../store';
+import { useChartDataStore } from '../../store/chart/useChartDataStore';
+import { useSymbolStore } from '../../store/useSymbolStore';
 import { useChartConfigStore, useIndicatorStore, useDrawingToolStore, useRealTimeStore } from '../../store/chart';
 import type { Timeframe } from '../../types/chart';
 import type { ExchangeType } from '../../types/api';
@@ -15,19 +16,19 @@ import type { IndicatorType } from '../../types/store';
 import { logger } from '../../utils/logger';
 
 export const ChartContainer: React.FC = () => {
-  // AppStoreから状態を取得
-  const currentSymbol = useAppStore(state => state.currentSymbol);
-  const currentTimeFrame = useAppStore(state => state.currentTimeFrame);
-  const isLoading = useAppStore(state => state.isLoadingChartData);
-  const error = useAppStore(state => state.chartError);
-  const chartData = useAppStore(state => state.chartData);
-  const exchangeType = useAppStore(state => state.exchangeType);
+  // 各ドメインストアから状態を取得
+  const currentSymbol = useSymbolStore(state => state.currentSymbol);
+  const currentTimeFrame = useChartDataStore(state => state.currentTimeFrame);
+  const isLoading = useChartDataStore(state => state.isLoading);
+  const error = useChartDataStore(state => state.error);
+  const chartData = useChartDataStore(state => state.data);
+  const exchangeType = useSymbolStore(state => state.exchangeType);
   
-  // AppStoreからアクションを取得
-  const updateTimeFrame = useAppStore(state => state.updateTimeFrame);
-  const setCurrentSymbol = useAppStore(state => state.setCurrentSymbol);
-  const fetchChartData = useAppStore(state => state.fetchChartData);
-  const setExchangeType = useAppStore(state => state.setExchangeType);
+  // 各ドメインストアからアクションを取得
+  const updateTimeFrame = useChartDataStore(state => state.updateTimeFrame);
+  const setCurrentSymbol = useSymbolStore(state => state.setCurrentSymbol);
+  const fetchChartData = useChartDataStore(state => state.fetchData);
+  const setExchangeType = useSymbolStore(state => state.setExchangeType);
   
   // チャート関連のストアから状態を取得
   const {
@@ -77,7 +78,7 @@ export const ChartContainer: React.FC = () => {
       
       if (type === 'spot' || type === 'futures') {
         // イベントから銘柄を取得、なければ現在の銘柄を使用
-        const targetSymbol = symbol || useAppStore.getState().currentSymbol || 'BTCUSDT';
+        const targetSymbol = symbol || useSymbolStore.getState().currentSymbol || 'BTCUSDT';
         
         logger.info(`取引タイプ変更時の銘柄: ${targetSymbol}`, {
           component: 'ChartContainer',
@@ -96,10 +97,10 @@ export const ChartContainer: React.FC = () => {
           });
           
           // 銘柄を即座に設定
-          useAppStore.getState().setCurrentSymbol(targetSymbol, '先物→現物切り替え前の銘柄設定');
+          setCurrentSymbol(targetSymbol, '先物→現物切り替え前の銘柄設定');
         }
         
-        // AppStoreの取引タイプを更新（銘柄を明示的に指定）
+        // SymbolStoreの取引タイプを更新（銘柄を明示的に指定）
         logger.info(`取引タイプを${exchangeType}から${type}に変更します`, {
           component: 'ChartContainer',
           action: 'handleInstrumentTypeChange',
@@ -121,7 +122,7 @@ export const ChartContainer: React.FC = () => {
           
           // 少し遅延させて銘柄を再設定
           setTimeout(() => {
-            useAppStore.getState().setCurrentSymbol(targetSymbol, '取引タイプ変更後の銘柄再設定');
+            setCurrentSymbol(targetSymbol, '取引タイプ変更後の銘柄再設定');
           }, 100);
         }
       }
@@ -162,7 +163,7 @@ export const ChartContainer: React.FC = () => {
         
         // データを再取得
         setTimeout(() => {
-          fetchChartData(symbol);
+          fetchChartData(symbol, currentTimeFrame);
         }, 100);
       }
     };

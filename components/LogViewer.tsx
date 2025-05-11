@@ -4,6 +4,9 @@
 // 更新: デバッグ機能の追加
 // このコンポーネントはローカルストレージに保存されたログを表示し、
 // アクティブなフェッチリクエスト、ポーリング状態、シンボル変更履歴などのデバッグ情報を提供します
+// 更新: ドメイン駆動設計ストア構造に対応
+// - useAppStoreからuseDebugStoreに移行
+// - デバッグ関連機能の分離
 
 import { useState, useEffect, useCallback } from 'react';
 import { getStoredLogs, clearStoredLogs, StoredLog } from '@/utils/logStorage';
@@ -12,7 +15,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useAppStore } from '@/store/useAppStore';
+import { useDebugStore } from '@/store/useDebugStore';
+import { useSymbolStore } from '@/store/useSymbolStore';
 import { cacheService } from '@/services/cache';
 import { requestHistoryService } from '@/services/history';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -30,12 +34,13 @@ export default function LogViewer() {
   const [cacheStats, setCacheStats] = useState<any>({});
   const [requestHistory, setRequestHistory] = useState<any[]>([]);
   
-  // AppStoreからデバッグ関連の状態と関数を取得
-  const isDebugMode = useAppStore(state => state.isDebugMode);
-  const toggleDebugMode = useAppStore(state => state.toggleDebugMode);
-  const getActiveFetchesInfo = useAppStore(state => state.getActiveFetchesInfo);
-  const getPollingStatus = useAppStore(state => state.getPollingStatus);
-  const getSymbolChangeHistory = useAppStore(state => state.getSymbolChangeHistory);
+  // ドメインストアからデバッグ関連の状態と関数を取得
+  const isDebugMode = useDebugStore(state => state.isDebugMode);
+  const toggleDebugMode = useDebugStore(state => state.toggleDebugMode);
+  const getActiveFetchesInfo = useDebugStore(state => state.getActiveFetchesInfo);
+  const getPollingStatus = useDebugStore(state => state.getPollingStatus);
+  // シンボル変更履歴はシンボルストアから取得
+  const getSymbolChangeHistory = useSymbolStore(state => state.getSymbolChangeHistory);
   
   // デバッグ情報を更新する関数
   const refreshDebugInfo = useCallback(() => {

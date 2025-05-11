@@ -5,7 +5,9 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { ErrorBoundary } from "@/components/ErrorBoundary"
 import { setupGlobalErrorHandlers } from "@/utils/errorHandlers"
 import { socketService } from '@/services/socketService'
-import { useAppStore } from '@/store'
+import { useDebugStore } from '@/store/useDebugStore'
+import { useSymbolStore } from '@/store/useSymbolStore'
+import { useOrderBookStore } from '@/store/market/useOrderBookStore'
 import { logger } from '@/utils/logger'
 import LogViewer from '@/components/LogViewer'
 import { Button } from '@/components/ui/button'
@@ -16,7 +18,7 @@ import { BugIcon, XIcon } from 'lucide-react'
 // 更新: デバッグ機能の追加、SocketInitializerの機能を統合、useAppStoreの初期化を追加
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   const [showDebugPanel, setShowDebugPanel] = useState(false);
-  const isDebugMode = useAppStore(state => state.isDebugMode);
+  const isDebugMode = useDebugStore(state => state.isDebugMode);
   // グローバルエラーハンドラー、ソケットクライアント、ストアをセットアップ（クライアントサイドのみ）
   useEffect(() => {
     // グローバルエラーハンドラーをセットアップ
@@ -28,18 +30,29 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
       
 
       
-      // アプリケーション初期化時にuseAppStoreを初期化
+      // シンボルと各ストアの初期化
       try {
-        // アプリストアを初期化
-        const appStore = useAppStore.getState();
-        const { symbol, exchangeType } = appStore.initializeApp();
+        // シンボルストアから情報を取得
+        const symbolStore = useSymbolStore.getState();
+        const symbol = symbolStore.currentSymbol;
+        const exchangeType = symbolStore.exchangeType;
         
-        logger.info(`App initialized with symbol: ${symbol}, exchange type: ${exchangeType}`, {
+        // シンボルが空の場合はデフォルト使用
+        const finalSymbol = symbol || 'BTCUSDT';
+        if (!symbol) {
+          symbolStore.setCurrentSymbol(finalSymbol, '初期化時のデフォルト設定');
+        }
+        
+        // オーダーブックを取得
+        const orderBookStore = useOrderBookStore.getState();
+        orderBookStore.fetchOrderBook(finalSymbol, exchangeType);
+        
+        logger.info(`App initialized with symbol: ${finalSymbol}, exchange type: ${exchangeType}`, {
           component: 'ClientLayout',
           action: 'initialize'
         });
       } catch (error) {
-        logger.error(`Failed to initialize app store: ${error}`, {
+        logger.error(`Failed to initialize symbol store: ${error}`, {
           component: 'ClientLayout',
           action: 'initialize',
           error

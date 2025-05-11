@@ -7,7 +7,7 @@
 // 更新: 人気銘柄セクションの追加
 
 import { useState, useEffect } from 'react';
-import { useAppStore } from '@/store';
+import { useSymbolStore } from '@/store/useSymbolStore';
 import { ExchangeType } from '@/types/api';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -40,7 +40,7 @@ export default function SymbolSelector({
   if (!propsValidation.success) {
     console.warn('SymbolSelector props validation failed:', propsValidation.error);
   }
-  // AppStoreから状態とアクションを取得
+  // SymbolStoreから状態とアクションを取得
   const {
     filteredSymbols,
     isLoadingSymbols: isLoading,
@@ -50,7 +50,7 @@ export default function SymbolSelector({
     toggleFavorite,
     clearFilters,
     filterOptions
-  } = useAppStore();
+  } = useSymbolStore();
   
   // 取引タイプの状態
   const [exchangeType, setExchangeType] = useState<ExchangeType>(defaultExchangeType);
