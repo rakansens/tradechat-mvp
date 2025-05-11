@@ -15,15 +15,21 @@
 // - シンボル変更検出ロジックの最適化
 // - 不要な再レンダリングの防止
 // - fetchOrderBookWithSymbol関数の改善
+// 更新: ドメイン駆動設計ストア構造に対応
+// - useAppStoreからuseOrderBookStoreとuseSymbolStoreに移行
+// - WebSocketの状態管理を更新
+// - データフェッチロジックを新しいストア構造に合わせて更新
 
 'use client';
 
 import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
-import { useAppStore } from '../../store';
 import { OrderBookEntry } from '../../types/market';
 import { cn, normalizeSymbol } from '../../lib/utils';
 import { theme } from '../../styles/colors';
 import { orderBookPropsSchema, validateOrderBookProps } from '@/lib/validations/market';
+import { useOrderBookStore } from '../../store/market/useOrderBookStore';
+import { useSymbolStore } from '../../store/useSymbolStore';
+import { useWebSocketStore } from '../../store/useWebSocketStore';
 
 // 価格を表示するためのフォーマット関数
 const formatPrice = (price: number): string => {
@@ -64,19 +70,19 @@ export const OrderBook: React.FC<OrderBookPropsSchema> = (props) => {
     className,
     orderBookWidth = '33%'
   } = validationResult.success ? validationResult.data : props;
-  // AppStoreからデータを取得
-  const orderBook = useAppStore(state => state.orderBook);
-  const isLoadingOrderBook = useAppStore(state => state.isLoadingOrderBook);
-  const orderBookError = useAppStore(state => state.orderBookError);
-  const currentSymbol = useAppStore(state => state.currentSymbol);
-  const fetchOrderBook = useAppStore((state) => state.fetchOrderBook);
+  // 新しいドメインストアからデータを取得
+  const orderBook = useOrderBookStore(state => state.orderBook);
+  const isLoadingOrderBook = useOrderBookStore(state => state.isLoadingOrderBook);
+  const orderBookError = useOrderBookStore(state => state.orderBookError);
+  const currentSymbol = useSymbolStore(state => state.currentSymbol);
+  const fetchOrderBook = useOrderBookStore((state) => state.fetchOrderBook);
   // WebSocketの接続状態を取得（無限ループを防ぐために個別のステートを取得）
-  const wsConnected = useAppStore(state => state.wsConnected);
-  const wsSubscriptions = useAppStore(state => state.wsSubscriptions);
+  const wsConnected = useWebSocketStore(state => state.wsConnected);
+  const wsSubscribed = useOrderBookStore(state => state.wsSubscribed);
   const wsStatus = useMemo(() => ({
     connected: wsConnected,
-    subscriptions: wsSubscriptions
-  }), [wsConnected, wsSubscriptions]);
+    subscriptions: { orderbook: wsSubscribed }
+  }), [wsConnected, wsSubscribed]);
   
   // AppStoreからスプレッド情報を計算
   const spread = useMemo(() => {
@@ -169,8 +175,8 @@ export const OrderBook: React.FC<OrderBookPropsSchema> = (props) => {
     }
   }, [processedData]);
 
-  // AppStoreから直接シンボルを取得
-  const appStoreSymbol = useAppStore(state => state.currentSymbol);
+  // シンボルストアから直接シンボルを取得
+  const appStoreSymbol = useSymbolStore(state => state.currentSymbol);
   
   // シンボル変更を検出するための参照
   const prevSymbolRef = useRef(currentSymbol);
@@ -194,7 +200,7 @@ export const OrderBook: React.FC<OrderBookPropsSchema> = (props) => {
       console.log(`OrderBook: Fetching orderbook for normalized symbol: ${normalizedSymbol}`);
     }
     
-    // AppStoreのfetchOrderBook関数を呼び出し
+    // OrderBookStoreのfetchOrderBook関数を呼び出し
     fetchOrderBook(normalizedSymbol);
   }, [fetchOrderBook]);
   
