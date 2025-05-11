@@ -13,7 +13,7 @@ import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { logger } from '../utils/logger';
 import { useSymbolStore } from './useSymbolStore';
-import { getSocketService } from '../services/socketService';
+import { getSocketService } from '../services/socket';
 
 // WebSocketストアの状態型定義
 export interface WebSocketState {
@@ -198,7 +198,7 @@ if (typeof window !== 'undefined') {
   setTimeout(async () => {
     try {
       // 動的インポート
-      const socketServiceModule = await import('../services/socketService');
+      const socketServiceModule = await import('../services/socket');
       socketServiceInstance = socketServiceModule.getSocketService();
       
       // 初期接続状態を設定

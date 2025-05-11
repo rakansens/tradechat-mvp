@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react"
 import { ThemeProvider } from "@/components/theme-provider"
 import { ErrorBoundary } from "@/components/ErrorBoundary"
 import { setupGlobalErrorHandlers } from "@/utils/errorHandlers"
-import { socketService } from '@/services/socketService'
+import { socketService } from '@/services/socket'
 import { useDebugStore } from '@/store/useDebugStore'
 import { useSymbolStore } from '@/store/useSymbolStore'
 import { useOrderBookStore } from '@/store/market/useOrderBookStore'

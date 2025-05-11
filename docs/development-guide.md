@@ -538,7 +538,7 @@ export function subscribeKline(
 
 ```typescript
 // services/dataFetchService.ts
-import { socketService } from './socketService';
+import { socketService } from './socket';
 import { bitgetApi } from './bitgetApi';
 import type { OrderBookData, OHLCData, ExchangeType, Timeframe } from '@/types';
 

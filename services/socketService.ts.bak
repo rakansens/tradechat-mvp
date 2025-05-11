@@ -3,49 +3,11 @@
  * WebSocketの共有データ方式に対応したSocket.IOクライアント
  *
  * 更新内容:
- * - サーバーサイドのSocket.IOサーバーと通信する機能を実装
- * - シンボルごとのデータ購読と購読解除の機能を実装
- * - 接続状態監視と自動再接続機能を実装
- * - WebSocketからのデータをコールバックで提供
- * - 遅延初期化を実装して循環参照問題を解決
+ * - リファクタリングを実施し、socket/ディレクトリに機能を分離
+ * - 後方互換性のために元のインターフェースを維持
  */
 
-import { Socket, io } from 'socket.io-client';
-import { initializeSocketClient, getSocket, emitEvent } from '../utils/socketClient';
-import { BitgetApiClient } from './bitgetApi';
-import { ExchangeType } from '../types/api';
-import { logger } from '../utils/logger';
-import { OrderBookData } from '../types/market';
-import { OHLCData } from '../types/chart';
-import { normalizeSymbol } from '../lib/utils';
-
-// Socket.IOの名前空間
-const NAMESPACE = {
-  MARKET: '' // デフォルトの名前空間を使用
-};
-
-// チャンネル名の定数
-const CHANNEL = {
-  ORDERBOOK: 'orderbook',
-  KLINE: 'kline',
-  TRADE: 'trade',
-  SUBSCRIBE: 'subscribe',
-  UNSUBSCRIBE: 'unsubscribe'
-};
-
-// シングルトンインスタンス
-let bitgetApi: BitgetApiClient | null = null;
-let marketSocket: Socket | null = null;
-let activeSubscriptions: Map<string, Set<() => void>> = new Map();
-// テスト用getterでアクセス可能
-
-// 接続状態
-let connectedFlag = false;
-let reconnectTimer: NodeJS.Timeout | null = null;
-// Module-level variable for tracking reconnect attempts
-let reconnectAttempts = 0; // 再接続試行回数を一元管理
-const MAX_RECONNECT_ATTEMPTS = 5;
-const RECONNECT_DELAY = 2000;
+import { getSocketService, SocketService } from './socket';
 
 /**
  * ソケットサービス
@@ -801,13 +763,9 @@ const createSocketService = () => ({
     reconnectAttempts = 0;
     activeSubscriptions.clear();
   },
-  // テスト用: reconnectAttemptsのgetter/setter
-  get reconnectAttempts() { return reconnectAttempts; },
-  set reconnectAttempts(val: number) { reconnectAttempts = val; },
-});
 
 // 遅延初期化関数
-export const getSocketService = () => {
+// export const getSocketService = () => {
   if (!socketServiceInstance) {
     socketServiceInstance = createSocketService();
   }
@@ -815,6 +773,6 @@ export const getSocketService = () => {
 };
 
 // 後方互換性のために socketService もエクスポート
-export const socketService = typeof window !== 'undefined'
+// export const socketService = typeof window !== 'undefined'
   ? getSocketService()
   : createSocketService(); // サーバーサイドレンダリング時は新しいインスタンスを作成

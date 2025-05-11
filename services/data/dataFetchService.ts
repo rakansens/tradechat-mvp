@@ -11,7 +11,7 @@ import { OrderBookData } from '../../types/market';
 import { OHLCData, Timeframe } from '../../types/chart';
 import { logger } from '../../utils/logger';
 import { normalizeSymbol } from '../../lib/utils';
-import { getSocketService } from '../socketService';
+import { getSocketService } from '../socket';
 import { cacheService } from '../cache';
 import { requestHistoryService } from '../history';
 import { IDataFetchService } from './dataFetchTypes';

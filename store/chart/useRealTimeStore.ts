@@ -13,7 +13,7 @@ import { OHLCData, Timeframe } from "../../types/chart";
 import { useChartDataStore } from "./useChartDataStore";
 import { selectCurrentPrice } from "../chart/selectors";
 import { logger } from "../../utils/logger";
-import { socketService } from "../../services/socketService";
+import { socketService } from "../../services/socket";
 
 // デバウンス関数の実装
 function debounce<T extends (...args: any[]) => any>(func: T, wait: number): (...args: Parameters<T>) => void {

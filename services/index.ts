@@ -7,7 +7,7 @@
 
 // 既存のサービス
 export * from './bitgetApi';
-export * from './socketService';
+export * from './socket';
 export * from './errorHandler';
 export * from './api';
 export * from './apiClientFactory';
