@@ -413,23 +413,50 @@ export default function ChartCanvas() {
   useEffect(() => {
     if (!chartInstanceRef.current) return;
     
-    // データを時間順（昇順）にソート
-    const sortedData = [...data].sort((a, b) => a.time - b.time);
-    
     // データが空でないことを確認
-    if (sortedData.length === 0) return;
+    if (!data || data.length === 0) return;
+    
+    // データを時間順（昇順）にソートし、重複を除去
+    const uniqueData = removeDuplicateTimeEntries(data);
+    const sortedData = [...uniqueData].sort((a, b) => a.time - b.time);
     
     // データが時間順に並んでいるか検証（デバッグ用）
+    let hasTimeOrderIssue = false;
     for (let i = 1; i < sortedData.length; i++) {
       if (sortedData[i].time < sortedData[i-1].time) {
+        hasTimeOrderIssue = true;
         logger.warn('データが時間順になっていません', {
           component: 'ChartCanvas',
           action: 'renderChart',
           prevTime: sortedData[i-1].time,
-          currentTime: sortedData[i].time
+          currentTime: sortedData[i].time,
+          index: i
         });
         break;
       }
+      
+      // 同じ時間のデータがないことを確認
+      if (sortedData[i].time === sortedData[i-1].time) {
+        hasTimeOrderIssue = true;
+        logger.warn('同じ時間のデータが複数存在します', {
+          component: 'ChartCanvas',
+          action: 'renderChart',
+          time: sortedData[i].time,
+          index: i
+        });
+        break;
+      }
+    }
+    
+    // 時間順の問題がある場合はログ出力
+    if (hasTimeOrderIssue) {
+      logger.warn('データの時間順に問題があります。データを修正します。', {
+        component: 'ChartCanvas',
+        action: 'renderChart',
+        dataLength: data.length,
+        uniqueDataLength: uniqueData.length,
+        sortedDataLength: sortedData.length
+      });
     }
 
     if (chartType === "candles" && candleSeries.current) {
@@ -480,8 +507,9 @@ export default function ChartCanvas() {
     const mainSeries = candleSeries.current || lineSeries.current || areaSeries.current;
     if (!mainSeries) return;
     
-    // データを時間順（昇順）にソート
-    const sortedData = [...data].sort((a, b) => a.time - b.time);
+    // データを時間順（昇順）にソートし、重複を除去
+    const uniqueData = removeDuplicateTimeEntries(data);
+    const sortedData = [...uniqueData].sort((a, b) => a.time - b.time);
     
     // RSIインジケーターの表示切替
     if (activeIndicators.some(indicator => indicator.type === 'rsi')) {
@@ -608,7 +636,8 @@ export default function ChartCanvas() {
     // フィボナッチリトレースメントの表示切替
     if (activeDrawingTools.includes('fibonacci')) {
       // データから高値と安値を取得
-      const sortedData = [...data].sort((a, b) => a.time - b.time);
+      const uniqueData = removeDuplicateTimeEntries(data);
+      const sortedData = [...uniqueData].sort((a, b) => a.time - b.time);
       const last30Data = sortedData.slice(-30); // 直近30本のデータを使用
       
       if (last30Data.length > 0) {
@@ -650,6 +679,19 @@ export default function ChartCanvas() {
       style={{ height: "100%" }}
     />
   );
+}
+
+// 重複する時間のデータを除去する関数
+function removeDuplicateTimeEntries(data: OHLCData[]): OHLCData[] {
+  const timeMap = new Map<number, OHLCData>();
+  
+  // 各データポイントを時間でマップに格納（後のデータで上書き）
+  data.forEach(item => {
+    timeMap.set(item.time, item);
+  });
+  
+  // マップの値を配列に変換して返す
+  return Array.from(timeMap.values());
 }
 
 // Get MA period based on timeframe

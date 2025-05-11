@@ -1,7 +1,7 @@
 // store/chart/useChartDataStore.ts
 // 更新: AppStoreを中心とした放射状の依存関係に変更
 // 更新: 動的インポートを削除し、明確な依存関係を確立
-// 更新: 循環参照を解消
+// 更新: 循環参照を解消するために、useAppStoreへの直接参照を削除
 // 更新: Zodバリデーションスキーマを適用
 //
 // このストアはチャートのデータ（OHLC）と、データの取得状態を管理します。
@@ -15,10 +15,10 @@ import dataFetchService from '../../services/dataFetchService';
 import { OHLCData, Timeframe } from '../../types/chart';
 import { generateOHLCData } from '../../utils/ohlcDummyData';
 import { useChartConfigStore } from './useChartConfigStore';
-import { useAppStore } from '../useAppStore';
 import { useRealTimeStore } from './useRealTimeStore';
 import { logger } from '../../utils/logger';
 import { ChartDataState } from '../../types/store';
+import { ExchangeType } from '../../types/api';
 import {
   validateOHLCData,
   validateTimeframe,
@@ -43,12 +43,26 @@ if (typeof window !== 'undefined') {
   }
 }
 
-// AppStoreの状態も確認
-const appState = useAppStore.getState();
-// AppStoreの値がある場合は、それを使用（ただし、ローカルストレージの値を優先）
-if (!initialTimeframe && appState.currentTimeFrame) {
-  initialTimeframe = appState.currentTimeFrame;
-}
+// ローカルストレージからシンボルを取得する関数
+const getSymbolFromLocalStorage = (): string => {
+  if (typeof window === 'undefined') return 'BTCUSDT';
+  return localStorage.getItem('lastUsedSymbol') || 'BTCUSDT';
+};
+
+// ローカルストレージから取引種別を取得する関数
+const getExchangeTypeFromLocalStorage = (): ExchangeType => {
+  if (typeof window === 'undefined') return 'spot';
+  
+  const storedExchangeType =
+    localStorage.getItem('lastUsedExchangeType') ||
+    localStorage.getItem('selectedInstrumentType');
+    
+  if (storedExchangeType && (storedExchangeType === 'spot' || storedExchangeType === 'futures')) {
+    return storedExchangeType as ExchangeType;
+  }
+  
+  return 'spot';
+};
 
 const initialOhlcData: OHLCData[] = generateOHLCData(
   100,
@@ -60,8 +74,6 @@ logger.info(`チャートデータストアの初期化、時間足: ${initialTi
   component: 'useChartDataStore',
   action: 'initialize',
   source: 'localStorage',
-  appStateCurrentTimeFrame: appState.currentTimeFrame,
-  appStateInitialized: !!appState.currentTimeFrame,
   localStorage_lastUsedTimeframe: typeof window !== 'undefined' ? localStorage.getItem('lastUsedTimeframe') : null,
   localStorage_selectedTimeframe: typeof window !== 'undefined' ? localStorage.getItem('selectedTimeframe') : null
 });
@@ -74,7 +86,7 @@ export const useChartDataStore = create<ChartDataState>()(
       data: initialOhlcData,
       isLoading: false,
       error: null,
-      currentSymbol: useAppStore.getState().currentSymbol,
+      currentSymbol: getSymbolFromLocalStorage(),
       currentTimeFrame: initialTimeframe,
       
       // アクション
@@ -98,18 +110,15 @@ export const useChartDataStore = create<ChartDataState>()(
         // 最新の状態を取得（リフレッシュボタンが押された場合など、状態が変わっている可能性がある）
         const currentState = get();
         const latestTimeFrame = currentState.currentTimeFrame;
-        
-        // AppStoreから最新のシンボルを取得
-        const appState = useAppStore.getState();
-        const latestSymbol = appState.currentSymbol;
+        const latestSymbol = currentState.currentSymbol;
         
         // 明示的に渡されたシンボルとタイムフレームを使用するか、最新の状態を使用する
         const finalSymbol = symbol || latestSymbol;
         const finalTimeFrame = timeFrame || latestTimeFrame;
         
         try {
-          // AppStoreから現在の取引タイプを取得
-          const { exchangeType } = appState;
+          // 取引種別をローカルストレージから取得
+          const exchangeType = getExchangeTypeFromLocalStorage();
           
           if (process.env.NODE_ENV !== 'production') {
             console.log('[fetchData] exchangeType:', exchangeType, 'symbol:', finalSymbol, 'timeframe:', finalTimeFrame);
@@ -278,69 +287,51 @@ export const useChartDataStore = create<ChartDataState>()(
           action: 'updateTimeFrame'
         });
         
-        // 重要: AppStoreにも時間足の変更を反映する
-        // これによりリフレッシュ後も設定が保持される
+        // ローカルストレージに保存
         try {
-          const appStore = useAppStore.getState();
-          if (typeof appStore.updateTimeFrame === 'function') {
-            // AppStoreのupdateTimeFrameメソッドを使用して更新
-            appStore.updateTimeFrame(timeFrame);
-            logger.info(`Updated timeframe in AppStore to ${timeFrame}`, {
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('lastUsedTimeframe', timeFrame);
+            localStorage.setItem('selectedTimeframe', timeFrame); // 互換性のため
+            logger.info(`Directly saved timeframe to localStorage: ${timeFrame}`, {
               component: 'useChartDataStore',
               action: 'updateTimeFrame'
             });
-          } else {
-            // AppStoreのメソッドが見つからない場合は直接保存
-            try {
-              localStorage.setItem('lastUsedTimeframe', timeFrame);
-              localStorage.setItem('selectedTimeframe', timeFrame); // 互換性のため
-              logger.info(`Directly saved timeframe to localStorage: ${timeFrame}`, {
-                component: 'useChartDataStore',
-                action: 'updateTimeFrame'
-              });
-            } catch (e) {
-              logger.warn('Failed to save timeframe to localStorage', {
-                component: 'useChartDataStore',
-                action: 'updateTimeFrame',
-                error: e
-              });
-            }
-          }
-          
-          // 重要: データフェッチサービスのキャッシュをクリア
-          // これにより時間足変更時に古いキャッシュが使われないようにする
-          try {
-            const { currentSymbol } = get();
-            const { exchangeType } = appStore;
-            
-            logger.info(`タイムフレーム変更前のキャッシュクリア準備`, {
-              component: 'useChartDataStore',
-              action: 'updateTimeFrame',
-              currentSymbol,
-              timeFrame,
-              exchangeType,
-              localStorage_lastUsedTimeframe: typeof window !== 'undefined' ? localStorage.getItem('lastUsedTimeframe') : null,
-              localStorage_selectedTimeframe: typeof window !== 'undefined' ? localStorage.getItem('selectedTimeframe') : null
-            });
-            
-            // 動的インポートを使わず、直接dataFetchServiceを参照する
-            // これにより確実にキャッシュクリアが実行される
-            dataFetchService.handleTimeframeChange(currentSymbol, timeFrame, exchangeType);
-            logger.info(`Cleared chart cache for timeframe change to ${timeFrame}`, {
-              component: 'useChartDataStore',
-              action: 'updateTimeFrame',
-              symbol: currentSymbol,
-              exchangeType
-            });
-          } catch (e) {
-            logger.warn('Failed to clear cache for timeframe change', {
-              component: 'useChartDataStore',
-              action: 'updateTimeFrame',
-              error: e
-            });
           }
         } catch (e) {
-          logger.warn('Failed to update AppStore with new timeframe', {
+          logger.warn('Failed to save timeframe to localStorage', {
+            component: 'useChartDataStore',
+            action: 'updateTimeFrame',
+            error: e
+          });
+        }
+        
+        // 重要: データフェッチサービスのキャッシュをクリア
+        // これにより時間足変更時に古いキャッシュが使われないようにする
+        try {
+          const { currentSymbol } = get();
+          const exchangeType = getExchangeTypeFromLocalStorage();
+          
+          logger.info(`タイムフレーム変更前のキャッシュクリア準備`, {
+            component: 'useChartDataStore',
+            action: 'updateTimeFrame',
+            currentSymbol,
+            timeFrame,
+            exchangeType,
+            localStorage_lastUsedTimeframe: typeof window !== 'undefined' ? localStorage.getItem('lastUsedTimeframe') : null,
+            localStorage_selectedTimeframe: typeof window !== 'undefined' ? localStorage.getItem('selectedTimeframe') : null
+          });
+          
+          // 動的インポートを使わず、直接dataFetchServiceを参照する
+          // これにより確実にキャッシュクリアが実行される
+          dataFetchService.handleTimeframeChange(currentSymbol, timeFrame, exchangeType);
+          logger.info(`Cleared chart cache for timeframe change to ${timeFrame}`, {
+            component: 'useChartDataStore',
+            action: 'updateTimeFrame',
+            symbol: currentSymbol,
+            exchangeType
+          });
+        } catch (e) {
+          logger.warn('Failed to clear cache for timeframe change', {
             component: 'useChartDataStore',
             action: 'updateTimeFrame',
             error: e
@@ -380,14 +371,14 @@ export const useChartDataStore = create<ChartDataState>()(
               });
               
               // シンボル、タイムフレーム、取引種別を指定してキャッシュをクリア
-              const appState = useAppStore.getState();
+              const exchangeType = getExchangeTypeFromLocalStorage();
               
               // 重要: キャッシュクリアを確実に実行
               // 1. 全てのキャッシュをクリア
               dataFetchService.clearCache();
               
               // 2. 特定のキャッシュをクリア
-              dataFetchService.handleTimeframeChange(currentSymbol, timeFrame, appState.exchangeType);
+              dataFetchService.handleTimeframeChange(currentSymbol, timeFrame, exchangeType);
               
               // キャッシュを使用せずに新しいデータを取得
               logger.info(`新しい時間足データを取得します: ${currentSymbol} ${timeFrame}`, {
@@ -462,21 +453,14 @@ export const useChartDataStore = create<ChartDataState>()(
           // 新しいデータを取得（AbortControllerのsignalを渡す）
           await get().fetchData(symbol, currentTimeFrame, abortController.signal, true);
           
-          // AppStoreのポーリング機能を使用
+          // リアルタイム更新を再開（既存の機能を維持）
           try {
-            // ポーリングはAppStoreで一元管理されるため、ここでは何もしない
-            logger.info('Chart data polling is now managed by AppStore', {
-              component: 'useChartDataStore',
-              action: 'updateSymbol'
-            });
-            
-            // リアルタイム更新を再開（既存の機能を維持）
             const { startRealTimeUpdates, useRealTimeData } = useRealTimeStore.getState();
             if (useRealTimeData) {
               startRealTimeUpdates();
             }
           } catch (e) {
-            logger.warn('Failed to start polling via AppStore', {
+            logger.warn('Failed to start real-time updates', {
               component: 'useChartDataStore',
               action: 'updateSymbol',
               error: e
@@ -541,41 +525,28 @@ export const useChartDataStore = create<ChartDataState>()(
   )
 );
 
-// AppStoreの変更を監視して自動的に更新する
-// コンポーネントのマウント時に一度だけ実行される初期化コード
-const initializeAppStoreSubscription = () => {
-  try {
-    // AppStoreを購読
-    const unsubscribe = useAppStore.subscribe((appState) => {
+// シンボルの変更を監視するための関数
+// ローカルストレージの変更を監視する
+if (typeof window !== 'undefined') {
+  // ストレージイベントを監視
+  window.addEventListener('storage', (event) => {
+    if (event.key === 'lastUsedSymbol' && event.newValue) {
       const chartDataStore = useChartDataStore.getState();
       const currentSymbolInChartStore = chartDataStore.currentSymbol;
-      const newSymbolFromAppStore = appState.currentSymbol;
       
       // シンボルが変更された場合のみ更新
-      if (currentSymbolInChartStore !== newSymbolFromAppStore) {
-        logger.info(`Symbol changed in AppStore to ${newSymbolFromAppStore}, triggering update in ChartDataStore`, {
+      if (currentSymbolInChartStore !== event.newValue) {
+        logger.info(`Symbol changed in localStorage to ${event.newValue}, triggering update in ChartDataStore`, {
           component: 'useChartDataStore',
-          action: 'appStoreSubscription'
+          action: 'storageEvent'
         });
         
         // UIを更新し、データ取得をトリガーするために `updateSymbol` を呼び出す
-        chartDataStore.updateSymbol(newSymbolFromAppStore);
+        chartDataStore.updateSymbol(event.newValue);
       }
-    });
-    
-    // 購読解除関数は返さない（アプリケーションのライフサイクル全体で有効）
-    logger.info(`Successfully initialized AppStore subscription`, {
-      component: 'useChartDataStore',
-      action: 'initializeAppStoreSubscription'
-    });
-  } catch (error) {
-    logger.error(`Failed to initialize AppStore subscription: ${error}`, {
-      component: 'useChartDataStore',
-      action: 'initializeAppStoreSubscription',
-      error
-    });
-  }
-};
+    }
+  });
+}
 
-// 初期化を実行
-initializeAppStoreSubscription();
+// デフォルトエクスポート
+export default useChartDataStore;

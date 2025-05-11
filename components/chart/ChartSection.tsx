@@ -1,7 +1,7 @@
 // components/chart/ChartSection.tsx
-// 更新: シンボルストアを使用するように修正
+// 更新: 新しいストア構造に対応するように修正
 // 変更内容:
-// 1. シンボルストアを使用してシンボル管理を一元化
+// 1. useChartDataStoreを直接使用するように変更
 // 2. 循環参照を解消
 // 3. 非同期処理の問題を解決
 // 4. ハイドレーションエラーの修正
@@ -24,6 +24,7 @@ import {
   // チャート関連のストア
   useChartConfigStore,
   useRealTimeStore,
+  useChartDataStore,
   // メモ化されたセレクター
   selectCurrentPrice,
   selectPriceChangePercent,
@@ -61,9 +62,11 @@ export default function ChartSection() {
   // AppStoreからデータと状態を取得
   const currentSymbol = useAppStore(state => state.currentSymbol);
   const currentTimeFrame = useAppStore(state => state.currentTimeFrame);
-  const isLoading = useAppStore(state => state.isLoadingChartData);
-  const error = useAppStore(state => state.chartError);
-  const chartData = useAppStore(state => state.chartData);
+  
+  // ChartDataStoreからデータと状態を取得
+  const chartData = useChartDataStore(state => state.data);
+  const isLoading = useChartDataStore(state => state.isLoading);
+  const error = useChartDataStore(state => state.error);
   
   // 価格情報を計算
   const currentPrice = useMemo(() => {
@@ -88,9 +91,11 @@ export default function ChartSection() {
   // AppStoreからアクションを取得
   const updateTimeFrame = useAppStore(state => state.updateTimeFrame);
   const setCurrentSymbol = useAppStore(state => state.setCurrentSymbol);
-  const fetchChartData = useAppStore(state => state.fetchChartData);
   const exchangeType = useAppStore(state => state.exchangeType);
   const setExchangeType = useAppStore(state => state.setExchangeType);
+  
+  // ChartDataStoreからアクションを取得
+  const fetchChartData = useChartDataStore(state => state.fetchData);
   
   // 後方互換性のために残すストアからデータを取得
   // チャート設定関連の状態とアクション
@@ -117,7 +122,13 @@ export default function ChartSection() {
     const latestTimeFrame = useAppStore.getState().currentTimeFrame;
     
     console.log(`ChartSection: Fetching data with latest symbol: ${latestSymbol}, timeframe: ${latestTimeFrame}`);
-    fetchChartData(latestSymbol, latestTimeFrame);
+    
+    // useChartDataStoreのfetchDataを使用
+    if (fetchChartData && typeof fetchChartData === 'function') {
+      fetchChartData(latestSymbol, latestTimeFrame);
+    } else {
+      console.error('fetchChartData is not a function', fetchChartData);
+    }
     
     // 依存配列に関数と状態を追加して不要な再実行を防止
   }, [fetchChartData, currentSymbol, currentTimeFrame, initializeApi, exchangeType]);
@@ -184,6 +195,9 @@ export default function ChartSection() {
     };
   }, []);
 
+  // クライアントサイドでのみ計算する値
+  const displayPriceChangePercent = mounted ? priceChangePercent : 0;
+
   return (
     <div className="relative flex flex-col w-full h-full">
       {/* メタ情報を表示するヘッダーセクション */}
@@ -196,13 +210,13 @@ export default function ChartSection() {
                 ${currentPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </span>
             )}
-            {priceChangePercent !== 0 && (
-              <Badge className="ml-2" variant={priceChangePercent >= 0 ? "success" : "destructive"}>
-                {priceChangePercent >= 0 ? '+' : ''}{priceChangePercent.toFixed(2)}%
+            {mounted && displayPriceChangePercent !== 0 && (
+              <Badge className="ml-2" variant={displayPriceChangePercent >= 0 ? "success" : "destructive"}>
+                {displayPriceChangePercent >= 0 ? '+' : ''}{displayPriceChangePercent.toFixed(2)}%
               </Badge>
             )}
           </div>
-          {dateRange && (
+          {mounted && dateRange && (
             <div className="text-xs text-[#9CA3AF]">
               {formatTimestamp(dateRange[0])} -
               {formatTimestamp(dateRange[1])}
@@ -229,7 +243,11 @@ export default function ChartSection() {
                 const latestSymbol = useAppStore.getState().currentSymbol;
                 const latestTimeFrame = useAppStore.getState().currentTimeFrame;
                 console.log(`ChartSection: Retrying with latest symbol: ${latestSymbol}, timeframe: ${latestTimeFrame}`);
-                fetchChartData(latestSymbol, latestTimeFrame);
+                
+                // useChartDataStoreのfetchDataを使用
+                if (fetchChartData && typeof fetchChartData === 'function') {
+                  fetchChartData(latestSymbol, latestTimeFrame);
+                }
               }}
               alternativeActions={
                 error?.includes('先物取引で利用できません') || error?.includes('先物取引でサポートされていません')
@@ -238,7 +256,11 @@ export default function ChartSection() {
                         label: '現物取引に切り替える',
                         action: () => {
                           setExchangeType('spot');
-                          fetchChartData(currentSymbol, currentTimeFrame);
+                          
+                          // useChartDataStoreのfetchDataを使用
+                          if (fetchChartData && typeof fetchChartData === 'function') {
+                            fetchChartData(currentSymbol, currentTimeFrame);
+                          }
                         }
                       }
                     ]
