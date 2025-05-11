@@ -13,7 +13,8 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAppStore } from '@/store/useAppStore';
-import { dataFetchService } from '@/services/dataFetchService';
+import { cacheService } from '@/services/cache';
+import { requestHistoryService } from '@/services/history';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Switch } from '@/components/ui/switch';
@@ -44,12 +45,12 @@ export default function LogViewer() {
       setPollingStatus(getPollingStatus());
       setSymbolHistory(getSymbolChangeHistory());
       
-      // dataFetchServiceからデバッグ情報を取得
+      // 新しいサービスからデバッグ情報を取得
       try {
-        setCacheStats(dataFetchService.getCacheStats());
-        setRequestHistory(dataFetchService.getRequestHistory());
+        setCacheStats(cacheService.getStats());
+        setRequestHistory(requestHistoryService.getHistory());
       } catch (e) {
-        console.error('Failed to get debug info from dataFetchService', e);
+        console.error('Failed to get debug info from services', e);
       }
     }
   }, [isDebugMode, getActiveFetchesInfo, getPollingStatus, getSymbolChangeHistory]);

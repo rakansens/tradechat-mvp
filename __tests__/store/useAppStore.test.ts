@@ -9,7 +9,7 @@
 
 import { useAppStore } from '../../store';
 import { logger } from '../../utils/logger';
-import { dataFetchService } from '../../services/dataFetchService';
+import { dataFetchService } from '../../services/data';
 import { socketService } from '../../services/socketService';
 
 // モック
@@ -23,7 +23,7 @@ jest.mock('../../utils/logger', () => ({
 }));
 
 // dataFetchServiceのモック
-jest.mock('../../services/dataFetchService', () => ({
+jest.mock('../../services/data', () => ({
   dataFetchService: {
     fetchOrderBook: jest.fn(),
     fetchChartData: jest.fn(),
