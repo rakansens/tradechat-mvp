@@ -1,131 +1,31 @@
 /**
- * dataFetchService.ts
- * WebSocketの共有データ方式に対応したデータフェッチサービス
- *
- * 更新内容:
- * - WebSocketからのデータを利用するように変更
- * - キャッシュ戦略の見直しと最適化
- * - WebSocketとRESTAPIのフォールバック機能を実装
- * - エラーハンドリングの強化
- * - getSocketService()を使用して初期化問題を解決
+ * services/data/dataFetchService.ts
+ * データフェッチサービスの実装
  * 
- * @deprecated このファイルは後方互換性のためだけに残されています。
- * 新しいコードでは以下のように新しいサービスを使用してください：
- * 
- * // 新しいインポート方法
- * import { dataFetchService } from '@/services/data';
- * import { cacheService } from '@/services/cache';
- * import { requestHistoryService } from '@/services/history';
- * 
- * このファイルは2025年8月1日以降のバージョンで削除される予定です。
- * それまでに新しいサービスへの移行を完了してください。
+ * 作成: リファクタリングされたデータフェッチサービスの実装
  */
 
-import { BitgetApiClient } from './bitgetApi';
-import { ExchangeType } from '../types/api';
-import { OrderBookData } from '../types/market';
-import { OHLCData, Timeframe } from '../types/chart';
-import { logger } from '../utils/logger';
-import { normalizeSymbol } from '../lib/utils';
-import { getSocketService } from './socketService';
+import { BitgetApiClient } from '../bitgetApi';
+import { ExchangeType } from '../../types/api';
+import { OrderBookData } from '../../types/market';
+import { OHLCData, Timeframe } from '../../types/chart';
+import { logger } from '../../utils/logger';
+import { normalizeSymbol } from '../../lib/utils';
+import { getSocketService } from '../socketService';
+import { cacheService } from '../cache';
+import { requestHistoryService } from '../history';
+import { IDataFetchService } from './dataFetchTypes';
 
-// シンプルなキャッシュ実装
-const cache = new Map<string, { data: any, timestamp: number, source: 'websocket' | 'rest' }>();
-const CACHE_TTL = 30000; // 30秒キャッシュ
-const WS_CACHE_TTL = 60000; // WebSocketデータは60秒キャッシュ
-
-// リクエスト履歴を保存する配列
-const requestHistory: Array<{
-  url: string;
-  method: string;
-  timestamp: number;
-  duration: number;
-  status: number;
-  success: boolean;
-}> = [];
-
-export const dataFetchService = {
-  /**
-   * キャッシュの統計情報を取得
-   */
-  getCacheStats: () => {
-    const stats = {
-      totalEntries: cache.size,
-      entries: [] as Array<{
-        key: string;
-        age: number;
-        size: number;
-      }>
-    };
-    
-    for (const [key, value] of cache.entries()) {
-      stats.entries.push({
-        key,
-        age: Date.now() - value.timestamp,
-        size: JSON.stringify(value.data).length
-      });
-    }
-    
-    return stats;
-  },
-  
-  /**
-   * リクエスト履歴を取得
-   */
-  getRequestHistory: () => {
-    return [...requestHistory];
-  },
-  
-  /**
-   * キャッシュからデータを取得
-   */
-  getFromCache: <T>(key: string): T | null => {
-    const item = cache.get(key);
-    if (!item) return null;
-    
-    // キャッシュ有効期限チェック（ソースによって有効期限を変える）
-    const ttl = item.source === 'websocket' ? WS_CACHE_TTL : CACHE_TTL;
-    if (Date.now() - item.timestamp > ttl) {
-      cache.delete(key);
-      return null;
-    }
-    
-    return item.data as T;
-  },
-  
-  /**
-   * キャッシュにデータを保存
-   */
-  setToCache: <T>(key: string, data: T, source: 'websocket' | 'rest' = 'rest'): void => {
-    cache.set(key, { data, timestamp: Date.now(), source });
-  },
-  
-  /**
-   * キャッシュをクリア
-   */
-  clearCache: (keyPrefix?: string): void => {
-    if (keyPrefix) {
-      // 特定のプレフィックスを持つキーのみ削除
-      for (const key of cache.keys()) {
-        if (key.startsWith(keyPrefix)) {
-          cache.delete(key);
-        }
-      }
-    } else {
-      // 全キャッシュをクリア
-      cache.clear();
-    }
-  },
-  
+export class DataFetchService implements IDataFetchService {
   /**
    * オーダーブックデータ取得（WebSocketとRESTAPIのハイブリッド）
    */
-  fetchOrderBook: async (
+  async fetchOrderBook(
     symbol: string,
     exchangeType: ExchangeType,
     signal?: AbortSignal,
     useCache: boolean = true
-  ): Promise<OrderBookData> => {
+  ): Promise<OrderBookData> {
     // 共通のnormalizeSymbol関数を使用してシンボルを正規化
     const normalizedSymbol = normalizeSymbol(symbol);
     
@@ -133,7 +33,7 @@ export const dataFetchService = {
     
     // キャッシュをチェック
     if (useCache) {
-      const cachedData = dataFetchService.getFromCache<OrderBookData>(requestKey);
+      const cachedData = cacheService.get<OrderBookData>(requestKey);
       if (cachedData) {
         return cachedData;
       }
@@ -156,7 +56,7 @@ export const dataFetchService = {
             // 一時的なサブスクリプション
             const unsubscribe = socketService.subscribeOrderBook(
               normalizedSymbol,
-              (data) => {
+              (data: OrderBookData) => {
                 clearTimeout(timeoutId);
                 unsubscribe(); // 一度データを受け取ったら購読解除
                 resolve(data);
@@ -168,7 +68,7 @@ export const dataFetchService = {
           // WebSocketからデータを取得できた場合
           if (wsData) {
             // リクエスト履歴に追加
-            requestHistory.push({
+            requestHistoryService.addEntry({
               url: `websocket/orderbook/${normalizedSymbol}`,
               method: 'WS',
               timestamp: Date.now(),
@@ -179,11 +79,7 @@ export const dataFetchService = {
             
             // 成功したらキャッシュに保存（WebSocketソース）
             if (useCache) {
-              cache.set(requestKey, {
-                data: wsData,
-                timestamp: Date.now(),
-                source: 'websocket'
-              });
+              cacheService.set(requestKey, wsData, 'websocket');
             }
             
             return wsData;
@@ -191,7 +87,7 @@ export const dataFetchService = {
         } catch (wsError) {
           // WebSocketエラーをログに記録（フォールバックのため例外はスローしない）
           logger.warn(`WebSocketからのオーダーブック取得に失敗、RESTAPIにフォールバック: ${wsError}`, {
-            component: 'dataFetchService',
+            component: 'DataFetchService',
             action: 'fetchOrderBook',
             symbol: normalizedSymbol,
             error: wsError
@@ -206,7 +102,7 @@ export const dataFetchService = {
       const endTime = Date.now();
       
       // リクエスト履歴に追加
-      requestHistory.push({
+      requestHistoryService.addEntry({
         url: `bitget/orderbook/${normalizedSymbol}`,
         method: 'GET',
         timestamp: startTime,
@@ -215,24 +111,15 @@ export const dataFetchService = {
         success: true
       });
       
-      // 履歴が100件を超えたら古いものを削除
-      if (requestHistory.length > 100) {
-        requestHistory.shift();
-      }
-      
       // 成功したらキャッシュに保存（RESTソース）
       if (useCache) {
-        cache.set(requestKey, {
-          data,
-          timestamp: Date.now(),
-          source: 'rest'
-        });
+        cacheService.set(requestKey, data, 'rest');
       }
       
       return data;
     } catch (error) {
       // エラー時もリクエスト履歴に追加
-      requestHistory.push({
+      requestHistoryService.addEntry({
         url: `bitget/orderbook/${normalizedSymbol}`,
         method: 'GET',
         timestamp: Date.now(),
@@ -242,36 +129,29 @@ export const dataFetchService = {
       });
       
       logger.error(`オーダーブック取得エラー: ${error}`, {
-        component: 'dataFetchService',
+        component: 'DataFetchService',
         action: 'fetchOrderBook',
         symbol,
         error
       });
       throw error;
     }
-  },
+  }
   
   /**
    * チャートデータ取得（WebSocketとRESTAPIのハイブリッド）
    */
-  fetchChartData: async (
+  async fetchChartData(
     symbol: string,
     timeFrame: Timeframe,
     exchangeType: ExchangeType,
     signal?: AbortSignal,
-    useCache: boolean = true // デフォルトでキャッシュを使用する
-  ): Promise<OHLCData[]> => {
-    // デバッグ用：リクエスト情報を詳細に記録
-    console.log(`[DEBUG] fetchChartData called:`, {
-      symbol,
-      timeFrame,
-      exchangeType,
-      useCache
-    });
+    useCache: boolean = true
+  ): Promise<OHLCData[]> {
     // シンボルが空の場合はエラーをスロー
     if (!symbol || symbol.trim() === '') {
       logger.error('空のシンボルでチャートデータを取得しようとしました', {
-        component: 'dataFetchService',
+        component: 'DataFetchService',
         action: 'fetchChartData',
         timeFrame,
         exchangeType
@@ -285,7 +165,7 @@ export const dataFetchService = {
     const requestKey = `chart-${normalizedSymbol}-${timeFrame}-${exchangeType}`;
     
     logger.debug(`チャートデータ取得開始:`, {
-      component: 'dataFetchService',
+      component: 'DataFetchService',
       action: 'fetchChartData',
       symbol: normalizedSymbol,
       timeFrame,
@@ -296,10 +176,10 @@ export const dataFetchService = {
     
     // キャッシュをチェック
     if (useCache) {
-      const cachedData = dataFetchService.getFromCache<OHLCData[]>(requestKey);
+      const cachedData = cacheService.get<OHLCData[]>(requestKey);
       if (cachedData) {
         logger.debug(`キャッシュからデータを取得:`, {
-          component: 'dataFetchService',
+          component: 'DataFetchService',
           action: 'fetchChartData',
           requestKey,
           dataCount: cachedData.length,
@@ -308,22 +188,7 @@ export const dataFetchService = {
           dataSample: cachedData.slice(-3) // 最後の3件のデータをサンプルとして記録
         });
         
-        // キャッシュヒットの詳細をログ出力
-        console.log(`キャッシュヒット: ${requestKey}`, {
-          timeFrame,
-          exchangeType,
-          dataLength: cachedData.length,
-          firstCandle: cachedData[0],
-          lastCandle: cachedData[cachedData.length - 1]
-        });
-        
         return cachedData;
-      } else {
-        // キャッシュミスをログ出力
-        console.log(`キャッシュミス: ${requestKey}`, {
-          timeFrame,
-          exchangeType
-        });
       }
     }
     
@@ -350,7 +215,7 @@ export const dataFetchService = {
             const unsubscribe = socketService.subscribeKline(
               normalizedSymbol,
               timeFrame,
-              (data) => {
+              (data: OHLCData) => {
                 receivedData.push(data);
                 dataCount++;
                 
@@ -377,7 +242,7 @@ export const dataFetchService = {
           // WebSocketからデータを取得できた場合
           if (wsData && wsData.length > 0) {
             // リクエスト履歴に追加
-            requestHistory.push({
+            requestHistoryService.addEntry({
               url: `websocket/chart/${normalizedSymbol}/${timeFrame}`,
               method: 'WS',
               timestamp: Date.now(),
@@ -388,14 +253,10 @@ export const dataFetchService = {
             
             // 成功したらキャッシュに保存（WebSocketソース）
             if (useCache) {
-              cache.set(requestKey, {
-                data: wsData,
-                timestamp: Date.now(),
-                source: 'websocket'
-              });
+              cacheService.set(requestKey, wsData, 'websocket');
               
               logger.debug(`WebSocketからのデータをキャッシュに保存:`, {
-                component: 'dataFetchService',
+                component: 'DataFetchService',
                 action: 'fetchChartData',
                 requestKey,
                 dataCount: wsData.length,
@@ -408,7 +269,7 @@ export const dataFetchService = {
         } catch (wsError) {
           // WebSocketエラーをログに記録（フォールバックのため例外はスローしない）
           logger.warn(`WebSocketからのチャートデータ取得に失敗、RESTAPIにフォールバック: ${wsError}`, {
-            component: 'dataFetchService',
+            component: 'DataFetchService',
             action: 'fetchChartData',
             symbol: normalizedSymbol,
             timeFrame,
@@ -422,7 +283,7 @@ export const dataFetchService = {
       const data = await api.getHistoricalCandles(normalizedSymbol, timeFrame, 100);
       
       // リクエスト履歴に追加
-      requestHistory.push({
+      requestHistoryService.addEntry({
         url: `bitget/chart/${normalizedSymbol}/${timeFrame}`,
         method: 'GET',
         timestamp: Date.now(),
@@ -433,14 +294,10 @@ export const dataFetchService = {
       
       // 成功したらキャッシュに保存（RESTソース）
       if (useCache) {
-        cache.set(requestKey, {
-          data,
-          timestamp: Date.now(),
-          source: 'rest'
-        });
+        cacheService.set(requestKey, data, 'rest');
         
         logger.debug(`RESTAPIからのデータをキャッシュに保存:`, {
-          component: 'dataFetchService',
+          component: 'DataFetchService',
           action: 'fetchChartData',
           requestKey,
           dataCount: data.length,
@@ -451,7 +308,7 @@ export const dataFetchService = {
       return data;
     } catch (error) {
       logger.error(`チャートデータ取得エラー: ${error}`, {
-        component: 'dataFetchService',
+        component: 'DataFetchService',
         action: 'fetchChartData',
         symbol: normalizedSymbol,
         timeFrame,
@@ -459,149 +316,65 @@ export const dataFetchService = {
       });
       throw error;
     }
-  },
+  }
+  
   /**
    * シンボル変更時にキャッシュをクリア
    */
-  handleSymbolChange: (newSymbol: string): void => {
+  handleSymbolChange(newSymbol: string): void {
     // 正規化したシンボルを使用
     const normalizedSymbol = normalizeSymbol(newSymbol);
     
     // 当該シンボルに関連するキャッシュをすべてクリア
-    dataFetchService.clearCache(`chart-${normalizedSymbol}`);
-    dataFetchService.clearCache(`orderbook-${normalizedSymbol}`);
+    cacheService.clear(`chart-${normalizedSymbol}`);
+    cacheService.clear(`orderbook-${normalizedSymbol}`);
     
     logger.info(`シンボル変更: ${newSymbol} のキャッシュをクリアしました`, {
-      component: 'dataFetchService',
+      component: 'DataFetchService',
       action: 'handleSymbolChange',
       symbol: newSymbol,
       normalizedSymbol
     });
-  },
+  }
   
   /**
    * 時間足変更時にキャッシュをクリア
-   * タイムフレームが変更されたときに古いキャッシュが使われないようにする
    */
-  handleTimeframeChange: (symbol: string, newTimeframe: Timeframe, exchangeType: ExchangeType = 'spot'): void => {
+  handleTimeframeChange(symbol: string, newTimeframe: Timeframe, exchangeType: ExchangeType = 'spot'): void {
     // 正規化したシンボルを使用
     const normalizedSymbol = normalizeSymbol(symbol);
     
-    // キャッシュを終了前にすべてクリアするため、すべてのキャッシュおよびその状態を確認
-    const allCacheEntries = [] as {key: string}[];
-    for (const key of cache.keys()) {
-      allCacheEntries.push({key});
-    }
-    
-    // キャッシュクリア前のキャッシュ内容を詳細に記録
-    const cacheContentsBeforeClear = [] as {key: string, data: any, timestamp: number, source: string}[];
-    for (const [key, value] of cache.entries()) {
-      if (key.startsWith(`chart-${normalizedSymbol}`)) {
-        cacheContentsBeforeClear.push({
-          key,
-          data: value.data,
-          timestamp: value.timestamp,
-          source: value.source
-        });
-      }
-    }
-    logger.debug(`タイムフレーム変更前のキャッシュ内容:`, {
-      component: 'dataFetchService',
-      action: 'handleTimeframeChange',
-      cacheContentsBeforeClear,
-      newTimeframe
-    });
-    
-    // 全キャッシュエントリ記録
-    logger.debug(`キャッシュクリア前のキャッシュエントリ:`, {
-      component: 'dataFetchService',
-      action: 'handleTimeframeChange',
-      allCacheEntries
-    });
-    
     // 1. 厳密なキャッシュキーをクリア - タイムフレームと取引種別を含む
     const exactCacheKey = `chart-${normalizedSymbol}-${newTimeframe}-${exchangeType}`;
-    dataFetchService.clearCache(exactCacheKey);
+    cacheService.clear(exactCacheKey);
     
     // 2. このシンボルのすべてのタイムフレームをクリア
     const symbolBaseKey = `chart-${normalizedSymbol}`;
-    
-    // このシンボルに関連するキャッシュエントリを手動でクリア
-    for (const key of cache.keys()) {
-      // シンボルに関連するすべてのキャッシュを削除
-      if (key.startsWith(symbolBaseKey)) {
-        cache.delete(key);
-        logger.debug(`キャッシュキー削除: ${key}`, {
-          component: 'dataFetchService',
-          action: 'handleTimeframeChange'
-        });
-      }
-    }
+    cacheService.clear(symbolBaseKey);
     
     // 3. 全てのチャート関連キャッシュをクリア（より確実にするため）
-    for (const key of cache.keys()) {
-      if (key.startsWith('chart-')) {
-        cache.delete(key);
-        logger.debug(`追加のキャッシュキー削除: ${key}`, {
-          component: 'dataFetchService',
-          action: 'handleTimeframeChange'
-        });
-      }
-    }
-    
-    // 4. 事後チェック: 該当シンボルのキャッシュがクリアされたか確認
-    const remainingCacheKeys = [] as string[];
-    for (const key of cache.keys()) {
-      if (key.startsWith(symbolBaseKey)) {
-        remainingCacheKeys.push(key);
-      }
-    }
-    
-    // キャッシュクリア後のキャッシュ内容を詳細に記録
-    const cacheContentsAfterClear = [] as {key: string, data: any, timestamp: number, source: string}[];
-    for (const [key, value] of cache.entries()) {
-      if (key.startsWith(`chart-${normalizedSymbol}`)) {
-        cacheContentsAfterClear.push({
-          key,
-          data: value.data,
-          timestamp: value.timestamp,
-          source: value.source
-        });
-      }
-    }
-    logger.debug(`タイムフレーム変更後のキャッシュ内容:`, {
-      component: 'dataFetchService',
-      action: 'handleTimeframeChange',
-      cacheContentsAfterClear,
-      newTimeframe
-    });
+    cacheService.clear('chart-');
     
     logger.info(`時間足変更: ${symbol} ${newTimeframe} (${exchangeType}) のキャッシュをクリアしました`, {
-      component: 'dataFetchService',
+      component: 'DataFetchService',
       action: 'handleTimeframeChange',
       symbol,
       normalizedSymbol,
       timeframe: newTimeframe,
       exchangeType,
       clearedExactKey: exactCacheKey,
-      clearedSymbolBaseKey: symbolBaseKey,
-      remainingCacheKeys: remainingCacheKeys // クリア後に残っているキャッシュがあれば表示
+      clearedSymbolBaseKey: symbolBaseKey
     });
-  },
+  }
   
   /**
    * WebSocketを使用してオーダーブックデータをリアルタイム購読
-   *
-   * @param symbol シンボル
-   * @param callback データ受信時のコールバック関数
-   * @param exchangeType 取引タイプ
-   * @returns 購読解除用の関数
    */
-  subscribeOrderBookRealtime: (
+  subscribeOrderBookRealtime(
     symbol: string,
     callback: (data: OrderBookData) => void,
     exchangeType: ExchangeType = 'spot'
-  ): () => void => {
+  ): () => void {
     // シンボルを正規化
     const normalizedSymbol = normalizeSymbol(symbol);
     
@@ -617,14 +390,10 @@ export const dataFetchService = {
     // WebSocketを使用してオーダーブックを購読
     const unsubscribe = socketService.subscribeOrderBook(
       normalizedSymbol,
-      (data) => {
+      (data: OrderBookData) => {
         // データをキャッシュに保存
         const requestKey = `orderbook-${normalizedSymbol}-${exchangeType}`;
-        cache.set(requestKey, {
-          data,
-          timestamp: Date.now(),
-          source: 'websocket'
-        });
+        cacheService.set(requestKey, data, 'websocket');
         
         // コールバック関数を呼び出し
         callback(data);
@@ -633,23 +402,17 @@ export const dataFetchService = {
     );
     
     return unsubscribe;
-  },
+  }
   
   /**
    * WebSocketを使用してローソク足データをリアルタイム購読
-   *
-   * @param symbol シンボル
-   * @param timeFrame タイムフレーム
-   * @param callback データ受信時のコールバック関数
-   * @param exchangeType 取引タイプ
-   * @returns 購読解除用の関数
    */
-  subscribeKlineRealtime: (
+  subscribeKlineRealtime(
     symbol: string,
     timeFrame: Timeframe,
     callback: (data: OHLCData) => void,
     exchangeType: ExchangeType = 'spot'
-  ): () => void => {
+  ): () => void {
     // シンボルを正規化
     const normalizedSymbol = normalizeSymbol(symbol);
     
@@ -666,10 +429,10 @@ export const dataFetchService = {
     const unsubscribe = socketService.subscribeKline(
       normalizedSymbol,
       timeFrame,
-      (data) => {
+      (data: OHLCData) => {
         // データをキャッシュに保存（既存のキャッシュがあれば更新）
         const requestKey = `chart-${normalizedSymbol}-${timeFrame}-${exchangeType}`;
-        const cachedData = dataFetchService.getFromCache<OHLCData[]>(requestKey);
+        const cachedData = cacheService.get<OHLCData[]>(requestKey);
         
         if (cachedData) {
           // 既存のデータがある場合は更新
@@ -687,18 +450,10 @@ export const dataFetchService = {
           }
           
           // キャッシュを更新
-          cache.set(requestKey, {
-            data: updatedData,
-            timestamp: Date.now(),
-            source: 'websocket'
-          });
+          cacheService.set(requestKey, updatedData, 'websocket');
         } else {
           // 既存のデータがない場合は新規作成
-          cache.set(requestKey, {
-            data: [data],
-            timestamp: Date.now(),
-            source: 'websocket'
-          });
+          cacheService.set(requestKey, [data], 'websocket');
         }
         
         // コールバック関数を呼び出し
@@ -709,6 +464,7 @@ export const dataFetchService = {
     
     return unsubscribe;
   }
-};
+}
 
-export default dataFetchService;
+// シングルトンインスタンスをエクスポート
+export const dataFetchService = new DataFetchService();

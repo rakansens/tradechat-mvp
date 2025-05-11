@@ -13,7 +13,7 @@ import { devtools } from 'zustand/middleware';
 import { ExchangeType } from '../../types/api';
 import { OrderBookData } from '../../types/market';
 import { logger } from '../../utils/logger';
-import { dataFetchService } from '../../services/dataFetchService';
+import { dataFetchService } from '../../services/data';
 import { useSymbolStore } from '../useSymbolStore';
 
 // ポーリング情報の型定義

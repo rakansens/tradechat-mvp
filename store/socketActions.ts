@@ -139,8 +139,8 @@ export const setTimeframe = (timeframe: Timeframe, source: string = 'socket-even
     
     // キャッシュもクリアする
     // 循環依存を避けるために動的インポートを使用
-    import('../services/dataFetchService').then(module => {
-      const dataFetchService = module.default;
+    import('../services/data').then(module => {
+      const { dataFetchService } = module;
       if (typeof dataFetchService.handleTimeframeChange === 'function') {
         dataFetchService.handleTimeframeChange(currentSymbol, timeframe, exchangeType);
         logger.info(`socketActions: 時間足変更に伴いキャッシュをクリアしました`, {

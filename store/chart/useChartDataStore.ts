@@ -11,7 +11,8 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { BitgetApiClient } from '../../services/bitgetApi';
-import dataFetchService from '../../services/dataFetchService';
+import { dataFetchService } from '../../services/data';
+import { cacheService } from '../../services/cache';
 import { OHLCData, Timeframe } from '../../types/chart';
 import { generateOHLCData } from '../../utils/ohlcDummyData';
 import { useChartConfigStore } from './useChartConfigStore';
@@ -375,7 +376,7 @@ export const useChartDataStore = create<ChartDataState>()(
               
               // 重要: キャッシュクリアを確実に実行
               // 1. 全てのキャッシュをクリア
-              dataFetchService.clearCache();
+              cacheService.clear();
               
               // 2. 特定のキャッシュをクリア
               dataFetchService.handleTimeframeChange(currentSymbol, timeFrame, exchangeType);
