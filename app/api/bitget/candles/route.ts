@@ -52,8 +52,8 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Symbol and timeframe are required' }, { status: 400 });
     }
     
-  // シンボルの正規化（BNBUSDTとBNB/USDTを同じように扱う）
-  const normalizedSymbol = symbol.replace('/', '');
+  // シンボルの正規化（BNBUSDTとBNB/USDTを同じように扱う、ダブルクォーテーションも削除）
+  const normalizedSymbol = symbol.replace(/[/"]/g, '');
   console.log(`Normalized symbol: ${normalizedSymbol} (original: ${symbol})`);
   
   // デバッグ用：リクエストの詳細をログに出力
