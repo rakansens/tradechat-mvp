@@ -9,8 +9,6 @@
 
 import React, { memo, useMemo, useEffect, useState } from 'react';
 import {
-  // アプリストア（一元化されたストア）
-  useAppStore,
   // 分割されたチャートストア
   useChartConfigStore,
   useIndicatorStore,
@@ -25,7 +23,8 @@ import {
   selectOpenEntries,
   // その他のストア
   useUIStore,
-  useEntryStore
+  useEntryStore,
+  useSymbolStore
 } from '@/store';
 import { Wifi, WifiOff, TrendingUp, Landmark, BarChart2, LineChart, Layers, BarChart3, CandlestickChart } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -97,9 +96,9 @@ const ChartToolbarComponent = memo(function ChartToolbar({
     const handleSymbolUpdate = (event: CustomEvent) => {
       const { symbol } = event.detail;
       console.log(`ツールバーの銘柄を更新: ${symbol}`);
-      // AppStoreの銘柄を更新
-      // データの再取得は行わず、UIの更新のみ行う
-      useAppStore.setState({ currentSymbol: symbol });
+      // SymbolStoreの銘柄を更新
+      // アクティブシンボルをローカルストレージに保存
+      useSymbolStore.getState().setCurrentSymbol(symbol, 'ChartToolbar.updateSymbol');
     };
     
     // イベントリスナーを登録
@@ -113,11 +112,11 @@ const ChartToolbarComponent = memo(function ChartToolbar({
     };
   }, []);
   
-  // AppStoreから状態とアクションを取得
-  const currentSymbol = useAppStore(state => state.currentSymbol);
-  const exchangeType = useAppStore(state => state.exchangeType);
-  const setCurrentSymbol = useAppStore(state => state.setCurrentSymbol);
-  const setExchangeType = useAppStore(state => state.setExchangeType);
+  // SymbolStoreから状態とアクションを取得
+  const currentSymbol = useSymbolStore(state => state.currentSymbol);
+  const exchangeType = useSymbolStore(state => state.exchangeType);
+  const setCurrentSymbol = useSymbolStore(state => state.setCurrentSymbol);
+  const setExchangeType = useSymbolStore(state => state.setExchangeType);
   
   // ChartDataStoreから状態とアクションを取得
   const chartData = useChartDataStore(state => state.data);

@@ -1,22 +1,32 @@
 // socketActions.test.ts
 // socketActionsのユニットテスト
+// 更新: useAppStoreからドメイン別ストアへ移行
 
 import { logger } from '../../../utils/logger';
 
-// useAppStoreをモック化
+// 各ドメインストアをモック化
 const mockSetCurrentSymbol = jest.fn();
 const mockSetExchangeType = jest.fn();
 const mockUpdateTimeFrame = jest.fn();
 
-jest.mock('../../../store/index', () => ({
-  useAppStore: {
+// useSymbolStoreのモック
+jest.mock('../../../store/useSymbolStore', () => ({
+  useSymbolStore: {
     getState: jest.fn().mockReturnValue({
       setCurrentSymbol: mockSetCurrentSymbol,
       setExchangeType: mockSetExchangeType,
-      updateTimeFrame: mockUpdateTimeFrame,
       currentSymbol: 'BTCUSDT',
       exchangeType: 'spot',
-      timeframe: '1d',
+    }),
+  },
+}));
+
+// useChartDataStoreのモック
+jest.mock('../../../store/chart', () => ({
+  useChartDataStore: {
+    getState: jest.fn().mockReturnValue({
+      updateTimeFrame: mockUpdateTimeFrame,
+      currentTimeFrame: '1d',
     }),
   },
 }));
@@ -39,8 +49,8 @@ global.CustomEvent = jest.fn().mockImplementation((event, options) => ({
 
 global.dispatchEvent = jest.fn();
 
-// モック化した後にsocketActionsをインポート
-import { socketStoreActions } from '../../../store/socketActions';
+// モック化した後にsocketActionsの個別関数をインポート
+import * as socketActions from '../../../store/socketActions';
 
 describe('socketStoreActions', () => {
   beforeEach(() => {
@@ -51,7 +61,7 @@ describe('socketStoreActions', () => {
   describe('setSymbol', () => {
     it('正常に銘柄を更新できること', () => {
       // テスト実行
-      socketStoreActions.setSymbol('ETHUSDT', 'test-source');
+      socketActions.setSymbol('ETHUSDT', 'test-source');
       
       // AppStore.setCurrentSymbol が正しく呼ばれたか検証
       expect(mockSetCurrentSymbol).toHaveBeenCalledWith(
@@ -87,7 +97,7 @@ describe('socketStoreActions', () => {
       });
       
       // テスト実行
-      socketStoreActions.setSymbol('ETHUSDT', 'test-source');
+      socketActions.setSymbol('ETHUSDT', 'test-source');
       
       // エラーログが出力されたか検証
       expect(logger.error).toHaveBeenCalledWith(
@@ -106,7 +116,7 @@ describe('socketStoreActions', () => {
   describe('setExchangeType', () => {
     it('正常に取引タイプを更新できること', () => {
       // テスト実行
-      socketStoreActions.setExchangeType('futures', 'BTCUSDT', 'test-source');
+      socketActions.setExchangeType('futures', 'BTCUSDT', 'test-source');
       
       // AppStore.setExchangeType が正しく呼ばれたか検証
       expect(mockSetExchangeType).toHaveBeenCalledWith(
@@ -133,7 +143,7 @@ describe('socketStoreActions', () => {
       });
       
       // テスト実行
-      socketStoreActions.setExchangeType('futures', 'BTCUSDT', 'test-source');
+      socketActions.setExchangeType('futures', 'BTCUSDT', 'test-source');
       
       // エラーログが出力されたか検証
       expect(logger.error).toHaveBeenCalledWith(
@@ -153,7 +163,7 @@ describe('socketStoreActions', () => {
   describe('setTimeframe', () => {
     it('正常に時間足を更新できること', () => {
       // テスト実行
-      socketStoreActions.setTimeframe('4h', 'test-source');
+      socketActions.setTimeframe('4h', 'test-source');
       
       // AppStore.updateTimeFrame が正しく呼ばれたか検証
       expect(mockUpdateTimeFrame).toHaveBeenCalledWith(
@@ -188,7 +198,7 @@ describe('socketStoreActions', () => {
       });
       
       // テスト実行
-      socketStoreActions.setTimeframe('4h', 'test-source');
+      socketActions.setTimeframe('4h', 'test-source');
       
       // エラーログが出力されたか検証
       expect(logger.error).toHaveBeenCalledWith(

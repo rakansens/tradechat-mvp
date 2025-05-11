@@ -1,12 +1,11 @@
 // store/index.ts
 // 更新: 新しく分割されたストアをエクスポートするように更新
-// 更新: useAppStoreを追加し、シンボル管理とデータフェッチを一元化
-// 更新: 循環参照を解消し、互換レイヤーを追加
-// 更新: 互換レイヤーを完全に削除し、すべてのコンポーネントを新しいAPIに移行
-// 更新: 新しく分割されたストア（useSymbolStore, useDataFetchStore, useWebSocketStore, useDebugStore）を追加
+// 更新: ドメイン駆動設計ストア構造に完全移行
+// 更新: 全ての機能領域ごとに専用ストアを作成
+// 更新: 全てのコンポーネントが新しいドメインストアを使用
+// 更新: useAppStoreを完全に削除
 
-// 中心となるAppStoreをエクスポート
-export { default as useAppStore } from './useAppStore';
+// 各ドメイン別ストアをエクスポート
 
 // 新しく分割されたストアをエクスポート
 export { default as useSymbolStore } from './useSymbolStore';
@@ -35,6 +34,9 @@ export { useUIStore } from './useUIStore';
 // 集約されたセレクターをエクスポート
 export * from './selectors';
 
-// 全てのストアが新しい構造に移行完了
-// 注意: シンボル管理とデータフェッチはuseAppStoreを使用してください
-// 互換レイヤーは完全に削除されました
+// ドメイン駆動設計ストア構造の参照ガイド:
+// - シンボル管理: useSymbolStore
+// - チャートデータ: useChartDataStore
+// - オーダーブック: useOrderBookStore
+// - WebSocket状態: useWebSocketStore
+// - デバッグ機能: useDebugStore

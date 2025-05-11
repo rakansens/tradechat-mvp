@@ -1,8 +1,14 @@
 // store/socketActions.ts
-// 作成: 2025-05-09 - Socket.IOイベントからAppStoreを直接更新するための仲介レイヤー
+// 作成: 2025-05-09 - Socket.IOイベントからストアを直接更新するための仲介レイヤー
 // 目的: 循環依存を避けつつ、データフローを一本化する
+// 更新: ドメイン駆動設計ストア構造に対応
+// - useAppStoreからドメイン別ストアへ移行
+// - シンボル操作はuseSymbolStoreで処理
+// - 時間足操作はuseChartDataStoreで処理
 
-import { useAppStore } from './index';
+import { useSymbolStore } from './useSymbolStore';
+import { useChartDataStore } from './chart/useChartDataStore';
+import { useWebSocketStore } from './useWebSocketStore';
 import { logger } from '@/utils/logger';
 import { Timeframe } from '@/types/chart';
 import { ExchangeType } from '@/types/api';
@@ -20,7 +26,7 @@ export const setSymbol = (symbol: string, source: string = 'socket-event') => {
     source
   });
   try {
-    useAppStore.getState().setCurrentSymbol(symbol, `socketActions/${source}`);
+    useSymbolStore.getState().setCurrentSymbol(symbol, `socketActions/${source}`);
     logger.info(`socketActions: 銘柄を${symbol}に更新しました`, {
       component: 'socketActions',
       action: 'setSymbol',
@@ -49,9 +55,9 @@ export const setExchangeType = (
   symbol?: string, 
   source: string = 'socket-event'
 ) => {
-  const store = useAppStore.getState();
-  const currentType = store.exchangeType;
-  const currentSymbol = symbol || store.currentSymbol || 'BTCUSDT';
+  const symbolStore = useSymbolStore.getState();
+  const currentType = symbolStore.exchangeType;
+  const currentSymbol = symbol || symbolStore.currentSymbol || 'BTCUSDT';
   
   logger.info(`socketActions: 取引タイプを${currentType}から${type}に更新します`, {
     component: 'socketActions',
@@ -72,15 +78,15 @@ export const setExchangeType = (
       });
       
       // 銘柄を先に設定
-      store.setCurrentSymbol(currentSymbol, '先物→現物切り替え前の銘柄設定');
+      symbolStore.setCurrentSymbol(currentSymbol, '先物→現物切り替え前の銘柄設定');
     }
     
     // 取引タイプを更新
-    store.setExchangeType(type);
+    symbolStore.setExchangeType(type);
     
     // 現物から先物への切り替え時、または銘柄変更時
     if ((type === 'futures' && currentType === 'spot') || 
-        (symbol && symbol !== store.currentSymbol)) {
+        (symbol && symbol !== symbolStore.currentSymbol)) {
       logger.info(`socketActions: 取引タイプ変更後に銘柄を再設定: ${currentSymbol}`, {
         component: 'socketActions',
         action: 'setExchangeType',
@@ -89,7 +95,7 @@ export const setExchangeType = (
       
       // 少し遅延させて銘柄を再設定
       setTimeout(() => {
-        store.setCurrentSymbol(currentSymbol, '取引タイプ変更後の銘柄再設定');
+        symbolStore.setCurrentSymbol(currentSymbol, '取引タイプ変更後の銘柄再設定');
       }, 100);
     }
     
@@ -121,21 +127,26 @@ export const setExchangeType = (
  * @param timeframe 設定する時間足
  * @param source イベントのソース（ログ用）
  */
-export const setTimeframe = (timeframe: Timeframe, source: string = 'socket-event') => {
-  logger.info(`socketActions: 時間足を${timeframe}に更新します`, {
+export const setTimeframe = (
+  timeframe: Timeframe,
+  source: string = 'socket-event'
+) => {
+  const chartDataStore = useChartDataStore.getState();
+  const currentTimeframe = chartDataStore.currentTimeFrame;
+  
+  logger.info(`socketActions: 時間足を${currentTimeframe}から${timeframe}に更新します`, {
     component: 'socketActions',
     action: 'setTimeframe',
     timeframe,
     source
   });
   try {
-    const appStore = useAppStore.getState();
-    // AppStoreの状態を更新
-    appStore.updateTimeFrame(timeframe);
+    // ChartDataStoreの時間足を更新
+    chartDataStore.updateTimeFrame(timeframe);
     
     // 現在のシンボルと取引タイプを取得
-    const currentSymbol = appStore.currentSymbol;
-    const exchangeType = appStore.exchangeType;
+    const currentSymbol = useSymbolStore.getState().currentSymbol;
+    const exchangeType = useSymbolStore.getState().exchangeType;
     
     // キャッシュもクリアする
     // 循環依存を避けるために動的インポートを使用
@@ -185,7 +196,11 @@ export const setTimeframe = (timeframe: Timeframe, source: string = 'socket-even
  * @param connected 接続状態 (true: 接続済み, false: 切断)
  * @param source イベントのソース（ログ用）
  */
-export const setConnected = (connected: boolean, source: string = 'socket-event') => {
+export const setConnected = (
+  connected: boolean,
+  source: string = 'socket-event'
+) => {
+  const wsStore = useWebSocketStore.getState();
   logger.info(`socketActions: 接続状態を${connected}に更新します`, {
     component: 'socketActions',
     action: 'setConnected',
@@ -193,8 +208,8 @@ export const setConnected = (connected: boolean, source: string = 'socket-event'
     source
   });
   try {
-    // AppStore の状態を直接更新
-    useAppStore.setState({ wsConnected: connected });
+    // Socket接続状態をWebSocketStoreに反映
+    wsStore.setConnected(connected);
     logger.info(`socketActions: 接続状態を${connected}に更新しました`, {
       component: 'socketActions',
       action: 'setConnected',

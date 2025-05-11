@@ -19,8 +19,6 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { BarChart3, CandlestickChart, LineChart } from "lucide-react"
 import ErrorDisplay from "@/components/common/ErrorDisplay"
 import {
-  // アプリストア（一元化されたストア）
-  useAppStore,
   // チャート関連のストア
   useChartConfigStore,
   useRealTimeStore,
@@ -40,6 +38,7 @@ import {
   selectSetChartType,
   selectStopRealTimeUpdates
 } from "@/store"
+import { useSymbolStore } from "@/store/useSymbolStore"
 import { theme } from "@/styles/colors"
 import ChartToolbar from "./ChartToolbar"
 import { OrderBook } from "@/components/market"
@@ -59,9 +58,9 @@ export default function ChartSection() {
     setMounted(true);
   }, []);
   
-  // AppStoreからデータと状態を取得
-  const currentSymbol = useAppStore(state => state.currentSymbol);
-  const currentTimeFrame = useAppStore(state => state.currentTimeFrame);
+  // 各ドメインストアからデータと状態を取得
+  const currentSymbol = useSymbolStore(state => state.currentSymbol);
+  const currentTimeFrame = useChartDataStore(state => state.currentTimeFrame);
   
   // ChartDataStoreからデータと状態を取得
   const chartData = useChartDataStore(state => state.data);
@@ -88,11 +87,11 @@ export default function ChartSection() {
     return [chartData[0].time, chartData[chartData.length - 1].time];
   }, [chartData]);
   
-  // AppStoreからアクションを取得
-  const updateTimeFrame = useAppStore(state => state.updateTimeFrame);
-  const setCurrentSymbol = useAppStore(state => state.setCurrentSymbol);
-  const exchangeType = useAppStore(state => state.exchangeType);
-  const setExchangeType = useAppStore(state => state.setExchangeType);
+  // 各ドメインストアからアクションを取得
+  const updateTimeFrame = useChartDataStore(state => state.updateTimeFrame);
+  const setCurrentSymbol = useSymbolStore(state => state.setCurrentSymbol);
+  const exchangeType = useSymbolStore(state => state.exchangeType);
+  const setExchangeType = useSymbolStore(state => state.setExchangeType);
   
   // ChartDataStoreからアクションを取得
   const fetchChartData = useChartDataStore(state => state.fetchData);
@@ -118,8 +117,8 @@ export default function ChartSection() {
     
     // 初期データの取得
     // 最新のシンボルとタイムフレームを取得して使用
-    const latestSymbol = useAppStore.getState().currentSymbol;
-    const latestTimeFrame = useAppStore.getState().currentTimeFrame;
+    const latestSymbol = useSymbolStore.getState().currentSymbol;
+    const latestTimeFrame = useChartDataStore.getState().currentTimeFrame;
     
     console.log(`ChartSection: Fetching data with latest symbol: ${latestSymbol}, timeframe: ${latestTimeFrame}`);
     
@@ -240,8 +239,8 @@ export default function ChartSection() {
               error={error}
               onRetry={() => {
                 // 最新のシンボルとタイムフレームを取得して使用
-                const latestSymbol = useAppStore.getState().currentSymbol;
-                const latestTimeFrame = useAppStore.getState().currentTimeFrame;
+                const latestSymbol = useSymbolStore.getState().currentSymbol;
+                const latestTimeFrame = useChartDataStore.getState().currentTimeFrame;
                 console.log(`ChartSection: Retrying with latest symbol: ${latestSymbol}, timeframe: ${latestTimeFrame}`);
                 
                 // useChartDataStoreのfetchDataを使用
