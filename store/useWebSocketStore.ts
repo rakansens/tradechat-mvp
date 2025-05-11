@@ -1,7 +1,8 @@
 // store/useWebSocketStore.ts
 // 更新: useAppStoreから分離したWebSocket関連の状態と操作を管理するストア
 // 更新: 循環参照を解消するために、socketServiceの動的インポートを使用
-// 
+// 更新: getSocketService()を使用して初期化問題を解決
+//
 // このストアはWebSocketの接続状態と購読を管理します。
 // 主な機能:
 // 1. WebSocket接続状態の管理
@@ -12,6 +13,7 @@ import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { logger } from '../utils/logger';
 import { useSymbolStore } from './useSymbolStore';
+import { getSocketService } from '../services/socketService';
 
 // WebSocketストアの状態型定義
 export interface WebSocketState {
@@ -150,7 +152,16 @@ export const useWebSocketStore = create<WebSocketState>()(
           const unsubscribe = _wsUnsubscribeFunctions[type];
           
           if (unsubscribe && typeof unsubscribe === 'function') {
-            unsubscribe();
+            try {
+              unsubscribe();
+            } catch (error) {
+              logger.error(`購読解除中にエラーが発生しました: ${error}`, {
+                component: 'useWebSocketStore',
+                action: 'setSubscription',
+                type,
+                error
+              });
+            }
           }
           
           // 購読解除関数を削除
@@ -179,6 +190,7 @@ export const useWebSocketStore = create<WebSocketState>()(
 // WebSocketの接続状態を監視する
 // 循環参照を避けるために、socketServiceを動的にインポートする
 let checkIntervalId: NodeJS.Timeout | null = null;
+let socketServiceInstance: any = null;
 
 // ブラウザ環境でのみ実行
 if (typeof window !== 'undefined') {
@@ -186,24 +198,52 @@ if (typeof window !== 'undefined') {
   setTimeout(async () => {
     try {
       // 動的インポート
-      const { socketService } = await import('../services/socketService');
+      const socketServiceModule = await import('../services/socketService');
+      socketServiceInstance = socketServiceModule.getSocketService();
+      
+      // 初期接続状態を設定
+      if (socketServiceInstance) {
+        const isConnected = socketServiceInstance.isConnected();
+        useWebSocketStore.getState().setConnected(isConnected);
+      }
       
       // 定期的にWebSocketの接続状態を確認
-      checkIntervalId = setInterval(() => {
-        const isConnected = socketService.isConnected();
-        const currentConnected = useWebSocketStore.getState().wsConnected;
-        
-        // 接続状態が変わった場合
-        if (isConnected !== currentConnected) {
-          useWebSocketStore.getState().setConnected(isConnected);
-          
-          // 接続された場合は何もしない（各ストアが必要に応じて購読を開始する）
-          // 切断された場合は購読状態をリセット
-          if (!isConnected) {
-            useWebSocketStore.getState().unsubscribeAllWebSockets();
-          }
-        }
-      }, 10000); // 10秒ごとにチェック
+            checkIntervalId = setInterval(() => {
+              try {
+                // socketServiceInstanceが初期化されていない場合は初期化
+                if (!socketServiceInstance) {
+                  socketServiceInstance = getSocketService();
+                }
+                
+                if (!socketServiceInstance) {
+                  logger.warn('socketServiceInstanceがまだ初期化されていません', {
+                    component: 'useWebSocketStore',
+                    action: 'checkWebSocketConnection'
+                  });
+                  return;
+                }
+                
+                const isConnected = socketServiceInstance.isConnected();
+                const currentConnected = useWebSocketStore.getState().wsConnected;
+                
+                // 接続状態が変わった場合
+                if (isConnected !== currentConnected) {
+                  useWebSocketStore.getState().setConnected(isConnected);
+                  
+                  // 接続された場合は何もしない（各ストアが必要に応じて購読を開始する）
+                  // 切断された場合は購読状態をリセット
+                  if (!isConnected) {
+                    useWebSocketStore.getState().unsubscribeAllWebSockets();
+                  }
+                }
+              } catch (error) {
+                logger.error(`WebSocket接続状態の確認中にエラーが発生しました: ${error}`, {
+                  component: 'useWebSocketStore',
+                  action: 'checkWebSocketConnection',
+                  error
+                });
+              }
+            }, 10000); // 10秒ごとにチェック
       
       logger.info(`Successfully initialized WebSocket monitoring`, {
         component: 'useWebSocketStore',

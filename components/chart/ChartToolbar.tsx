@@ -16,6 +16,7 @@ import {
   useIndicatorStore,
   useDrawingToolStore,
   useRealTimeStore,
+  useChartDataStore,
   // メモ化されたセレクター
   selectCurrentPrice,
   selectPriceChangePercent,
@@ -87,9 +88,9 @@ const ChartToolbarComponent = memo(function ChartToolbar({
     const handleTimeframeUpdate = (event: CustomEvent) => {
       const { timeframe } = event.detail;
       console.log(`ツールバーの時間足を更新: ${timeframe}`);
-      // AppStoreの時間足を更新
+      // ChartDataStoreの時間足を更新
       // データの再取得は行わず、UIの更新のみ行う
-      useAppStore.setState({ currentTimeFrame: timeframe as Timeframe });
+      useChartDataStore.setState({ currentTimeFrame: timeframe as Timeframe });
     };
     
     // 銘柄変更イベントのリスナー
@@ -114,14 +115,16 @@ const ChartToolbarComponent = memo(function ChartToolbar({
   
   // AppStoreから状態とアクションを取得
   const currentSymbol = useAppStore(state => state.currentSymbol);
-  const currentTimeFrame = useAppStore(state => state.currentTimeFrame);
-  const error = useAppStore(state => state.chartError);
-  const updateTimeFrame = useAppStore(state => state.updateTimeFrame);
-  const setCurrentSymbol = useAppStore(state => state.setCurrentSymbol);
-  const fetchChartData = useAppStore(state => state.fetchChartData);
   const exchangeType = useAppStore(state => state.exchangeType);
+  const setCurrentSymbol = useAppStore(state => state.setCurrentSymbol);
   const setExchangeType = useAppStore(state => state.setExchangeType);
-  const chartData = useAppStore(state => state.chartData);
+  
+  // ChartDataStoreから状態とアクションを取得
+  const chartData = useChartDataStore(state => state.data);
+  const error = useChartDataStore(state => state.error);
+  const currentTimeFrame = useChartDataStore(state => state.currentTimeFrame);
+  const updateTimeFrame = useChartDataStore(state => state.updateTimeFrame);
+  const fetchChartData = useChartDataStore(state => state.fetchData);
   
   // 価格情報を計算
   const currentPrice = useMemo(() => {
@@ -238,7 +241,14 @@ const ChartToolbarComponent = memo(function ChartToolbar({
             {availableTimeframes.map((tf) => (
               <button
                 key={tf}
-                onClick={() => updateTimeFrame(tf as Timeframe)}
+                onClick={() => {
+                  console.log(`タイムフレーム変更: ${tf}`);
+                  if (updateTimeFrame && typeof updateTimeFrame === 'function') {
+                    updateTimeFrame(tf as Timeframe);
+                  } else {
+                    console.error('updateTimeFrame is not a function', updateTimeFrame);
+                  }
+                }}
                 className={`inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors hover:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-transparent px-2 py-1 h-7 text-[#A7B0C4] data-[state=on]:bg-[#2962FF] data-[state=on]:text-white border-[#2A2E39] hover:bg-[#242838] ${
                   currentTimeFrame === tf ? 'bg-[#2962FF] text-white' : ''
                 }`}
@@ -387,7 +397,11 @@ const ChartToolbarComponent = memo(function ChartToolbar({
               // AppStoreを使用して取引種別を更新
               setExchangeType('spot');
               // データを再取得
-              fetchChartData(currentSymbol, currentTimeFrame);
+              if (fetchChartData && typeof fetchChartData === 'function') {
+                fetchChartData(currentSymbol, currentTimeFrame);
+              } else {
+                console.error('fetchChartData is not a function', fetchChartData);
+              }
             }}
               className={`flex items-center px-2 py-1 text-xs rounded-l ${
                 !isClient ? 'bg-dark-800 text-gray-300' : // 初期レンダリング時はデフォルトスタイル
@@ -403,7 +417,11 @@ const ChartToolbarComponent = memo(function ChartToolbar({
               // AppStoreを使用して取引種別を更新
               setExchangeType('futures');
               // データを再取得
-              fetchChartData(currentSymbol, currentTimeFrame);
+              if (fetchChartData && typeof fetchChartData === 'function') {
+                fetchChartData(currentSymbol, currentTimeFrame);
+              } else {
+                console.error('fetchChartData is not a function', fetchChartData);
+              }
             }}
               className={`flex items-center px-2 py-1 text-xs rounded-r ${
                 !isClient ? 'bg-dark-800 text-gray-300' : // 初期レンダリング時はデフォルトスタイル

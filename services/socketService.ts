@@ -7,6 +7,7 @@
  * - シンボルごとのデータ購読と購読解除の機能を実装
  * - 接続状態監視と自動再接続機能を実装
  * - WebSocketからのデータをコールバックで提供
+ * - 遅延初期化を実装して循環参照問題を解決
  */
 
 import { Socket, io } from 'socket.io-client';
@@ -144,13 +145,18 @@ function ensureMarketSocket(): Socket | null {
   if (marketSocket && marketSocket.connected) return marketSocket;
   marketSocket = getSocket(true) as Socket | null;
   if (!marketSocket) {
-    socketService.initializeMarketSocket();
+    // socketServiceの代わりに_socketServiceBaseを使用
+    _socketServiceBase.initializeMarketSocket();
     marketSocket = getSocket(false) as Socket | null;
   }
   return marketSocket;
 }
 
-export const socketService = {
+// 遅延初期化のためのシングルトンインスタンス
+let socketServiceInstance: any = null;
+
+// 実際のサービス実装
+const createSocketService = () => ({
   ..._socketServiceBase,
   
   /**
@@ -701,11 +707,10 @@ export const socketService = {
    * 再接続をスケジュール
    */
   scheduleReconnect(): void {
-    const attempts = socketService.reconnectAttempts;
-    // テストで動的に書き換えられる可能性がある上限値を参照
-    // (オブジェクトにあればそちら、なければ定数)
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-    const limit: number = (socketService as any).MAX_RECONNECT_ATTEMPTS ?? MAX_RECONNECT_ATTEMPTS;
+    // reconnectAttemptsを直接参照
+    const attempts = reconnectAttempts;
+    // 定数を直接参照
+    const limit: number = MAX_RECONNECT_ATTEMPTS;
 
     // 再接続試行回数が上限に達した場合は再接続を停止
     if (attempts >= limit) {
@@ -731,7 +736,7 @@ export const socketService = {
       });
 
       // マーケットソケットを再初期化
-      socketService.initializeMarketSocket();
+      _socketServiceBase.initializeMarketSocket();
     }, RECONNECT_DELAY * Math.pow(2, reconnectAttempts)); // 指数バックオフ
   },
   
@@ -747,9 +752,8 @@ export const socketService = {
     const socket = ensureMarketSocket();
     if (!socket) return;
 
-    // テストが注入した Map があれば優先
-    const subs: Map<string, Set<() => void>> =
-      (socketService as any).activeSubscriptions ?? activeSubscriptions;
+    // activeSubscriptionsを直接参照
+    const subs: Map<string, Set<() => void>> = activeSubscriptions;
 
     // 各サブスクリプションキーを解析
     for (const [subKey, callbacks] of subs.entries()) {
@@ -800,4 +804,17 @@ export const socketService = {
   // テスト用: reconnectAttemptsのgetter/setter
   get reconnectAttempts() { return reconnectAttempts; },
   set reconnectAttempts(val: number) { reconnectAttempts = val; },
+});
+
+// 遅延初期化関数
+export const getSocketService = () => {
+  if (!socketServiceInstance) {
+    socketServiceInstance = createSocketService();
+  }
+  return socketServiceInstance;
 };
+
+// 後方互換性のために socketService もエクスポート
+export const socketService = typeof window !== 'undefined'
+  ? getSocketService()
+  : createSocketService(); // サーバーサイドレンダリング時は新しいインスタンスを作成

@@ -7,6 +7,7 @@
  * - キャッシュ戦略の見直しと最適化
  * - WebSocketとRESTAPIのフォールバック機能を実装
  * - エラーハンドリングの強化
+ * - getSocketService()を使用して初期化問題を解決
  */
 
 import { BitgetApiClient } from './bitgetApi';
@@ -15,7 +16,7 @@ import { OrderBookData } from '../types/market';
 import { OHLCData, Timeframe } from '../types/chart';
 import { logger } from '../utils/logger';
 import { normalizeSymbol } from '../lib/utils';
-import { socketService } from './socketService';
+import { getSocketService } from './socketService';
 
 // シンプルなキャッシュ実装
 const cache = new Map<string, { data: any, timestamp: number, source: 'websocket' | 'rest' }>();
@@ -128,8 +129,11 @@ export const dataFetchService = {
     }
     
     try {
+      // WebSocketサービスを取得
+      const socketService = getSocketService();
+      
       // WebSocketが接続されているか確認
-      if (socketService.isConnected()) {
+      if (socketService && socketService.isConnected()) {
         try {
           // WebSocketからデータを取得（Promise化）
           const wsData = await new Promise<OrderBookData>((resolve, reject) => {
@@ -313,8 +317,11 @@ export const dataFetchService = {
     }
     
     try {
+      // WebSocketサービスを取得
+      const socketService = getSocketService();
+      
       // WebSocketが接続されているか確認
-      if (socketService.isConnected()) {
+      if (socketService && socketService.isConnected()) {
         try {
           // WebSocketからデータを取得（Promise化）
           // 注意: ローソク足データは配列で返されるため、複数のデータを受け取る必要がある
@@ -587,8 +594,11 @@ export const dataFetchService = {
     // シンボルを正規化
     const normalizedSymbol = normalizeSymbol(symbol);
     
+    // WebSocketサービスを取得
+    const socketService = getSocketService();
+    
     // WebSocketが接続されているか確認
-    if (!socketService.isConnected()) {
+    if (socketService && !socketService.isConnected()) {
       // WebSocketが接続されていない場合は接続を試みる
       socketService.initializeMarketSocket();
     }
@@ -632,8 +642,11 @@ export const dataFetchService = {
     // シンボルを正規化
     const normalizedSymbol = normalizeSymbol(symbol);
     
+    // WebSocketサービスを取得
+    const socketService = getSocketService();
+    
     // WebSocketが接続されているか確認
-    if (!socketService.isConnected()) {
+    if (socketService && !socketService.isConnected()) {
       // WebSocketが接続されていない場合は接続を試みる
       socketService.initializeMarketSocket();
     }
