@@ -292,8 +292,11 @@ describe('socketService', () => {
       // 関数を実行
       socketService.resubscribeAll();
 
-      // 検証
-      expect(logger.info).toHaveBeenCalledWith('すべてのサブスクリプションを再購読します', expect.any(Object));
+      // 検証 - 新しいログメッセージに合わせる
+      expect(logger.info).toHaveBeenCalledWith('すべての購読を再購読しました', expect.objectContaining({
+        component: 'SubscriptionManager',
+        action: 'resubscribeAll'
+      }));
     });
   });
 
