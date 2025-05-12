@@ -1,6 +1,5 @@
 // store/market/useOrderBookStore.ts
 // 作成: useAppStoreから分離したオーダーブック関連の状態と操作を管理するストア
-// 更新: 2025-05-12 - dataFetchServiceからorderBookServiceに移行
 // 
 // このストアはオーダーブックデータと、データの取得状態を管理します。
 // 主な機能:
@@ -12,9 +11,9 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { ExchangeType } from '../../types/api';
-import { OrderBookData } from '../../types/chart';
+import { OrderBookData } from '../../types/market';
 import { logger } from '../../utils/logger';
-import { orderBookService } from '../../services/data';
+import { dataFetchService } from '../../services/data';
 import { useSymbolStore } from '../useSymbolStore';
 
 // ポーリング情報の型定義
@@ -102,7 +101,7 @@ export const useOrderBookStore = create<OrderBookState>()(
           });
           
           // 共通サービスを使用してオーダーブックを取得
-          const orderBook = await orderBookService.getOrderBook(
+          const orderBook = await dataFetchService.fetchOrderBook(
             finalSymbol,
             finalExchangeType
           );
@@ -287,17 +286,14 @@ export const useOrderBookStore = create<OrderBookState>()(
         });
         
         // WebSocketを使用してオーダーブックを購読
-        const unsubscribe = orderBookService.subscribeOrderBookRealtime(
+        const unsubscribe = dataFetchService.subscribeOrderBookRealtime(
           symbol,
           (data) => {
             // データを受信したらストアを更新
             set({
               orderBook: data,
               isLoadingOrderBook: false,
-              pollingInfo: {
-                ...get().pollingInfo,
-                lastPollTime: Date.now()
-              }
+              orderBookError: null
             });
           },
           exchangeType

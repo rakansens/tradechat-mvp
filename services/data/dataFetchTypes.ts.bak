@@ -6,10 +6,24 @@
  */
 
 import { ExchangeType } from '../../types/api';
+import { OrderBookData } from '../../types/market';
 import { OHLCData, Timeframe } from '../../types/chart';
 
 export interface IDataFetchService {
-  // オーダーブック関連のメソッドはIOrderBookServiceに移行しました
+  /**
+   * オーダーブックデータ取得
+   * @param symbol シンボル
+   * @param exchangeType 取引タイプ
+   * @param signal AbortSignal
+   * @param useCache キャッシュを使用するかどうか
+   * @returns オーダーブックデータ
+   */
+  fetchOrderBook(
+    symbol: string,
+    exchangeType: ExchangeType,
+    signal?: AbortSignal,
+    useCache?: boolean
+  ): Promise<OrderBookData>;
   
   /**
    * チャートデータ取得
@@ -28,7 +42,18 @@ export interface IDataFetchService {
     useCache?: boolean
   ): Promise<OHLCData[]>;
   
-  // オーダーブックのリアルタイム購読機能はIOrderBookServiceに移行しました
+  /**
+   * WebSocketを使用してオーダーブックデータをリアルタイム購読
+   * @param symbol シンボル
+   * @param callback データ受信時のコールバック関数
+   * @param exchangeType 取引タイプ
+   * @returns 購読解除用の関数
+   */
+  subscribeOrderBookRealtime(
+    symbol: string,
+    callback: (data: OrderBookData) => void,
+    exchangeType?: ExchangeType
+  ): () => void;
   
   /**
    * WebSocketを使用してローソク足データをリアルタイム購読

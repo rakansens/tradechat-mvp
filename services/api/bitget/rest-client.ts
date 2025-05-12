@@ -70,7 +70,8 @@ export class BitgetRestClient implements IRestApiClient {
         const orderBookData: OrderBookData = {
           asks: data.asks || [],
           bids: data.bids || [],
-          timestamp: Date.now()
+          timestamp: Date.now(),
+          symbol: symbol
         };
         
         logger.debug(`オーダーブックデータを取得しました: asks=${orderBookData.asks.length}, bids=${orderBookData.bids.length}`, {
@@ -96,7 +97,8 @@ export class BitgetRestClient implements IRestApiClient {
       return {
         asks: [[symbol.split('/')[0] === 'BTC' ? '30000.00' : '2000.00', '1.0']],
         bids: [[symbol.split('/')[0] === 'BTC' ? '29900.00' : '1990.00', '1.0']],
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        symbol: symbol
       };
     }
   }

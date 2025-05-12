@@ -29,6 +29,7 @@ import { theme } from '../../styles/colors';
 import { orderBookPropsSchema, validateOrderBookProps } from '@/lib/validations/market';
 import { useOrderBookStore } from '../../store/market/useOrderBookStore';
 import { useSymbolStore } from '../../store/useSymbolStore';
+import { getPrice, getAmount, normalizeOrderBookData } from '../../utils/orderbook-utils';
 import { useWebSocketStore } from '../../store/useWebSocketStore';
 
 // 価格を表示するためのフォーマット関数
@@ -79,7 +80,7 @@ export const OrderBook: React.FC<OrderBookPropsSchema> = (props) => {
   // WebSocketの接続状態を取得（無限ループを防ぐために個別のステートを取得）
   const wsConnected = useWebSocketStore(state => state.wsConnected);
   const wsSubscribed = useOrderBookStore(state => state.wsSubscribed);
-  const wsStatus = useMemo(() => ({
+  const status = useMemo(() => ({
     connected: wsConnected,
     subscriptions: { orderbook: wsSubscribed }
   }), [wsConnected, wsSubscribed]);
@@ -89,8 +90,8 @@ export const OrderBook: React.FC<OrderBookPropsSchema> = (props) => {
     if (!orderBook || !orderBook.asks || !orderBook.bids || orderBook.asks.length === 0 || orderBook.bids.length === 0) {
       return 0;
     }
-    const lowestAsk = orderBook.asks[0].price;
-    const highestBid = orderBook.bids[0].price;
+    const lowestAsk = getPrice(orderBook.asks[0]);
+    const highestBid = getPrice(orderBook.bids[0]);
     return lowestAsk - highestBid;
   }, [orderBook]);
   
@@ -98,21 +99,27 @@ export const OrderBook: React.FC<OrderBookPropsSchema> = (props) => {
     if (!orderBook || !orderBook.asks || !orderBook.bids || orderBook.asks.length === 0 || orderBook.bids.length === 0) {
       return 0;
     }
-    const lowestAsk = orderBook.asks[0].price;
-    const highestBid = orderBook.bids[0].price;
+    const lowestAsk = getPrice(orderBook.asks[0]);
+    const highestBid = getPrice(orderBook.bids[0]);
     return ((lowestAsk - highestBid) / lowestAsk) * 100;
   }, [orderBook]);
   
-  // AppStoreから注文データを取得し、Zodで検証
-  const rawBids = useMemo(() => {
-    if (!orderBook?.bids) return [];
-    return orderBook.bids;
+  // オーダーブックデータを標準形式に変換
+  const normalizedOrderBook = useMemo(() => {
+    if (!orderBook) return null;
+    return normalizeOrderBookData(orderBook);
   }, [orderBook]);
   
+  // 標準化されたデータから注文データを取得
+  const rawBids = useMemo(() => {
+    if (!normalizedOrderBook?.bids) return [];
+    return normalizedOrderBook.bids as OrderBookEntry[];
+  }, [normalizedOrderBook]);
+  
   const rawAsks = useMemo(() => {
-    if (!orderBook?.asks) return [];
-    return orderBook.asks;
-  }, [orderBook]);
+    if (!normalizedOrderBook?.asks) return [];
+    return normalizedOrderBook.asks as OrderBookEntry[];
+  }, [normalizedOrderBook]);
 
   // データのローカル加工
   const [processedBids, setProcessedBids] = useState<OrderBookEntry[]>([]);
@@ -260,12 +267,12 @@ export const OrderBook: React.FC<OrderBookPropsSchema> = (props) => {
               <div
                 className={cn(
                   "w-2 h-2 rounded-full mr-1",
-                  wsStatus.connected ? "bg-green-500" : "bg-red-500"
+                  status.connected ? "bg-green-500" : "bg-red-500"
                 )}
               />
               <span className="text-xs text-[#9CA3AF]">
-                {wsStatus.connected ? (
-                  wsStatus.subscriptions?.orderbook ? "WS" : "REST"
+                {status.connected ? (
+                  status.subscriptions?.orderbook ? "WS" : "REST"
                 ) : "REST"}
               </span>
             </div>

@@ -3,6 +3,7 @@
  * API関連のインターフェース定義
  * 
  * 作成: 2025-05-12 - SRPに基づいたインターフェース設計
+ * 更新: 2025-05-12 - オーダーブックサービスのインターフェースを追加
  * 
  * このファイルは、APIクライアントのインターフェースを定義します。
  * 単一責任の原則（SRP）に基づき、各インターフェースは明確に分離された責任を持ちます。
@@ -151,16 +152,53 @@ export interface IDataSourceFactory {
 }
 
 /**
+ * オーダーブックサービスインターフェース
+ * オーダーブックデータの取得と管理に責任を持つ
+ */
+export interface IOrderBookService {
+  /**
+   * オーダーブックデータを取得
+   * @param symbol シンボル
+   * @param exchangeType 取引タイプ
+   * @param signal AbortSignal
+   * @returns オーダーブックデータ
+   */
+  getOrderBook(
+    symbol: string,
+    exchangeType: ExchangeType,
+    signal?: AbortSignal
+  ): Promise<OrderBookData>;
+  
+  /**
+   * オーダーブックデータをリアルタイムで購読
+   * @param symbol シンボル
+   * @param callback データ受信時のコールバック関数
+   * @param exchangeType 取引タイプ
+   * @returns 購読解除用の関数
+   */
+  subscribeOrderBookRealtime(
+    symbol: string,
+    callback: (data: OrderBookData) => void,
+    exchangeType?: ExchangeType
+  ): () => void;
+  
+  /**
+   * すべての購読を解除
+   */
+  unsubscribeAll(): void;
+}
+
+/**
  * キャッシュサービスインターフェース
  * データのキャッシュに責任を持つ
  */
-export interface ICacheService {
+export interface ICacheService<T = any> {
   /**
    * データを取得
    * @param key キー
    * @returns キャッシュされたデータ
    */
-  get<T>(key: string): T | null;
+  get<U = T>(key: string): U | null;
   
   /**
    * データを保存
@@ -169,7 +207,7 @@ export interface ICacheService {
    * @param source データソース
    * @param ttl 有効期限（秒）
    */
-  set<T>(key: string, data: T, source?: string, ttl?: number): void;
+  set<U = T>(key: string, data: U, source?: string, ttl?: number): void;
   
   /**
    * データを削除

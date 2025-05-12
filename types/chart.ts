@@ -175,13 +175,24 @@ export const TIMEFRAME_MAP_FUTURES: Record<string, string> = {
 };
 
 /**
+ * オーダーブックエントリーの型
+ */
+export interface OrderBookEntry {
+  price: number;
+  amount: number;
+  total?: number; // UI表示用の累積数量
+}
+
+/**
  * オーダーブックデータの型
+ * 
+ * @deprecated 互換性のため、配列形式もサポートします
  */
 export interface OrderBookData {
-  asks: [number, number][];  // [価格, 数量]の配列
-  bids: [number, number][];  // [価格, 数量]の配列
-  timestamp: number;        // タイムスタンプ
-  symbol: string;           // シンボル
+  asks: OrderBookEntry[] | [string, string][];
+  bids: OrderBookEntry[] | [string, string][];
+  timestamp: number;
+  symbol: string;
 }
 
 export interface ChartState {

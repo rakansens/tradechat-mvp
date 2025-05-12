@@ -9,10 +9,6 @@
  * 3. オーダーブックとローソク足データの購読
  * 4. 再接続メカニズム
  * 5. REST APIとWebSocketの連携（ハイブリッドアプローチ）
- * 
- * 更新: 2025-05-12 - リファクタリング: services/api/bitget/websocket-clientへのリダイレクト
- * 
- * @deprecated このモジュールは非推奨です。代わりに services/api/bitget/websocket-client を使用してください。
  */
 
 import axios from 'axios';

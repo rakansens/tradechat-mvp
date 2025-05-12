@@ -3,9 +3,6 @@
  * Bitget公式WebSocketエンドポイントを使用したクライアント
  * 
  * 作成: 2025-05-11 - Bitget公式WebSocketエンドポイントを使用した実装
- * 更新: 2025-05-12 - リファクタリング: services/api/bitget/websocket-clientへのリダイレクト
- * 
- * @deprecated このモジュールは非推奨です。代わりに services/api/bitget/websocket-client を使用してください。
  */
 
 import { ExchangeType } from '@/types/api';

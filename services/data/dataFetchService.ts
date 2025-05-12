@@ -6,12 +6,16 @@
  * - ブラウザとサーバー環境の両方で動作するように修正
  * - REST APIとWebSocketの適切な使い分け
  * - エラーハンドリングの強化
+ * 
+ * 更新: 2025-05-12 - オーダーブック関連の機能をorderBookServiceに移行
+ * @deprecated このサービスは非推奨です。代わりに専用のサービスを使用してください：
+ * - チャートデータ: chartDataService
+ * - オーダーブック: orderBookService
  */
 
 import { EventEmitter } from 'events';
 import { BitgetApiClient } from '../bitgetApi';
 import { IDataFetchService } from './dataFetchTypes';
-import { OrderBookData } from '../../types/market';
 import { OHLCData, Timeframe } from '../../types/chart';
 import { ExchangeType } from '../../types/api';
 import { logger } from '../../utils/logger';
@@ -39,88 +43,7 @@ class DataFetchService extends EventEmitter implements IDataFetchService {
     return this.bitgetApiClient;
   }
   
-  /**
-   * オーダーブックデータ取得（WebSocketとRESTAPIのハイブリッド）
-   * @param symbol シンボル
-   * @param exchangeType 取引タイプ
-   * @param signal AbortSignal
-   * @param useCache キャッシュを使用するかどうか
-   * @returns オーダーブックデータ
-   */
-  async fetchOrderBook(
-    symbol: string,
-    exchangeType: ExchangeType,
-    signal?: AbortSignal,
-    useCache: boolean = true
-  ): Promise<OrderBookData> {
-    // シンボルを正規化
-    const normalizedSymbol = normalizeSymbol(symbol);
-    
-    // キャッシュキーを生成
-    const cacheKey = `orderbook-${normalizedSymbol}-${exchangeType}`;
-    
-    // キャッシュからデータを取得
-    if (useCache) {
-      const cachedData = cacheService.get<OrderBookData>(cacheKey);
-      if (cachedData) {
-        logger.debug(`キャッシュからオーダーブックデータを取得: ${normalizedSymbol}`, {
-          component: 'DataFetchService',
-          action: 'fetchOrderBook',
-          symbol: normalizedSymbol,
-          exchangeType,
-          source: 'cache'
-        });
-        return cachedData;
-      }
-    }
-    
-    try {
-      logger.info(`REST APIからオーダーブックデータを取得中: ${normalizedSymbol}`, {
-        component: 'DataFetchService',
-        action: 'fetchOrderBook',
-        symbol: normalizedSymbol,
-        exchangeType,
-        source: 'rest-api'
-      });
-      
-      // BitgetApiClientを取得
-      const bitgetClient = this.getBitgetApiClient();
-      
-      // REST APIからデータを取得
-      const restData = await bitgetClient.getOrderBook(normalizedSymbol, exchangeType);
-      
-      // キャッシュにデータを保存
-      cacheService.set(cacheKey, restData, 'rest');
-      
-      // ログに記録
-      logger.info(`REST APIからオーダーブックデータを取得完了: ${normalizedSymbol}`, {
-        component: 'DataFetchService',
-        action: 'fetchOrderBook',
-        symbol: normalizedSymbol,
-        exchangeType,
-        source: 'rest-api'
-      });
-      
-      return restData;
-    } catch (error) {
-      logger.error(`オーダーブック取得エラー: ${error}`, {
-        component: 'DataFetchService',
-        action: 'fetchOrderBook',
-        symbol: normalizedSymbol,
-        exchangeType,
-        error
-      });
-      
-      // エラー時はデモデータを返す
-      const demoData: OrderBookData = {
-        asks: [[normalizedSymbol.split('/')[0] === 'BTC' ? '30000.00' : '2000.00', '1.0']],
-        bids: [[normalizedSymbol.split('/')[0] === 'BTC' ? '29900.00' : '1990.00', '1.0']],
-        timestamp: Date.now()
-      };
-      
-      return demoData;
-    }
-  }
+  // オーダーブック関連のメソッドはorderBookServiceに移行しました
   
   /**
    * チャートデータ取得（ベストプラクティスに沿ったハイブリッドアプローチ）
@@ -261,94 +184,7 @@ class DataFetchService extends EventEmitter implements IDataFetchService {
     });
   }
   
-  /**
-   * WebSocketを使用してオーダーブックデータをリアルタイム購読
-   * @param symbol シンボル（例: 'BTC/USDT'）
-   * @param callback データ受信時のコールバック関数
-   * @param exchangeType 取引タイプ（'spot'または'futures'）
-   * @returns 購読解除用の関数
-   */
-  subscribeOrderBookRealtime(
-    symbol: string,
-    callback: (data: OrderBookData) => void,
-    exchangeType: ExchangeType = 'spot'
-  ): () => void {
-    // シンボルを正規化
-    const normalizedSymbol = normalizeSymbol(symbol);
-    
-    // ブラウザ環境ではポーリングで対応
-    if (isBrowser) {
-      logger.info(`ブラウザ環境ではポーリングでオーダーブックデータを取得: ${normalizedSymbol}`, {
-        component: 'DataFetchService',
-        action: 'subscribeOrderBookRealtime',
-        symbol: normalizedSymbol,
-        exchangeType,
-        client: 'polling'
-      });
-      
-      // ポーリング間隔（ミリ秒）
-      const pollingInterval = 3000;
-      
-      // ポーリング用のタイマーID
-      const timerId = setInterval(async () => {
-        try {
-          const data = await this.fetchOrderBook(normalizedSymbol, exchangeType);
-          callback(data);
-        } catch (error) {
-          logger.error(`ポーリングでのオーダーブック取得エラー: ${error}`, {
-            component: 'DataFetchService',
-            action: 'subscribeOrderBookRealtime',
-            symbol: normalizedSymbol,
-            exchangeType,
-            error
-          });
-        }
-      }, pollingInterval);
-      
-      // 購読解除関数を返す
-      return () => {
-        clearInterval(timerId);
-      };
-    }
-    
-    // サーバー環境ではWebSocketを使用
-    const socketService = getSocketService();
-    
-    // WebSocketが接続されていない場合は空の解除関数を返す
-    if (!socketService || !socketService.isConnected()) {
-      logger.warn(`WebSocketが接続されていないため、オーダーブックの購読ができません: ${normalizedSymbol}`, {
-        component: 'DataFetchService',
-        action: 'subscribeOrderBookRealtime',
-        symbol: normalizedSymbol,
-        exchangeType
-      });
-      return () => {};
-    }
-    
-    // WebSocketサービスを使用
-    const unsubscribe = socketService.subscribeOrderBook(
-      normalizedSymbol,
-      (data: OrderBookData) => {
-        // データをキャッシュに保存
-        const requestKey = `orderbook-${normalizedSymbol}-${exchangeType}`;
-        cacheService.set(requestKey, data, 'websocket');
-        
-        // コールバック関数を呼び出し
-        callback(data);
-      },
-      exchangeType
-    );
-    
-    logger.info(`WebSocketでオーダーブックのリアルタイム購読を開始: ${normalizedSymbol}`, {
-      component: 'DataFetchService',
-      action: 'subscribeOrderBookRealtime',
-      symbol: normalizedSymbol,
-      exchangeType,
-      client: 'socket-service'
-    });
-    
-    return unsubscribe;
-  }
+  // オーダーブックのリアルタイム購読機能はorderBookServiceに移行しました
   
   /**
    * WebSocketを使用してローソク足データをリアルタイム購読

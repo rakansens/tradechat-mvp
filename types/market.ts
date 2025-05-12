@@ -10,11 +10,15 @@ export interface OrderBookEntry {
   total?: number; // UI表示用の累積数量
 }
 
+/**
+ * オーダーブックデータの型
+ * chart.tsの定義と互換性を持たせるために、配列形式もサポート
+ */
 export interface OrderBookData {
   symbol: string;
   timestamp: number;
-  bids: OrderBookEntry[]; // 買い注文
-  asks: OrderBookEntry[]; // 売り注文
+  bids: OrderBookEntry[] | [string, string][]; // 買い注文
+  asks: OrderBookEntry[] | [string, string][]; // 売り注文
 }
 
 export interface OrderBookProps {
