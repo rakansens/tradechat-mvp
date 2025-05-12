@@ -1,10 +1,8 @@
 // services/api/client-factory.ts
 // 移動: apiClientFactory.tsから移動
-// 更新: インポートパスを変更
+// 更新: 2025-05-12 - インポートパスを新しいBitgetApiClientに更新
 
-// 注意: 現時点では古いパスからインポート
-// 将来的には './bitget/rest-client' に変更予定
-import { BitgetApiClient } from '../bitgetApi';
+import { BitgetApiClient } from './bitget/client';
 import { ExchangeType } from '@/types/api';
 
 // APIクライアントのインスタンスをキャッシュ

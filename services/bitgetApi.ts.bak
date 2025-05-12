@@ -1,8 +1,8 @@
 // services/bitgetApi.ts
-// 更新: エラーハンドリングの強化と型安全性の向上
-
-// services/bitgetApi.ts
-// 更新: 共通API関数を使用するように変更
+// 更新: 新しいBitgetApiClientクラスへのリダイレクト層を追加
+//
+// このファイルは段階的に廃止され、services/api/bitget/client.tsに移行されます。
+// 既存のコードとの互換性を維持するためのリダイレクト層として機能します。
 
 import { AxiosRequestConfig, AxiosResponse } from 'axios';
 import { OHLCData, TIMEFRAME_MAP_SPOT, TIMEFRAME_MAP_FUTURES } from '../types/chart';
@@ -18,6 +18,9 @@ import { getApiConfig } from './api/common/environment';
 import { ExchangeType, BitgetCredentials } from '../types/api';
 import { SymbolInfo } from '../types/symbol';
 import { logger } from '@/utils/logger';
+
+// 新しいBitgetApiClientをインポート
+import { BitgetApiClient as NewBitgetApiClient } from './api/bitget/client';
 
 // 先物取引で利用できない可能性が高い銘柄のパターン
 const UNSUPPORTED_FUTURES_PATTERNS = [
@@ -116,8 +119,27 @@ export class BitgetApiClient {
    * @param limit 取得するキャンドル数
    * @param endTime 取得終了時間 (Unixタイムスタンプミリ秒)
    * @returns キャンドルデータの配列
+   * @deprecated 新しいBitgetApiClient.fetchCandlesを使用してください
    */
   async getHistoricalCandles(symbol: string, timeframe: string, limit: number = 100, endTime?: number) {
+    // 新しいBitgetApiClientを使用してデータを取得
+    const client = new NewBitgetApiClient({
+      credentials: this.credentials,
+      enableDemoMode: ENABLE_DEMO_MODE_ON_ERROR
+    });
+    
+    try {
+      // 新しいクライアントのメソッドを使用
+      // インターフェースに合わせてパラメータを渡す
+      return await client.fetchCandles(symbol, timeframe, limit, this.exchangeType);
+    } catch (error) {
+      // 元の実装と同様のエラーハンドリングを維持
+      logger.error('Error in getHistoricalCandles', error, {
+        component: 'BitgetApiClient',
+        action: 'getHistoricalCandles'
+      });
+      throw error;
+    }
     try {
       // シンボルを正しい形式に変換（スラッシュを削除）
       const formattedSymbol = symbol.replace('/', '').toUpperCase();
@@ -705,11 +727,30 @@ export class BitgetApiClient {
    * @param symbol 通貨ペア (例: 'BTC/USDT')
    * @param exchangeType 取引種別 (デフォルトはインスタンスの設定値)
    * @returns オーダーブックデータ
+   * @deprecated 新しいBitgetApiClient.fetchOrderBookを使用してください
    */
   async getOrderBook(
     symbol: string,
     exchangeType: ExchangeType = this.exchangeType
   ): Promise<OrderBookData> {
+    // 新しいBitgetApiClientを使用してデータを取得
+    const client = new NewBitgetApiClient({
+      credentials: this.credentials,
+      enableDemoMode: ENABLE_DEMO_MODE_ON_ERROR
+    });
+    
+    try {
+      // 新しいクライアントのメソッドを使用
+      // インターフェースに合わせてパラメータを渡す
+      return await client.fetchOrderBook(symbol, 150, exchangeType);
+    } catch (error) {
+      // 元の実装と同様のエラーハンドリングを維持
+      logger.error('Error in getOrderBook', error, {
+        component: 'BitgetApiClient',
+        action: 'getOrderBook'
+      });
+      throw error;
+    }
     try {
       // シンボルを正しい形式に変換（スラッシュを削除）
       const formattedSymbol = symbol.replace('/', '').toUpperCase();

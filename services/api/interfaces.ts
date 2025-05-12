@@ -30,17 +30,19 @@ export interface IWebSocketClient {
   /**
    * オーダーブックデータを購読
    * @param symbol シンボル
+   * @param callback コールバック関数
    * @returns 購読解除用の関数
    */
-  subscribeOrderBook(symbol: string): () => void;
+  subscribeOrderBook(symbol: string, callback: (data: OrderBookData) => void): () => void;
   
   /**
    * ローソク足データを購読
    * @param symbol シンボル
    * @param timeframe タイムフレーム
+   * @param callback コールバック関数
    * @returns 購読解除用の関数
    */
-  subscribeCandles(symbol: string, timeframe: Timeframe): () => void;
+  subscribeCandles(symbol: string, timeframe: Timeframe, callback: (data: OHLCData) => void): () => void;
   
   /**
    * イベントリスナーを登録

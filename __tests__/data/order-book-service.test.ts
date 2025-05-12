@@ -6,7 +6,7 @@
  */
 
 import { orderBookService } from '../../services/data/order-book-service';
-import { BitgetApiClient } from '../../services/bitgetApi';
+import { BitgetApiClient } from '../../services/api/bitget/client';
 import { getSocketService } from '../../services/socket/service';
 import { OrderBookData } from '../../types/chart';
 
@@ -17,7 +17,7 @@ Object.defineProperty(global, 'window', {
 });
 
 // モック
-jest.mock('../../services/bitgetApi');
+jest.mock('../../services/api/bitget/client');
 jest.mock('../../services/socket/service');
 
 describe('OrderBookService - ユニットテスト', () => {
@@ -44,17 +44,23 @@ describe('OrderBookService - ユニットテスト', () => {
       symbol: 'BTC/USDT'
     };
     
-    // BitgetApiClientのモック
-    const mockGetOrderBook = jest.fn().mockResolvedValue(mockOrderBookData);
-    (BitgetApiClient as jest.Mock).mockImplementation(() => ({
-      getOrderBook: mockGetOrderBook
-    }));
+    // BitgetApiClientのモックを設定
+    jest.clearAllMocks();
+    
+    // モックインスタンスを作成
+    const mockFetchOrderBook = jest.fn().mockResolvedValue(mockOrderBookData);
+    const mockInstance = {
+      fetchOrderBook: mockFetchOrderBook
+    };
+    
+    // コンストラクタのモックを設定
+    (BitgetApiClient as jest.Mock).mockImplementation(() => mockInstance);
     
     // オーダーブックデータを取得
     const result = await orderBookService.getOrderBook('BTC/USDT', 'spot');
     
-    // 検証
-    expect(mockGetOrderBook).toHaveBeenCalledWith('BTC/USDT', 'spot');
+    // 検証 - 新しいAPIのメソッド名に合わせて修正
+    expect(mockFetchOrderBook).toHaveBeenCalledWith('BTC/USDT', expect.any(Number), 'spot');
     expect(result).toEqual(mockOrderBookData);
   });
   

@@ -14,7 +14,7 @@ import { OrderBookData } from '../../types/market';
 import { OHLCData } from '../../types/chart';
 import { getSocketClient, SocketClient } from './client';
 import { getSubscriptionManager, SubscriptionManager } from './subscription';
-import { BitgetApiClient } from '../bitgetApi';
+import { BitgetApiClient } from '../api/bitget/client';
 import { emitEvent, getSocket } from '../../utils/socketClient';
 import { logger } from '../../utils/logger';
 

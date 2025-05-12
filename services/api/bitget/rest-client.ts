@@ -40,10 +40,28 @@ export class BitgetRestClient implements IRestApiClient {
   /**
    * オーダーブックデータを取得
    * @param symbol シンボル
+   * @param limit 取得件数
+   * @param exchangeType 取引タイプ
+   * @returns オーダーブックデータ
+   */
+  /**
+   * オーダーブックデータを取得（インターフェース互換性用）
+   * @param symbol シンボル
    * @param exchangeType 取引タイプ
    * @returns オーダーブックデータ
    */
   public async getOrderBook(symbol: string, exchangeType: ExchangeType): Promise<OrderBookData> {
+    return this.fetchOrderBook(symbol, 100, exchangeType);
+  }
+  
+  /**
+   * オーダーブックデータを取得
+   * @param symbol シンボル
+   * @param limit 取得件数
+   * @param exchangeType 取引タイプ
+   * @returns オーダーブックデータ
+   */
+  public async fetchOrderBook(symbol: string, limit: number = 100, exchangeType: ExchangeType = 'spot'): Promise<OrderBookData> {
     try {
       // Bitget REST APIの正しいエンドポイント
       const endpoint = `${BITGET_REST_ENDPOINT}/api/v2/spot/market/orderbook`;
@@ -51,12 +69,12 @@ export class BitgetRestClient implements IRestApiClient {
       // パラメータの準備
       const params = {
         symbol: symbol,
-        limit: '100'  // 取得する深さ
+        limit: limit.toString()  // 取得する深さ
       };
       
       logger.debug(`REST APIリクエスト: ${endpoint}`, {
         component: 'BitgetRestClient',
-        action: 'getOrderBook',
+        action: 'fetchOrderBook',
         params
       });
       
@@ -76,7 +94,7 @@ export class BitgetRestClient implements IRestApiClient {
         
         logger.debug(`オーダーブックデータを取得しました: asks=${orderBookData.asks.length}, bids=${orderBookData.bids.length}`, {
           component: 'BitgetRestClient',
-          action: 'getOrderBook',
+          action: 'fetchOrderBook',
           symbol
         });
         
@@ -87,7 +105,7 @@ export class BitgetRestClient implements IRestApiClient {
     } catch (error) {
       logger.error(`オーダーブックデータの取得に失敗しました: ${error}`, {
         component: 'BitgetRestClient',
-        action: 'getOrderBook',
+        action: 'fetchOrderBook',
         symbol,
         exchangeType,
         error
@@ -108,12 +126,37 @@ export class BitgetRestClient implements IRestApiClient {
    * @param symbol シンボル
    * @param timeframe タイムフレーム
    * @param limit 取得件数
+   * @param endTime 終了時間（オプション）
+   * @returns ローソク足データの配列
+   */
+  /**
+   * 過去のローソク足データを取得（インターフェース互換性用）
+   * @param symbol シンボル
+   * @param timeframe タイムフレーム
+   * @param limit 取得件数
    * @returns ローソク足データの配列
    */
   public async getHistoricalCandles(
     symbol: string,
     timeframe: Timeframe,
     limit: number = 100
+  ): Promise<OHLCData[]> {
+    return this.fetchCandles(symbol, timeframe, limit);
+  }
+  
+  /**
+   * 過去のローソク足データを取得
+   * @param symbol シンボル
+   * @param timeframe タイムフレーム
+   * @param limit 取得件数
+   * @param endTime 終了時間（オプション）
+   * @returns ローソク足データの配列
+   */
+  public async fetchCandles(
+    symbol: string,
+    timeframe: string,
+    limit: number = 100,
+    endTime?: number
   ): Promise<OHLCData[]> {
     try {
       // Bitget REST APIの正しいエンドポイント
@@ -131,7 +174,7 @@ export class BitgetRestClient implements IRestApiClient {
       
       logger.debug(`REST APIリクエスト: ${endpoint}`, {
         component: 'BitgetRestClient',
-        action: 'getHistoricalCandles',
+        action: 'fetchCandles',
         params
       });
       
@@ -141,7 +184,7 @@ export class BitgetRestClient implements IRestApiClient {
       if (response.data && response.data.data) {
         logger.debug(`取得したデータ: ${response.data.data.length}件`, {
           component: 'BitgetRestClient',
-          action: 'getHistoricalCandles',
+          action: 'fetchCandles',
           symbol,
           timeframe
         });
@@ -161,7 +204,7 @@ export class BitgetRestClient implements IRestApiClient {
     } catch (error) {
       logger.error(`過去のローソク足データの取得に失敗しました: ${error}`, {
         component: 'BitgetRestClient',
-        action: 'getHistoricalCandles',
+        action: 'fetchCandles',
         symbol,
         timeframe,
         error

@@ -14,7 +14,7 @@
  */
 
 import { EventEmitter } from 'events';
-import { BitgetApiClient } from '../bitgetApi';
+import { BitgetApiClient } from '../api/bitget/client';
 import { IDataFetchService } from './dataFetchTypes';
 import { OHLCData, Timeframe } from '../../types/chart';
 import { ExchangeType } from '../../types/api';
@@ -101,7 +101,7 @@ class DataFetchService extends EventEmitter implements IDataFetchService {
       // BitgetApiClientを取得
       const bitgetClient = this.getBitgetApiClient();
       
-      const restData = await bitgetClient.getHistoricalCandles(normalizedSymbol, timeFrame, 100);
+      const restData = await bitgetClient.fetchCandles(normalizedSymbol, timeFrame, 100);
       
       // キャッシュにデータを保存
       cacheService.set(cacheKey, restData, 'rest');

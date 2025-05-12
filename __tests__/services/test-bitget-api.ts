@@ -5,9 +5,9 @@
  * ts-node test-bitget-api.ts
  */
 
-import { BitgetApiClient } from './services/bitgetApi';
-import { ExchangeType } from './types/api';
-import { OHLCData } from './types/chart';
+import { BitgetApiClient } from '../../services/api/bitget/client';
+import { ExchangeType } from '../../types/api';
+import { OHLCData } from '../../types/chart';
 
 // テスト設定
 const TEST_SYMBOLS = ['BTC/USDT', 'ETH/USDT'];
@@ -25,7 +25,7 @@ async function testHistoricalData() {
       for (const timeframe of TEST_TIMEFRAMES) {
         try {
           console.log(`${symbol} ${timeframe} のデータを取得中...`);
-          const data = await api.getHistoricalCandles(symbol, timeframe, 10);
+          const data = await api.fetchCandles(symbol, timeframe, 10);
           console.log(`✅ 成功: ${data.length}件のデータを取得: ${symbol} ${timeframe}`);
           
           if (data.length > 0) {
@@ -58,8 +58,11 @@ function testWebSocket() {
   console.log(`WebSocket接続をテスト中... (${symbol} ${timeframe})`);
   const api = new BitgetApiClient({}, 'spot');
   
-  // データ更新用コールバック
-  api.onKlineUpdate((data: OHLCData) => {
+  // WebSocket接続を確立
+  api.connectWebSocket();
+  
+  // データ購読とコールバック設定
+  api.subscribeCandles(symbol, timeframe, (data: OHLCData) => {
     console.log('リアルタイムデータを受信:', {
       time: new Date(data.time).toISOString(),
       open: data.open,
@@ -69,9 +72,6 @@ function testWebSocket() {
       volume: data.volume
     });
   });
-  
-  // WebSocket接続とデータ購読
-  api.subscribeToKline(symbol, timeframe);
   
   console.log(`WebSocketサブスクリプション開始: ${symbol} ${timeframe}`);
   console.log('30秒後に接続を終了します...');

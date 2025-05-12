@@ -7,7 +7,7 @@
  */
 
 import { EventEmitter } from 'events';
-import { BitgetApiClient } from '../bitgetApi';
+import { BitgetApiClient } from '../api/bitget/client';
 import { IOrderBookService } from '../api/interfaces';
 import { OrderBookData } from '../../types/chart';
 import { ExchangeType } from '../../types/api';
@@ -81,7 +81,7 @@ class OrderBookService extends EventEmitter implements IOrderBookService {
       const bitgetClient = this.getBitgetApiClient();
       
       // REST APIからデータを取得
-      const restData = await bitgetClient.getOrderBook(normalizedSymbol, exchangeType);
+      const restData = await bitgetClient.fetchOrderBook(normalizedSymbol, 20, exchangeType);
       
       // キャッシュにデータを保存
       cacheService.set(cacheKey, restData, 'rest');

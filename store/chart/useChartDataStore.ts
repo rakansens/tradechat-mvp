@@ -10,7 +10,7 @@
 
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import { BitgetApiClient } from '../../services/bitgetApi';
+import { BitgetApiClient } from '../../services/api/bitget/client';
 import { dataFetchService } from '../../services/data';
 import { cacheService } from '../../services/cache';
 import { OHLCData, Timeframe } from '../../types/chart';

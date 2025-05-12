@@ -7,7 +7,7 @@
 
 import { OHLCData, Timeframe, ChartType } from './chart';
 import { ExchangeType } from './api';
-import { BitgetApiClient } from '../services/bitgetApi';
+import { BitgetApiClient } from '../services/api/bitget/client';
 
 /**
  * インジケーターの種類
