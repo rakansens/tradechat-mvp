@@ -1,32 +1,16 @@
-// services/api.ts
-// 追加: API通信の共通化と型安全性の向上
-// 更新: 型定義をtypes/api.tsに移動
+// services/api/common/request.ts
+// 移動: api.tsから移動
+// 更新: 環境変数と型の参照先を変更
 
 import axios from 'axios';
-import { handleApiError } from './errorHandler';
+import { handleApiError } from '../../errors';
 import {
   ApiResponse,
   ApiRequestConfig,
-  ApiEnvironmentConfig,
   AdaptiveApiRequestConfig,
   CancellableRequest
-} from '../types/api';
-
-// 環境変数のインポート
-import { env } from '../config/env';
-
-// 環境判定
-export const IS_DEV = env.environment.isDevelopment;
-export const IS_BROWSER = typeof window !== 'undefined';
-
-// API設定
-export const API_CONFIG: Record<string, ApiEnvironmentConfig> = {
-  bitget: {
-    baseUrl: env.api.bitget.baseUrl,
-    wsUrl: env.api.bitget.wsUrl,
-    enableDemoMode: env.api.bitget.enableDemoMode
-  }
-};
+} from '../../../types/api';
+import { IS_DEV, IS_BROWSER, getApiConfig } from './environment';
 
 /**
  * 共通APIリクエスト関数
@@ -145,7 +129,7 @@ export async function serverApiRequest<T = any>(
  * @param config リクエスト設定
  * @returns レスポンスデータ
  */
-export async function adaptiveApiRequest<T = any>(config: AdaptiveApiRequestConfig<T>): Promise<T> {
+export async function adaptiveApiRequest<T = any>(config: AdaptiveApiRequestConfig): Promise<T> {
   const { browserEndpoint, serverBaseUrl, serverEndpoint, params, options = {} } = config;
 
   if (IS_BROWSER) {

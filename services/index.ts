@@ -8,9 +8,12 @@
 // 既存のサービス
 export * from './bitgetApi';
 export * from './socket';
-export * from './errorHandler';
-export * from './api';
-export * from './apiClientFactory';
+
+// 新しいAPIサービスパス
+export * from './api/common/request';
+export * from './api/client-factory';
+export * from './errors/handler';
+export * from './api/common/environment';
 
 // リファクタリングされたサービス
 export * from './cache';

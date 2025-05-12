@@ -1,0 +1,6 @@
+// services/errorHandler.ts
+// 更新: リファクタリングにより新しい構造にリダイレクト
+// このファイルは互換性のために残されています
+
+// 新しい場所から全ての機能をエクスポート
+export * from './errors/handler';

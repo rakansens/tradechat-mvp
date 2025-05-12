@@ -105,6 +105,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/ws": "^8.18.1",
+    "axios-mock-adapter": "^2.1.0",
     "concurrently": "^9.1.2",
     "dotenv": "^16.5.0",
     "esbuild-plugin-tsconfig-paths": "^1.0.1",

@@ -7,7 +7,7 @@ import WebSocket from 'ws';
 import { EventEmitter } from 'events';
 import { ExchangeType } from '../types/api';
 import { logger } from '../utils/logger';
-import { API_CONFIG } from '../services/api';
+import { getApiConfig } from '../services/api/common/environment';
 
 // 接続状態の定義
 enum ConnectionState {
@@ -56,11 +56,11 @@ export class BitgetWebSocketManager extends EventEmitter {
   /**
    * BitgetWebSocketManagerを初期化
    * 
-   * @param wsUrl WebSocketのURL（指定がない場合はAPI_CONFIGから取得）
+   * @param wsUrl WebSocketのURL（指定がない場合はgetApiConfig()から取得）
    */
   constructor(wsUrl?: string) {
     super();
-    this.wsUrl = wsUrl || API_CONFIG.bitget.wsUrl;
+    this.wsUrl = wsUrl || getApiConfig('bitget').wsUrl;
   }
 
   /**

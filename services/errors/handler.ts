@@ -1,14 +1,11 @@
-// services/errorHandler.ts
-// 追加: グローバルなエラーハンドリング機能
-// 更新: 型定義をtypes/api.tsに移動
+// services/errors/handler.ts
+// 移動: errorHandler.tsから移動
+// 更新: 環境変数の参照を共通モジュールに変更
 
 import { toast } from 'sonner';
 import { AxiosError } from 'axios';
-import { ApiErrorHandlerOptions, WebSocketErrorHandlerOptions } from '../types/api';
-
-// 環境判定
-const IS_DEV = process.env.NODE_ENV === 'development';
-const IS_BROWSER = typeof window !== 'undefined';
+import { ApiErrorHandlerOptions, WebSocketErrorHandlerOptions } from '../../types/api';
+import { IS_DEV, IS_BROWSER } from '../api/common/environment';
 
 // エラーの種類を区別するための型
 export type ErrorSource = 'api' | 'websocket' | 'chart' | 'general';

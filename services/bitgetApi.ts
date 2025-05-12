@@ -7,15 +7,14 @@
 import { AxiosRequestConfig, AxiosResponse } from 'axios';
 import { OHLCData, TIMEFRAME_MAP_SPOT, TIMEFRAME_MAP_FUTURES } from '../types/chart';
 import { OrderBookData, OrderBookEntry, BitgetOrderBookResponse } from '../types/market';
-import { handleApiError, handleWebSocketError } from './errorHandler';
+import { handleApiError, handleWebSocketError } from './errors/handler';
 import { 
   apiRequest, 
   adaptiveApiRequest, 
-  createCancellableRequest,
-  API_CONFIG,
-  IS_DEV,
-  IS_BROWSER 
-} from './api';
+  createCancellableRequest
+} from './api/common/request';
+import { IS_DEV, IS_BROWSER } from './api/common/environment';
+import { getApiConfig } from './api/common/environment';
 import { ExchangeType, BitgetCredentials } from '../types/api';
 import { SymbolInfo } from '../types/symbol';
 import { logger } from '@/utils/logger';
@@ -26,10 +25,11 @@ const UNSUPPORTED_FUTURES_PATTERNS = [
   /[^B]BTC$/  // BTC建ての通貨ペア（BTC自体は除く）
 ];
 
-// API設定は共通モジュールから取得
-const BITGET_API_BASE_URL = API_CONFIG.bitget.baseUrl;
-const BITGET_WS_URL = API_CONFIG.bitget.wsUrl;
-const ENABLE_DEMO_MODE_ON_ERROR = API_CONFIG.bitget.enableDemoMode;
+// API設定を環境設定から取得
+const apiConfig = getApiConfig('bitget');
+const BITGET_API_BASE_URL = apiConfig.baseUrl;
+const BITGET_WS_URL = apiConfig.wsUrl;
+const ENABLE_DEMO_MODE_ON_ERROR = apiConfig.enableDemoMode;
 
 // 環境に応じたWebSocketの作成
 const createWebSocket = (url: string) => {
