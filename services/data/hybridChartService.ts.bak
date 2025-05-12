@@ -1,0 +1,103 @@
+/**
+ * services/data/hybridChartService.ts
+ * ハイブリッドチャートサービスの実装
+ * 
+ * 作成: 2023-05-12 - 業界のベストプラクティスに沿ったハイブリッドチャートデータ取得サービス
+ * 更新: 2023-05-20 - SRPに基づくリファクタリングにより非推奨化
+ * 
+ * @deprecated このサービスは非推奨です。代わりに services/api/chart-data-service を使用してください。
+ * 
+ * このサービスは以下の機能を提供します：
+ * 1. REST APIを使用して過去の確定ローソク足データを取得
+ * 2. WebSocketを使用して最新の未確定ローソク足データをリアルタイム更新
+ * 3. 両方のデータを統合して完全なチャートデータを提供
+ */
+
+import { EventEmitter } from 'events';
+import { ExchangeType } from '../../types/api';
+import { OHLCData, OrderBookData, Timeframe } from '../../types/chart';
+import { logger } from '../../utils/logger';
+
+// 新しい実装をインポート
+import { chartDataService as newChartDataService } from '../api/chart-data-service';
+
+// コールバック型の定義
+type ChartDataCallback = (data: OHLCData) => void;
+
+/**
+ * ハイブリッドチャートサービス
+ * @deprecated このクラスは非推奨です。代わりに services/api/chart-data-service を使用してください。
+ */
+export class HybridChartService extends EventEmitter {
+  private activeSubscriptions: Map<string, boolean> = new Map();
+  
+  constructor() {
+    super();
+    logger.warn('非推奨: HybridChartServiceは非推奨です。代わりに services/api/chart-data-service を使用してください。');
+    
+    // リダイレクト先のエラーハンドリングを設定
+    newChartDataService.on('error', (error: Error) => {
+      this.emit('error', error);
+    });
+  }
+
+  /**
+   * チャートデータを取得する
+   * @deprecated 代わりに chartDataService.getChartData を使用してください
+   */
+  async getChartData(
+    symbol: string,
+    timeframe: Timeframe,
+    exchangeType: ExchangeType,
+    limit: number = 100
+  ): Promise<OHLCData[]> {
+    return newChartDataService.getChartData(symbol, timeframe, exchangeType, limit);
+  }
+
+  /**
+   * リアルタイムチャートデータを購読する
+   * @deprecated 代わりに chartDataService.subscribeRealtimeChartData を使用してください
+   */
+  subscribeRealtimeChartData(
+    symbol: string,
+    timeframe: Timeframe,
+    exchangeType: ExchangeType,
+    callback: ChartDataCallback
+  ): string {
+    // 新しい実装を呼び出し、返値を文字列として扱う
+    const result = newChartDataService.subscribeRealtimeChartData(symbol, timeframe, callback);
+    const subscriptionId = typeof result === 'string' ? result : `subscription-${Date.now()}`;
+    this.activeSubscriptions.set(subscriptionId, true);
+    return subscriptionId;
+  }
+
+  /**
+   * リアルタイムチャートデータの購読を解除する
+   * @deprecated 代わりに chartDataService.unsubscribeRealtimeChartData を使用してください
+   */
+  unsubscribeRealtimeChartData(subscriptionId: string): void {
+    logger.warn(`非推奨のメソッドが呼び出されました: unsubscribeRealtimeChartData`);
+    this.activeSubscriptions.delete(subscriptionId);
+  }
+
+  /**
+   * すべての購読を解除する
+   * @deprecated 代わりに chartDataService.unsubscribeAll を使用してください
+   */
+  unsubscribeAll(): void {
+    newChartDataService.unsubscribeAll();
+    this.activeSubscriptions.clear();
+  }
+
+  /**
+   * オーダーブックデータを取得する
+   * @deprecated 代わりに chartDataService.getOrderBook を使用してください
+   */
+  async getOrderBook(symbol: string, exchangeType: ExchangeType): Promise<OrderBookData> {
+    logger.warn(`非推奨のメソッドが呼び出されました: getOrderBook`);
+    return newChartDataService.getOrderBook(symbol, exchangeType);
+  }
+}
+
+// シングルトンインスタンスをエクスポート
+export const hybridChartService = new HybridChartService();

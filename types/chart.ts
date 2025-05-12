@@ -174,6 +174,16 @@ export const TIMEFRAME_MAP_FUTURES: Record<string, string> = {
   '1M': '1M',
 };
 
+/**
+ * オーダーブックデータの型
+ */
+export interface OrderBookData {
+  asks: [number, number][];  // [価格, 数量]の配列
+  bids: [number, number][];  // [価格, 数量]の配列
+  timestamp: number;        // タイムスタンプ
+  symbol: string;           // シンボル
+}
+
 export interface ChartState {
   // 状態
   timeframe: Timeframe;
