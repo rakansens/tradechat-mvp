@@ -78,21 +78,26 @@ export class BitgetWebSocketClient extends EventEmitter implements IWebSocketCli
           this.ws = new WebSocketImpl(BITGET_WS_ENDPOINT);
           
           // Node.js環境でのイベントハンドラ設定
-          this.ws.on('open', () => {
+          // TypeScriptの型チェックを回避するためにasを使用
+          const nodeWs = this.ws as unknown as {
+            on(event: string, listener: (...args: any[]) => void): void;
+          };
+          
+          nodeWs.on('open', () => {
             this.handleOpen();
             resolve();
           });
           
-          this.ws.on('message', (data: any) => {
+          nodeWs.on('message', (data: any) => {
             this.handleMessage(typeof data === 'string' ? data : data.toString());
           });
           
-          this.ws.on('error', (error: any) => {
+          nodeWs.on('error', (error: any) => {
             this.handleError(error);
             reject(error);
           });
           
-          this.ws.on('close', (code: number, reason: string) => {
+          nodeWs.on('close', (code: number, reason: string) => {
             this.handleClose(code, reason);
           });
         } else {
@@ -100,23 +105,29 @@ export class BitgetWebSocketClient extends EventEmitter implements IWebSocketCli
           this.ws = new WebSocket(BITGET_WS_ENDPOINT);
           
           // ブラウザ環境でのイベントハンドラ設定
-          this.ws.onopen = () => {
-            this.handleOpen();
-            resolve();
-          };
-          
-          this.ws.onmessage = (event) => {
-            this.handleMessage(event.data);
-          };
-          
-          this.ws.onerror = (error) => {
+          if (this.ws) {
+            this.ws.onopen = () => {
+              this.handleOpen();
+              resolve();
+            };
+            
+            this.ws.onmessage = (event) => {
+              this.handleMessage(event.data);
+            };
+            
+            this.ws.onerror = (error) => {
+              this.handleError(error);
+              reject(error);
+            };
+            
+            this.ws.onclose = (event) => {
+              this.handleClose(event.code, event.reason);
+            };
+          } else {
+            const error = new Error('WebSocketの作成に失敗しました');
             this.handleError(error);
             reject(error);
-          };
-          
-          this.ws.onclose = (event) => {
-            this.handleClose(event.code, event.reason);
-          };
+          }
         }
       } catch (error) {
         logger.error(`接続エラー: ${error}`);

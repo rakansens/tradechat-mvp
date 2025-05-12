@@ -82,8 +82,8 @@ describe('ChartDataService - ユニットテスト', () => {
   test('getOrderBook should fetch order book data', async () => {
     // モックデータ
     const mockOrderBookData: OrderBookData = {
-      asks: [[30100, 1.5], [30200, 2.5]],
-      bids: [[30000, 2.0], [29900, 3.0]],
+      asks: [['30100', '1.5'], ['30200', '2.5']],
+      bids: [['30000', '2.0'], ['29900', '3.0']],
       timestamp: 1620000000000,
       symbol: 'BTC/USDT'
     };

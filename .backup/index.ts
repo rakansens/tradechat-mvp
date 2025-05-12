@@ -2,17 +2,17 @@
  * services/bitget/index.ts
  * BitgetApiClientとBitgetWebSocketClientをエクスポート
  * 
- * 更新: 2025-05-11 - BitgetWebSocketClientを追加
- * 更新: 2025-05-11 - BitgetWebSocketClientV2を追加
- * 更新: 2025-05-12 - リファクタリング: services/api/bitgetへのリダイレクト
+ * 更新: 2025-05-12 - リファクタリング完了: 古い実装を削除し、完全に新しい実装へリダイレクト
  * 
  * @deprecated このモジュールは非推奨です。代わりに services/api/bitget を使用してください。
  */
 
-import { BitgetApiClient } from '../bitgetApi';
-import { BitgetWebSocketClient as NewBitgetWebSocketClient } from '../api/bitget/websocket-client';
 import { BitgetRestClient } from '../api/bitget/rest-client';
+import { BitgetWebSocketClient as NewBitgetWebSocketClient } from '../api/bitget/websocket-client';
 import { logger } from '../../utils/logger';
+
+// BitgetApiClientのエクスポート
+import { BitgetApiClient } from '../bitgetApi';
 
 // 元のWebSocketクライアントをエミュレート
 class BitgetWebSocketClient extends NewBitgetWebSocketClient {
@@ -41,5 +41,5 @@ export {
   BitgetApiClient, 
   BitgetWebSocketClient, 
   getBitgetWebSocketClient,
-  BitgetWebSocketClientV2 
+  BitgetWebSocketClientV2
 };

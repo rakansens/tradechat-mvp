@@ -2,11 +2,13 @@
  * __tests__/websocket-ping-unit.test.ts
  * WebSocketクライアントのPing/Pong機能のユニットテスト
  * 
- * このテストは、BitgetWebSocketClientV2のPing/Pongメカニズムの
+ * このテストは、BitgetWebSocketClientのPing/Pongメカニズムの
  * 個々のコンポーネントをユニットテストします。
+ * 
+ * 更新: 2025-05-12 - リファクタリング: services/api/bitget/websocket-clientを使用するように変更
  */
 
-import { BitgetWebSocketClient } from '../services/bitget/websocket-v2';
+import { BitgetWebSocketClient } from '../services/api/bitget/websocket-client';
 
 // テスト用のタイムアウト設定
 jest.setTimeout(5000);

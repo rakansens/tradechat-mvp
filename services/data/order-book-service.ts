@@ -107,6 +107,8 @@ class OrderBookService extends EventEmitter implements IOrderBookService {
       
       // エラー時はデモデータを返す
       const demoData: OrderBookData = {
+        symbol: normalizedSymbol,
+        timestamp: Date.now(),
         asks: [
           {
             price: parseFloat(normalizedSymbol.split('/')[0] === 'BTC' ? '30000.00' : '2000.00'),
@@ -118,9 +120,7 @@ class OrderBookService extends EventEmitter implements IOrderBookService {
             price: parseFloat(normalizedSymbol.split('/')[0] === 'BTC' ? '29900.00' : '1990.00'),
             amount: 1.0
           }
-        ],
-        timestamp: Date.now(),
-        symbol: normalizedSymbol
+        ]
       };
       
       return demoData;

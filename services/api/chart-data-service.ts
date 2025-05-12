@@ -381,7 +381,7 @@ export class ChartDataService extends EventEmitter implements IChartDataService 
     logger.debug(`リアルタイムローソク足データを更新: ${normalizedSymbol} ${timeframe}`, {
       component: 'ChartDataService',
       action: 'handleRealtimeCandleUpdate',
-      timestamp: new Date(candleData.timestamp).toISOString()
+      timestamp: new Date(candleData.time).toISOString()
     });
   }
   
@@ -389,23 +389,26 @@ export class ChartDataService extends EventEmitter implements IChartDataService 
    * ローソク足データを更新
    */
   private updateCandleData(existingData: OHLCData[], newCandle: OHLCData): OHLCData[] {
-    // データがない場合は新しいローソク足を追加
-    if (existingData.length === 0) {
-      return [newCandle];
-    }
+    // 既存のデータをコピー
+    const updatedData = [...existingData];
     
-    // 最新のローソク足のインデックスを探す
-    const index = existingData.findIndex(candle => candle.timestamp === newCandle.timestamp);
+    // 同じタイムスタンプのローソク足を探す
+    const existingIndex = updatedData.findIndex(
+      candle => candle.time === newCandle.time
+    );
     
-    if (index !== -1) {
+    if (existingIndex >= 0) {
       // 既存のローソク足を更新
-      const updatedData = [...existingData];
-      updatedData[index] = newCandle;
-      return updatedData;
+      updatedData[existingIndex] = newCandle;
     } else {
       // 新しいローソク足を追加
-      return [...existingData, newCandle].sort((a, b) => a.timestamp - b.timestamp);
+      updatedData.push(newCandle);
+      
+      // タイムスタンプでソート（古い順）
+      updatedData.sort((a, b) => a.time - b.time);
     }
+    
+    return updatedData;
   }
 }
 

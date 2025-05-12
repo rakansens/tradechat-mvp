@@ -246,9 +246,13 @@ describe('BitgetWebSocketClient', () => {
   test('should attempt reconnect on close', async () => {
     // setTimeoutをモック
     const originalSetTimeout = global.setTimeout;
-    global.setTimeout = jest.fn().mockImplementation((callback, delay) => {
+    const mockSetTimeout = jest.fn().mockImplementation((callback, delay) => {
       return originalSetTimeout(callback, 0) as any;
     });
+    // 型変換を正しく行う
+    const mockSetTimeoutWithPromisify = mockSetTimeout as unknown as typeof setTimeout;
+    mockSetTimeoutWithPromisify.__promisify__ = originalSetTimeout.__promisify__;
+    global.setTimeout = mockSetTimeoutWithPromisify;
 
     // 接続
     const connectPromise = client.connect();
