@@ -67,13 +67,14 @@ export function initializeSocketClient(forceReinitialize = false, namespace?: st
       reconnectionAttempts: 10,
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
-      timeout: 20000,
-      transports: ['websocket', 'polling'] // WebSocketとポーリングの両方を使用
+      timeout: 30000, // サーバー側のconnectTimeoutと一致させる
+      transports: ['websocket', 'polling'] // WebSocketを優先し、フォールバックとしてポーリングを使用
     };
     
-    // 名前空間の問題を回避するため、デフォルトの名前空間のみを使用
-    const baseUrl = window.location.origin; // 現在のオリジンを使用
-    socket = io(baseUrl, options);
+// 名前空間の問題を回避するため、デフォルトの名前空間のみを使用
+// 明示的にポート3000を指定して接続
+const baseUrl = 'http://localhost:3000'; // 明示的にポート3000を指定
+socket = io(baseUrl, options);
     
     // 接続成功時の処理
     socket.on('connected', (data: { clientId: string }) => {

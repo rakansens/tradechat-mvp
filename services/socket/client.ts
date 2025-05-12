@@ -37,8 +37,8 @@ export class SocketClient {
         return null;
       }
       
-      // Socket.io接続を初期化（デフォルトの名前空間を使用）
-      initializeSocketClient(false);
+      // Socket.io接続を初期化（デフォルトの名前空間を使用、既存があれば再利用）
+      initializeSocketClient(false); // 既存ソケットがあれば再利用
       this.socket = getSocket(true);
       
       // 接続イベントのハンドラを設定

@@ -170,9 +170,8 @@ global.emitSocketEvent = async (eventName, data) => {
 // 環境変数の設定
 const dev = process.env.NODE_ENV !== 'production';
 let PORT = process.env.PORT || 3000;
-
-// 実際に使用されているポート番号を追跡する変数
 let ACTUAL_PORT = PORT;
+let MAX_PORT_ATTEMPTS = 10; // 最大試行回数
 
 // Nextアプリの初期化
 const app = next({ dev });
@@ -203,6 +202,12 @@ app.prepare().then(() => {
   // HTTPサーバーの作成
   const server = createServer((req, res) => {
     const parsedUrl = parse(req.url, true);
+    
+    // Socket.IO handshake & polling endpoints are handled by Socket.IO's own listener.
+    // If the request path starts with /socket.io, do nothing here so the next listener can respond.
+    if (parsedUrl.pathname.startsWith('/socket.io')) {
+      return;
+    }
     
     // 画像表示用のエンドポイント
     if (parsedUrl.pathname.startsWith('/api/chart-image/')) {
@@ -270,11 +275,14 @@ app.prepare().then(() => {
   io = new Server(server, {
     cors: {
       origin: '*',
-      methods: ['GET', 'POST']
+      methods: ['GET', 'POST'],
+      credentials: true
     },
     // ピングタイムアウトと接続タイムアウト設定
-    pingTimeout: 60000, 
-    connectTimeout: 30000
+    pingTimeout: 60000,
+    connectTimeout: 30000,
+    // クライアント側と同じtransports設定を使用
+    transports: ['websocket', 'polling']
   });
   
   console.log('Socket.IOサーバーを初期化中...');
@@ -575,15 +583,31 @@ app.prepare().then(() => {
   };
   
   // サーバー起動のエラーハンドリング
+  let portAttempts = 0;
+  
+  function tryListenOnPort(port) {
+    ACTUAL_PORT = port;
+    server.listen(ACTUAL_PORT);
+  }
+  
   server.on('error', (error) => {
     if (error.code === 'EADDRINUSE') {
-      // 新しいポート番号を設定
-      ACTUAL_PORT = PORT + 1;
-      console.error(`ポート ${PORT} は既に使用されています。ポート ${ACTUAL_PORT} を試します...`);
+      portAttempts++;
+      
+      if (portAttempts >= MAX_PORT_ATTEMPTS) {
+        console.error(`利用可能なポートが見つかりません。${MAX_PORT_ATTEMPTS}回試行しました。`);
+        process.exit(1);
+      }
+      
+      // ポート番号をインクリメント
+      const nextPort = ACTUAL_PORT + 1;
+      console.log(`ポート ${ACTUAL_PORT} は既に使用されています。ポート ${nextPort} を試します...`);
+      
+      // サーバーを閉じて新しいポートで再試行
+      server.close();
       setTimeout(() => {
-        server.close();
-        server.listen(ACTUAL_PORT);
-      }, 1000);
+        tryListenOnPort(nextPort);
+      }, 100);
     } else {
       console.error('サーバー起動エラー:', error);
       process.exit(1);
@@ -591,8 +615,10 @@ app.prepare().then(() => {
   });
   
   // サーバー起動
-  server.listen(PORT, (err) => {
-    if (err) throw err;
+  tryListenOnPort(PORT);
+  
+  // サーバーが正常に起動したときのハンドラ
+  server.on('listening', () => {
     
     // 実際に使用されているポートを記録
     ACTUAL_PORT = server.address().port;

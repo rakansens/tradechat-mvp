@@ -352,8 +352,8 @@ export class BitgetApiClient {
               result = {
                 time: timestamp, // lightweight-chartsの要件に合わせてtimeとして設定
                 open: parsedOpen,
-                high: parsedHigh,
-                low: parsedLow,
+                high: adjustedHigh,
+                low: adjustedLow,
                 close: parsedClose,
                 volume: parsedVolume
               };
@@ -853,12 +853,16 @@ export class BitgetApiClient {
     this.lastTimeframe = timeframe;
     // 既存のWebSocketをクリーンアップ
     this.cleanup();
-    
+
     // 取引種別を更新
     this.exchangeType = exchangeType;
-    
+
     // デモモードを無効化
     this.isInDemoMode = false;
+
+    // 接続タイムアウトタイマー
+    let connectionTimeoutTimer: NodeJS.Timeout | null = null;
+    const CONNECTION_TIMEOUT = 30000; // 30秒のタイムアウト
 
     try {
       // WebSocket作成関数を使用
@@ -873,6 +877,28 @@ export class BitgetApiClient {
         this.isInDemoMode = true;
         return;
       }
+
+      // 接続タイムアウトを設定
+      connectionTimeoutTimer = setTimeout(() => {
+        logger.warn('BitgetWS: Connection timeout, reconnecting...', {
+          component: 'BitgetApi',
+          action: 'connectWebSocket',
+          timeout: CONNECTION_TIMEOUT
+        });
+        
+        // 既存の接続を閉じて再接続
+        if (this.ws) {
+          try {
+            this.ws.close();
+          } catch (e) {
+            // 閉じる際のエラーは無視
+          }
+          this.ws = null;
+        }
+        
+        // 再接続を試みる
+        this.reconnect(2000); // 2秒後に再接続
+      }, CONNECTION_TIMEOUT);
 
       this.ws.onopen = () => {
         if (IS_DEV) logger.info('BitgetWS: Connection established', {
@@ -979,7 +1005,7 @@ export class BitgetApiClient {
     // Official docs: 'SP' (spot), 'MC' (USDT‑M perpetual)
     const instType = this.exchangeType === 'spot' ? 'SP' : 'MC';
     const instId   = this.exchangeType === 'spot'
-      ? formattedSymbol
+      ? `${formattedSymbol}`  // スポット取引の場合はサフィックスなし
       : `${formattedSymbol}_UMCBL`;
 
     const channelName = `candle${bitgetTimeframe}`;
@@ -1180,8 +1206,8 @@ export class BitgetApiClient {
       const result: OHLCData = {
         time: parsedTime,
         open: parsedOpen,
-        high: parsedHigh,
-        low: parsedLow,
+        high: adjustedHigh,
+        low: adjustedLow,
         close: parsedClose,
         volume: parsedVolume,
       };

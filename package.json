@@ -58,6 +58,7 @@
     "autoprefixer": "^10.4.20",
     "axios": "^1.9.0",
     "ccxt": "^4.4.78",
+    "ccxws": "^0.47.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "1.0.4",
@@ -91,7 +92,7 @@
     "use-sync-external-store": "latest",
     "uuid": "^11.1.0",
     "vaul": "^1.1.2",
-    "ws": "^8.18.1",
+    "ws": "^8.18.2",
     "zod": "latest",
     "zustand": "latest"
   },
