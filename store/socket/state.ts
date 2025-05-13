@@ -1,5 +1,6 @@
 // store/socket/state.ts
 // 作成: 2025-05-10 - ソケット接続状態を管理するスライスのState定義
+// WebSocketの状態定義
 
 export interface SocketSliceState {
   /**
@@ -13,6 +14,9 @@ export interface SocketSliceState {
    * 接続時に割り当てられるユニークID
    */
   socketId?: string;
+
+  subscriptions: Record<'orderbook' | 'chart', boolean>;
+  _unsubscribeFns: Record<string, () => void>;
 }
 
 /**
@@ -20,5 +24,7 @@ export interface SocketSliceState {
  */
 export const initialSocketState: SocketSliceState = {
   connected: false,
-  socketId: undefined
+  socketId: undefined,
+  subscriptions: { orderbook: false, chart: false },
+  _unsubscribeFns: {}
 }; 

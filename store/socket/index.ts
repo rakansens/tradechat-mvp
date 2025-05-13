@@ -1,38 +1,36 @@
 // store/socket/index.ts
-// 作成: 2025-05-10 - ソケット接続状態を管理するスライスのエントリーポイント
-// 更新: 2025-05-10 - StateCreator型の修正
-// 更新: 2025-05-14 - Zustandストアの作成とエクスポート
+// SocketSliceのエントリーポイント - 2025-05-13
 
-import { StateCreator, create } from 'zustand';
+import { StoreApi } from 'zustand';
 import { initialSocketState } from './state';
-import { SocketSlice, createSocketSliceActions } from './actions';
-import { selectConnected, selectSocketId } from './selectors';
+import { createSocketSliceActions } from './actions';
+import { logger } from '@/utils/logger';
+
+// 型のリエクスポート
+export type { SocketSliceState } from './state';
+export type { SocketSliceActions } from './actions';
+
+// サイドエフェクトのエクスポート
+export { initializeSocketMonitoring, cleanupSocketMonitoring } from './dispatcher';
 
 /**
- * ソケットスライスを作成する
- * @param set Zustandのset関数
- * @param get Zustandのget関数
- * @returns SocketSlice
+ * SocketSliceを作成する関数
+ * rootStoreに統合するためのファクトリ関数
  */
-export const createSocketSlice: StateCreator<
-  SocketSlice,
-  [],
-  [],
-  SocketSlice
-> = (set, get, _store) => ({
-  ...initialSocketState,
-  ...createSocketSliceActions(set, get, _store)
-});
-
-/**
- * ソケット状態を管理するZustandストア
- */
-export const useSocketStore = create<SocketSlice>()((...args) => ({
-  ...createSocketSlice(...args)
-}));
-
-// セレクターをエクスポート
-export { selectConnected, selectSocketId };
-
-// 型をエクスポート
-export type { SocketSlice }; 
+export const createSocketSlice = <T extends object>(
+  set: StoreApi<T>['setState'],
+  get: StoreApi<T>['getState'],
+  store: StoreApi<T>
+) => {
+  // スライスの初期化ログ
+  logger.info('SocketSliceを初期化します', {
+    component: 'SocketSlice',
+    action: 'init'
+  });
+  
+  // 状態とアクションを結合して返す
+  return {
+    ...initialSocketState,
+    ...createSocketSliceActions(set as any, get as any, store as any)
+  };
+}; 

@@ -59,6 +59,9 @@ export interface RootActions {
   // SocketSliceActions
   setConnected: SocketSlice['setConnected']
   setSocketId: SocketSlice['setSocketId']
+  setSubscription: SocketSlice['setSubscription']
+  unsubscribeAll: SocketSlice['unsubscribeAll']
+  getWebSocketStatus: SocketSlice['getWebSocketStatus']
   // SymbolSliceActions
   setCurrentSymbol: SymbolSlice['setCurrentSymbol']
   setExchangeType: SymbolSlice['setExchangeType']

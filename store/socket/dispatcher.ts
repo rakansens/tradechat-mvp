@@ -5,10 +5,14 @@
 // 更新: 2025-05-10 - より簡素なエクスポートと型アサーションの使用
 // 更新: 2025-05-14 - 型安全性の向上と循環参照の解決
 // 更新: 2025-05-14 - ソケットスライスの参照パスを修正
+// WebSocket接続監視と副作用の管理
 
 import { ExchangeType } from '@/types/api';
 import { Timeframe } from '@/types/chart';
 import { logger } from '@/utils/logger';
+import { getSocketService } from '@/services/socket';
+import { useRootStore } from '@/store/rootStore';
+import type { RootStore } from '@/store/rootStore';
 
 /**
  * ソケットイベントタイプ
@@ -181,4 +185,130 @@ export const storeEmit = <T extends SocketEvent>(event: T, payload: SocketPayloa
       error
     });
   }
-}; 
+};
+
+// 接続チェック用インターバルID
+let checkIntervalId: NodeJS.Timeout | null = null;
+// socketServiceのインスタンス
+let socketServiceInstance: any = null;
+
+/**
+ * WebSocket接続監視の初期化
+ * - 初回遅延初期化
+ * - 定期的な接続状態確認
+ * - アンロード時のクリーンアップ
+ */
+export const initializeSocketMonitoring = () => {
+  // ブラウザ環境でのみ実行
+  if (typeof window === 'undefined') return;
+
+  // 既に初期化済みの場合は何もしない
+  if (checkIntervalId !== null) return;
+
+  // 遅延初期化（アプリ起動直後にサービスが完全に初期化されるのを待つ）
+  setTimeout(async () => {
+    try {
+      // socketServiceを取得
+      socketServiceInstance = getSocketService();
+      
+      // 初期接続状態を設定
+      if (socketServiceInstance) {
+        // isConnectedメソッドが存在するか確認
+        const isConnected = typeof socketServiceInstance.isConnected === 'function' 
+          ? socketServiceInstance.isConnected()
+          : false;
+        
+        // ストアの状態を更新
+        const store = useRootStore.getState();
+        store.setConnected(isConnected);
+      }
+      
+      // 定期的にWebSocketの接続状態を確認（10秒間隔）
+      checkIntervalId = setInterval(() => {
+        try {
+          // socketServiceInstanceが初期化されていない場合は初期化
+          if (!socketServiceInstance) {
+            socketServiceInstance = getSocketService();
+          }
+          
+          if (!socketServiceInstance) {
+            logger.warn('socketServiceInstanceがまだ初期化されていません', {
+              component: 'SocketDispatcher',
+              action: 'checkWebSocketConnection'
+            });
+            return;
+          }
+          
+          // isConnectedメソッドが存在するか確認
+          const isConnected = typeof socketServiceInstance.isConnected === 'function'
+            ? socketServiceInstance.isConnected()
+            : (socketServiceInstance.webSocketClient?.isConnected 
+                ? socketServiceInstance.webSocketClient.isConnected() 
+                : false);
+          
+          const store = useRootStore.getState();
+          const currentConnected = store.connected;
+          
+          // 接続状態が変わった場合のみ更新
+          if (isConnected !== currentConnected) {
+            store.setConnected(isConnected);
+            
+            // 切断された場合は購読状態をリセット
+            if (!isConnected && typeof store.unsubscribeAll === 'function') {
+              store.unsubscribeAll();
+            }
+          }
+        } catch (error) {
+          logger.error(`WebSocket接続状態の確認中にエラーが発生しました: ${error}`, {
+            component: 'SocketDispatcher',
+            action: 'checkWebSocketConnection',
+            error
+          });
+        }
+      }, 10000); // 10秒ごとにチェック
+      
+      logger.info('WebSocket監視を初期化しました', {
+        component: 'SocketDispatcher',
+        action: 'initializeSocketMonitoring'
+      });
+    } catch (error) {
+      logger.error(`WebSocket監視の初期化に失敗しました: ${error}`, {
+        component: 'SocketDispatcher',
+        action: 'initializeSocketMonitoring',
+        error
+      });
+    }
+  }, 1000); // 1秒後に初期化開始
+
+  // クリーンアップ関数を登録
+  window.addEventListener('beforeunload', cleanupSocketMonitoring);
+};
+
+/**
+ * WebSocket接続監視のクリーンアップ
+ */
+export const cleanupSocketMonitoring = () => {
+  if (checkIntervalId) {
+    clearInterval(checkIntervalId);
+    checkIntervalId = null;
+  }
+  
+  // 購読を全て解除
+  const store = useRootStore.getState();
+  if (typeof store.unsubscribeAll === 'function') {
+    store.unsubscribeAll();
+  }
+  
+  logger.info('WebSocket監視をクリーンアップしました', {
+    component: 'SocketDispatcher',
+    action: 'cleanupSocketMonitoring'
+  });
+};
+
+// ブラウザ環境の場合、自動的に初期化
+if (typeof window !== 'undefined') {
+  // NextJSのHydrationエラーを防ぐため、ブラウザでのみ初期化
+  setTimeout(() => {
+    initializeSocketMonitoring();
+  }, 0);
+} 

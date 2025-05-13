@@ -5,7 +5,7 @@
 
 import { useOrderBookStore } from '@/store/market/useOrderBookStore';
 import { useSymbolStore } from '@/store/useSymbolStore';
-import { useWebSocketStore } from '@/store/useWebSocketStore';
+import { useSocketConnected } from '@/store/barrel';
 
 /**
  * オーダーブックコンポーネントで使用する全てのストアデータとアクションを取得するフック
@@ -23,7 +23,7 @@ export default function useOrderBookStores() {
   const currentSymbol = useSymbolStore(state => state.currentSymbol);
 
   // WebSocketStore
-  const wsConnected = useWebSocketStore(state => state.wsConnected);
+  const wsConnected = useSocketConnected();
 
   return {
     // OrderBookStoreデータ

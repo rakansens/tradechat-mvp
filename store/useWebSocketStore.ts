@@ -1,4 +1,5 @@
 // store/useWebSocketStore.ts
+/** @deprecated SocketSlice へ移行済み — 2025-05-13 */
 // 更新: useAppStoreから分離したWebSocket関連の状態と操作を管理するストア
 // 更新: 循環参照を解消するために、socketServiceの動的インポートを使用
 // 更新: getSocketService()を使用して初期化問題を解決

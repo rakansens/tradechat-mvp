@@ -3,6 +3,9 @@
 // 他のSliceも今後ここに追加していく
 // 更新: SymbolSliceのセレクターを追加
 
+// SocketSliceのセレクター
+export * from "./socket/selectors"
+
 // ChartDataSliceのセレクター
 export * from "./chart/data/selectors"
 

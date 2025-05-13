@@ -30,7 +30,10 @@ import { orderBookPropsSchema, validateOrderBookProps } from '@/lib/validations/
 import { useOrderBookStore } from '../../store/market/useOrderBookStore';
 import { useSymbolStore } from '../../store/useSymbolStore';
 import { getPrice, getAmount, normalizeOrderBookData } from '../../utils/orderbook-utils';
-import { useWebSocketStore } from '../../store/useWebSocketStore';
+import { useSocketConnected } from '@/store/barrel';
+import Decimal from 'decimal.js';
+import { BookEntry, OrderBookData } from '../../types/orderbook';
+import { Spinner } from '../ui/spinner';
 
 // 価格を表示するためのフォーマット関数
 const formatPrice = (price: number): string => {
@@ -78,7 +81,7 @@ export const OrderBook: React.FC<OrderBookPropsSchema> = (props) => {
   const currentSymbol = useSymbolStore(state => state.currentSymbol);
   const fetchOrderBook = useOrderBookStore((state) => state.fetchOrderBook);
   // WebSocketの接続状態を取得（無限ループを防ぐために個別のステートを取得）
-  const wsConnected = useWebSocketStore(state => state.wsConnected);
+  const wsConnected = useSocketConnected();
   const wsSubscribed = useOrderBookStore(state => state.wsSubscribed);
   const status = useMemo(() => ({
     connected: wsConnected,

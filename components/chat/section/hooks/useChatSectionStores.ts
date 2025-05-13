@@ -10,6 +10,7 @@
 import { 
   useEntryStore,
   useRootStore,
+  useChatStore,
   // メモ化されたセレクター
   selectMessages, 
   selectIsSearching,
@@ -27,6 +28,9 @@ import {
  * @returns チャットセクションで使用する状態とアクション
  */
 export const useChatSectionStores = () => {
+  // ChatStoreの状態を取得（後方互換性のため）
+  const chatStore = useChatStore();
+  
   // RootStoreから状態を取得
   const messages = useRootStore(selectMessages);
   const isLoading = useRootStore(selectIsSearching);
