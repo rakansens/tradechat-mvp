@@ -4,6 +4,8 @@
 // 更新: SymbolSliceのセレクターを追加
 // 更新: 2025-05-30 - 明示的にSymbolSliceの特殊なセレクターをエクスポート
 // 更新: 2025-05-30 - DataFetchSliceのセレクターを追加
+// 更新: 2025-06-01 - OrderBookStore統合に伴うセレクターを追加
+// 更新: 2025-06-01 - セレクターの名前衝突を解決
 
 // DataFetchSliceのセレクターを追加
 export * from "./dataFetch/selectors"
@@ -14,8 +16,11 @@ export * from "./socket/selectors"
 // ChartDataSliceのセレクター
 export * from "./chart/data/selectors"
 
-// ChartConfigSliceのセレクター
-export * from "./chart/config/selectors"
+// ChartConfigSliceのセレクターを選択的にエクスポート（名前衝突を回避）
+export {
+  selectChartType,
+  // selectExchangeTypeはシンボルスライスから取得
+} from "./chart/config/selectors"
 
 // RealTimeSliceのセレクター
 export * from "./chart/realTime/selectors"
@@ -26,13 +31,38 @@ export * from "./chart/drawingTool/selectors"
 // IndicatorSliceのセレクター
 export * from "./chart/indicator/selectors"
 
-// SymbolSliceのセレクター
-export * from "./symbol/selectors"
-
-// 特定のSymbolSliceセレクターを明示的にエクスポート（名前衝突防止のため）
+// MarketSliceのセレクターを選択的にエクスポート
 export {
-  selectSymbolCurrentSymbol,
-  selectSymbolExchangeType,
+  selectMarketCurrentSymbol,
+  selectTrades,
+  selectMarketStats,
+  selectSymbols,
+  selectIsDemoMode,
+  select24hVolume,
+  select24hPriceChangePercent
+} from './market/selectors';
+
+// OrderBookStore統合: 明示的にセレクターをエクスポート
+export {
+  selectOrderBook,
+  selectIsLoadingOrderBook,
+  selectOrderBookError,
+  selectOrderBookWsSubscribed,
+  selectOrderBookPollingInfo,
+  selectOrderBookPollingActive,
+  selectOrderBookLastPollTime,
+  selectBids,
+  selectAsks,
+  selectHighestBid,
+  selectLowestAsk,
+  selectSpread,
+  selectSpreadPercent
+} from './market/selectors';
+
+// SymbolSliceのセレクターを明示的にエクスポート
+export {
+  selectSymbolCurrentSymbol as selectCurrentSymbol,
+  selectSymbolExchangeType as selectExchangeType,
   selectSymbolList,
   selectFilteredSymbols,
   selectSymbolFilterOptions,
@@ -99,25 +129,4 @@ export {
   selectLayoutClass,
   selectHasModal,
   selectModalProps
-} from './ui/selectors'
-
-// Market Sliceのセレクターをエクスポート
-export {
-  selectMarketCurrentSymbol,
-  // selectExchangeType, // ChartConfigSliceに移行
-  selectOrderBook,
-  selectIsLoadingOrderBook,
-  selectOrderBookError,
-  selectTrades,
-  selectMarketStats,
-  selectSymbols,
-  selectIsDemoMode,
-  selectBids,
-  selectAsks,
-  selectHighestBid,
-  selectLowestAsk,
-  selectSpread,
-  selectSpreadPercent,
-  select24hVolume,
-  select24hPriceChangePercent
-} from './market/selectors' 
+} from './ui/selectors' 

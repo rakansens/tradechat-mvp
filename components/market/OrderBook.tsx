@@ -20,6 +20,7 @@
 // - WebSocketの状態管理を更新
 // - データフェッチロジックを新しいストア構造に合わせて更新
 // 更新: useSymbolStoreからrootStore経由のセレクタに移行
+// 更新: 2025-06-05 - useOrderBookStoreをuseRootStoreに統合
 
 'use client';
 
@@ -28,8 +29,13 @@ import { OrderBookEntry } from '../../types/market';
 import { cn, normalizeSymbol } from '../../lib/utils';
 import { theme } from '../../styles/colors';
 import { orderBookPropsSchema, validateOrderBookProps } from '@/lib/validations/market';
-import { useOrderBookStore } from '../../store/market/useOrderBookStore';
 import { useRootStore } from '../../store/rootStore';
+import { 
+  selectOrderBook, 
+  selectIsLoadingOrderBook, 
+  selectOrderBookError,
+  selectOrderBookWsSubscribed 
+} from '@/store/barrel';
 import { getPrice, getAmount, normalizeOrderBookData } from '../../utils/orderbook-utils';
 import { useSocketConnected } from '@/store/barrel';
 import Decimal from 'decimal.js';
@@ -75,15 +81,17 @@ export const OrderBook: React.FC<OrderBookPropsSchema> = (props) => {
     className,
     orderBookWidth = '33%'
   } = validationResult.success ? validationResult.data : props;
-  // 新しいドメインストアからデータを取得
-  const orderBook = useOrderBookStore(state => state.orderBook);
-  const isLoadingOrderBook = useOrderBookStore(state => state.isLoadingOrderBook);
-  const orderBookError = useOrderBookStore(state => state.orderBookError);
+  
+  // RootStoreからデータを取得
+  const orderBook = useRootStore(selectOrderBook);
+  const isLoadingOrderBook = useRootStore(selectIsLoadingOrderBook);
+  const orderBookError = useRootStore(selectOrderBookError);
   const currentSymbol = useRootStore(state => state.currentSymbol);
-  const fetchOrderBook = useOrderBookStore((state) => state.fetchOrderBook);
-  // WebSocketの接続状態を取得（無限ループを防ぐために個別のステートを取得）
+  const fetchOrderBook = useRootStore(state => state.fetchOrderBook);
+  
+  // WebSocketの接続状態を取得
   const wsConnected = useSocketConnected();
-  const wsSubscribed = useOrderBookStore(state => state.wsSubscribed);
+  const wsSubscribed = useRootStore(selectOrderBookWsSubscribed);
   const status = useMemo(() => ({
     connected: wsConnected,
     subscriptions: { orderbook: wsSubscribed }

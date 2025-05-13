@@ -7,6 +7,7 @@
 // 更新: 古いuseSymbolStoreを新しいrootStoreのSymbolSliceに置き換え
 // 更新: 2025-05-15 - useEntryStoreをuseRootStoreに置き換え
 // 更新: 2025-05-15 - useIndicatorStore, useDrawingToolStore, useRealTimeStoreNewをuseRootStoreに置き換え
+// 更新: 2025-06-05 - selectSymbolCurrentSymbol/selectSymbolExchangeTypeをselectCurrentSymbol/selectExchangeTypeに変更
 
 import {
   // ルートストアとセレクター
@@ -16,8 +17,8 @@ import {
 } from '@/store';
 // 各スライスのセレクターをインポート
 import { 
-  selectChartType,
-  selectExchangeType 
+  selectChartType
+  // selectExchangeTypeは削除し、barrelから統一してインポート
 } from '@/store/chart/config/selectors';
 import {
   selectChartData,
@@ -25,9 +26,10 @@ import {
   selectCurrentTimeFrame
 } from '@/store/chart/data/selectors';
 import { selectActiveTab } from '@/store/ui/selectors';
+// シンボル関連のセレクターをインポート
 import { 
-  selectSymbolCurrentSymbol,
-  selectSymbolExchangeType
+  selectCurrentSymbol,
+  selectExchangeType
 } from '@/store/barrel';
 // インジケーター関連のセレクターをインポート
 import {
@@ -53,8 +55,8 @@ import { EntrySliceState } from '@/store/entry/state';
  */
 export function useToolbarStores() {
   // SymbolStoreからSymbolSliceに移行
-  const currentSymbol = useRootStore(selectSymbolCurrentSymbol);
-  const exchangeType = useRootStore(selectSymbolExchangeType);
+  const currentSymbol = useRootStore(selectCurrentSymbol);
+  const exchangeType = useRootStore(selectExchangeType);
   const setCurrentSymbol = useRootStore(state => state.setCurrentSymbol);
   const setExchangeType = useRootStore(state => state.setExchangeType);
   

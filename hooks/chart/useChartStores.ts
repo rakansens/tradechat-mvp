@@ -6,6 +6,7 @@
  * - 2023-06-01: ChartContainer.tsxのリファクタリングに伴い作成
  * - 2023-07-10: 新しいrootStoreからのチャートデータを追加
  * - 更新: 古いuseSymbolStoreを新しいrootStoreのSymbolSliceに置き換え
+ * - 更新: 2025-06-05 - selectSymbolCurrentSymbol/selectSymbolExchangeTypeをselectCurrentSymbol/selectExchangeTypeに変更
  */
 
 // 古いインポートを削除
@@ -16,8 +17,8 @@ import {
   selectTimeframe, 
   selectChartType, 
   selectOHLCData,
-  selectSymbolCurrentSymbol,
-  selectSymbolExchangeType
+  selectCurrentSymbol,
+  selectExchangeType
 } from '@/store/barrel';
 import type { IndicatorType, DrawingToolType } from '@/types/store';
 
@@ -27,8 +28,8 @@ import type { IndicatorType, DrawingToolType } from '@/types/store';
  */
 export const useChartStores = () => {
   // シンボルストアからデータ取得（rootStoreのSymbolSliceから）
-  const currentSymbol = useRootStore(selectSymbolCurrentSymbol);
-  const exchangeType = useRootStore(selectSymbolExchangeType);
+  const currentSymbol = useRootStore(selectCurrentSymbol);
+  const exchangeType = useRootStore(selectExchangeType);
   const setCurrentSymbol = useRootStore(state => state.setCurrentSymbol);
   const setExchangeType = useRootStore(state => state.setExchangeType);
   

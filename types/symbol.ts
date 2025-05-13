@@ -43,3 +43,39 @@ export interface SymbolFilterOptions {
   /** お気に入りのみ表示 */
   favoritesOnly: boolean;
 }
+
+/**
+ * types/symbol.ts
+ * シンボル関連の型定義
+ * 
+ * 作成: 2025-06-05 - 古いuseSymbolStoreからの型定義を移行
+ */
+
+import { ExchangeType } from './api';
+
+// フィルターオプションの型定義
+export interface FilterOptions {
+  searchTerm: string;
+  quoteAsset: string;
+  favoritesOnly: boolean;
+}
+
+// シンボル変更履歴エントリの型定義
+export interface SymbolChangeHistoryEntry {
+  symbol: string;
+  exchangeType: ExchangeType;
+  timestamp: number;
+  source: string;
+}
+
+// シンボルスライスの状態型定義
+export interface SymbolSliceState {
+  currentSymbol: string;
+  exchangeType: ExchangeType;
+  symbols: any[]; // SymbolInfo[]
+  filteredSymbols: any[]; // SymbolInfo[]
+  isLoading: boolean;
+  error: string | null;
+  filterOptions: FilterOptions;
+  changeHistory: SymbolChangeHistoryEntry[];
+}

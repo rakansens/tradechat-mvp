@@ -1,6 +1,7 @@
 // store/market/selectors.ts
 // 更新: 基本セレクターとメモ化されたセレクターの明確な分離
 // 更新: 型安全性の向上のため、明示的な型定義を使用
+// 更新: 2025-06-01 - OrderBookStore統合のためのセレクター追加
 //
 // このファイルはZustandストアのパフォーマンスを向上させるためのセレクター関数を提供します。
 // 基本セレクターは単純なステート取得のみを行い、計算が必要なセレクターはメモ化されています。
@@ -8,6 +9,7 @@
 import { createSelector } from 'reselect';
 import type { OrderBookData, OrderBookEntry, TradeData, MarketStatsData, SymbolInfo } from '@/types/market';
 import type { ExchangeType } from '@/types/api';
+import type { OrderBookPollingInfo } from './state';
 
 // ==========================================
 // 基本セレクター
@@ -25,6 +27,8 @@ interface MarketStateBase {
   marketStats: MarketStatsData | null;
   symbols: SymbolInfo[];
   isDemoMode: boolean;
+  ws: { subscribed: boolean };
+  polling: OrderBookPollingInfo;
 }
 
 export const selectMarketCurrentSymbol = (state: { currentSymbol: string }) => state.currentSymbol;
@@ -36,6 +40,12 @@ export const selectTrades = (state: { trades: TradeData[] }) => state.trades;
 export const selectMarketStats = (state: { marketStats: MarketStatsData | null }) => state.marketStats;
 export const selectSymbols = (state: { symbols: SymbolInfo[] }) => state.symbols;
 export const selectIsDemoMode = (state: { isDemoMode: boolean }) => state.isDemoMode;
+
+// OrderBookStore統合: WebSocketとポーリング関連セレクター
+export const selectOrderBookWsSubscribed = (state: { ws: { subscribed: boolean } }) => state.ws.subscribed;
+export const selectOrderBookPollingInfo = (state: { polling: OrderBookPollingInfo }) => state.polling;
+export const selectOrderBookPollingActive = (state: { polling: OrderBookPollingInfo }) => state.polling.active;
+export const selectOrderBookLastPollTime = (state: { polling: OrderBookPollingInfo }) => state.polling.lastPollTime;
 
 // ==========================================
 // メモ化されたセレクター

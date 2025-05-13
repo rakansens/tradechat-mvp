@@ -6,6 +6,7 @@
  * - 2023-06-04: ChartSection.tsxのリファクタリングに伴い作成
  * - 2025-05-20: 古いストア参照をuseRootStoreとセレクターに置き換え
  * - 更新: 古いuseSymbolStoreを新しいrootStoreのSymbolSliceに置き換え
+ * - 更新: 2025-06-05 - selectSymbolCurrentSymbol/selectSymbolExchangeTypeをselectCurrentSymbol/selectExchangeTypeに変更
  */
 
 import { useMemo } from 'react';
@@ -24,8 +25,8 @@ import {
 } from '@/store/chart/data/selectors';
 import { selectChartType } from '@/store/chart/config/selectors';
 import {
-  selectSymbolCurrentSymbol,
-  selectSymbolExchangeType
+  selectCurrentSymbol,
+  selectExchangeType
 } from '@/store/barrel';
 
 import type { Timeframe, ChartType } from '@/types/chart';
@@ -43,8 +44,8 @@ import { formatTimestamp } from '@/utils/chartUtils';
  */
 export const useChartSectionStores = () => {
   // SymbolSliceをrootStoreから取得
-  const currentSymbol = useRootStore(selectSymbolCurrentSymbol);
-  const exchangeType = useRootStore(selectSymbolExchangeType);
+  const currentSymbol = useRootStore(selectCurrentSymbol);
+  const exchangeType = useRootStore(selectExchangeType);
   const setCurrentSymbol = useRootStore(state => state.setCurrentSymbol);
   const setExchangeType = useRootStore(state => state.setExchangeType);
   

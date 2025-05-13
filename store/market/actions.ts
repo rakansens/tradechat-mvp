@@ -22,7 +22,10 @@ const marketService = {
       symbol,
       lastPrice: 0,
       priceChangePercent24h: 0,
-      volume24h: 0
+      volume24h: 0,
+      high24h: 0,
+      low24h: 0,
+      timestamp: Date.now()
     }
   }
 }
@@ -53,6 +56,14 @@ export interface MarketSliceActions {
   
   // その他設定
   setDemoMode: (isDemo: boolean) => void
+
+  // OrderBookStore統合: WebSocket関連
+  subscribeOrderBookWebSocket: () => void
+  unsubscribeOrderBookWebSocket: () => void
+
+  // OrderBookStore統合: オーダーブックポーリング関連
+  startOrderBookPolling: () => void
+  stopOrderBookPolling: () => void
 }
 
 // マーケットスライスのアクション作成関数
@@ -309,16 +320,17 @@ export const createMarketActions = (
         const state = get();
         if (!state.isPolling) return;
         
-        await Promise.all([
-          get().fetchOrderBook(),
-          get().fetchTrades(),
-          get().fetchMarketStats()
-        ]).catch(err => {
+        try {
+          // 各データを順番に取得
+          await state.currentSymbol && createMarketActions(set, get).fetchOrderBook();
+          await state.currentSymbol && createMarketActions(set, get).fetchTrades();
+          await state.currentSymbol && createMarketActions(set, get).fetchMarketStats();
+        } catch (err: any) {
           logger.error(`ポーリングエラー: ${err.message}`, {
             component: 'MarketSlice',
             action: 'pollData'
           });
-        });
+        }
       };
       
       // 最初のデータ取得を即座に実行
@@ -366,6 +378,24 @@ export const createMarketActions = (
       set((state) => {
         state.isDemoMode = isDemo
       })
+    },
+
+    // OrderBookStore統合: WebSocket関連
+    subscribeOrderBookWebSocket: () => {
+      // 実装が必要
+    },
+
+    unsubscribeOrderBookWebSocket: () => {
+      // 実装が必要
+    },
+
+    // OrderBookStore統合: オーダーブックポーリング関連
+    startOrderBookPolling: () => {
+      // 実装が必要
+    },
+
+    stopOrderBookPolling: () => {
+      // 実装が必要
     }
   };
 } 

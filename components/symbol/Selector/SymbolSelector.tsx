@@ -8,6 +8,7 @@
  * - 2025-05-14: ファイル名をindex.tsxからSymbolSelector.tsxに変更
  * - 2025-05-14: 不足している型定義を追加
  * - 2025-05-14: モック実装を実際の実装に置き換え
+ * - 2025-06-05: selectSymbolCurrentSymbolをselectCurrentSymbolに変更
  */
 
 "use client";
@@ -15,7 +16,7 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useRootStore } from '@/store/rootStore';
 import { 
-  selectSymbolCurrentSymbol, 
+  selectCurrentSymbol, 
   selectSymbolList, 
   selectFilteredSymbols, 
   selectIsLoadingSymbols
@@ -29,7 +30,7 @@ import FilterBar from './ui/FilterBar';
 import PopularList from './ui/PopularList';
 import SymbolList from './ui/SymbolList';
 import { ExchangeType } from '@/types/api';
-import { FilterOptions } from '@/store/useSymbolStore';
+import { FilterOptions } from '@/types/symbol';
 import { validateSymbolSelectorProps } from '@/lib/validations/symbol';
 import type { SymbolSelectorPropsSchema } from '@/lib/validations/symbol';
 
@@ -49,7 +50,7 @@ export const SymbolSelector: React.FC<SymbolSelectorProps> = ({
   className = '',
 }) => {
   // RootStoreからSymbolSliceの状態を取得
-  const currentSymbol = useRootStore(selectSymbolCurrentSymbol);
+  const currentSymbol = useRootStore(selectCurrentSymbol);
   const symbols = useRootStore(selectFilteredSymbols);
   const isLoading = useRootStore(selectIsLoadingSymbols);
   
@@ -119,17 +120,17 @@ const useFilterState = () => {
   
   // 検索語句のハンドラー
   const handleSearch = useCallback((term: string) => {
-    setFilterOptions(prev => ({ ...prev, searchTerm: term }));
+    setFilterOptions((prev: FilterOptions) => ({ ...prev, searchTerm: term }));
   }, []);
   
   // 基軸通貨フィルターのハンドラー
   const handleQuoteAssetFilter = useCallback((asset: string) => {
-    setFilterOptions(prev => ({ ...prev, quoteAsset: asset }));
+    setFilterOptions((prev: FilterOptions) => ({ ...prev, quoteAsset: asset }));
   }, []);
   
   // お気に入りフィルターのトグルハンドラー
   const handleFavoritesToggle = useCallback(() => {
-    setFilterOptions(prev => ({ ...prev, favoritesOnly: !prev.favoritesOnly }));
+    setFilterOptions((prev: FilterOptions) => ({ ...prev, favoritesOnly: !prev.favoritesOnly }));
   }, []);
   
   // フィルターリセットハンドラー

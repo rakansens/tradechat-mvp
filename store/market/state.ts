@@ -1,11 +1,20 @@
 // store/market/state.ts
 // 初期実装: マーケットスライスの状態と初期値を定義
+// 更新: 2025-06-01 - OrderBookStoreの状態を統合
 
 import type { ExchangeType } from '@/types/api'
 import type { OrderBookData, TradeData, MarketStatsData, SymbolInfo } from '@/types/market'
 
 // ポーリング情報の型定義
 export interface PollingInfo {
+  active: boolean
+  lastPollTime: number | null
+  interval: number
+  type: string
+}
+
+// オーダーブックポーリング情報の型定義
+export interface OrderBookPollingInfo {
   active: boolean
   lastPollTime: number | null
   interval: number
@@ -22,6 +31,14 @@ export interface MarketSliceState {
   orderBook: OrderBookData | null
   isLoadingOrderBook: boolean
   orderBookError: string | null
+  
+  // OrderBookStore統合: WebSocket関連
+  ws: {
+    subscribed: boolean
+  }
+  
+  // OrderBookStore統合: ポーリング情報
+  polling: OrderBookPollingInfo
   
   // 取引履歴関連
   trades: TradeData[]
@@ -57,6 +74,19 @@ export const initialMarketState: MarketSliceState = {
   orderBook: null,
   isLoadingOrderBook: false,
   orderBookError: null,
+  
+  // OrderBookStore統合: WebSocket関連
+  ws: {
+    subscribed: false
+  },
+  
+  // OrderBookStore統合: ポーリング情報
+  polling: {
+    active: false,
+    lastPollTime: null,
+    interval: 30000, // 30秒
+    type: 'orderbook'
+  },
   
   // 取引履歴関連
   trades: [],
