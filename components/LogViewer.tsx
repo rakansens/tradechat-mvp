@@ -7,106 +7,59 @@
 // 更新: ドメイン駆動設計ストア構造に対応
 // - useAppStoreからuseDebugStoreに移行
 // - デバッグ関連機能の分離
+// 更新: useLogsフックを使用してログ関連の処理をコンポーネントから分離
+// 更新: useDebugStoresフックを使用してストア参照を集約
+// 更新: useDebugPollingフックを使用してポーリング処理を集約
 
-import { useState, useEffect, useCallback } from 'react';
-import { getStoredLogs, clearStoredLogs, StoredLog } from '@/utils/logStorage';
+import { useState, useEffect } from 'react';
+import { StoredLog } from '@/utils/logStorage';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useDebugStore } from '@/store/useDebugStore';
-import { useSymbolStore } from '@/store/useSymbolStore';
-import { cacheService } from '@/services/cache';
-import { requestHistoryService } from '@/services/history';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { useLogs, useDebugStores, useDebugPolling } from '@/hooks/debug';
 
 export default function LogViewer() {
-  const [logs, setLogs] = useState<StoredLog[]>([]);
   const [activeTab, setActiveTab] = useState<'all' | 'error' | 'warn' | 'debug'>('all');
-  const [refreshInterval, setRefreshInterval] = useState<number | null>(null);
   const [activeFetches, setActiveFetches] = useState<any[]>([]);
   const [pollingStatus, setPollingStatus] = useState<any>({});
   const [symbolHistory, setSymbolHistory] = useState<any[]>([]);
   const [cacheStats, setCacheStats] = useState<any>({});
   const [requestHistory, setRequestHistory] = useState<any[]>([]);
   
-  // ドメインストアからデバッグ関連の状態と関数を取得
-  const isDebugMode = useDebugStore(state => state.isDebugMode);
-  const toggleDebugMode = useDebugStore(state => state.toggleDebugMode);
-  const getActiveFetchesInfo = useDebugStore(state => state.getActiveFetchesInfo);
-  const getPollingStatus = useDebugStore(state => state.getPollingStatus);
-  // シンボル変更履歴はシンボルストアから取得
-  const getSymbolChangeHistory = useSymbolStore(state => state.getSymbolChangeHistory);
+  // useLogsフックを使用してログ管理機能を取得
+  const { logs, refreshLogs, handleClearLogs } = useLogs(activeTab);
   
-  // デバッグ情報を更新する関数
-  const refreshDebugInfo = useCallback(() => {
-    if (isDebugMode) {
-      // AppStoreからデバッグ情報を取得
-      setActiveFetches(getActiveFetchesInfo());
-      setPollingStatus(getPollingStatus());
-      setSymbolHistory(getSymbolChangeHistory());
-      
-      // 新しいサービスからデバッグ情報を取得
-      try {
-        setCacheStats(cacheService.getStats());
-        setRequestHistory(requestHistoryService.getHistory());
-      } catch (e) {
-        console.error('Failed to get debug info from services', e);
-      }
-    }
-  }, [isDebugMode, getActiveFetchesInfo, getPollingStatus, getSymbolChangeHistory]);
+  // useDebugStoresフックを使用してデバッグ関連機能を取得
+  const { isDebugMode, toggleDebugMode, refreshDebugInfo } = useDebugStores();
   
-  // コンポーネントマウント時とタブ切り替え時にログを取得
+  // デバッグ情報を表示に適用する関数
+  const updateDebugDisplay = () => {
+    const debugInfo = refreshDebugInfo();
+    setActiveFetches(debugInfo.activeFetches);
+    setPollingStatus(debugInfo.pollingStatus);
+    setSymbolHistory(debugInfo.symbolHistory);
+    setCacheStats(debugInfo.cacheStats);
+    setRequestHistory(debugInfo.requestHistory);
+  };
+  
+  // useDebugPollingフックを使用してポーリングを管理
+  useDebugPolling({
+    isDebugMode,
+    refreshFunctions: [refreshLogs, updateDebugDisplay],
+    interval: 2000
+  });
+  
+  // コンポーネントマウント時に初回データ取得
   useEffect(() => {
     refreshLogs();
-    refreshDebugInfo();
-  }, [activeTab, refreshDebugInfo]);
-  
-  // ログを取得して状態を更新
-  const refreshLogs = () => {
-    const allLogs = getStoredLogs();
-    
-    // タブに応じてフィルタリング
-    let filteredLogs = allLogs;
-    if (activeTab === 'error') {
-      filteredLogs = allLogs.filter(log => log.level === 'error');
-    } else if (activeTab === 'warn') {
-      filteredLogs = allLogs.filter(log => log.level === 'warn');
-    }
-    
-    setLogs(filteredLogs);
-  };
-  
-  // 定期的な更新を設定
-  useEffect(() => {
-    if (isDebugMode) {
-      const intervalId = setInterval(() => {
-        refreshLogs();
-        refreshDebugInfo();
-      }, 2000); // 2秒ごとに更新
-      
-      setRefreshInterval(intervalId as unknown as number);
-      
-      return () => {
-        if (intervalId) clearInterval(intervalId);
-      };
-    } else {
-      if (refreshInterval) {
-        clearInterval(refreshInterval);
-        setRefreshInterval(null);
-      }
-    }
-  }, [isDebugMode, refreshDebugInfo]);
-  
-  // ログをクリア
-  const handleClearLogs = () => {
-    clearStoredLogs();
-    setLogs([]);
-  };
+    updateDebugDisplay();
+  }, []);
   
   // ログレベルに応じたバッジの色を返す
   const getBadgeVariant = (level: string) => {
