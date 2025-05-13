@@ -1,7 +1,14 @@
 /**
  * utils/logger.ts
  * アプリケーション全体で使用するロガーユーティリティ
+ * 
+ * 更新履歴:
+ * - 2025-05-13: クライアントサイドでの互換性を向上
  */
+
+// 環境検出
+const isBrowser = typeof window !== 'undefined';
+const isServer = !isBrowser;
 
 // ログレベルの定義
 export enum LogLevel {
@@ -12,7 +19,7 @@ export enum LogLevel {
 }
 
 // 現在のログレベル（環境変数から取得、デフォルトはINFO）
-const currentLogLevel = process.env.LOG_LEVEL 
+const currentLogLevel = (isServer && process.env.LOG_LEVEL)
   ? parseInt(process.env.LOG_LEVEL, 10) 
   : LogLevel.INFO;
 
@@ -78,8 +85,18 @@ function formatLogMessage(
  * @param logMessage ログメッセージオブジェクト
  */
 function outputLog(logMessage: LogMessage): void {
+  // クライアント側で出力しない条件
+  if (isBrowser && logMessage.level > LogLevel.WARN) {
+    return;
+  }
+  
   // 現在のログレベルよりも高いレベルのログは出力しない
   if (logMessage.level > currentLogLevel) {
+    return;
+  }
+  
+  // コンソールが存在しない環境での対策
+  if (typeof console === 'undefined') {
     return;
   }
   
@@ -118,18 +135,37 @@ function outputLog(logMessage: LogMessage): void {
     logMessage.message
   ].filter(Boolean).join(' ');
   
-  // ログ出力
-  if (logMessage.error) {
-    logMethod(baseMessage, '\nError:', logMessage.error);
-  } else if (logMessage.data) {
-    logMethod(baseMessage, '\nData:', logMessage.data);
-  } else {
-    logMethod(baseMessage);
+  try {
+    // ログ出力
+    if (logMessage.error) {
+      logMethod(baseMessage, '\nError:', logMessage.error);
+    } else if (logMessage.data) {
+      logMethod(baseMessage, '\nData:', logMessage.data);
+    } else {
+      logMethod(baseMessage);
+    }
+    
+    // 開発環境では詳細なログをコンソールに出力
+    if (isServer && process.env.NODE_ENV === 'development' && logMessage.level <= LogLevel.DEBUG) {
+      console.dir(logMessage, { depth: null, colors: true });
+    }
+  } catch (e) {
+    // コンソール出力に失敗した場合は無視（クライアント側での互換性のため）
   }
-  
-  // 開発環境では詳細なログをコンソールに出力
-  if (process.env.NODE_ENV === 'development' && logMessage.level <= LogLevel.DEBUG) {
-    console.dir(logMessage, { depth: null, colors: true });
+}
+
+/**
+ * 安全なログ実行ラッパー
+ * クライアントサイドでの例外をキャッチするための関数
+ */
+function safeExecute(fn: Function, ...args: any[]): void {
+  try {
+    fn(...args);
+  } catch (e) {
+    // クライアントサイドでのログエラーを抑制
+    if (isBrowser && console && console.error) {
+      console.error('Logger error:', e);
+    }
   }
 }
 
@@ -145,8 +181,10 @@ export const logger = {
    * @param meta メタデータ（オプション）
    */
   error(message: string, error?: any, meta?: { component?: string; action?: string; [key: string]: any }): void {
-    const logMessage = formatLogMessage(LogLevel.ERROR, message, error, meta);
-    outputLog(logMessage);
+    safeExecute(() => {
+      const logMessage = formatLogMessage(LogLevel.ERROR, message, error, meta);
+      outputLog(logMessage);
+    });
   },
   
   /**
@@ -156,8 +194,10 @@ export const logger = {
    * @param meta メタデータ（オプション）
    */
   warn(message: string, meta?: { component?: string; action?: string; [key: string]: any }): void {
-    const logMessage = formatLogMessage(LogLevel.WARN, message, undefined, meta);
-    outputLog(logMessage);
+    safeExecute(() => {
+      const logMessage = formatLogMessage(LogLevel.WARN, message, undefined, meta);
+      outputLog(logMessage);
+    });
   },
   
   /**
@@ -167,8 +207,10 @@ export const logger = {
    * @param meta メタデータ（オプション）
    */
   info(message: string, meta?: { component?: string; action?: string; [key: string]: any }): void {
-    const logMessage = formatLogMessage(LogLevel.INFO, message, undefined, meta);
-    outputLog(logMessage);
+    safeExecute(() => {
+      const logMessage = formatLogMessage(LogLevel.INFO, message, undefined, meta);
+      outputLog(logMessage);
+    });
   },
   
   /**
@@ -178,8 +220,10 @@ export const logger = {
    * @param meta メタデータ（オプション）
    */
   debug(message: string, meta?: { component?: string; action?: string; [key: string]: any }): void {
-    const logMessage = formatLogMessage(LogLevel.DEBUG, message, undefined, meta);
-    outputLog(logMessage);
+    safeExecute(() => {
+      const logMessage = formatLogMessage(LogLevel.DEBUG, message, undefined, meta);
+      outputLog(logMessage);
+    });
   },
   
   /**

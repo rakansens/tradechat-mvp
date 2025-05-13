@@ -5,6 +5,7 @@
 // 更新: 2025-05-10 - より簡素なエクスポートと型アサーションの使用
 // 更新: 2025-05-14 - 型安全性の向上と循環参照の解決
 // 更新: 2025-05-14 - ソケットスライスの参照パスを修正
+// 更新: 2025-05-14 - 動的インポートを最適化して、Webpackの警告を解消
 // WebSocket接続監視と副作用の管理
 
 import { ExchangeType } from '@/types/api';
@@ -13,6 +14,23 @@ import { logger } from '@/utils/logger';
 import { getSocketService } from '@/services/socket';
 import { useRootStore } from '@/store/rootStore';
 import type { RootStore } from '@/store/rootStore';
+
+// 循環参照を避けるための前方参照型
+type SymbolStoreType = {
+  setCurrentSymbol: (symbol: string) => void;
+  setExchangeType: (type: ExchangeType) => void;
+  currentSymbol: string;
+};
+
+type ChartDataStoreType = {
+  updateTimeFrame: (timeframe: Timeframe) => void;
+};
+
+type DataServiceType = {
+  chartDataService: {
+    clearCacheOnSymbolChange: (symbol: string) => void;
+  };
+};
 
 /**
  * ソケットイベントタイプ
@@ -36,62 +54,29 @@ export type SocketPayload<T extends SocketEvent> =
   never;
 
 /**
- * モジュールを動的にインポートして安全に関数を呼び出す
- * @param modulePath インポートするモジュールのパス
- * @param action 実行するアクション
- * @param payload アクションに渡すデータ
- * @param fieldPath モジュール内で使用するフィールドパス
- * @returns 成功したかどうか
+ * ストアのパスを明示的に指定して、動的インポートを行う
+ * @param storePath ストアのパス
+ * @returns ストアのPromise
  */
-const importAndCall = async <T>(
-  modulePath: string,
-  action: string,
-  payload: any,
-  fieldPath: string
-): Promise<boolean> => {
+const importStore = async <T>(storePath: string): Promise<T | null> => {
   try {
-    const module = await import(modulePath);
-    logger.debug(`Socket Dispatcher: ${modulePath} 読み込み成功 (${action})`, {
-      component: 'SocketDispatcher'
-    });
-    
-    // フィールドパスからオブジェクトとプロパティを取得
-    const parts = fieldPath.split('.');
-    let obj = module;
-    
-    // ネストされたプロパティにアクセス
-    for (let i = 0; i < parts.length - 1; i++) {
-      obj = obj[parts[i]];
-      if (!obj) {
-        logger.error(`Socket Dispatcher: ${fieldPath} が見つかりません`, {
-          component: 'SocketDispatcher',
-          path: parts.slice(0, i + 1).join('.')
-        });
-        return false;
-      }
+    // 明示的に各ストアへのパスを指定
+    if (storePath === '@/store/useSymbolStore') {
+      return (await import('@/store/useSymbolStore')).useSymbolStore.getState() as T;
+    } else if (storePath === '@/store/chart/useChartDataStore') {
+      return (await import('@/store/chart/useChartDataStore')).useChartDataStore.getState() as T;
+    } else if (storePath === '@/services/data') {
+      return await import('@/services/data') as unknown as T;
+    } else if (storePath === '@/store/socket/index') {
+      return (await import('@/store/rootStore')).useRootStore.getState() as T;
     }
-    
-    // 最後のプロパティは関数または取得メソッド
-    const propName = parts[parts.length - 1];
-    const fn = obj[propName];
-    
-    if (typeof fn === 'function') {
-      fn(payload);
-      return true;
-    } else {
-      logger.error(`Socket Dispatcher: ${fieldPath} は関数ではありません`, {
-        component: 'SocketDispatcher',
-        type: typeof fn
-      });
-      return false;
-    }
+    return null;
   } catch (e) {
-    logger.error(`Socket Dispatcher: ${modulePath} 読み込み/実行エラー (${action})`, {
+    logger.error(`インポートエラー: ${storePath}`, {
       component: 'SocketDispatcher',
-      error: e,
-      payload
+      error: e
     });
-    return false;
+    return null;
   }
 };
 
@@ -111,64 +96,51 @@ export const storeEmit = <T extends SocketEvent>(event: T, payload: SocketPayloa
     switch (event) {
       case 'symbol':
         // シンボル変更イベント
-        importAndCall(
-          '@/store/useSymbolStore',
-          'setCurrentSymbol',
-          payload as string,
-          'useSymbolStore.getState().setCurrentSymbol'
-        );
+        importStore<SymbolStoreType>('@/store/useSymbolStore').then(store => {
+          if (store) {
+            store.setCurrentSymbol(payload as string);
+          }
+        });
         break;
         
       case 'exchangeType':
         // 取引タイプ変更イベント
-        importAndCall(
-          '@/store/useSymbolStore',
-          'setExchangeType',
-          payload as ExchangeType,
-          'useSymbolStore.getState().setExchangeType'
-        );
+        importStore<SymbolStoreType>('@/store/useSymbolStore').then(store => {
+          if (store) {
+            store.setExchangeType(payload as ExchangeType);
+          }
+        });
         break;
         
       case 'timeframe':
         // 時間足変更イベント
-        importAndCall(
-          '@/store/chart/useChartDataStore',
-          'updateTimeFrame',
-          payload as Timeframe,
-          'useChartDataStore.getState().updateTimeFrame'
-        )
-          .then(success => {
-            if (success) {
-              // キャッシュもクリアする
-              import('@/services/data').then(module => {
-                const { chartDataService } = module;
-                import('@/store/useSymbolStore').then(symbolModule => {
-                  const currentSymbol = symbolModule.useSymbolStore.getState().currentSymbol;
-                  chartDataService.clearCacheOnSymbolChange(currentSymbol);
+        importStore<ChartDataStoreType>('@/store/chart/useChartDataStore').then(store => {
+          if (store) {
+            store.updateTimeFrame(payload as Timeframe);
+            
+            // キャッシュもクリアする
+            importStore<DataServiceType>('@/services/data').then(dataService => {
+              if (dataService) {
+                importStore<SymbolStoreType>('@/store/useSymbolStore').then(symbolStore => {
+                  if (symbolStore) {
+                    const currentSymbol = symbolStore.currentSymbol;
+                    dataService.chartDataService.clearCacheOnSymbolChange(currentSymbol);
+                  }
                 });
-              });
-            }
-          });
+              }
+            });
+          }
+        });
         break;
         
       case 'connected':
         // 接続状態変更イベント
-        importAndCall(
-          '@/store/socket/index',
-          'setConnected',
-          payload as boolean,
-          'useSocketStore.getState().setConnected'
-        );
+        useRootStore.getState().setConnected(payload as boolean);
         break;
         
       case 'socketId':
         // ソケットID変更イベント
-        importAndCall(
-          '@/store/socket/index',
-          'setSocketId',
-          payload as string,
-          'useSocketStore.getState().setSocketId'
-        );
+        useRootStore.getState().setSocketId(payload as string);
         break;
         
       default:
@@ -248,61 +220,67 @@ export const initializeSocketMonitoring = () => {
           
           const store = useRootStore.getState();
           const currentConnected = store.connected;
-          
-          // 接続状態が変わった場合のみ更新
-          if (isConnected !== currentConnected) {
+
+          // 接続状態が変化した場合のみ更新
+          if (currentConnected !== isConnected) {
             store.setConnected(isConnected);
-            
-            // 切断された場合は購読状態をリセット
-            if (!isConnected && typeof store.unsubscribeAll === 'function') {
-              store.unsubscribeAll();
-            }
           }
         } catch (error) {
-          logger.error(`WebSocket接続状態の確認中にエラーが発生しました: ${error}`, {
+          logger.error('WebSocket接続状態チェック中にエラーが発生しました', {
             component: 'SocketDispatcher',
             action: 'checkWebSocketConnection',
             error
           });
         }
-      }, 10000); // 10秒ごとにチェック
+      }, 10 * 1000); // 10秒ごとに確認
       
-      logger.info('WebSocket監視を初期化しました', {
-        component: 'SocketDispatcher',
-        action: 'initializeSocketMonitoring'
+      // アンロード時にクリーンアップ
+      window.addEventListener('beforeunload', () => {
+        if (checkIntervalId !== null) {
+          clearInterval(checkIntervalId);
+          checkIntervalId = null;
+        }
+
+        // ストアのアンサブスクライブ
+        if (useRootStore) {
+          const store = useRootStore.getState();
+          // すべての購読を解除
+          if (typeof store.unsubscribeAll === 'function') {
+            store.unsubscribeAll();
+          }
+        }
       });
+      
     } catch (error) {
-      logger.error(`WebSocket監視の初期化に失敗しました: ${error}`, {
+      logger.error('Socket監視の初期化中にエラーが発生しました', {
         component: 'SocketDispatcher',
         action: 'initializeSocketMonitoring',
         error
       });
     }
-  }, 1000); // 1秒後に初期化開始
-
-  // クリーンアップ関数を登録
-  window.addEventListener('beforeunload', cleanupSocketMonitoring);
+  }, 1000); // 1秒後に初期化
 };
 
 /**
  * WebSocket接続監視のクリーンアップ
  */
 export const cleanupSocketMonitoring = () => {
-  if (checkIntervalId) {
+  // ブラウザ環境でのみ実行
+  if (typeof window === 'undefined') return;
+  
+  if (checkIntervalId !== null) {
     clearInterval(checkIntervalId);
     checkIntervalId = null;
   }
   
-  // 購読を全て解除
-  const store = useRootStore.getState();
-  if (typeof store.unsubscribeAll === 'function') {
-    store.unsubscribeAll();
+  // ストアのアンサブスクライブ
+  if (useRootStore) {
+    const store = useRootStore.getState();
+    // すべての購読を解除
+    if (typeof store.unsubscribeAll === 'function') {
+      store.unsubscribeAll();
+    }
   }
-  
-  logger.info('WebSocket監視をクリーンアップしました', {
-    component: 'SocketDispatcher',
-    action: 'cleanupSocketMonitoring'
-  });
 };
 
 // ブラウザ環境の場合、自動的に初期化
