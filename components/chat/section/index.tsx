@@ -6,6 +6,8 @@
  * - 2023-06-10: ChatSection.tsxのリファクタリングに伴い作成
  * - 2025-05-20: マルチスレッド機能のサポートを追加
  * - 2025-05-21: UIUXを既存デザインに合わせ、サイドバーのトグル表示を実装
+ * - 2025-05-21: サイドバー閉時にコンパクトなアイコンバーを表示するよう変更
+ * - 2025-05-21: ChatGPTライクなUIに調整、サイドバー表示を改善
  */
 
 "use client"
@@ -17,13 +19,14 @@ import ChatWindow from "@/components/chat/ChatWindow"
 import { theme } from "@/styles/colors"
 import { useChatSectionStores, useQuickCommands } from "@/hooks/chat"
 import { Sidebar } from "@/components/chat/sidebar"
-import { Menu, MessageSquare, ChevronLeft, PanelLeftClose } from "lucide-react"
+import { MessageSquare, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Sheet,
   SheetContent,
   SheetTrigger,
 } from "@/components/ui/sheet"
+import NewThreadModal from "@/components/chat/modals/NewThreadModal"
 
 // UIコンポーネント
 import Header from "./ui/Header"
@@ -79,11 +82,34 @@ export default function ChatSection({
   const [isMounted, setIsMounted] = useState(false);
   
   // サイドバーの表示状態
-  const [sidebarVisible, setSidebarVisible] = useState(true);
+  const [sidebarVisible, setSidebarVisible] = useState(false);
+  
+  // 新規会話モーダルの表示状態
+  const [isModalOpen, setIsModalOpen] = useState(false);
   
   // トグルサイドバー
   const toggleSidebar = () => {
     setSidebarVisible(!sidebarVisible);
+  };
+  
+  // サイドバーを閉じる
+  const closeSidebar = () => {
+    setSidebarVisible(false);
+  };
+  
+  // 新規会話作成モーダルを開く
+  const openNewThreadModal = () => {
+    setIsModalOpen(true);
+  };
+  
+  // 新規会話作成後のコールバック
+  const onNewThreadCreated = (newThread: any) => {
+    // イベントを発行して会話の切り替えを通知
+    window.dispatchEvent(new CustomEvent('conversationCreated', { 
+      detail: { conversationId: newThread.id } 
+    }));
+    
+    setIsModalOpen(false);
   };
   
   useEffect(() => {
@@ -95,42 +121,56 @@ export default function ChatSection({
       <Card className="flex-1 flex flex-col overflow-hidden border-0 rounded-none shadow-none" style={{ backgroundColor: theme.background.secondary }}>
         {/* マルチスレッドチャットUI */}
         <div className="flex h-full">
-          {/* モバイル用サイドバートリガー */}
-          {isMounted && !sidebarVisible && (
+          {/* モバイル用サイドバートリガー - モバイル時のみ表示 */}
+          {isMounted && (
             <div className="md:hidden fixed top-20 left-2 z-50">
               <Sheet>
                 <SheetTrigger asChild>
-                  <Button variant="outline" size="icon">
-                    <Menu className="h-5 w-5" />
+                  <Button variant="outline" size="icon" className="bg-[#1e2130] border-none hover:bg-[#2d3142]">
+                    <MessageSquare className="h-5 w-5" />
                     <span className="sr-only">サイドバーを開く</span>
                   </Button>
                 </SheetTrigger>
                 <SheetContent side="left" className="p-0 w-[280px]">
-                  <Sidebar />
+                  <Sidebar onClose={closeSidebar} />
                 </SheetContent>
               </Sheet>
             </div>
           )}
 
-          {/* デスクトップ用サイドバー（トグル可能） */}
-          {isMounted && (
-            <div className={`${sidebarVisible ? 'block' : 'hidden'} md:block border-r bg-[#1e2130] transition-all ease-in-out duration-300`} style={{ width: sidebarVisible ? '280px' : '0' }}>
-              <Sidebar />
+          {/* デスクトップ用 - 左端アイコンバー */}
+          {isMounted && !sidebarVisible && (
+            <div className="hidden md:flex flex-col items-center justify-start w-[68px] h-full bg-[#1e2130] border-r border-gray-800">
+              {/* 新規会話ボタン */}
+              <div className="mt-5 mb-4">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={openNewThreadModal}
+                  className="w-10 h-10 rounded-full bg-purple-600 hover:bg-purple-700 flex items-center justify-center"
+                >
+                  <Plus className="h-5 w-5 text-white" />
+                </Button>
+              </div>
+              
+              {/* 会話履歴ボタン */}
+              <div className="mb-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={toggleSidebar}
+                  className="w-10 h-10 rounded-full bg-[#2d3142] hover:bg-[#383f55] flex items-center justify-center"
+                >
+                  <MessageSquare className="h-5 w-5 text-gray-300" />
+                </Button>
+              </div>
             </div>
           )}
-
-          {/* サイドバートグルボタン（デスクトップ用） */}
-          {isMounted && (
-            <div className="hidden md:block h-8 w-8 absolute top-[70px] z-10 cursor-pointer" 
-                 style={{ left: sidebarVisible ? '290px' : '10px' }}
-                 onClick={toggleSidebar}>
-              <Button variant="ghost" size="icon" className="rounded-full bg-[#2d3142]">
-                {sidebarVisible ? (
-                  <PanelLeftClose className="h-4 w-4" />
-                ) : (
-                  <MessageSquare className="h-4 w-4" />
-                )}
-              </Button>
+          
+          {/* サイドバー（表示時のみ） */}
+          {isMounted && sidebarVisible && (
+            <div className="hidden md:block w-[280px] h-full">
+              <Sidebar onClose={closeSidebar} />
             </div>
           )}
 
@@ -169,6 +209,13 @@ export default function ChatSection({
           </div>
         </div>
       </Card>
+      
+      {/* 新規スレッド作成モーダル */}
+      <NewThreadModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onThreadCreated={onNewThreadCreated}
+      />
     </div>
   );
 } 

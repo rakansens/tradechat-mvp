@@ -3,12 +3,12 @@
 // components/chat/sidebar/index.tsx
 // チャットサイドバーコンポーネント
 // 作成日: 2025/5/21
-// 更新日: 2025/5/21 - UIUXを既存デザインに合わせて作成
+// 更新日: 2025/5/21 - ChatGPTライクなUIUXに合わせて更新
 
 import { useState, useEffect } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { Plus, MessageSquare, Loader2, Search } from 'lucide-react'
+import { Plus, MessageSquare, Loader2, Search, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import NewThreadModal from '@/components/chat/modals/NewThreadModal'
 import { Input } from '@/components/ui/input'
@@ -19,7 +19,11 @@ type Conversation = {
   updated_at: string
 }
 
-export function Sidebar() {
+interface SidebarProps {
+  onClose?: () => void;
+}
+
+export function Sidebar({ onClose }: SidebarProps = {}) {
   const router = useRouter()
   const pathname = usePathname()
   const [conversations, setConversations] = useState<Conversation[]>([])
@@ -52,6 +56,17 @@ export function Sidebar() {
   // マウント時に会話一覧を取得
   useEffect(() => {
     fetchConversations()
+    
+    // 会話作成イベントのリスナーを追加
+    const handleConversationCreated = (event: CustomEvent<{conversationId: string}>) => {
+      fetchConversations(); // 会話リストを更新
+    };
+    
+    window.addEventListener('conversationCreated', handleConversationCreated as EventListener);
+    
+    return () => {
+      window.removeEventListener('conversationCreated', handleConversationCreated as EventListener);
+    };
   }, [])
 
   // 会話の並び替え（更新日時の新しい順）
@@ -85,6 +100,11 @@ export function Sidebar() {
       window.dispatchEvent(new CustomEvent('conversationChanged', { 
         detail: { conversationId } 
       }))
+      
+      // サイドバーを閉じる（モバイル対応）
+      if (onClose) {
+        onClose();
+      }
     }
   }
 
@@ -111,12 +131,30 @@ export function Sidebar() {
     return '数秒前';
   };
 
+  // サイドバーを閉じる（折りたたむ）処理
+  const handleClose = () => {
+    if (onClose) {
+      onClose();
+    }
+  };
+
   return (
     <div className="flex h-full w-full flex-col bg-[#1e2130]">
       {/* ヘッダー */}
-      <div className="flex h-14 items-center p-4 border-b border-gray-800">
-        <MessageSquare className="h-5 w-5 mr-2" />
-        <h2 className="font-medium">会話履歴</h2>
+      <div className="relative flex h-14 items-center px-4 border-b border-gray-800">
+        <div className="flex items-center">
+          <MessageSquare className="h-5 w-5 mr-2 text-gray-300" />
+          <h2 className="font-medium text-gray-200">会話履歴</h2>
+        </div>
+        
+        {/* 閉じるボタン */}
+        <button
+          onClick={handleClose}
+          className="absolute right-3 p-1.5 rounded-full hover:bg-gray-700"
+          aria-label="サイドバーを閉じる"
+        >
+          <X className="h-4 w-4 text-gray-400" />
+        </button>
       </div>
 
       {/* 検索フォーム */}
@@ -125,7 +163,7 @@ export function Sidebar() {
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input
             placeholder="会話を検索..."
-            className="pl-9 bg-[#262a37] border-gray-700"
+            className="pl-9 bg-[#262a37] border-gray-700 focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -136,7 +174,7 @@ export function Sidebar() {
       <div className="px-3 mb-3">
         <Button
           onClick={openNewThreadModal}
-          className="w-full bg-purple-600 hover:bg-purple-700"
+          className="w-full bg-purple-600 hover:bg-purple-700 text-white"
         >
           <Plus className="h-4 w-4 mr-2" />
           新しい会話
@@ -144,19 +182,19 @@ export function Sidebar() {
       </div>
 
       {/* 会話一覧 */}
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-auto px-2">
         {isLoading ? (
           <div className="flex h-20 items-center justify-center">
-            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
           </div>
         ) : filteredConversations.length === 0 ? (
-          <div className="mt-8 flex flex-col items-center justify-center text-center text-sm text-muted-foreground">
+          <div className="mt-8 flex flex-col items-center justify-center text-center text-sm text-gray-400">
             <MessageSquare className="mb-2 h-10 w-10" />
             <p>会話がありません</p>
             <p className="mt-1">新しい会話を作成してください</p>
           </div>
         ) : (
-          <div className="space-y-1 px-1">
+          <div className="space-y-1">
             {filteredConversations.map((conversation) => (
               <button
                 key={conversation.id}
@@ -169,7 +207,7 @@ export function Sidebar() {
                 )}
               >
                 <div className="flex flex-col">
-                  <div className="font-medium truncate">{conversation.title}</div>
+                  <div className="font-medium truncate text-gray-200">{conversation.title}</div>
                   <div className="text-xs text-gray-400 mt-1">
                     {formatRelativeTime(conversation.updated_at)}
                   </div>
