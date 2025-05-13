@@ -66,26 +66,35 @@
   - メインのバレルファイル（types/index.ts）を更新して新しいnetworkドメインからの型をエクスポート
   - 後方互換性を確保しつつ移行を完了
 
+- **T-4** (完了): UI / Chat / Entry / Symbol ドメイン抽出を実施しました。
+  - それぞれのドメインディレクトリを更新:
+    - ui.ts → types/ui/base.ts
+    - chat.ts → types/chat/base.ts
+    - entry.ts → types/entry/base.ts
+    - symbol.ts → types/symbol/base.ts
+  - 各ドメインのバレルファイル（index.ts）を更新してすべての型をエクスポート
+  - 元のファイルを@deprecatedマークで再エクスポートに変更
+  - メインのバレルファイル（types/index.ts）を更新してすべてのドメインからの型をエクスポート
+  - 後方互換性を確保しつつ移行を完了
+
+- **T-5** (完了): 共通型の整理を実施しました。
+  - 共通型ディレクトリ内に新たなファイルを作成:
+    - common.ts → types/common/base.ts
+    - common-interfaces.ts → types/common/interfaces.ts
+  - バレルファイル（common/index.ts）を更新してすべての型をエクスポート
+  - 元のファイル（common.ts, common-interfaces.ts）を@deprecatedマークで再エクスポートに変更
+  - メインのバレルファイル（types/index.ts）を更新してcommonドメインからの型をエクスポート
+  - ESLintに非推奨ファイルの直接インポートを警告するルール（no-restricted-imports）を追加
+  - 後方互換性を確保しつつ移行を完了
+
 ## 進行中の作業
 
 - ユーザー認証関連のフックの整理
 - アプリケーション設定関連のフックの整理
 - 関数コンポーネントの最適化
-- **新規**: types ディレクトリリファクタリングの次フェーズ（T-4: UI / Chat / Entry / Symbol ドメイン抽出）の準備
+- **新規**: types ディレクトリリファクタリングの次フェーズ（T-6: バレル排除）の準備
 
 ### types ディレクトリリファクタリングプロジェクト（続き）
-
-- **T-4** (計画中): UI / Chat / Entry / Symbol 抽出
-  - それぞれ ui/, chat/, entry/, symbol/ フォルダーを作成し、関連型を移動
-  - 完了条件: grep "types/xyz.ts" が 0 件
-  - 影響範囲: 各コンポーネント & hooks
-
-- **T-5** (未開始): 共通 & 廃止掃除
-  - ルートに残った汎用型を common/ に集約
-  - 使われていない旧ファイルは _legacy-*.ts にリネームし @deprecated 付与
-  - ESLint no-restricted-imports で旧ファイル直接参照を禁止
-  - 完了条件: pnpm lint 緑
-  - 影響範囲: 全体
 
 - **T-6** (未開始): バレル排除（任意）
   - バレルをサブフォルダー再エクスポートのみに変更し、全コードを types/chart などへ書換え
