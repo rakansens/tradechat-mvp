@@ -2,6 +2,7 @@
 // 作成: チャート関連の型定義
 // 更新: lightweight-charts v5 互換の型定義を追加
 // 更新: Zodスキーマから生成した型定義と一致するように修正
+// 更新: OHLCData型をDateオブジェクトもサポートするように拡張
 
 /**
  * Nominal 型（lightweight-charts の型定義から）
@@ -52,14 +53,18 @@ export type ChartType = "candles" | "line" | "bar" | "area";
 
 /**
  * OHLC（始値・高値・安値・終値）データの型
+ * timeフィールドは複数の型をサポート:
+ * - number: UNIXタイムスタンプ (ミリ秒 or 秒)
+ * - Date: JavaScript Dateオブジェクト
+ * - string: ISO形式の日時文字列
  */
 export interface OHLCData {
-  time: number;        // UNIXタイムスタンプ (ミリ秒)
-  open: number;        // 始値
-  high: number;        // 高値
-  low: number;         // 安値
-  close: number;       // 終値
-  volume?: number;     // 取引量（オプション）
+  time: number | Date | string; // 時間（複数形式をサポート）
+  open: number;                 // 始値
+  high: number;                 // 高値
+  low: number;                  // 安値
+  close: number;                // 終値
+  volume?: number;              // 取引量（オプション）
 }
 
 // Zodスキーマから生成した型定義

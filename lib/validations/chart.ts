@@ -3,7 +3,11 @@ import { Timeframe } from "@/types/chart"
 
 // OHLCデータのバリデーションスキーマ
 export const ohlcDataSchema = z.object({
-  time: z.number(),
+  time: z.union([
+    z.number(),                 // UNIXタイムスタンプ（秒またはミリ秒）
+    z.date(),                   // JavaScript Dateオブジェクト
+    z.string().datetime()       // ISO形式の日時文字列
+  ]),
   open: z.number(),
   high: z.number(),
   low: z.number(),

@@ -47,6 +47,10 @@ export interface ChartDataState {
   
   // リアルタイム更新用のアクション
   updateLastCandle: (newCandle: OHLCData) => void;
+  
+  // WebSocket/キャッシュ管理用のアクション
+  setData: (updater: OHLCData[] | ((prevData: OHLCData[]) => OHLCData[])) => void;
+  updateWithCandle: (candle: OHLCData) => void;
 }
 
 /**

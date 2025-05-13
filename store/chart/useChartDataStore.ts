@@ -3,6 +3,7 @@
 // 更新: 動的インポートを削除し、明確な依存関係を確立
 // 更新: 循環参照を解消するために、useAppStoreへの直接参照を削除
 // 更新: Zodバリデーションスキーマを適用
+// 更新: upsertCandle統合でリアルタイムデータの一貫性を向上
 //
 // このストアはチャートのデータ（OHLC）と、データの取得状態を管理します。
 // リアルタイム更新用のメソッドも提供します。
@@ -79,6 +80,63 @@ logger.info(`チャートデータストアの初期化、時間足: ${initialTi
   localStorage_selectedTimeframe: typeof window !== 'undefined' ? localStorage.getItem('selectedTimeframe') : null
 });
 
+/**
+ * ロウソク足データの更新・マージユーティリティ
+ * 時系列データの整合性を保つために使用
+ */
+const upsertCandle = (list: OHLCData[], incoming: OHLCData): OHLCData[] => {
+  if (!list || list.length === 0) return [incoming];
+  
+  // 時間値を標準化（DateかUTC秒タイムスタンプに変換）
+  const incomingTime = incoming.time instanceof Date
+    ? incoming.time
+    : typeof incoming.time === 'string'
+      ? new Date(incoming.time)
+      : new Date(typeof incoming.time === 'number' && incoming.time > 10000000000 
+          ? incoming.time 
+          : incoming.time * 1000);
+  
+  const incomingTimestamp = incomingTime.getTime();
+  
+  // 最後のロウソク足と比較
+  const last = list[list.length - 1];
+  const lastTime = last.time instanceof Date
+    ? last.time
+    : typeof last.time === 'string'
+      ? new Date(last.time)
+      : new Date(typeof last.time === 'number' && last.time > 10000000000 
+          ? last.time 
+          : last.time * 1000);
+  
+  const lastTimestamp = lastTime.getTime();
+  
+  // 標準化された新しい足オブジェクト
+  const normalizedCandle = {
+    ...incoming,
+    time: incomingTime
+  };
+  
+  // 同じ時間なら更新
+  if (incomingTimestamp === lastTimestamp) {
+    const result = [...list];
+    result[result.length - 1] = normalizedCandle;
+    return result;
+  }
+  
+  // 新しい時間なら追加
+  if (incomingTimestamp > lastTimestamp) {
+    return [...list, normalizedCandle];
+  }
+  
+  // 古いデータは無視（通常はREST APIで取得済み）
+  logger.debug('古い足データは無視します:', {
+    incomingTime: incomingTime.toISOString(),
+    lastTime: lastTime.toISOString(),
+    component: 'useChartDataStore'
+  });
+  return [...list];
+};
+
 // チャートデータストアの作成
 export const useChartDataStore = create<ChartDataState>()(
   devtools(
@@ -93,6 +151,52 @@ export const useChartDataStore = create<ChartDataState>()(
       // アクション
       // 現在のリクエストをキャンセルするためのAbortController
       _abortController: null as AbortController | null,
+      
+      // データ更新関数 - WebSocketからの更新や既存データの置き換えに使用
+      setData: (updater: OHLCData[] | ((prevData: OHLCData[]) => OHLCData[])) => {
+        set(state => {
+          // 関数が渡された場合はその関数を実行
+          const newData = typeof updater === 'function'
+            ? updater(state.data)
+            : updater;
+          
+          // 新しいデータが空の場合は変更しない
+          if (!newData || newData.length === 0) {
+            logger.warn('無効な空データが設定されました', {
+              component: 'useChartDataStore',
+              action: 'setData'
+            });
+            return state;
+          }
+          
+          logger.debug('チャートデータ更新', {
+            component: 'useChartDataStore',
+            action: 'setData',
+            dataLength: newData.length,
+            firstItem: newData[0],
+            lastItem: newData[newData.length - 1]
+          });
+          
+          return { data: newData };
+        });
+      },
+      
+      // WebSocketから受信した新しい足データを更新
+      updateWithCandle: (candle: OHLCData) => {
+        if (!candle) return;
+        
+        set(state => {
+          // 既存のデータと新しい足をマージ
+          const updatedData = upsertCandle(state.data, candle);
+          
+          // データ量が多すぎる場合は古いデータを削除
+          if (updatedData.length > 500) {
+            return { data: updatedData.slice(-500) };
+          }
+          
+          return { data: updatedData };
+        });
+      },
       
       fetchData: async (symbol: string, timeFrame: Timeframe, signal?: AbortSignal, useCache: boolean = false) => {
         // 開発環境でのバリデーション
@@ -254,8 +358,9 @@ export const useChartDataStore = create<ChartDataState>()(
             });
           }
         }
+        // 更新に新しいupsertCandle関数を使用
         set((state) => ({
-          data: [...state.data, data]
+          data: upsertCandle(state.data, data)
         }));
       },
       
@@ -497,29 +602,10 @@ export const useChartDataStore = create<ChartDataState>()(
             });
           }
         }
-        set((state) => {
-          // 既存のデータ配列を取得
-          const data = [...state.data];
-          
-          // 最後のローソク足を取得
-          const lastCandle = data[data.length - 1];
-          
-          // 同じ時間のローソク足なら更新、そうでなければ追加
-          if (lastCandle && lastCandle.time === newCandle.time) {
-            // 最後のローソク足を更新
-            data[data.length - 1] = newCandle;
-          } else {
-            // 新しいローソク足を追加
-            data.push(newCandle);
-            
-            // データが多すぎる場合は古いものを削除
-            if (data.length > 500) {
-              data.shift();
-            }
-          }
-          
-          return { data };
-        });
+        // upsertCandleを使用して最新のデータを更新
+        set((state) => ({
+          data: upsertCandle(state.data, newCandle)
+        }));
       }
     }),
     { name: "chart-data-store" }
