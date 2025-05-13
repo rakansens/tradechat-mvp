@@ -2,9 +2,10 @@
  * components/chat/window/hooks/useChatWindowStores.ts
  * 作成: ChatWindowで使用するストアとセレクターを集約したカスタムフック
  * 更新: 2025-05-20 - useChatStoreをuseRootStoreに置き換え
+ * 更新: 2025-05-15 - useEntryStoreをuseRootStoreに置き換え
  */
 
-import { useRootStore, useEntryStore } from "@/store";
+import { useRootStore } from "@/store";
 import {
   selectIsSearching,
   selectMessagesWithStreaming,
@@ -22,7 +23,7 @@ export default function useChatWindowStores() {
   // メモ化されたセレクターを使用してデータを取得
   const messages = useRootStore(selectMessagesWithStreaming);
   const isSearching = useRootStore(selectIsSearching);
-  const pendingEntry = useEntryStore(selectPendingEntry);
+  const pendingEntry = useRootStore(selectPendingEntry);
   const streamingMessage = useRootStore(selectStreamingMessage);
 
   return {

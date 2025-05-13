@@ -13,6 +13,7 @@
 // 更新: 2025-05-14 - useChatStoreとuseSymbolStore参照を削除
 // 更新: 2025-05-15 - useSymbolStoreとuseChatStoreの参照を完全に削除
 // 更新: 2025-05-15 - useUIStoreを削除しUIスライスに完全移行
+// 更新: 2025-05-15 - useEntryStoreを削除しEntryスライスに完全移行
 
 // ルートストアをエクスポート
 export { useRootStore } from './rootStore';
@@ -44,14 +45,14 @@ export { useDrawingToolStore } from './chart/useDrawingToolStore';
 // マーケットストアをエクスポート
 export { useOrderBookStore } from './market/useOrderBookStore';
 
-// その他のストアをエクスポート
-export { useEntryStore } from './useEntryStore';
-
 // 新しいスライスベースの実装
 export { createChartDataSlice, type ChartDataSlice, type ChartDataActions } from './chart/data';
 export { useChartDataStore as useChartDataStoreNew } from './chart/data';
 export { createRealTimeSlice, type RealTimeSlice, type RealTimeActions } from './chart/realTime';
 export { useRealTimeStore as useRealTimeStoreNew } from './chart/realTime';
+
+// Entryスライスの型をエクスポート
+export { type EntrySlice } from './entry';
 
 // 重要なセレクターを明示的にエクスポート（競合を避けるため）
 // ChartDataSliceのセレクター

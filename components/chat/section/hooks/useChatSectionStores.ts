@@ -6,12 +6,11 @@
  * - 2023-06-10: ChatSection.tsxのリファクタリングに伴い作成
  * - 2025-05-20: useChatStoreをuseRootStoreに置き換え
  * - 2025-05-13: 古いuseChatStore参照を完全に削除
+ * - 2025-05-15: useEntryStoreをuseRootStoreに置き換え
  */
 
 import { 
-  useEntryStore,
   useRootStore,
-  // useChatStore, // 削除：古い参照
   // メモ化されたセレクター
   selectMessages, 
   selectIsSearching,
@@ -42,9 +41,9 @@ export const useChatSectionStores = () => {
   const setInput = rootStore.setInput;
   const sendMessage = rootStore.sendMessage;
   
-  // エントリーストアから状態を取得
-  const pendingEntry = useEntryStore(selectPendingEntry);
-  const hasPendingEntry = useEntryStore(selectHasPendingEntry);
+  // エントリー関連の状態もRootStoreから取得
+  const pendingEntry = useRootStore(selectPendingEntry);
+  const hasPendingEntry = useRootStore(selectHasPendingEntry);
   
   return {
     // チャット関連

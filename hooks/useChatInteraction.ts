@@ -5,12 +5,13 @@
 // 更新: ストリーミングメッセージの処理を改善し、isStreaming フラグを設定
 // 更新: any型キャストを具体的な型に置き換えて型安全性を向上
 // 更新: 2025-05-14 - useChatStoreをuseRootStoreに変更
+// 更新: 2025-05-15 - useEntryStoreを削除し、すべてのエントリー処理をpropsから受け取るように変更
 "use client"
 
 import { useState, useEffect, useRef } from "react"
 import { useChat } from "ai/react"
-import { useRootStore, useEntryStore, selectLatestProposal } from "@/store"
-import type { Entry, OpenEntry } from "@/types/entry"
+import { useRootStore, selectLatestProposal } from "@/store"
+import type { Entry, OpenEntry, TradeSide } from "@/types/entry"
 import type { ExtendedMessage, ProposalType } from "@/types/chat"
 import type { ChangeEvent, FormEvent } from "react"
 import type { Message } from "ai"
@@ -255,53 +256,88 @@ Would you like to enter a long position based on this positive news sentiment?`,
     setIsSearching(false)
   }
 
-  // Handle AI proposal query (for testing)
+  // Handle AI proposal query
   const handleAIProposalQuery = () => {
-    // Generate a random proposal
-    const isBuy = Math.random() > 0.5
-    const price = ohlcData[ohlcData.length - 1].close
-    const proposalType: ProposalType = isBuy ? "buy" : "sell"
+    // Get the latest proposal message
+    const latestProposal = useRootStore(selectLatestProposal)
 
-    setMessages([
-      ...messages,
-      {
-        id: Date.now().toString(),
-        role: "assistant",
-        content: `Based on my analysis, I recommend a ${isBuy ? "buy" : "sell"} position at the current price of $${price}.
-
-Technical Analysis:
-• ${isBuy ? "Price is above the 50-day moving average" : "Price has broken below support"}
-• ${isBuy ? "RSI indicates oversold conditions" : "MACD shows a bearish crossover"}
-• ${isBuy ? "Volume is increasing on up days" : "Volume is increasing on down days"}
-
-Would you like to enter this ${isBuy ? "long" : "short"} position?`,
-        isProposal: true,
-        proposalType,
-        price,
-      } as ExtendedMessage,
-    ])
+    // Use latest proposal details if available, otherwise use defaults
+    const proposalDetails = latestProposal
+      ? {
+          price: latestProposal.price || 60500,
+          side: (latestProposal.proposalType === "buy" ? "buy" : "sell") as TradeSide,
+        }
+      : {
+          price: 60500,
+          side: "buy" as TradeSide,
+        }
 
     // Set entry information
     setPendingEntry({
       id: Date.now().toString(),
-      side: proposalType,
+      side: proposalDetails.side,
       symbol: "BTC/USD",
-      price,
+      price: proposalDetails.price,
       time: new Date().toISOString(),
       status: "open",
     })
+
+    // Switch to the chart tab
+    setActiveTab("chart")
+
+    // End searching state
+    setIsSearching(false)
   }
 
-  // Return the chat state and handlers
+  // Proceed with pending entry
+  const handleProceedWithEntry = () => {
+    if (pendingEntry) {
+      executeEntry()
+      setMessages([
+        ...messages,
+        {
+          id: Date.now().toString(),
+          role: "user",
+          content: "Execute trade",
+        } as ExtendedMessage,
+        {
+          id: Date.now().toString() + "-response",
+          role: "assistant",
+          content: `I've executed a ${pendingEntry.side} order for BTC/USD at $${pendingEntry.price}. The position is now open.
+
+I'll monitor this position and alert you of any significant price movements. You can view your position details in the Trades tab.`,
+        } as ExtendedMessage,
+      ])
+    }
+  }
+
+  // Cancel pending entry
+  const handleCancelEntry = () => {
+    setPendingEntry(null)
+    setMessages([
+      ...messages,
+      {
+        id: Date.now().toString(),
+        role: "user",
+        content: "Cancel trade",
+      } as ExtendedMessage,
+      {
+        id: Date.now().toString() + "-response",
+        role: "assistant",
+        content: "I've canceled the pending trade. Let me know if you'd like to explore other trading opportunities.",
+      } as ExtendedMessage,
+    ])
+  }
+
   return {
     messages,
     input,
+    isSearching,
+    pendingEntry,
     handleInputChange,
     handleSubmit: handleSubmitWithSamples,
-    isSearching,
-    setIsSearching,
-    handleEntryPointQuery,
-    handleNewsQuery,
+    handleProceedWithEntry,
+    handleCancelEntry,
     handleAIProposalQuery,
   }
 }

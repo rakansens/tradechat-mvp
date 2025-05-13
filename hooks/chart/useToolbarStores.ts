@@ -5,6 +5,7 @@
 // 2. コンポーネントとストアの結合度を下げる
 // 更新: 古いストア（useChartDataStore、useChartConfigStore、useUIStore）をuseRootStoreに置き換え
 // 更新: 古いuseSymbolStoreを新しいrootStoreのSymbolSliceに置き換え
+// 更新: 2025-05-15 - useEntryStoreをuseRootStoreに置き換え
 
 import {
   // ルートストアとセレクター
@@ -13,10 +14,8 @@ import {
   useIndicatorStore,
   useDrawingToolStore,
   useRealTimeStoreNew,
-  // 古いストア（まだマイグレーションされていないもの）
-  useEntryStore,
-  // 古いSymbolStoreは削除
-  // useSymbolStore
+  // セレクター
+  selectEntries
 } from '@/store';
 // 各スライスのセレクターをインポート
 import { 
@@ -76,8 +75,8 @@ export function useToolbarStores() {
   const useRealTimeData = useRealTimeStoreNew(state => state.useRealTimeData);
   const toggleRealTimeData = useRealTimeStoreNew(state => state.toggleRealTimeData);
   
-  // エントリーストアから状態を取得
-  const entries = useEntryStore((state: EntrySliceState) => state.entries);
+  // エントリーストアから状態を取得（RootStoreとセレクターを使用）
+  const entries = useRootStore(selectEntries);
   const openPositionsCount = entries.filter(entry => entry.status === "open").length;
 
   // シンボル変更を一元管理

@@ -1,6 +1,7 @@
 // app/page.tsx
 // 更新: リファクタリングでレイアウトコンポーネントを使用し、コードを整理、チャートデータ取得ロジックを統合
 // 更新: useChartDataStoreとuseUIStoreをuseRootStoreに置き換え
+// 更新: 2025-05-15 - useEntryStoreをuseRootStoreに置き換え
 "use client"
 
 import { useEffect, useRef, useCallback } from "react"
@@ -19,10 +20,6 @@ import {
   selectPendingEntry,
   selectActiveTab,
   // その他のストア
-  useEntryStore,
-  // 非推奨
-  // useUIStore,
-  // useChartDataStore,
   useChartConfigStore,
 } from "@/store"
 // チャートデータスライスのセレクターを直接インポート
@@ -40,12 +37,12 @@ export default function Home() {
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   // エントリーストアから状態とアクションを取得（メモ化されたセレクタを使用）
-  const entries = useEntryStore(selectEntries);
-  const pendingEntry = useEntryStore(selectPendingEntry);
-  const setPendingEntry = useEntryStore((state) => state.setPendingEntry);
-  const executeStoreEntry = useEntryStore((state) => state.executeEntry);
-  const closePosition = useEntryStore((state) => state.closePosition);
-  const cancelPosition = useEntryStore((state) => state.cancelPosition);
+  const entries = useRootStore(selectEntries);
+  const pendingEntry = useRootStore(selectPendingEntry);
+  const setPendingEntry = useRootStore((state) => state.setPendingEntry);
+  const executeStoreEntry = useRootStore((state) => state.executeEntry);
+  const closePosition = useRootStore((state) => state.closePosition);
+  const cancelPosition = useRootStore((state) => state.cancelPosition);
 
   // チャートデータ関連（メモ化されたセレクタを使用）- RootStoreから取得するように変更
   const currentSymbol = useRootStore(selectCurrentSymbol);
