@@ -5,6 +5,8 @@
 // 2. 循環参照を解消
 // 3. 非同期処理の問題を解決
 // 4. ハイドレーションエラーの修正
+// 5. ChartCanvasへの正しいprops受け渡しの追加
+// 6. レイアウトとスタイルの最適化
 "use client"
 
 import React, { useMemo, useEffect, useState } from 'react';
@@ -198,9 +200,9 @@ export default function ChartSection() {
   const displayPriceChangePercent = mounted ? priceChangePercent : 0;
 
   return (
-    <div className="relative flex flex-col w-full h-full">
+    <div className="relative flex flex-col w-full h-full overflow-hidden">
       {/* メタ情報を表示するヘッダーセクション */}
-      <div className="px-4 py-2 bg-[#131722] border-b border-[#2A2E39]">
+      <div className="flex-shrink-0 px-4 py-2 bg-[#131722] border-b border-[#2A2E39]">
         <div className="flex items-center justify-between">
           <div className="flex items-center">
             <h2 className="text-lg font-semibold text-white">{mounted ? currentSymbol : ''}</h2>
@@ -227,11 +229,11 @@ export default function ChartSection() {
       {/* ChartToolbarはメインレイアウトに移動しました */}
       
       {/* チャートとオーダーブックを横並びに配置（レスポンシブ対応） */}
-      <div className="relative flex flex-grow flex-col md:flex-row">
+      <div className="flex-grow flex flex-col md:flex-row w-full h-[calc(100%-50px)] min-h-0">
         {/* チャート部分 */}
-        <div className="relative w-full h-1/2 md:h-full md:w-3/4 lg:w-3/4">
+        <div className="relative w-full h-1/2 md:h-full md:w-3/4 lg:w-3/4 flex-grow overflow-hidden">
           {isLoading ? (
-            <div className="absolute inset-0 flex items-center justify-center bg-[#131722] bg-opacity-80">
+            <div className="absolute inset-0 flex items-center justify-center bg-[#131722] bg-opacity-80 z-10">
               <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#2962FF]"></div>
             </div>
           ) : error ? (
@@ -267,16 +269,26 @@ export default function ChartSection() {
               }
             />
           ) : (
-            <ChartCanvas />
+            <div className="w-full h-full" style={{ minHeight: '400px' }}>
+              <ChartCanvas 
+                className="w-full h-full"
+                symbol={currentSymbol}
+                chartType={chartType} 
+                timeframe={currentTimeFrame}
+              />
+            </div>
           )}
         </div>
         
         {/* オーダーブック部分 */}
-        <div className="w-full h-1/2 md:h-full md:w-1/4 lg:w-1/4 border-t md:border-t-0 md:border-l border-[#2A2E39] bg-[#131722]">
+        <div className="w-full h-1/2 md:h-full md:w-1/4 lg:w-1/4 border-t md:border-t-0 md:border-l border-[#2A2E39] bg-[#131722] flex-shrink-0 overflow-auto">
           <div className="h-full flex flex-col">
+            <div className="p-2 border-b border-[#2A2E39] bg-[#1C2030] text-white font-medium">
+              オーダーブック
+            </div>
             <OrderBook
               depth={15}
-              className="h-full"
+              className="h-full overflow-auto"
               orderBookWidth="25%"
             />
           </div>

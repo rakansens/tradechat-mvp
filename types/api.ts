@@ -109,3 +109,13 @@ export interface AdaptiveApiRequestConfig<T = any> {
   params: Record<string, any>;
   options?: Omit<ApiRequestConfig, 'url' | 'params'>;
 }
+
+// ロウソク足データの型定義
+export interface CandleData {
+  timestamp: number;  // UNIXタイムスタンプ (ミリ秒)
+  open: number;       // 始値
+  high: number;       // 高値
+  low: number;        // 安値
+  close: number;      // 終値
+  volume: number;     // 取引量
+}
