@@ -1,0 +1,94 @@
+// store/ui/actions.ts
+// 初期実装: UIスライスのアクション
+
+import type { TabType } from '@/types/store'
+import type { UISliceState } from './state'
+
+// UIスライスのアクション定義
+export interface UISliceActions {
+  // タブ管理
+  setActiveTab: (tab: TabType) => void
+  
+  // テーマ管理
+  toggleDarkMode: () => void
+  setDarkMode: (isDark: boolean) => void
+  
+  // レイアウト管理
+  toggleSidebar: () => void
+  setSidebarOpen: (isOpen: boolean) => void
+  toggleSettings: () => void
+  setSettingsOpen: (isOpen: boolean) => void
+  
+  // モーダル管理
+  openModal: (modalType: string, modalData?: any) => void
+  closeModal: () => void
+}
+
+// UIスライスのアクション作成関数
+export const createUIActions = (
+  set: (fn: (state: UISliceState) => void) => void,
+  get: () => UISliceState
+): UISliceActions => ({
+  
+  // タブ管理
+  setActiveTab: (tab) => {
+    set((state) => {
+      state.activeTab = tab
+    })
+  },
+  
+  // テーマ管理
+  toggleDarkMode: () => {
+    set((state) => {
+      state.isDarkMode = !state.isDarkMode
+    })
+  },
+  
+  setDarkMode: (isDark) => {
+    set((state) => {
+      state.isDarkMode = isDark
+    })
+  },
+  
+  // レイアウト管理
+  toggleSidebar: () => {
+    set((state) => {
+      state.isSidebarOpen = !state.isSidebarOpen
+    })
+  },
+  
+  setSidebarOpen: (isOpen) => {
+    set((state) => {
+      state.isSidebarOpen = isOpen
+    })
+  },
+  
+  toggleSettings: () => {
+    set((state) => {
+      state.isSettingsOpen = !state.isSettingsOpen
+    })
+  },
+  
+  setSettingsOpen: (isOpen) => {
+    set((state) => {
+      state.isSettingsOpen = isOpen
+    })
+  },
+  
+  // モーダル管理
+  openModal: (modalType, modalData = null) => {
+    set((state) => {
+      state.isModalOpen = true
+      state.modalType = modalType
+      state.modalData = modalData
+    })
+  },
+  
+  closeModal: () => {
+    set((state) => {
+      state.isModalOpen = false
+      state.modalType = null
+      state.modalData = null
+    })
+  }
+}) 

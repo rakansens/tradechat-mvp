@@ -6,20 +6,22 @@
 // このファイルはZustandストアのパフォーマンスを向上させるためのメモ化されたセレクター関数を提供します。
 
 import { createSelector } from 'reselect';
-import type { ChatState, ExtendedMessage } from '@/types/chat';
+import type { ChatSliceState } from './state'
+import type { ChatSlice } from './index' // スライス全体の型をインポート（アクションを含む）
+import type { ExtendedMessage } from '@/types/chat';
 
-// 基本セレクター
-export const selectMessages = (state: ChatState) => state.messages;
-export const selectIsSearching = (state: ChatState) => state.isSearching;
-export const selectInput = (state: ChatState) => state.input;
+// 基本セレクター（状態のみ）
+export const selectMessages = (state: ChatSliceState) => state.messages;
+export const selectIsSearching = (state: ChatSliceState) => state.isSearching;
+export const selectInput = (state: ChatSliceState) => state.input;
 
-// アクションセレクタ
-export const selectSetInput = (state: ChatState) => state.setInput;
-export const selectSendMessage = (state: ChatState) => state.sendMessage;
-export const selectClearMessages = (state: ChatState) => state.clearMessages;
-export const selectAddMessage = (state: ChatState) => state.addMessage;
-export const selectUpdateMessage = (state: ChatState) => state.updateMessage;
-export const selectDeleteMessage = (state: ChatState) => state.deleteMessage;
+// アクションセレクタ（完全なスライス型を使用）
+export const selectSetInput = (state: ChatSlice) => state.setInput;
+export const selectSendMessage = (state: ChatSlice) => state.sendMessage;
+export const selectClearMessages = (state: ChatSlice) => state.clearMessages;
+export const selectAddMessage = (state: ChatSlice) => state.addMessage;
+export const selectUpdateMessage = (state: ChatSlice) => state.updateMessage;
+export const selectDeleteMessage = (state: ChatSlice) => state.deleteMessage;
 
 // メモ化されたセレクター
 export const selectLastMessage = createSelector(
