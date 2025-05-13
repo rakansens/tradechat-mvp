@@ -1,4 +1,4 @@
-import type { Candle } from "@/utils/normalizeCandles";
+import type { Candle } from "./normalizeCandles";
 
 /**
  * WebSocket等から受信した新しいロウソク足データを既存配列に追加・更新するためのユーティリティ

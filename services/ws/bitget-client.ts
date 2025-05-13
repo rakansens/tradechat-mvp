@@ -164,7 +164,7 @@ export class BitgetWebSocketClient {
       if (this.ws?.readyState === WebSocket.OPEN) {
         // pingメッセージ送信
         this.ws.send("ping");
-        logger.debug('Sent ping');
+        logger.debug('Sent ping', { component: 'BitgetWebSocketClient', action: 'heartbeat' });
       }
     }, 25000); // 30秒より少し短い間隔
   }
@@ -179,11 +179,19 @@ export class BitgetWebSocketClient {
     
     if (this.ws?.readyState === WebSocket.OPEN) {
       this.ws.send(payload);
-      logger.debug('Sent message:', payload);
+      logger.debug('Sent message', { 
+        component: 'BitgetWebSocketClient', 
+        action: 'send',
+        payload: typeof payload === 'string' && payload.length < 100 ? payload : '[large payload]'
+      });
     } else {
       // 接続が確立するまでメッセージをキューに入れる
       this.queue.push(payload);
-      logger.debug('Queued message:', payload);
+      logger.debug('Queued message', { 
+        component: 'BitgetWebSocketClient', 
+        action: 'queue',
+        queueLength: this.queue.length
+      });
     }
   }
   
@@ -197,7 +205,11 @@ export class BitgetWebSocketClient {
       const message = this.queue.shift();
       if (message) {
         this.ws.send(message);
-        logger.debug('Sent queued message:', message);
+        logger.debug('Sent queued message', { 
+          component: 'BitgetWebSocketClient', 
+          action: 'flush',
+          remainingQueue: this.queue.length
+        });
       }
     }
   }
