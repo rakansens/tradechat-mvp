@@ -2,7 +2,7 @@
 // チャートの時間関連の型定義
 
 import { z } from "zod";
-import { timeframeSchema } from "@/lib/validations/chart";
+import { timeframeSchema } from "@/types/validations/chart";
 
 /**
  * Nominal 型（lightweight-charts の型定義から）

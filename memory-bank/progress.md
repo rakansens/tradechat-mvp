@@ -136,28 +136,24 @@
 - ユーザー認証関連のフックの整理
 - アプリケーション設定関連のフックの整理
 - 関数コンポーネントの最適化
+- **未使用型の整理と削除作業**
+  - 型チェックで判明した問題点の改善
+  - 最も修正が必要な未使用型からの対応（validationsドメイン、68件）
+  - 削除作業のドキュメント化（docs/validations-cleanup.md, docs/unused-types-cleanup.md）
+- **strictNullChecks強化計画**
+  - tsconfig.jsonにstrictNullChecksを明示的に追加済み
+  - エラー箇所の調査と修正計画の策定（docs/strictnull-checks-impl.md）
+  - 段階的な厳格化オプションの導入計画作成
 
 ## 今後の作業
 
-### 型定義リファクタリングプロジェクト（完了）
-
-- **T-0からT-6まで完了**
-  - 型定義をドメイン別に整理し、バレル経由のインポートに統一しました
-  - 型チェック・ビルド時に発見された問題を修正しました
-  - 最終確認として以下のチェックを実施しました:
-    - TypeScriptコンパイル（tsc --noEmit）: 成功
-    - 未使用型の検出（ts-prune）: 未使用型が多数あるが、現段階では削除せず
-    - 循環参照チェック（madge --circular）: 循環参照なし
-    - ビルド確認: TypeScript型チェックは成功（Supabase環境変数エラーは実行時の問題）
-
-### 次のステップ候補
-
 1. **未使用型の整理**
    - ts-pruneで検出された未使用型の精査と削除
+   - 優先順: validations > chart > network > store
 
 2. **TypeScriptの型厳格化**
-   - `tsconfig.json`の`strictNullChecks`を有効化
-   - 他の厳格モードを段階的に有効化
+   - 厳格モードを段階的に有効化
+   - null/undefinedの厳格なチェック対応
 
 3. **CI/CDパイプラインの強化**
    - GitHub Actionsに型チェックを追加

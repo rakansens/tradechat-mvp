@@ -68,7 +68,7 @@ import {
   ohlcDataSchema,
   timeframeSchema,
   chartDataStateSchema
-} from "@/lib/validations/chart";
+} from "@/types/validations/chart";
 
 export type OHLCDataSchema = z.infer<typeof ohlcDataSchema>;
 export type TimeframeSchema = z.infer<typeof timeframeSchema>;

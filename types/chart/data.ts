@@ -5,7 +5,7 @@ import { z } from "zod";
 import {
   ohlcDataSchema,
   chartDataStateSchema
-} from "@/lib/validations/chart";
+} from "@/types/validations/chart";
 import { Time, Timeframe, ChartType } from "../chart/time";
 
 /**

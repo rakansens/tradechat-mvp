@@ -15,7 +15,7 @@ import {
   validateOHLCData,
   validateTimeframe,
   validateChartDataState
-} from "@/lib/validations/chart"
+} from "@/types/validations/chart"
 
 // ローカルストレージから取引種別を取得する関数
 const getExchangeTypeFromLocalStorage = (): ExchangeType => {
