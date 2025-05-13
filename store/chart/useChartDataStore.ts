@@ -17,8 +17,8 @@ import { chartDataService } from '../../services/data';
 import { cacheService } from '../../services/cache';
 import { OHLCData, Timeframe } from '../../types/chart';
 import { generateOHLCData } from '../../utils/ohlcDummyData';
-import { useChartConfigStore } from './useChartConfigStore';
-import { useRealTimeStore } from './useRealTimeStore';
+// 古いuseChartConfigStore、useRealTimeStoreからrootStoreに移行
+import { useRootStore } from '../rootStore';
 import { logger } from '../../utils/logger';
 import { ChartDataState } from '../../types/store';
 import { ExchangeType } from '../../types/api';
@@ -209,7 +209,7 @@ export const useChartDataStore = create<ChartDataState>()(
           }
           
           // 先物取引でサポートされていない銘柄のエラーの場合は、よりユーザーフレンドリーなメッセージに変換
-          const { exchangeType } = useChartConfigStore.getState();
+          const exchangeType = getExchangeTypeFromLocalStorage();
           if (
             errorMessage.includes('先物取引でサポートされていません') ||
             (
@@ -227,7 +227,7 @@ export const useChartDataStore = create<ChartDataState>()(
           });
           
           // 将来的な拡張: エラー時に取引種別を変更するロジック
-          // 例: useChartConfigStore.getState().setExchangeType('spot');
+          // 例: useRootStore.getState().setExchangeType('spot');
           
           // APIが失敗した場合はダミーデータを使用
           const dummyData = generateOHLCData(100, timeFrame);
@@ -403,7 +403,9 @@ export const useChartDataStore = create<ChartDataState>()(
               
               // リアルタイム更新を再開
               try {
-                const { startRealTimeUpdates, useRealTimeData } = useRealTimeStore.getState();
+                const rootStore = useRootStore.getState();
+                const { startRealTimeUpdates } = rootStore;
+                const useRealTimeData = rootStore.useRealTimeData;
                 if (useRealTimeData) {
                   startRealTimeUpdates();
                 }
@@ -458,7 +460,9 @@ export const useChartDataStore = create<ChartDataState>()(
           
           // リアルタイム更新を再開（既存の機能を維持）
           try {
-            const { startRealTimeUpdates, useRealTimeData } = useRealTimeStore.getState();
+            const rootStore = useRootStore.getState();
+            const { startRealTimeUpdates } = rootStore;
+            const useRealTimeData = rootStore.useRealTimeData;
             if (useRealTimeData) {
               startRealTimeUpdates();
             }

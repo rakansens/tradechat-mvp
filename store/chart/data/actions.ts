@@ -9,7 +9,7 @@ import { chartDataService } from "@/services/data"
 import { cacheService } from "@/services/cache"
 import { logger } from "@/utils/logger"
 import { generateOHLCData } from "@/utils/ohlcDummyData"
-import { useChartConfigStore } from "../useChartConfigStore"
+// 直接ExchangeTypeを取得するように修正
 import { useRootStore } from "@/store/rootStore"
 import {
   validateOHLCData,
@@ -172,7 +172,8 @@ export const createChartDataActions = <T extends ChartDataSlice>(
       }
       
       // 先物取引でサポートされていない銘柄のエラーの場合は、よりユーザーフレンドリーなメッセージに変換
-      const { exchangeType } = useChartConfigStore.getState()
+      // rootStoreから取引種別を取得
+      const exchangeType = getExchangeTypeFromLocalStorage();
       if (
         errorMessage.includes('先物取引でサポートされていません') ||
         (

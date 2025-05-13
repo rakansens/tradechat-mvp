@@ -67,8 +67,10 @@ export const createRealTimeActions = <T extends RealTimeSlice>(
       // APIクライアントが初期化されていない場合は初期化する
       if (!api) {
         try {
-          // ChartConfigSliceから現在の取引種別を取得（循環参照を避けるため共通サービスを使用）
-          const { exchangeType } = require('../config').useChartConfigStore.getState()
+          // 取引種別をローカルストレージから直接取得（循環参照回避のため）
+          const exchangeType = typeof window !== 'undefined' 
+            ? (localStorage.getItem('lastUsedExchangeType') || localStorage.getItem('selectedInstrumentType') || 'spot') as ExchangeType
+            : 'spot';
           get().initializeApi(exchangeType)
           api = get().bitgetApi
           
@@ -88,8 +90,11 @@ export const createRealTimeActions = <T extends RealTimeSlice>(
         }
       }
       
-      // ChartDataStoreから現在のシンボルとタイムフレームを取得
-      const { currentSymbol, currentTimeFrame, updateLastCandle } = require('../useChartDataStore').useChartDataStore.getState()
+      // rootStoreから現在のシンボルとタイムフレームを取得（循環参照回避）
+      const rootStore = require('@/store/rootStore').useRootStore.getState();
+      const currentSymbol = rootStore.currentSymbol;
+      const currentTimeFrame = rootStore.currentTimeFrame;
+      const updateLastCandle = rootStore.updateLastCandle;
       
       // 購読キーを生成
       const subscriptionKey = getSubscriptionKey(currentSymbol, currentTimeFrame)
