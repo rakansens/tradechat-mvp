@@ -50,6 +50,14 @@ export class SocketService implements ISocketService {
   }
 
   /**
+   * 接続状態を確認
+   * @returns 接続されているかどうか
+   */
+  isConnected(): boolean {
+    return this.webSocketClient.isConnected();
+  }
+
+  /**
    * マーケットデータ用のWebSocket接続を初期化
    * @returns Socket.IOのソケットインスタンス
    */

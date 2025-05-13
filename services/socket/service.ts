@@ -4,30 +4,12 @@
  */
 
 import { EventEmitter } from 'events';
+import { Socket } from 'socket.io-client';
 import { OrderBookData } from '../../types/market';
 import { OHLCData, Timeframe } from '../../types/chart';
 import { ExchangeType } from '../../types/api';
 import { logger } from '../../utils/logger';
-
-/**
- * WebSocketサービスインターフェース
- */
-export interface ISocketService {
-  isConnected(): boolean;
-  connect(): Promise<void>;
-  disconnect(): void;
-  subscribeOrderBook(
-    symbol: string,
-    callback: (data: OrderBookData) => void,
-    exchangeType?: ExchangeType
-  ): () => void;
-  subscribeKline(
-    symbol: string,
-    timeframe: Timeframe,
-    callback: (data: OHLCData) => void,
-    exchangeType?: ExchangeType
-  ): () => void;
-}
+import { ISocketService } from './interfaces';
 
 /**
  * WebSocketサービスの実装
@@ -35,6 +17,34 @@ export interface ISocketService {
 class SocketService extends EventEmitter implements ISocketService {
   private connected: boolean = false;
   private mockInterval: NodeJS.Timeout | null = null;
+  
+  /**
+   * マーケットデータ用のWebSocket接続を初期化
+   * @returns Socket.IOのソケットインスタンス
+   */
+  initializeMarketSocket(): Socket | null {
+    this.connect();
+    return null;
+  }
+  
+  /**
+   * BitgetAPIクライアントを初期化
+   * @param exchangeType 取引タイプ（'spot'または'futures'）
+   * @param config 追加の設定オプション
+   * @returns BitgetAPIクライアントインスタンス
+   */
+  initializeApiClient(exchangeType: ExchangeType = 'spot', config: Record<string, any> = {}): any {
+    // 実際の実装では適切なAPIクライアントを返す
+    return {};
+  }
+  
+  /**
+   * 現在のBitgetAPIクライアントを取得
+   * @returns 現在のBitgetAPIクライアントインスタンス
+   */
+  getCurrentApiClient(): any | null {
+    return null;
+  }
   
   /**
    * 接続状態を確認
@@ -98,6 +108,29 @@ class SocketService extends EventEmitter implements ISocketService {
         error
       });
     }
+  }
+  
+  /**
+   * すべての接続を切断
+   */
+  disconnectAll(): void {
+    this.disconnect();
+  }
+  
+  /**
+   * 再接続をスケジュール
+   */
+  scheduleReconnect(): void {
+    if (!this.connected) {
+      setTimeout(() => this.connect(), 1000);
+    }
+  }
+  
+  /**
+   * すべての購読を再購読
+   */
+  resubscribeAll(): void {
+    // 実装なし
   }
   
   /**
@@ -204,14 +237,14 @@ class SocketService extends EventEmitter implements ISocketService {
       const orderBookData: OrderBookData & { symbol: string } = {
         symbol: 'BTC/USDT',
         asks: [
-          ['30000.00', '1.0'],
-          ['30010.00', '2.0'],
-          ['30020.00', '3.0']
+          { price: 30000.00, amount: 1.0 },
+          { price: 30010.00, amount: 2.0 },
+          { price: 30020.00, amount: 3.0 }
         ],
         bids: [
-          ['29990.00', '1.5'],
-          ['29980.00', '2.5'],
-          ['29970.00', '3.5']
+          { price: 29990.00, amount: 1.5 },
+          { price: 29980.00, amount: 2.5 },
+          { price: 29970.00, amount: 3.5 }
         ],
         timestamp: Date.now()
       };

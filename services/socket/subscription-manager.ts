@@ -102,14 +102,28 @@ export class SubscriptionManager implements ISubscriptionManager {
           const orderBookData: OrderBookData = {
             symbol: data.symbol,
             timestamp: data.timestamp,
-            asks: data.data.asks.map((ask: [string, string]) => ({
-              price: parseFloat(ask[0]),
-              amount: parseFloat(ask[1])
-            })),
-            bids: data.data.bids.map((bid: [string, string]) => ({
-              price: parseFloat(bid[0]),
-              amount: parseFloat(bid[1])
-            }))
+            asks: data.data.asks.map((ask: [string, string] | any) => {
+              // 配列形式の場合はそのまま返す
+              if (Array.isArray(ask)) {
+                return ask;
+              }
+              // オブジェクト形式の場合はOrderBookEntryとして返す
+              return {
+                price: typeof ask.price === 'string' ? parseFloat(ask.price) : ask.price,
+                amount: typeof ask.amount === 'string' ? parseFloat(ask.amount) : ask.amount
+              };
+            }),
+            bids: data.data.bids.map((bid: [string, string] | any) => {
+              // 配列形式の場合はそのまま返す
+              if (Array.isArray(bid)) {
+                return bid;
+              }
+              // オブジェクト形式の場合はOrderBookEntryとして返す
+              return {
+                price: typeof bid.price === 'string' ? parseFloat(bid.price) : bid.price,
+                amount: typeof bid.amount === 'string' ? parseFloat(bid.amount) : bid.amount
+              };
+            })
           };
           
           // コールバック関数の呼び出し

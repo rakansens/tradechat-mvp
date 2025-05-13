@@ -200,4 +200,10 @@ export interface ISocketService {
    * すべての購読を再購読
    */
   resubscribeAll(): void;
+
+  /**
+   * 接続状態を確認
+   * @returns 接続されている場合はtrue
+   */
+  isConnected(): boolean;
 }

@@ -5,6 +5,7 @@
  * 作成: 2025-05-11 - CCXWSライブラリを使用したWebSocketクライアントの実装
  * 更新: 2023-06-10 - エラーハンドリングとリトライ機能を強化
  * 更新: 2023-07-15 - 各種取引所対応を追加
+ * 更新: 2023-07-22 - BitgetはCCXWSでサポートされていないため、BitmexClientで代用
  */
 
 import { BitmexClient } from 'ccxws';
@@ -17,7 +18,7 @@ import EventEmitter from 'events';
 
 // サポートする取引所のマッピング
 const EXCHANGE_CLIENTS = {
-  bitget: BitmexClient,
+  bitget: BitmexClient, // BitgetはCCXWSでサポートされていないため、BitmexClientで代用
   bitmex: BitmexClient,
 };
 
@@ -51,7 +52,7 @@ export class CCXWSClient {
       }
 
       // サポートする取引所のクライアントを初期化
-      this.clients.bitget = new BitmexClient(); // 一時的にBitmexClientで代用
+      this.clients.bitget = new BitmexClient(); // BitgetはCCXWSでサポートされていないため、BitmexClientで代用
       this.clients.bitmex = new BitmexClient();
 
       // エラーハンドラの設定

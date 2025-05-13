@@ -7,7 +7,7 @@
  */
 
 import { EventEmitter } from 'events';
-import { OrderBookData } from '../../types/market';
+import { OrderBookData, OrderBookEntry } from '../../types/market';
 import { OHLCData, Timeframe } from '../../types/chart';
 import { ExchangeType } from '../../types/api';
 import { logger } from '../../utils/logger';
@@ -273,12 +273,12 @@ export class MockSocketService extends EventEmitter implements ISocketService {
     const currentPrice = basePrice * randomFactor;
     
     // オーダーブックデータを生成
-    const asks = Array.from({ length: 10 }, (_, i) => ({
+    const asks: OrderBookEntry[] = Array.from({ length: 10 }, (_, i) => ({
       price: currentPrice * (1 + 0.0001 * (i + 1)),
       amount: Math.random() * 10
     }));
     
-    const bids = Array.from({ length: 10 }, (_, i) => ({
+    const bids: OrderBookEntry[] = Array.from({ length: 10 }, (_, i) => ({
       price: currentPrice * (1 - 0.0001 * (i + 1)),
       amount: Math.random() * 10
     }));
