@@ -257,7 +257,7 @@ export default function ChartCanvas() {
             component: 'ChartCanvas',
             action: 'resizeObserver'
           });
-        }
+      }
       }
     }, 100); // 100ms debounce
     
@@ -416,7 +416,7 @@ export default function ChartCanvas() {
           try {
             // データ形式を変換
             const formattedData = sortedData.map((item) => ({
-              time: (item.time / 1000) as UTCTimestamp,
+            time: (item.time / 1000) as UTCTimestamp,
               open: Number(item.open),
               high: Number(item.high),
               low: Number(item.low),
@@ -493,7 +493,7 @@ export default function ChartCanvas() {
           try {
             // データ形式を変換
             const formattedData = sortedData.map((item) => ({
-              time: (item.time / 1000) as UTCTimestamp,
+            time: (item.time / 1000) as UTCTimestamp,
               value: Number(item.close),
             }));
             
@@ -547,7 +547,7 @@ export default function ChartCanvas() {
           try {
             // データ形式を変換
             const formattedData = sortedData.map((item) => ({
-              time: (item.time / 1000) as UTCTimestamp,
+            time: (item.time / 1000) as UTCTimestamp,
               value: Number(item.close),
             }));
             
@@ -837,7 +837,7 @@ export default function ChartCanvas() {
 
     // データをセットする前に最終チェック
     try {
-      if (chartType === "candles" && candleSeries.current) {
+    if (chartType === "candles" && candleSeries.current) {
         const formattedData = sortedData.map((item) => ({
           time: (item.time / 1000) as UTCTimestamp,
           open: Number(item.open),
@@ -913,9 +913,9 @@ export default function ChartCanvas() {
         action: 'setData',
         error
       });
-    }
+      }
   }, [data, chartType, currentTimeFrame]);
-
+  
   // インジケーターの表示切替を監視
   useEffect(() => {
     if (!chartInstanceRef.current || !data || data.length === 0) return;

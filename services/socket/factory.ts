@@ -1,9 +1,10 @@
 /**
- * services/socket/factory.ts
- * WebSocketサービスのインスタンス生成と依存性注入を担当
+ * services/socket/factory.ts - 修正
+ * 責務: サービスインスタンスの作成と管理
  * 
  * 作成: 2025-05-12 - WebSocketサービスのリファクタリングの一環として
  * 変更: 各コンポーネントのシングルトン管理を一元化
+ * 更新: 2025-05-13 - SocketCoreを活用するように変更
  */
 
 import { ISocketService, IWebSocketClient, ISubscriptionManager, IBitgetIntegration } from './interfaces';
@@ -14,6 +15,7 @@ import { MockSocketService, getMockSocketService } from './mock-service';
 // 相対パスでインポート
 import { SocketService } from './socket-service';
 import { logger } from '../../utils/logger';
+import { SocketCore } from './core';
 
 // シングルトンインスタンス
 let socketServiceInstance: ISocketService | null = null;
@@ -50,14 +52,17 @@ export function getSocketService(useMock: boolean = false): ISocketService {
   // 新しいインスタンスを作成
   socketServiceInstance = createSocketService();
   
-  // 初期化
+  // 初期化 - SocketCoreで共有のソケットインスタンスを取得
   if (socketServiceInstance) {
+    // ソケットの初期化をSocketCoreが担当するように変更
+    SocketCore.getSocket(true);
     socketServiceInstance.initializeMarketSocket();
   }
   
   logger.info('新しいSocketServiceインスタンスを作成', {
     component: 'SocketServiceFactory',
-    action: 'getSocketService'
+    action: 'getSocketService',
+    usingSocketCore: true
   });
   
   return socketServiceInstance as ISocketService;
@@ -111,4 +116,6 @@ export function getMockService(): ISocketService {
  */
 export function resetInstances(): void {
   socketServiceInstance = null;
+  // SocketCoreの接続もリセット
+  SocketCore.disconnect();
 }

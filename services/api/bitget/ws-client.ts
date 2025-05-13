@@ -663,19 +663,19 @@ export class BitgetWebSocketClient extends EventEmitter {
   private sendSubscription(subscription: { instType: string; channel: string; instId: string }): void {
     // メッセージを作成
     const message = {
-      op: 'subscribe',
-      args: [subscription]
+        op: 'subscribe',
+        args: [subscription]
     };
     
     // 送信キューを使用してメッセージを送信
     this.sendQueue.send(message);
-    
+      
     // 現在の購読情報を保存
-    this.currentSubscription = subscription;
-    
+      this.currentSubscription = subscription;
+      
     logger.debug('Subscription queued', {
-      component: 'BitgetWebSocketClient',
-      action: 'sendSubscription',
+        component: 'BitgetWebSocketClient',
+        action: 'sendSubscription',
       subscription,
       queueSize: this.sendQueue.getQueueSize()
     });

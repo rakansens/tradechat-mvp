@@ -19,13 +19,13 @@ let connectionAttempts = 0;
 const MAX_CONNECTION_ATTEMPTS = 5;
 const RECONNECT_DELAY = 2000; // ms
 
-  /**
-   * マーケットデータ用のSocket.IO接続を初期化
-   * @returns Socket.IOのソケットインスタンス
-   */
+/**
+ * マーケットデータ用のSocket.IO接続を初期化
+ * @returns Socket.IOのソケットインスタンス
+ */
 export function initializeSocketClient(): Socket | null {
   // サーバーサイドでは実行しない
-      if (typeof window === 'undefined') {
+  if (typeof window === 'undefined') {
     logger.warn('initializeSocketClientはブラウザ環境でのみ実行できます', {
       component: 'SocketClient',
       action: 'initializeSocketClient'
@@ -79,9 +79,9 @@ export function initializeSocketClient(): Socket | null {
           error: e
         });
       }
-      }
-      
-      // Socket.io接続を初期化（デフォルトの名前空間を使用、既存があれば再利用）
+    }
+
+    // Socket.io接続を初期化（デフォルトの名前空間を使用、既存があれば再利用）
     const baseUrl = process.env.API_BASE_URL || 'http://localhost:3000';
     
     // 接続オプションを設定
@@ -92,25 +92,25 @@ export function initializeSocketClient(): Socket | null {
       timeout: 30000,
       transports: ['websocket', 'polling'] // WebSocketを優先し、フォールバックとしてポーリングを使用
     };
-      
+
     // Socket.IO接続を作成
     socketInstance = io(baseUrl, options);
     
     // 接続成功時の処理
     socketInstance.on('connect', () => {
-          logger.info('Socket.IO接続成功', {
-            component: 'SocketClient',
+      logger.info('Socket.IO接続成功', {
+        component: 'SocketClient',
         action: 'connect',
         id: socketInstance?.id
-          });
-          
+      });
+      
       isConnecting = false;
       connectionAttempts = 0;
-        });
-        
+    });
+    
     // 切断時の処理
     socketInstance.on('disconnect', (reason) => {
-          logger.warn(`Socket.IO切断: ${reason}`, {
+      logger.warn(`Socket.IO切断: ${reason}`, {
         component: 'SocketClient',
         action: 'disconnect',
         reason
@@ -119,9 +119,9 @@ export function initializeSocketClient(): Socket | null {
       // io client disconnect以外の理由で切断された場合は再接続しない
       if (reason === 'io client disconnect') {
         logger.info('クライアント側から切断されました。再接続は行いません。', {
-            component: 'SocketClient',
-            action: 'disconnect'
-          });
+          component: 'SocketClient',
+          action: 'disconnect'
+        });
         return;
       }
       
@@ -135,18 +135,18 @@ export function initializeSocketClient(): Socket | null {
         isConnecting = false;
         initializeSocketClient();
       }, RECONNECT_DELAY);
-        });
-        
+    });
+    
     // 接続エラー時の処理
     socketInstance.on('connect_error', (error) => {
-          logger.error(`Socket.IO接続エラー: ${error.message}`, {
-            component: 'SocketClient',
-            action: 'connect_error',
-            error
-          });
-          
+      logger.error(`Socket.IO接続エラー: ${error.message}`, {
+        component: 'SocketClient',
+        action: 'connect_error',
+        error
+      });
+      
       isConnecting = false;
-          
+      
       // 一定時間後に再接続を試みる
       setTimeout(() => {
         logger.info(`Socket.IO接続エラー後、再接続を試みます(${connectionAttempts}/${MAX_CONNECTION_ATTEMPTS})`, {
@@ -157,35 +157,35 @@ export function initializeSocketClient(): Socket | null {
         initializeSocketClient();
       }, RECONNECT_DELAY);
     });
-      
+    
     return socketInstance;
-    } catch (error) {
+  } catch (error) {
     logger.error('Socket.IO初期化エラー:', {
-        component: 'SocketClient',
+      component: 'SocketClient',
       action: 'initializeSocketClient',
       error
-      });
+    });
     
     isConnecting = false;
-      return null;
-    }
+    return null;
   }
+}
 
-  /**
-   * 現在のSocket.IOインスタンスを取得、なければ初期化
+/**
+ * 現在のSocket.IOインスタンスを取得、なければ初期化
  * @param forceInit 強制的に初期化するかどうか
  * @returns Socket.IOインスタンス
  */
 export function getSocket(forceInit = false): Socket | null {
   if (forceInit || !socketInstance) {
     return initializeSocketClient();
-    }
-  return socketInstance;
   }
+  return socketInstance;
+}
 
-  /**
+/**
  * WebSocket接続を切断
-   */
+ */
 export function disconnectSocket(): void {
   if (socketInstance) {
     try {
@@ -193,8 +193,8 @@ export function disconnectSocket(): void {
       socketInstance = null;
       connectionAttempts = 0;
       isConnecting = false;
-    
-    logger.info('Socket.IO接続を切断しました', {
+      
+      logger.info('Socket.IO接続を切断しました', {
         component: 'SocketClient',
         action: 'disconnectSocket'
       });

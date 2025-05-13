@@ -235,16 +235,16 @@ function convertCandleData(responseData: any[], timeframe: string): any[] {
             let normalizedTimestamp = timestamp;
             if (timestamp < 10000000000) {
               normalizedTimestamp = timestamp * 1000; // 秒からミリ秒に変換
-            }
-            
-            result = {
+          }
+          
+          result = {
               time: normalizedTimestamp,
-              open: parseFloat(String(candle.open)),
-              high: parseFloat(String(candle.high)),
-              low: parseFloat(String(candle.low)),
-              close: parseFloat(String(candle.close)),
-              volume: parseFloat(String(candle.volume || candle.vol || '0'))
-            };
+            open: parseFloat(String(candle.open)),
+            high: parseFloat(String(candle.high)),
+            low: parseFloat(String(candle.low)),
+            close: parseFloat(String(candle.close)),
+            volume: parseFloat(String(candle.volume || candle.vol || '0'))
+          };
           }
         }
         

@@ -212,21 +212,21 @@ if (typeof window !== 'undefined') {
       }
       
       // 定期的にWebSocketの接続状態を確認
-      checkIntervalId = setInterval(() => {
-        try {
-          // socketServiceInstanceが初期化されていない場合は初期化
-          if (!socketServiceInstance) {
-            socketServiceInstance = getSocketService();
-          }
-          
-          if (!socketServiceInstance) {
-            logger.warn('socketServiceInstanceがまだ初期化されていません', {
-              component: 'useWebSocketStore',
-              action: 'checkWebSocketConnection'
-            });
-            return;
-          }
-          
+            checkIntervalId = setInterval(() => {
+              try {
+                // socketServiceInstanceが初期化されていない場合は初期化
+                if (!socketServiceInstance) {
+                  socketServiceInstance = getSocketService();
+                }
+                
+                if (!socketServiceInstance) {
+                  logger.warn('socketServiceInstanceがまだ初期化されていません', {
+                    component: 'useWebSocketStore',
+                    action: 'checkWebSocketConnection'
+                  });
+                  return;
+                }
+                
           // isConnectedメソッドが存在するか確認
           const isConnected = typeof socketServiceInstance.isConnected === 'function'
             ? socketServiceInstance.isConnected()
@@ -234,26 +234,26 @@ if (typeof window !== 'undefined') {
                 ? socketServiceInstance.webSocketClient.isConnected() 
                 : false);
           
-          const currentConnected = useWebSocketStore.getState().wsConnected;
-          
-          // 接続状態が変わった場合
-          if (isConnected !== currentConnected) {
-            useWebSocketStore.getState().setConnected(isConnected);
-            
-            // 接続された場合は何もしない（各ストアが必要に応じて購読を開始する）
-            // 切断された場合は購読状態をリセット
-            if (!isConnected) {
-              useWebSocketStore.getState().unsubscribeAllWebSockets();
-            }
-          }
-        } catch (error) {
-          logger.error(`WebSocket接続状態の確認中にエラーが発生しました: ${error}`, {
-            component: 'useWebSocketStore',
-            action: 'checkWebSocketConnection',
-            error
-          });
-        }
-      }, 10000); // 10秒ごとにチェック
+                const currentConnected = useWebSocketStore.getState().wsConnected;
+                
+                // 接続状態が変わった場合
+                if (isConnected !== currentConnected) {
+                  useWebSocketStore.getState().setConnected(isConnected);
+                  
+                  // 接続された場合は何もしない（各ストアが必要に応じて購読を開始する）
+                  // 切断された場合は購読状態をリセット
+                  if (!isConnected) {
+                    useWebSocketStore.getState().unsubscribeAllWebSockets();
+                  }
+                }
+              } catch (error) {
+                logger.error(`WebSocket接続状態の確認中にエラーが発生しました: ${error}`, {
+                  component: 'useWebSocketStore',
+                  action: 'checkWebSocketConnection',
+                  error
+                });
+              }
+            }, 10000); // 10秒ごとにチェック
       
       logger.info(`Successfully initialized WebSocket monitoring`, {
         component: 'useWebSocketStore',
