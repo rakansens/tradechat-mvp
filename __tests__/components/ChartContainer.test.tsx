@@ -13,7 +13,7 @@ import { render, act } from '@testing-library/react';
 import { ChartContainer } from '../../components/chart/ChartContainer';
 import { useSymbolStore } from '../../store/useSymbolStore';
 import { useChartDataStore } from '../../store/chart';
-import { logger } from '../../utils/logger';
+import { logger } from '../../utils/common';
 
 // モック
 jest.mock('../../store/useSymbolStore', () => ({
@@ -47,7 +47,7 @@ jest.mock('../../store/chart', () => ({
   }))
 }));
 
-jest.mock('../../utils/logger', () => ({
+jest.mock('../../utils/common', () => ({
   logger: {
     info: jest.fn(),
     warn: jest.fn(),

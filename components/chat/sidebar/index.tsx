@@ -1,16 +1,16 @@
 'use client'
 
-// components/Sidebar.tsx
+// components/chat/sidebar/index.tsx
 // チャットサイドバーコンポーネント
-// 作成日: 2025/5/20
-// 更新日: 2025/5/21 - UIUXを既存デザインに合わせて更新
+// 作成日: 2025/5/21
+// 更新日: 2025/5/21 - UIUXを既存デザインに合わせて作成
 
 import { useState, useEffect } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Plus, MessageSquare, Loader2, Search } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import NewThreadModal from './NewThreadModal'
+import NewThreadModal from '@/components/chat/modals/NewThreadModal'
 import { Input } from '@/components/ui/input'
 
 type Conversation = {

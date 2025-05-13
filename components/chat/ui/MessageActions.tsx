@@ -1,6 +1,7 @@
 // components/chat/ui/MessageActions.tsx
 // 作成: メッセージ操作用UIコンポーネント
 // ユーザーがメッセージに対して行える操作（コピーなど）を提供
+// 更新: 2025-05-21 - conversationIdプロパティを追加
 
 import { useState, memo } from "react"
 import { Copy, Check, Download } from "lucide-react"
@@ -10,9 +11,10 @@ import type { ExtendedMessage } from "@/types/chat"
 interface MessageActionsProps {
   message: ExtendedMessage
   isVisible: boolean
+  conversationId?: string | null // 追加: 会話ID
 }
 
-export const MessageActions = memo(({ message, isVisible }: MessageActionsProps) => {
+export const MessageActions = memo(({ message, isVisible, conversationId }: MessageActionsProps) => {
   const [copied, setCopied] = useState(false)
   
   // メッセージ内容をクリップボードにコピー
@@ -28,12 +30,17 @@ export const MessageActions = memo(({ message, isVisible }: MessageActionsProps)
   
   // Markdownとしてメッセージを保存
   const saveAsMarkdown = () => {
+    // ファイル名に会話IDを含める
+    const fileName = conversationId 
+      ? `message-${conversationId.substring(0, 8)}-${new Date().toISOString().split("T")[0]}.md`
+      : `message-${new Date().toISOString().split("T")[0]}.md`;
+      
     const blob = new Blob([message.content], { type: "text/markdown" })
     const url = URL.createObjectURL(blob)
     
     const a = document.createElement("a")
     a.href = url
-    a.download = `message-${new Date().toISOString().split("T")[0]}.md`
+    a.download = fileName
     document.body.appendChild(a)
     a.click()
     

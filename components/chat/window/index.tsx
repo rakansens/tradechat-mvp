@@ -4,15 +4,17 @@
  * components/chat/window/index.tsx
  * 作成: リファクタリング後のChatWindowコンポーネント
  * 役割: HooksとUIを結合し、元のChatWindowと同等の機能を提供
+ * 更新: 2025-05-21 - マルチスレッド会話IDをサポート
  */
 
-import React, { forwardRef } from "react";
+import React, { forwardRef, useEffect, useState } from "react";
 import type { TradeActionProps } from "@/types/common-interfaces";
 import type { OpenEntry } from "@/types/entry";
 
 // カスタムフック
 import useChatWindowStores from "./hooks/useChatWindowStores";
 import useScrollManager from "./hooks/useScrollManager";
+import { useChatInteraction } from "@/hooks/chat";
 
 // UIコンポーネント
 import MessageListWrapper from "./ui/MessageListWrapper";
@@ -25,6 +27,7 @@ interface ChatWindowProps extends Pick<TradeActionProps, 'onExecuteEntry'> {
   isThinking?: boolean;
   editPendingEntry?: (entry: OpenEntry) => void;
   cancelPendingEntry?: () => void;
+  conversationId?: string; // 追加: 特定の会話IDを指定できるようにする
 }
 
 /**
@@ -36,13 +39,90 @@ const ChatWindow = forwardRef<HTMLDivElement, ChatWindowProps>(
     isThinking = false,
     onExecuteEntry, 
     editPendingEntry,
-    cancelPendingEntry
+    cancelPendingEntry,
+    conversationId
   }, ref) => {
     // ストアから状態を取得
     const { messages, isSearching, pendingEntry, streamingMessage } = useChatWindowStores();
     
     // スクロール管理フックを使用
     const { containerRef, showScrollButton, handleScroll, scrollToBottom } = useScrollManager();
+    
+    // URLからconversationIdを取得
+    const [activeConversationId, setActiveConversationId] = useState<string | null>(
+      conversationId || null
+    );
+    
+    // URLのクエリパラメータを監視
+    useEffect(() => {
+      // URLから会話IDを取得
+      const getConversationIdFromUrl = () => {
+        if (typeof window === 'undefined') return null;
+        const searchParams = new URLSearchParams(window.location.search);
+        return searchParams.get('conversationId');
+      };
+      
+      // 初期会話IDを設定
+      const urlConversationId = getConversationIdFromUrl();
+      if (urlConversationId) {
+        setActiveConversationId(urlConversationId);
+      }
+      
+      // conversationChangedイベントをリッスン
+      const handleConversationChange = (event: CustomEvent<{conversationId: string}>) => {
+        setActiveConversationId(event.detail.conversationId);
+      };
+      
+      window.addEventListener('conversationChanged', handleConversationChange as EventListener);
+      
+      return () => {
+        window.removeEventListener('conversationChanged', handleConversationChange as EventListener);
+      };
+    }, []);
+    
+    // conversationIdが変更されたら会話内容を読み込む
+    useEffect(() => {
+      if (activeConversationId) {
+        // 会話データを読み込む
+        fetch(`/api/messages/${activeConversationId}`)
+          .then(res => {
+            if (!res.ok) throw new Error('会話を読み込めませんでした');
+            return res.json();
+          })
+          .then(data => {
+            // メッセージをストアに設定（既存のuseChatWindowStoresと結合）
+            const formattedMessages = data.messages.map((msg: any) => ({
+              id: msg.id,
+              role: msg.role,
+              content: msg.content,
+              ...(msg.is_proposal && { isProposal: true }),
+              ...(msg.proposal_type && { proposalType: msg.proposal_type }),
+              ...(msg.price && { price: msg.price }),
+              ...(msg.take_profit && { takeProfit: msg.take_profit }),
+              ...(msg.stop_loss && { stopLoss: msg.stop_loss }),
+              ...(msg.chat_images?.image_data && { 
+                imageData: msg.chat_images.image_data,
+                imageCaption: msg.chat_images.image_caption || 'Image' 
+              }),
+            }));
+            
+            // メッセージを更新
+            // 注: ここでuseChatWindowStoresのsetMessagesがない場合は、 
+            // useRootStore.getState().setMessagesを直接使用することになる
+            try {
+              // ストアのセッター関数を使用
+              import('@/store').then(({ useRootStore }) => {
+                useRootStore.getState().setMessages(formattedMessages);
+              });
+            } catch (error) {
+              console.error('Failed to update messages:', error);
+            }
+          })
+          .catch(err => {
+            console.error('Error loading conversation:', err);
+          });
+      }
+    }, [activeConversationId]);
     
     return (
       <div 
@@ -59,6 +139,7 @@ const ChatWindow = forwardRef<HTMLDivElement, ChatWindowProps>(
           executeEntry={onExecuteEntry}
           editPendingEntry={editPendingEntry}
           cancelPendingEntry={cancelPendingEntry}
+          conversationId={activeConversationId}
         />
         
         {/* 状態インジケーター - ストリーミングメッセージがない場合のみ表示 */}

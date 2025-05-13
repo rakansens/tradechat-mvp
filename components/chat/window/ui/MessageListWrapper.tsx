@@ -3,6 +3,7 @@
 /**
  * components/chat/window/ui/MessageListWrapper.tsx
  * 作成: MessageListにpropsを渡すラッパーコンポーネント
+ * 更新: 2025-05-21 - conversationIdプロパティを追加
  */
 
 import React, { memo } from "react";
@@ -18,6 +19,7 @@ interface MessageListWrapperProps {
   executeEntry?: TradeActionProps['onExecuteEntry'];
   editPendingEntry?: (entry: OpenEntry) => void;
   cancelPendingEntry?: () => void;
+  conversationId?: string | null;
 }
 
 /**
@@ -30,7 +32,8 @@ const MessageListWrapper = memo(function MessageListWrapper({
   chatEndRef,
   executeEntry,
   editPendingEntry,
-  cancelPendingEntry
+  cancelPendingEntry,
+  conversationId
 }: MessageListWrapperProps) {
   return (
     <MessageList
@@ -40,6 +43,7 @@ const MessageListWrapper = memo(function MessageListWrapper({
       executeEntry={executeEntry}
       editPendingEntry={editPendingEntry}
       cancelPendingEntry={cancelPendingEntry}
+      conversationId={conversationId}
     />
   );
 });

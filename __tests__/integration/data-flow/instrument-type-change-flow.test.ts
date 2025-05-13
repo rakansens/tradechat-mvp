@@ -5,7 +5,7 @@
 
 import { changeInstrumentTypeTool } from '../../../src/mastra/tools/instrument-type-tools';
 import { socketStoreActions } from '../../../store/socketActions';
-import { logger } from '../../../utils/logger';
+import { logger } from '../../../utils/common';
 
 // モジュールをモック化
 jest.mock('../../../src/mastra/tools/instrument-type-tools', () => ({
@@ -20,7 +20,7 @@ jest.mock('../../../store/socketActions', () => ({
   },
 }));
 
-jest.mock('../../../utils/logger', () => ({
+jest.mock('../../../utils/common', () => ({
   logger: {
     info: jest.fn(),
     error: jest.fn(),

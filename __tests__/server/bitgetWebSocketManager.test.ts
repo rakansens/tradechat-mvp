@@ -13,11 +13,11 @@
 import { BitgetWebSocketManager } from '../../server/bitgetWebSocketManager';
 import WebSocket from 'ws';
 import { EventEmitter } from 'events';
-import { logger } from '../../utils/logger';
+import { logger } from '../../utils/common';
 
 // WebSocketとloggerをモック化
 jest.mock('ws');
-jest.mock('../../utils/logger', () => ({
+jest.mock('../../utils/common', () => ({
   logger: {
     info: jest.fn(),
     warn: jest.fn(),

@@ -1,9 +1,9 @@
 'use client'
 
-// components/NewThreadModal.tsx
+// components/chat/modals/NewThreadModal.tsx
 // 新規会話作成モーダル
-// 作成日: 2025/5/20
-// 更新日: 2025/5/21 - UIUXを既存デザインに合わせて更新
+// 作成日: 2025/5/21
+// 更新日: 2025/5/21 - UIUXを既存デザインに合わせて作成
 
 import { useState, useRef, useEffect } from 'react'
 import {

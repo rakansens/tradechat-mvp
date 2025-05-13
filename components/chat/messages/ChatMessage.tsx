@@ -1,6 +1,7 @@
 // components/chat/messages/ChatMessage.tsx
 // 更新: パフォーマンス最適化のためのリファクタリング
 // 静的要素の定数化とコンポーネントの分割を行いました
+// 更新: 2025-05-21 - conversationIdプロパティを追加
 
 import { useState, memo, useMemo } from "react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -41,6 +42,7 @@ interface ChatMessageProps {
   executeEntry?: () => void
   editPendingEntry?: (entry: OpenEntry) => void
   cancelPendingEntry?: () => void
+  conversationId?: string | null // 追加: 会話ID
 }
 
 interface MessageBubbleProps {
@@ -74,7 +76,8 @@ export const ChatMessage = memo(({
   pendingEntry,
   executeEntry,
   editPendingEntry,
-  cancelPendingEntry
+  cancelPendingEntry,
+  conversationId // 追加: 会話ID
 }: ChatMessageProps) => {
   const [isHovering, setIsHovering] = useState(false)
   
@@ -113,7 +116,8 @@ export const ChatMessage = memo(({
         {/* Actions menu appears on hover */}
         <MessageActions 
           message={message} 
-          isVisible={isHovering} 
+          isVisible={isHovering}
+          conversationId={conversationId} // 追加: 会話ID
         />
 
         {/* Proposal action buttons */}
