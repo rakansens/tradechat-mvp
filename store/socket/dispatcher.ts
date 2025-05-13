@@ -7,6 +7,7 @@
 // 更新: 2025-05-14 - ソケットスライスの参照パスを修正
 // 更新: 2025-05-14 - 動的インポートを最適化して、Webpackの警告を解消
 // 更新: 2025-05-15 - useSymbolStoreの参照を削除し、代わりにuseRootStoreを使用
+// 更新: 2025-05-31 - useChartDataStoreの参照を削除し、rootStoreを直接使用
 // WebSocket接続監視と副作用の管理
 
 import { ExchangeType } from '@/types/api';
@@ -17,10 +18,7 @@ import { useRootStore } from '@/store/rootStore';
 import type { RootStore } from '@/store/rootStore';
 
 // 循環参照を避けるための前方参照型
-type ChartDataStoreType = {
-  updateTimeFrame: (timeframe: Timeframe) => void;
-};
-
+// @deprecated - ChartDataStoreTypeはrootStoreに統合済み
 type DataServiceType = {
   chartDataService: {
     clearCacheOnSymbolChange: (symbol: string) => void;
@@ -56,9 +54,7 @@ export type SocketPayload<T extends SocketEvent> =
 const importStore = async <T>(storePath: string): Promise<T | null> => {
   try {
     // 明示的に各ストアへのパスを指定
-    if (storePath === '@/store/chart/useChartDataStore') {
-      return (await import('@/store/chart/useChartDataStore')).useChartDataStore.getState() as T;
-    } else if (storePath === '@/services/data') {
+    if (storePath === '@/services/data') {
       return await import('@/services/data') as unknown as T;
     } else if (storePath === '@/store/socket/index') {
       return (await import('@/store/rootStore')).useRootStore.getState() as T;
@@ -100,18 +96,14 @@ export const storeEmit = <T extends SocketEvent>(event: T, payload: SocketPayloa
         break;
         
       case 'timeframe':
-        // 時間足変更イベント
-        importStore<ChartDataStoreType>('@/store/chart/useChartDataStore').then(store => {
-          if (store) {
-            store.updateTimeFrame(payload as Timeframe);
-            
-            // キャッシュもクリアする
-            importStore<DataServiceType>('@/services/data').then(dataService => {
-              if (dataService) {
-                const currentSymbol = rootStore.currentSymbol;
-                dataService.chartDataService.clearCacheOnSymbolChange(currentSymbol);
-              }
-            });
+        // 時間足変更イベント - rootStoreを直接使用
+        rootStore.updateTimeFrame(payload as Timeframe);
+        
+        // キャッシュもクリアする
+        importStore<DataServiceType>('@/services/data').then(dataService => {
+          if (dataService) {
+            const currentSymbol = rootStore.currentSymbol;
+            dataService.chartDataService.clearCacheOnSymbolChange(currentSymbol);
           }
         });
         break;
