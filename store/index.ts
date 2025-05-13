@@ -12,6 +12,7 @@
 // 更新: 2025-05-14 - useWebSocketStoreを削除し、SocketSliceセレクターを追加
 // 更新: 2025-05-14 - useChatStoreとuseSymbolStore参照を削除
 // 更新: 2025-05-15 - useSymbolStoreとuseChatStoreの参照を完全に削除
+// 更新: 2025-05-15 - useUIStoreを削除しUIスライスに完全移行
 
 // ルートストアをエクスポート
 export { useRootStore } from './rootStore';
@@ -45,9 +46,6 @@ export { useOrderBookStore } from './market/useOrderBookStore';
 
 // その他のストアをエクスポート
 export { useEntryStore } from './useEntryStore';
-
-// 従来のストア（非推奨、将来的には削除予定）
-export { useUIStore } from './useUIStore';
 
 // 新しいスライスベースの実装
 export { createChartDataSlice, type ChartDataSlice, type ChartDataActions } from './chart/data';
@@ -115,7 +113,7 @@ export {
 } from './chat/selectors';
 
 // ドメイン駆動設計ストア構造の参照ガイド:
-// - ルートストア: useRootStore（チャート、エントリー、チャット、シンボル、ソケットスライスを含む統合ストア）
+// - ルートストア: useRootStore（チャート、エントリー、チャット、シンボル、ソケット、UIスライスを含む統合ストア）
 // - チャートデータ: useRootStore + selectChartData などのセレクター
 // - オーダーブック: useOrderBookStore
 // - WebSocket状態: useSocketConnected などのセレクター（SocketSliceに移行）
