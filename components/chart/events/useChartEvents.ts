@@ -4,12 +4,13 @@
  * 
  * 変更履歴:
  * - 2025-05-15: ChartCanvas.tsxから責務分離の一環として作成
+ * - 2025-05-20: 古いuseChartDataStore参照をRootStoreに更新
  */
 
 import { useEffect } from 'react';
 import { Timeframe } from '@/types/chart';
 import { logger } from '@/utils/logger';
-import { useChartDataStore } from '@/store';
+import { useRootStore } from '@/store';
 
 // カスタムイベントの型定義
 interface TimeframeChangedEvent extends CustomEvent {
@@ -46,8 +47,8 @@ export function useChartEvents(): UseChartEventsReturn {
         action: 'handleTimeframeChange'
       });
       
-      // チャートデータストアの時間足を更新
-      useChartDataStore.getState().updateTimeFrame(timeframe as Timeframe);
+      // RootStoreの時間足を更新
+      useRootStore.getState().updateTimeFrame(timeframe as Timeframe);
       
       // ツールバーの選択状態を更新するためのカスタムイベント
       const updateEvent = new CustomEvent('updateToolbarTimeframe', { detail: { timeframe } });
@@ -62,8 +63,8 @@ export function useChartEvents(): UseChartEventsReturn {
         action: 'handleSymbolChange'
       });
       
-      // チャートデータストアの銘柄を更新
-      useChartDataStore.getState().updateSymbol(symbol);
+      // RootStoreの銘柄を更新
+      useRootStore.getState().updateSymbol(symbol);
       
       // ツールバーの選択状態を更新するためのカスタムイベント
       const updateEvent = new CustomEvent('updateToolbarSymbol', { detail: { symbol } });

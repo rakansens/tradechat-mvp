@@ -4,6 +4,7 @@
  * 
  * 変更履歴:
  * - 2025-05-15: ChartCanvas.tsxから責務分離の一環として作成
+ * - 2025-05-20: 古いストア参照を新しいRootStoreベースの実装に更新
  */
 
 "use client"
@@ -12,11 +13,12 @@ import { useEffect } from "react"
 import { OHLCData, ChartType } from "@/types/chart"
 import { logger } from '@/utils/logger'
 import { 
-  useChartDataStore, 
-  useChartConfigStore, 
+  useRootStore,
   useIndicatorStore, 
   useDrawingToolStore 
 } from "@/store"
+import { selectChartData, selectCurrentSymbol, selectCurrentTimeFrame } from "@/store/chart/data/selectors"
+import { selectChartType } from "@/store/chart/config/selectors"
 import { CandlestickSeries, LineSeries, AreaSeries } from "lightweight-charts";
 
 // リファクタリングした各Hookをインポート
@@ -55,9 +57,11 @@ export default function ChartCanvas() {
   // イベント管理を使用
   useChartEvents();
   
-  // ストアからデータを取得
-  const { data, currentSymbol, currentTimeFrame } = useChartDataStore();
-  const { chartType } = useChartConfigStore();
+  // ストアからデータを取得（RootStoreとセレクターを使用）
+  const data = useRootStore(selectChartData);
+  const currentSymbol = useRootStore(selectCurrentSymbol);
+  const currentTimeFrame = useRootStore(selectCurrentTimeFrame);
+  const chartType = useRootStore(selectChartType);
   const { activeIndicators } = useIndicatorStore();
   const { activeDrawingTools } = useDrawingToolStore();
   

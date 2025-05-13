@@ -4,10 +4,11 @@
  * 
  * 変更履歴:
  * - 2023-06-01: ChartContainer.tsxのリファクタリングに伴い作成
+ * - 2025-05-20: useRealTimeStoreをuseRootStoreに置き換え
  */
 
 import { useEffect } from 'react';
-import { useRealTimeStore } from '@/store/chart';
+import { useRootStore } from '@/store';
 import { logger } from '@/utils/logger';
 
 /**
@@ -18,7 +19,7 @@ import { logger } from '@/utils/logger';
  */
 export const useRealTimeCleanup = () => {
   // リアルタイムデータの使用状態を取得
-  const useRealTimeData = useRealTimeStore(s => s.useRealTimeData);
+  const useRealTimeData = useRootStore(s => s.useRealTimeData);
   
   useEffect(() => {
     // リアルタイムデータが有効な場合のみ、クリーンアップ関数を設定
@@ -29,7 +30,7 @@ export const useRealTimeCleanup = () => {
           action: 'cleanup',
           timestamp: new Date().toISOString()
         });
-        useRealTimeStore.getState().stopRealTimeUpdates();
+        useRootStore.getState().stopRealTimeUpdates();
       }
     };
   }, [useRealTimeData]);

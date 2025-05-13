@@ -3,21 +3,34 @@
 // 役割:
 // 1. 必要なすべてのストアのstateとactionをまとめて提供
 // 2. コンポーネントとストアの結合度を下げる
+// 更新: 古いストア（useChartDataStore、useChartConfigStore、useUIStore）をuseRootStoreに置き換え
 
 import {
+  // ルートストアとセレクター
+  useRootStore,
   // 分割されたチャートストア
-  useChartConfigStore,
   useIndicatorStore,
   useDrawingToolStore,
-  useRealTimeStore,
-  useChartDataStore,
-  // その他のストア
-  useUIStore,
+  useRealTimeStoreNew,
+  // 古いストア（まだマイグレーションされていないもの）
   useEntryStore,
   useSymbolStore
 } from '@/store';
+// 各スライスのセレクターをインポート
+import { 
+  selectChartType,
+  selectExchangeType 
+} from '@/store/chart/config/selectors';
+import {
+  selectChartData,
+  selectError,
+  selectCurrentTimeFrame
+} from '@/store/chart/data/selectors';
+import { selectActiveTab } from '@/store/ui/selectors';
 import { Timeframe, ChartType } from '@/types/chart';
 import { IndicatorType, DrawingToolType } from '@/types/store';
+import { EntrySliceState } from '@/store/entry/state';
+import type { SymbolState } from '@/store/useSymbolStore';
 
 /**
  * チャートツールバーで必要なすべてのストアの状態とアクションを提供するカスタムフック
@@ -25,21 +38,21 @@ import { IndicatorType, DrawingToolType } from '@/types/store';
  */
 export function useToolbarStores() {
   // SymbolStoreから状態とアクションを取得
-  const currentSymbol = useSymbolStore(state => state.currentSymbol);
-  const exchangeType = useSymbolStore(state => state.exchangeType);
-  const setCurrentSymbol = useSymbolStore(state => state.setCurrentSymbol);
-  const setExchangeType = useSymbolStore(state => state.setExchangeType);
+  const currentSymbol = useSymbolStore((state: SymbolState) => state.currentSymbol);
+  const exchangeType = useSymbolStore((state: SymbolState) => state.exchangeType);
+  const setCurrentSymbol = useSymbolStore((state) => state.setCurrentSymbol);
+  const setExchangeType = useSymbolStore((state) => state.setExchangeType);
   
-  // ChartDataStoreから状態とアクションを取得
-  const chartData = useChartDataStore(state => state.data);
-  const error = useChartDataStore(state => state.error);
-  const currentTimeFrame = useChartDataStore(state => state.currentTimeFrame);
-  const updateTimeFrame = useChartDataStore(state => state.updateTimeFrame);
-  const fetchChartData = useChartDataStore(state => state.fetchData);
+  // ChartDataSliceから状態とアクションを取得（RootStoreを使用）
+  const chartData = useRootStore(selectChartData);
+  const error = useRootStore(selectError);
+  const currentTimeFrame = useRootStore(selectCurrentTimeFrame);
+  const updateTimeFrame = useRootStore((state) => state.updateTimeFrame);
+  const fetchChartData = useRootStore((state) => state.fetchData);
   
-  // ChartConfigStoreから状態とアクションを取得
-  const chartType = useChartConfigStore(state => state.chartType);
-  const setChartType = useChartConfigStore(state => state.setChartType);
+  // ChartConfigSliceから状態とアクションを取得（RootStoreを使用）
+  const chartType = useRootStore(selectChartType);
+  const setChartType = useRootStore((state) => state.setChartType);
 
   // IndicatorStoreから状態とアクションを取得
   const activeIndicators = useIndicatorStore(state => state.activeIndicators);
@@ -53,11 +66,11 @@ export function useToolbarStores() {
   const clearAllDrawingTools = useDrawingToolStore(state => state.clearAllDrawingTools);
 
   // RealTimeStoreから状態とアクションを取得
-  const useRealTimeData = useRealTimeStore(state => state.useRealTimeData);
-  const toggleRealTimeData = useRealTimeStore(state => state.toggleRealTimeData);
+  const useRealTimeData = useRealTimeStoreNew(state => state.useRealTimeData);
+  const toggleRealTimeData = useRealTimeStoreNew(state => state.toggleRealTimeData);
   
   // エントリーストアから状態を取得
-  const entries = useEntryStore(state => state.entries);
+  const entries = useEntryStore((state: EntrySliceState) => state.entries);
   const openPositionsCount = entries.filter(entry => entry.status === "open").length;
 
   // シンボル変更を一元管理

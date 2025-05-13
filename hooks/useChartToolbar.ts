@@ -1,10 +1,20 @@
 // hooks/useChartToolbar.ts
 // 作成: ChartToolbarコンポーネントの状態管理を統一するためのカスタムフック
+// 更新: useChartDataStoreをuseRootStoreに置き換え
+// 更新: useUIStoreをuseRootStoreに置き換え、UIセレクターを使用するように修正
+// 更新: useChartConfigStoreをuseRootStoreに置き換え、ChartConfigセレクターを使用するように修正
 
 import { useCallback } from 'react';
-import { useUIStore, useChartDataStore, useChartConfigStore, useRealTimeStore } from '@/store';
+import { useRootStore } from '@/store';
 import { selectActiveTab } from '@/store/ui/selectors';
-import { selectCurrentPrice, selectPriceChangePercent } from '@/store/chart/selectors';
+import { 
+  selectCurrentPrice,
+  selectCurrentSymbol, 
+  selectCurrentTimeFrame, 
+  selectError 
+} from '@/store/chart/data/selectors';
+import { selectPriceChangePercent } from '@/store/chart/selectors';
+import { selectChartType, selectExchangeType } from '@/store/chart/config/selectors';
 import { TabType } from '@/types/store';
 import { Timeframe, ChartType } from '@/types/chart';
 import { ExchangeType } from '@/types/api';
@@ -14,30 +24,30 @@ import { ExchangeType } from '@/types/api';
  * グローバルな状態はストアから直接取得し、ロジックをカプセル化します
  */
 export function useChartToolbar() {
-  // UIストアから状態を取得
-  const activeTab = useUIStore(selectActiveTab);
-  const setActiveTab = useUIStore((state) => state.setActiveTab);
+  // UIストアから状態を取得（RootStoreから取得するように変更）
+  const activeTab = useRootStore(selectActiveTab);
+  const setActiveTab = useRootStore((state) => state.setActiveTab);
 
-  // チャートデータストアから状態とアクションを取得
-  const currentSymbol = useChartDataStore((state) => state.currentSymbol);
-  const currentTimeFrame = useChartDataStore((state) => state.currentTimeFrame);
-  const updateTimeFrame = useChartDataStore((state) => state.updateTimeFrame);
-  const updateSymbol = useChartDataStore((state) => state.updateSymbol);
-  const fetchData = useChartDataStore((state) => state.fetchData);
+  // RootStoreからチャートデータ関連の状態とアクションを取得
+  const currentSymbol = useRootStore(selectCurrentSymbol);
+  const currentTimeFrame = useRootStore(selectCurrentTimeFrame);
+  const updateTimeFrame = useRootStore((state) => state.updateTimeFrame);
+  const updateSymbol = useRootStore((state) => state.updateSymbol);
+  const fetchData = useRootStore((state) => state.fetchData);
   // メモ化されたセレクターを使用
-  const currentPrice = useChartDataStore(selectCurrentPrice);
-  const priceChangePercent = useChartDataStore(selectPriceChangePercent);
-  const error = useChartDataStore((state) => state.error);
+  const currentPrice = useRootStore(selectCurrentPrice);
+  const priceChangePercent = useRootStore(selectPriceChangePercent);
+  const error = useRootStore(selectError);
 
-  // チャート設定ストアから状態とアクションを取得
-  const chartType = useChartConfigStore((state) => state.chartType);
-  const exchangeType = useChartConfigStore((state) => state.exchangeType);
-  const setChartType = useChartConfigStore((state) => state.setChartType);
-  const setExchangeType = useChartConfigStore((state) => state.setExchangeType);
+  // チャート設定ストアから状態とアクションを取得（RootStoreから取得するように変更）
+  const chartType = useRootStore(selectChartType);
+  const exchangeType = useRootStore(selectExchangeType);
+  const setChartType = useRootStore((state) => state.setChartType);
+  const setExchangeType = useRootStore((state) => state.setExchangeType);
 
-  // リアルタイム更新ストアから状態とアクションを取得
-  const useRealTimeData = useRealTimeStore((state) => state.useRealTimeData);
-  const toggleRealTimeData = useRealTimeStore((state) => state.toggleRealTimeData);
+  // リアルタイム更新の状態とアクションをrootStoreから取得
+  const useRealTimeData = useRootStore((state) => state.useRealTimeData);
+  const toggleRealTimeData = useRootStore((state) => state.toggleRealTimeData);
 
   // タブ切り替えハンドラー
   const handleTabChange = useCallback((value: string) => {

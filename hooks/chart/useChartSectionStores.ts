@@ -4,15 +4,24 @@
  * 
  * 変更履歴:
  * - 2023-06-04: ChartSection.tsxのリファクタリングに伴い作成
+ * - 2025-05-20: 古いストア参照をuseRootStoreとセレクターに置き換え
  */
 
 import { useMemo } from 'react';
 import { 
-  useChartDataStore,
-  useChartConfigStore,
-  useRealTimeStore
-} from '@/store/chart';
-import { useSymbolStore } from '@/store/useSymbolStore';
+  useRootStore,
+  useSymbolStore
+} from '@/store';
+
+// セレクターをインポート
+import { 
+  selectChartData, 
+  selectCurrentTimeFrame, 
+  selectIsLoading, 
+  selectError 
+} from '@/store/chart/data/selectors';
+import { selectChartType } from '@/store/chart/config/selectors';
+
 import type { Timeframe, ChartType } from '@/types/chart';
 import { formatTimestamp } from '@/utils/chartUtils';
 
@@ -33,21 +42,22 @@ export const useChartSectionStores = () => {
   const setCurrentSymbol = useSymbolStore(state => state.setCurrentSymbol);
   const setExchangeType = useSymbolStore(state => state.setExchangeType);
   
-  // ChartDataStore
-  const chartData = useChartDataStore(state => state.data);
-  const currentTimeFrame = useChartDataStore(state => state.currentTimeFrame);
-  const isLoading = useChartDataStore(state => state.isLoading);
-  const error = useChartDataStore(state => state.error);
-  const updateTimeFrame = useChartDataStore(state => state.updateTimeFrame);
-  const fetchChartData = useChartDataStore(state => state.fetchData);
+  // ChartDataStore (RootStoreから取得)
+  const chartData = useRootStore(selectChartData);
+  const currentTimeFrame = useRootStore(selectCurrentTimeFrame);
+  const isLoading = useRootStore(selectIsLoading);
+  const error = useRootStore(selectError);
   
-  // ChartConfigStore
-  const chartType = useChartConfigStore(state => state.chartType);
-  const setChartType = useChartConfigStore(state => state.setChartType);
+  // ChartConfigStore (RootStoreから取得)
+  const chartType = useRootStore(selectChartType);
   
-  // RealTimeStore
-  const stopRealTimeUpdates = useRealTimeStore(state => state.stopRealTimeUpdates);
-  const initializeApi = useRealTimeStore(state => state.initializeApi);
+  // RootStoreからアクションを取得
+  const rootStore = useRootStore();
+  const updateTimeFrame = rootStore.updateTimeFrame;
+  const fetchChartData = rootStore.fetchData;
+  const setChartType = rootStore.setChartType;
+  const stopRealTimeUpdates = rootStore.stopRealTimeUpdates;
+  const initializeApi = rootStore.initializeApi;
   
   // 派生データの計算
   const derivedData = useMemo(() => {

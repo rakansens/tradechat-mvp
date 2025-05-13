@@ -7,6 +7,8 @@
 // 更新: 新しいRealTimeSliceをエクスポートに追加
 // 更新: 新しいChartDataSliceをエクスポートに追加
 // 更新: エクスポートの重複を修正
+// 更新: セレクターの競合を解決
+// 更新: チャット関連とその他不足しているセレクターを追加
 
 // ルートストアをエクスポート
 export { useRootStore } from './rootStore';
@@ -38,18 +40,70 @@ export { useChatStore } from './useChatStore';
 // 従来のストア（非推奨、将来的には削除予定）
 export { useUIStore } from './useUIStore';
 
-// 集約されたセレクターをエクスポート
-// 重複を避けるため個別にエクスポート
-export * from './selectors';
-export * from './barrel';
+// 新しいスライスベースの実装
+export { createChartDataSlice, type ChartDataSlice, type ChartDataActions } from './chart/data';
+export { useChartDataStore as useChartDataStoreNew } from './chart/data';
+export { createRealTimeSlice, type RealTimeSlice, type RealTimeActions } from './chart/realTime';
+export { useRealTimeStore as useRealTimeStoreNew } from './chart/realTime';
 
-// ChartDataSlice (新しいスライスベースの実装)
-export { createChartDataSlice, type ChartDataSlice, type ChartDataActions } from './chart/data'
-export { useChartDataStore as useChartDataStoreNew } from './chart/data'
+// 重要なセレクターを明示的にエクスポート（競合を避けるため）
+// ChartDataSliceのセレクター
+export {
+  selectChartData,
+  selectIsLoading,
+  selectError,
+  selectCurrentPrice,
+  selectLatestCandle,
+  selectPriceRange,
+  // 以下のセレクターは両方の場所で定義されているので明示的なパスでインポートする必要があります
+  // selectCurrentSymbol,
+  // selectCurrentTimeFrame,
+} from './chart/data/selectors';
 
-// RealTimeSlice (新しいスライスベースの実装)
-export { createRealTimeSlice, type RealTimeSlice, type RealTimeActions } from './chart/realTime'
-export { useRealTimeStore as useRealTimeStoreNew } from './chart/realTime'
+// ChartConfigSliceのセレクター
+export {
+  selectChartType,
+  // 以下のセレクターは両方の場所で定義されているので明示的なパスでインポートする必要があります
+  // selectExchangeType,
+} from './chart/config/selectors';
+
+// UIスライスのセレクター
+export {
+  selectActiveTab,
+  selectIsDarkMode,
+  selectIsSidebarOpen,
+  selectIsSettingsOpen,
+  selectIsModalOpen,
+  selectModalType,
+  selectModalData,
+} from './ui/selectors';
+
+// エントリースライスのセレクター
+export {
+  selectEntries,
+  selectPendingEntry,
+  selectHasPendingEntry,
+  selectOpenEntries,
+  selectClosedEntries,
+} from './entry/selectors';
+
+// その他の必要なセレクター
+export { selectPriceChangePercent } from './chart/selectors';
+
+// チャット関連のセレクター
+export {
+  selectMessages,
+  selectIsSearching,
+  selectInput,
+  selectLastMessage,
+  selectMessageCount,
+  selectUserMessages,
+  selectAIMessages,
+  selectProposalMessages,
+  selectLatestProposal,
+  selectMessagesWithStreaming,
+  selectStreamingMessage
+} from './chat/selectors';
 
 // ドメイン駆動設計ストア構造の参照ガイド:
 // - ルートストア: useRootStore（チャート、エントリー、チャット、UIスライスを含む統合ストア）

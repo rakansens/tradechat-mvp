@@ -3,9 +3,10 @@
 // 役割:
 // 1. CustomEventの登録/解除を一元管理
 // 2. イベントデータをストアに反映する処理をカプセル化
+// 更新: useChartDataStoreをuseRootStoreに置き換え
 
 import { useEffect } from 'react';
-import { useChartDataStore, useSymbolStore } from '@/store';
+import { useRootStore, useSymbolStore } from '@/store';
 import { Timeframe } from '@/types/chart';
 
 /**
@@ -23,9 +24,9 @@ export function useToolbarEvents() {
     const handleTimeframeUpdate = (event: CustomEvent) => {
       const { timeframe } = event.detail;
       console.log(`ツールバーの時間足を更新: ${timeframe}`);
-      // ChartDataStoreの時間足を更新
+      // RootStoreの時間足を更新
       // データの再取得は行わず、UIの更新のみ行う
-      useChartDataStore.setState({ currentTimeFrame: timeframe as Timeframe });
+      useRootStore.setState({ currentTimeFrame: timeframe as Timeframe });
     };
     
     // 銘柄変更イベントのリスナー
