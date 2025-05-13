@@ -1,5 +1,6 @@
-// hooks/use-mobile.tsx
-// @deprecated hooks/core/useMobile.tsx に移動しました
+// hooks/core/useMobile.tsx
+// 作成: モバイル表示かどうかを判定するカスタムフック
+// 更新: core/へ移動（リファクタリング）、ファイル名をキャメルケースに統一
 
 import * as React from "react"
 
@@ -19,4 +20,4 @@ export function useIsMobile() {
   }, [])
 
   return !!isMobile
-}
+} 

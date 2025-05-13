@@ -1,7 +1,3 @@
-// hooks/useResizeObserver.ts
-// 作成: ResizeObserverの初期化とリソース管理をカプセル化したカスタムフック
-// @deprecated hooks/core/useResizeObserver.ts に移動しました
-
 "use client"
 
 import { useRef, useEffect, useCallback } from 'react'
@@ -64,4 +60,4 @@ export function useResizeObserver<T extends HTMLElement>(
   }, [])
   
   return { elementRef, setElement }
-}
+} 

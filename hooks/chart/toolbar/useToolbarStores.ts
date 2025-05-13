@@ -1,15 +1,20 @@
-// hooks/chart/useToolbarStores.ts
-// @deprecated hooks/chart/toolbar/useToolbarStores.ts に移動しました
-//
-// 作成: チャートツールバーで必要なストアへのアクセスを一元管理するカスタムフック
-// 役割:
-// 1. 必要なすべてのストアのstateとactionをまとめて提供
-// 2. コンポーネントとストアの結合度を下げる
-// 更新: 古いストア（useChartDataStore、useChartConfigStore、useUIStore）をuseRootStoreに置き換え
-// 更新: 古いuseSymbolStoreを新しいrootStoreのSymbolSliceに置き換え
-// 更新: 2025-05-15 - useEntryStoreをuseRootStoreに置き換え
-// 更新: 2025-05-15 - useIndicatorStore, useDrawingToolStore, useRealTimeStoreNewをuseRootStoreに置き換え
-// 更新: 2025-06-05 - selectSymbolCurrentSymbol/selectSymbolExchangeTypeをselectCurrentSymbol/selectExchangeTypeに変更
+/**
+ * hooks/chart/toolbar/useToolbarStores.ts
+ * チャートツールバーで必要なストアへのアクセスを一元管理するカスタムフック
+ * 
+ * 役割:
+ * 1. 必要なすべてのストアのstateとactionをまとめて提供
+ * 2. コンポーネントとストアの結合度を下げる
+ * 
+ * 変更履歴:
+ * - 作成: ChartToolbar.tsxのリファクタリングに伴い作成
+ * - 更新: 古いストア（useChartDataStore、useChartConfigStore、useUIStore）をuseRootStoreに置き換え
+ * - 更新: 古いuseSymbolStoreを新しいrootStoreのSymbolSliceに置き換え
+ * - 更新: 2025-05-15 - useEntryStoreをuseRootStoreに置き換え
+ * - 更新: 2025-05-15 - useIndicatorStore, useDrawingToolStore, useRealTimeStoreNewをuseRootStoreに置き換え
+ * - 更新: 2025-06-05 - selectSymbolCurrentSymbol/selectSymbolExchangeTypeをselectCurrentSymbol/selectExchangeTypeに変更
+ * - 更新: 2025-06-15: chart/toolbar/ サブディレクトリに移動
+ */
 
 import {
   // ルートストアとセレクター

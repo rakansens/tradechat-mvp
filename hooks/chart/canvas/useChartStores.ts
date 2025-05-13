@@ -1,7 +1,5 @@
 /**
- * hooks/chart/useChartStores.ts
- * @deprecated hooks/chart/canvas/useChartStores.ts に移動しました
- * 
+ * hooks/chart/canvas/useChartStores.ts
  * チャート関連の複数のストアを一元管理するフック
  * 
  * 変更履歴:
@@ -9,6 +7,7 @@
  * - 2023-07-10: 新しいrootStoreからのチャートデータを追加
  * - 更新: 古いuseSymbolStoreを新しいrootStoreのSymbolSliceに置き換え
  * - 更新: 2025-06-05 - selectSymbolCurrentSymbol/selectSymbolExchangeTypeをselectCurrentSymbol/selectExchangeTypeに変更
+ * - 更新: 2025-06-15: chart/canvas/ サブディレクトリに移動
  */
 
 // 古いインポートを削除

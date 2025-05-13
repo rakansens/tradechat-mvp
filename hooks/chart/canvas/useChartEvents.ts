@@ -1,11 +1,10 @@
 /**
- * hooks/chart/useChartEvents.ts
- * @deprecated hooks/chart/canvas/useChartEvents.ts に移動しました
- * 
+ * hooks/chart/canvas/useChartEvents.ts
  * チャートのグローバルイベント処理を担当するフック
  * 
  * 変更履歴:
  * - 2023-06-01: ChartContainer.tsxのリファクタリングに伴い作成
+ * - 更新: 2025-06-15: chart/canvas/ サブディレクトリに移動
  */
 
 import { useEffect } from 'react';

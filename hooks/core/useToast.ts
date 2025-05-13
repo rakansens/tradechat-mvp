@@ -1,6 +1,3 @@
-// hooks/use-toast.ts
-// @deprecated hooks/core/useToast.ts に移動しました
-
 "use client"
 
 // Inspired by react-hot-toast library
@@ -194,4 +191,4 @@ function useToast() {
   }
 }
 
-export { useToast, toast }
+export { useToast, toast } 

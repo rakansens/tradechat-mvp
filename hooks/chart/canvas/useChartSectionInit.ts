@@ -1,13 +1,12 @@
 /**
- * hooks/chart/useChartSectionInit.ts
- * @deprecated hooks/chart/canvas/useChartSectionInit.ts に移動しました
- * 
+ * hooks/chart/canvas/useChartSectionInit.ts
  * チャートセクションの初期化とデータフェッチを担当するフック
  * 
  * 変更履歴:
  * - 2023-06-04: ChartSection.tsxのリファクタリングに伴い作成
  * - 2025-05-20: useChartDataStoreをuseRootStoreに置き換え
  * - 更新: 古いuseSymbolStoreをrootStoreのSymbolSliceに置き換え
+ * - 更新: 2025-06-15: chart/canvas/ サブディレクトリに移動
  */
 
 import { useEffect, useCallback } from 'react';

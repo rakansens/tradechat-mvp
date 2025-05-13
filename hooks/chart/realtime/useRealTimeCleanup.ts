@@ -1,12 +1,11 @@
 /**
- * hooks/chart/useRealTimeCleanup.ts
- * @deprecated hooks/chart/realtime/useRealTimeCleanup.ts に移動しました
- * 
+ * hooks/chart/realtime/useRealTimeCleanup.ts
  * リアルタイムデータ更新のクリーンアップを担当するフック
  * 
  * 変更履歴:
  * - 2023-06-01: ChartContainer.tsxのリファクタリングに伴い作成
  * - 2025-05-20: useRealTimeStoreをuseRootStoreに置き換え
+ * - 更新: 2025-06-15: chart/realtime/ サブディレクトリに移動
  */
 
 import { useEffect } from 'react';

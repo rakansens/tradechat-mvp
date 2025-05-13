@@ -1,11 +1,10 @@
 /**
- * hooks/chart/useChartSectionCleanup.ts
- * @deprecated hooks/chart/init/useChartSectionCleanup.ts に移動しました
- * 
+ * hooks/chart/init/useChartSectionCleanup.ts
  * チャートセクションのクリーンアップロジックを担当するフック
  * 
  * 変更履歴:
  * - 2023-06-04: ChartSection.tsxのリファクタリングに伴い作成
+ * - 更新: 2025-06-15: chart/init/ サブディレクトリに移動
  */
 
 import { useEffect } from 'react';

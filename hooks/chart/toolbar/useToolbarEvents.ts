@@ -1,12 +1,17 @@
-// hooks/chart/useToolbarEvents.ts
-// @deprecated hooks/chart/toolbar/useToolbarEvents.ts に移動しました
-//
-// 作成: チャートツールバーで使用するカスタムイベント処理を管理するフック
-// 役割:
-// 1. CustomEventの登録/解除を一元管理
-// 2. イベントデータをストアに反映する処理をカプセル化
-// 更新: useChartDataStoreをuseRootStoreに置き換え
-// 更新: 古いuseSymbolStoreをrootStoreのSymbolSliceに置き換え
+/**
+ * hooks/chart/toolbar/useToolbarEvents.ts
+ * チャートツールバーで使用するカスタムイベント処理を管理するフック
+ * 
+ * 役割:
+ * 1. CustomEventの登録/解除を一元管理
+ * 2. イベントデータをストアに反映する処理をカプセル化
+ * 
+ * 変更履歴:
+ * - 作成: ChartToolbar.tsxのリファクタリングに伴い作成
+ * - 更新: useChartDataStoreをuseRootStoreに置き換え
+ * - 更新: 古いuseSymbolStoreをrootStoreのSymbolSliceに置き換え
+ * - 更新: 2025-06-15: chart/toolbar/ サブディレクトリに移動
+ */
 
 import { useEffect } from 'react';
 // useSymbolStoreを削除

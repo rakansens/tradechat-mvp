@@ -1,7 +1,5 @@
 /**
- * hooks/chart/useChartSectionStores.ts
- * @deprecated hooks/chart/canvas/useChartSectionStores.ts に移動しました
- * 
+ * hooks/chart/canvas/useChartSectionStores.ts
  * チャートセクション用のストアセレクターとアクションを集約するフック
  * 
  * 変更履歴:
@@ -9,6 +7,7 @@
  * - 2025-05-20: 古いストア参照をuseRootStoreとセレクターに置き換え
  * - 更新: 古いuseSymbolStoreを新しいrootStoreのSymbolSliceに置き換え
  * - 更新: 2025-06-05 - selectSymbolCurrentSymbol/selectSymbolExchangeTypeをselectCurrentSymbol/selectExchangeTypeに変更
+ * - 更新: 2025-06-15: chart/canvas/ サブディレクトリに移動
  */
 
 import { useMemo } from 'react';

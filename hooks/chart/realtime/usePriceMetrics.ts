@@ -1,10 +1,15 @@
-// hooks/chart/usePriceMetrics.ts
-// @deprecated hooks/chart/realtime/usePriceMetrics.ts に移動しました
-// 
-// 作成: チャートデータから現在価格と変化率を計算するカスタムフック
-// 役割:
-// 1. 現在価格（最新のロウソク足終値）を計算
-// 2. 価格変化率（最初と最後のローソク足の差分）を計算
+/**
+ * hooks/chart/realtime/usePriceMetrics.ts
+ * チャートデータから現在価格と変化率を計算するカスタムフック
+ * 
+ * 役割:
+ * 1. 現在価格（最新のロウソク足終値）を計算
+ * 2. 価格変化率（最初と最後のローソク足の差分）を計算
+ * 
+ * 変更履歴:
+ * - 作成: チャートプライス表示のリファクタリングに伴い作成
+ * - 更新: 2025-06-15: chart/realtime/ サブディレクトリに移動
+ */
 
 import { useMemo } from 'react';
 import { OHLCData } from '@/types/chart';
