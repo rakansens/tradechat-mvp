@@ -37,4 +37,4 @@ const SpreadBar = memo(function SpreadBar({
   );
 });
 
- 
+export default SpreadBar;
