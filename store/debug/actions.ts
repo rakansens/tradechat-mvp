@@ -1,11 +1,11 @@
 // store/debug/actions.ts
 // 作成: 2025-05-15 - デバッグスライスのアクション実装
 // 更新: 2025-05-15 - 重複するメソッド名を修正し、アクションを明確に分けました
+// 更新: 2025-05-30 - useDataFetchStoreを削除し、useRootStoreを使用するように変更
 
 import type { DebugSliceState } from './state';
 import { useSocketStatus } from '@/store/socket/selectors';
 import { useRootStore } from '@/store/rootStore';
-import { useDataFetchStore } from '@/store';
 import { useOrderBookStore } from '@/store/market/useOrderBookStore';
 
 /**
@@ -40,8 +40,8 @@ export const createDebugActions = (
   // アクティブなフェッチ情報を取得
   getActiveFetchesInfo: () => {
     try {
-      // 既存の実装と同じく、DataFetchStoreから情報を取得
-      return useDataFetchStore.getState().getActiveFetchesInfo();
+      // DataFetchSliceを使用して情報を取得
+      return useRootStore.getState().getActiveFetchesInfo();
     } catch (error) {
       console.error('Failed to get active fetches info:', error);
       return [];

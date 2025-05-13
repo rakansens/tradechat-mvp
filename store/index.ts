@@ -3,6 +3,7 @@
 // 更新: TypeScriptエラーを修正
 // 更新: 2025-05-15 - useDebugStoreの参照を削除
 // 更新: 2025-05-15 - エクスポート衝突を解消
+// 更新: 2025-05-30 - useDataFetchStoreを非推奨に変更し、DataFetchSliceを使用するように促す
 
 // 汎用ストア
 export { useRootStore } from './rootStore';
@@ -11,13 +12,19 @@ export { useRootStore } from './rootStore';
 // export * from './selectors';  
 
 // コアストア
-export { default as useDataFetchStore } from './useDataFetchStore';
+/**
+ * @deprecated このストアは非推奨です。代わりにDataFetchSliceを使用してください。
+ * import { useRootStore } from '@/store';
+ * import { selectActiveFetches, selectActiveFetchesInfo } from '@/store/dataFetch/selectors';
+ */
+// export { default as useDataFetchStore } from './useDataFetchStore';
 
 // 各スライスのエクスポート
 export * from './chart';
 export * from './chat';
 export * from './entry';
 export * from './ui';
+export * from './dataFetch';
 
 // エクスポート衝突を避けるために個別スライスのエクスポートは行わず、
 // 必要なものを個別にインポートするように変更
@@ -31,6 +38,7 @@ export { createMarketSlice } from './market';
 export { createSymbolSlice } from './symbol';
 export { createSocketSlice } from './socket';
 export { createDebugSlice } from './debug';
+export { createDataFetchSlice } from './dataFetch';
 
 // slice以外の関連ストア
 export { useOrderBookStore } from './market/useOrderBookStore';

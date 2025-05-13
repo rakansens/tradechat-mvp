@@ -10,6 +10,7 @@
 // 更新: 2025-05-10 - SocketSliceを追加してrootStoreに統合
 // 更新: 2025-05-15 - DebugSliceを統合
 // 更新: 2025-05-15 - アクション名重複を解決
+// 更新: 2025-05-30 - DataFetchSliceを統合
 
 import { create } from 'zustand'
 import { devtools, persist } from 'zustand/middleware'
@@ -43,6 +44,8 @@ import type { SocketSliceState } from './socket/state'
 import { createDebugSlice } from './debug'
 import type { DebugSlice } from './debug'
 import type { DebugSliceState } from './debug/state'
+import { createDataFetchSlice, type DataFetchSlice } from './dataFetch'
+import type { DataFetchSliceState } from './dataFetch/state'
 
 // RootStore型定義 - 各スライスの状態を統合
 export interface RootState extends 
@@ -58,7 +61,8 @@ export interface RootState extends
   ChartDataSliceState,
   SymbolSliceState,
   SocketSliceState,
-  DebugSliceState
+  DebugSliceState,
+  DataFetchSliceState
 {}
 
 // 各スライスで追加されるアクションを型で事前定義
@@ -157,6 +161,12 @@ export interface RootActions {
   getPollingStatus: DebugSlice['getPollingStatus']
   getDebugSymbolChangeHistory: DebugSlice['getDebugSymbolChangeHistory']
   getDebugWebSocketStatus: DebugSlice['getDebugWebSocketStatus']
+  
+  // DataFetchSliceActions
+  cancelFetch: DataFetchSlice['cancelFetch']
+  cancelAllFetches: DataFetchSlice['cancelAllFetches']
+  addFetch: DataFetchSlice['addFetch']
+  removeFetch: DataFetchSlice['removeFetch']
 }
 
 // 完全なストア型
@@ -187,7 +197,14 @@ export const useRootStore = create<RootStore>()(
   storeLogger('root')(
     devtools(
       persist(
-        immer((set, get) => ({
+        immer((set, get, api) => ({
+          // DataFetchSliceを統合
+          ...createDataFetchSlice(
+            (fn) => set(fn),
+            get,
+            api
+          ),
+          
           // SocketSliceを統合
           ...createSocketSlice(
             set as any, 

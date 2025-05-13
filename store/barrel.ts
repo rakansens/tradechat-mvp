@@ -3,6 +3,10 @@
 // 他のSliceも今後ここに追加していく
 // 更新: SymbolSliceのセレクターを追加
 // 更新: 2025-05-30 - 明示的にSymbolSliceの特殊なセレクターをエクスポート
+// 更新: 2025-05-30 - DataFetchSliceのセレクターを追加
+
+// DataFetchSliceのセレクターを追加
+export * from "./dataFetch/selectors"
 
 // SocketSliceのセレクター
 export * from "./socket/selectors"
