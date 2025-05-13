@@ -1,9 +1,12 @@
 /**
  * __tests__/chart/useIndicators.test.ts
  * チャートインジケーターHookのテスト
+ * 
+ * 変更履歴:
+ * - 2023-06-02: React 19に対応するためにテストを書き換え
  */
 
-import { renderHook } from '@testing-library/react-hooks';
+import { renderHook } from '@testing-library/react';
 import { useIndicators } from '@/hooks/chart';
 import { IChartApi, ISeriesApi } from 'lightweight-charts';
 import { OHLCData } from '@/types/chart';
