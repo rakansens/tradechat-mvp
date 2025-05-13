@@ -27,36 +27,52 @@ import { Timeframe } from '@/types/chart';
  * @returns void
  */
 export function useToolbarEvents() {
-  // Socket.IOイベントリスナーの設定
+  const updateTimeFrame = useRootStore((state) => state.updateTimeFrame);
+  
+  // キーボードショートカットの設定
   useEffect(() => {
-    // 時間足変更イベントのリスナー
-    const handleTimeframeUpdate = (event: CustomEvent) => {
-      const { timeframe } = event.detail;
-      console.log(`ツールバーの時間足を更新: ${timeframe}`);
-      // RootStoreの時間足を更新
-      // データの再取得は行わず、UIの更新のみ行う
-      useRootStore.setState({ currentTimeFrame: timeframe as Timeframe });
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // タイムフレーム切り替えのショートカット
+      if (e.altKey) {
+        switch (e.key) {
+          case '1':
+            updateTimeFrame('1m' as Timeframe);
+            break;
+          case '5':
+            updateTimeFrame('5m' as Timeframe);
+            break;
+          case '2':
+            updateTimeFrame('15m' as Timeframe);
+            break;
+          case '3':
+            updateTimeFrame('30m' as Timeframe);
+            break;
+          case 'h':
+          case 'H':
+            updateTimeFrame('1h' as Timeframe);
+            break;
+          case '4':
+            updateTimeFrame('4h' as Timeframe);
+            break;
+          case 'd':
+          case 'D':
+            updateTimeFrame('1d' as Timeframe);
+            break;
+          case 'w':
+          case 'W':
+            updateTimeFrame('1w' as Timeframe);
+            break;
+        }
+      }
     };
-    
-    // 銘柄変更イベントのリスナー
-    const handleSymbolUpdate = (event: CustomEvent) => {
-      const { symbol } = event.detail;
-      console.log(`ツールバーの銘柄を更新: ${symbol}`);
-      // SymbolSliceの銘柄を更新（rootStoreから）
-      // アクティブシンボルをローカルストレージに保存
-      useRootStore.getState().setCurrentSymbol(symbol, 'ToolbarEvents.updateSymbol');
-    };
-    
-    // イベントリスナーを登録
-    window.addEventListener('updateToolbarTimeframe', handleTimeframeUpdate as EventListener);
-    window.addEventListener('updateToolbarSymbol', handleSymbolUpdate as EventListener);
-    
-    // クリーンアップ関数
+
+    window.addEventListener('keydown', handleKeyDown);
     return () => {
-      window.removeEventListener('updateToolbarTimeframe', handleTimeframeUpdate as EventListener);
-      window.removeEventListener('updateToolbarSymbol', handleSymbolUpdate as EventListener);
+      window.removeEventListener('keydown', handleKeyDown);
     };
-  }, []);
+  }, [updateTimeFrame]);
+
+  return null;
 }
 
 export default useToolbarEvents; 

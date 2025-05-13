@@ -1,9 +1,13 @@
 /**
  * hooks/chart/toolbar/index.ts
- * チャートツールバー関連フックのバレルエクスポート
  * 
- * 作成: 2025-06-15 - H-1 Chart フェーズのリファクタリング
+ * チャートツールバー関連フックのバレルファイル
+ * 
+ * 変更履歴:
+ * - 2025-05-15: 初期作成
  */
 
-export * from './useToolbarEvents';
-export * from './useToolbarStores';
+export { useChartToolbar } from './useChartToolbar';
+export { useToolbarEvents } from './useToolbarEvents';
+export { useToolbarStores } from './useToolbarStores';
+export { usePriceMetrics } from './usePriceMetrics';

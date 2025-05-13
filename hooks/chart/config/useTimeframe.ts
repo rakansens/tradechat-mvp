@@ -1,5 +1,12 @@
 /**
- * @deprecated このフックは非推奨です。代わりに `import { useTimeframe } from '@/hooks/chart/config'` を使用してください。
+ * hooks/chart/config/useTimeframe.ts
+ * 
+ * チャートの時間枠を管理するカスタムフック
+ * 時間枠の選択と各時間枠に対するデータポイント数の設定を提供
+ *
+ * 変更履歴:
+ * - 2023-05-15: 初期実装
+ * - 2025-05-15: フックのリファクタリングに伴いhooks/chart/configディレクトリに移動
  */
 
 "use client"
@@ -7,6 +14,10 @@
 import { useState, useCallback } from "react"
 import type { Timeframe } from "@/types"
 
+/**
+ * チャートの時間枠を管理するフック
+ * @returns 時間枠の状態と、時間枠に応じたデータポイント数を計算する関数
+ */
 export function useTimeframe() {
   const [timeframe, setTimeframe] = useState<Timeframe>("1d")
 
@@ -35,4 +46,4 @@ export function useTimeframe() {
     setTimeframe,
     getDataPointsForTimeframe,
   }
-}
+} 

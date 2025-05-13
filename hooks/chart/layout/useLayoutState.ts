@@ -1,9 +1,13 @@
-// hooks/useLayoutState.ts
-// 作成: レイアウト状態管理のためのカスタムフック（リサイズ状態管理とローカルストレージ保存の共通化）
-// 更新: 無限ループの修正とパフォーマンス最適化
-
 /**
- * @deprecated このフックは非推奨です。代わりに `import { useLayoutState } from '@/hooks/chart/layout'` を使用してください。
+ * hooks/chart/layout/useLayoutState.ts
+ * 
+ * レイアウト状態管理のためのカスタムフック
+ * リサイズ状態管理とローカルストレージ保存を共通化
+ * 
+ * 変更履歴:
+ * - 2023-05-01: 初期実装
+ * - 2023-07-10: 無限ループの修正とパフォーマンス最適化
+ * - 2025-05-15: フックのリファクタリングに伴いhooks/chart/layoutディレクトリに移動
  */
 
 "use client"
@@ -78,4 +82,4 @@ export function useLayoutState({
     minSizes,
     direction
   }
-}
+} 

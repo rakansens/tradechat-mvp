@@ -1,11 +1,27 @@
 /**
- * @deprecated このフックは非推奨です。代わりに `import { useEntries } from '@/hooks/entry'` を使用してください。
+ * hooks/entry/useEntries.ts
+ * 
+ * トレードエントリーを管理するカスタムフック
+ * ポジションの作成、実行、キャンセル、クローズの機能を提供します
+ * 
+ * 変更履歴:
+ * - 2023-04-10: 初期実装
+ * - 2023-06-20: ポジションクローズ処理を追加
+ * - 2023-10-05: キャンセル機能を追加
+ * - 2025-05-14: フックのリファクタリングに伴いhooks/entryディレクトリに移動
  */
+
 "use client"
 
 import { useState } from "react"
 import type { Entry } from "@/types"
 
+/**
+ * トレードエントリーを管理するフック
+ * 
+ * @param ohlcData チャートの価格データ配列
+ * @returns エントリー関連の状態と操作関数
+ */
 export function useEntries(ohlcData: any[]) {
   const [entries, setEntries] = useState<Entry[]>([])
   const [pendingEntry, setPendingEntry] = useState<Entry | null>(null)
@@ -68,4 +84,4 @@ export function useEntries(ohlcData: any[]) {
     handleClosePosition,
     handleCancelPosition,
   }
-}
+} 

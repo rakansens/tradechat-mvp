@@ -25,3 +25,8 @@ export * from './realtime';
 
 // useChartEventsをuseChartGlobalEventsという別名でもエクスポート（後方互換性維持）
 export { useChartEvents as useChartGlobalEvents } from './canvas/useChartEvents';
+
+// 新しいチャート関連のサブディレクトリからのエクスポート
+export * from './layout';
+export * from './config';
+export * from './store';

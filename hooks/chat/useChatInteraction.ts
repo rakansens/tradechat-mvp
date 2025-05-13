@@ -1,16 +1,21 @@
-// hooks/useChatInteraction.ts
-// 更新: Message型をExtendedMessage型に置き換えて型エラーを修正
-// 更新: メモ化されたセレクタを使用するように更新
-// 更新: ストリーミングテキスト表示のためのリアルタイム更新機能を追加
-// 更新: ストリーミングメッセージの処理を改善し、isStreaming フラグを設定
-// 更新: any型キャストを具体的な型に置き換えて型安全性を向上
-// 更新: 2025-05-14 - useChatStoreをuseRootStoreに変更
-// 更新: 2025-05-15 - useEntryStoreを削除し、すべてのエントリー処理をpropsから受け取るように変更
-// 更新: 2025-05-14 - @deprecatedタグを追加し、新しいインポートパスを指示
-
 /**
- * @deprecated このフックは非推奨です。代わりに `import { useChatInteraction } from '@/hooks/chat'` を使用してください。
+ * hooks/chat/useChatInteraction.ts
+ * 
+ * チャットインタラクションを管理するカスタムフック
+ * AIチャットとのインタラクション、提案の処理、エントリー操作を管理します
+ * 
+ * 変更履歴:
+ * - 2023-05-10: 初期実装
+ * - 2023-05-12: Message型をExtendedMessage型に置き換えて型エラーを修正
+ * - 2023-06-05: メモ化されたセレクタを使用するように更新
+ * - 2023-09-20: ストリーミングテキスト表示のためのリアルタイム更新機能を追加
+ * - 2023-10-15: ストリーミングメッセージの処理を改善し、isStreaming フラグを設定
+ * - 2024-01-10: any型キャストを具体的な型に置き換えて型安全性を向上
+ * - 2024-05-14: useChatStoreをuseRootStoreに変更
+ * - 2024-05-15: useEntryStoreを削除し、すべてのエントリー処理をpropsから受け取るように変更
+ * - 2025-05-14: フックのリファクタリングに伴いhooks/chatディレクトリに移動
  */
+
 "use client"
 
 import { useState, useEffect, useRef } from "react"
@@ -345,4 +350,4 @@ I'll monitor this position and alert you of any significant price movements. You
     handleCancelEntry,
     handleAIProposalQuery,
   }
-}
+} 

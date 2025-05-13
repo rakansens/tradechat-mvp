@@ -1,11 +1,15 @@
-// hooks/useChartToolbar.ts
-// 作成: ChartToolbarコンポーネントの状態管理を統一するためのカスタムフック
-// 更新: useChartDataStoreをuseRootStoreに置き換え
-// 更新: useUIStoreをuseRootStoreに置き換え、UIセレクターを使用するように修正
-// 更新: useChartConfigStoreをuseRootStoreに置き換え、ChartConfigセレクターを使用するように修正
-
 /**
- * @deprecated このフックは非推奨です。代わりに `import { useChartToolbar } from '@/hooks/chart/toolbar'` を使用してください。
+ * hooks/chart/toolbar/useChartToolbar.ts
+ * 
+ * ChartToolbarコンポーネントの状態管理を統一するためのカスタムフック
+ * グローバルな状態はストアから直接取得し、ロジックをカプセル化
+ *
+ * 変更履歴:
+ * - 2023-06-15: 初期実装
+ * - 2023-08-10: useChartDataStoreをuseRootStoreに置き換え
+ * - 2023-09-05: useUIStoreをuseRootStoreに置き換え、UIセレクターを使用するように修正
+ * - 2023-10-20: useChartConfigStoreをuseRootStoreに置き換え、ChartConfigセレクターを使用するように修正
+ * - 2025-05-15: フックのリファクタリングに伴いhooks/chart/toolbarディレクトリに移動
  */
 
 import { useCallback } from 'react';
@@ -115,4 +119,4 @@ export function useChartToolbar() {
     handleExchangeTypeChange,
     toggleRealTimeData,
   };
-}
+} 

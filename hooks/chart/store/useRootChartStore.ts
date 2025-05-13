@@ -1,8 +1,12 @@
-// hooks/useRootChartStore.ts
-// 初期実装: rootStoreのチャートスライスを使用するためのフック
-
 /**
- * @deprecated このフックは非推奨です。代わりに `import { useRootChartStore } from '@/hooks/chart/store'` を使用してください。
+ * hooks/chart/store/useRootChartStore.ts
+ * 
+ * rootStoreのチャートスライスを使用するためのカスタムフック
+ * 既存の実装と互換性を保ちながら、リファクタリングされたストアを使用
+ *
+ * 変更履歴:
+ * - 2023-07-20: 初期実装
+ * - 2025-05-15: フックのリファクタリングに伴いhooks/chart/storeディレクトリに移動
  */
 
 import { useRootStore } from '@/store/rootStore'
@@ -57,4 +61,4 @@ export const useRootChartStore = () => {
       refreshOhlcData()
     }
   }
-} 
+}

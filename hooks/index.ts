@@ -1,4 +1,7 @@
 // hooks/index.ts
-// 作成: hooks ルートのエクスポート（barrel）
+// バレルファイル - フックをまとめてエクスポート
 
-export * from './core' 
+export * from './core';
+export * from './chat';
+export * from './chart';
+export * from './entry'; 

@@ -1,5 +1,13 @@
 /**
- * @deprecated このフックは非推奨です。代わりに `import { useChartConfig } from '@/hooks/chart/config'` を使用してください。
+ * hooks/chart/config/useChartConfig.ts
+ * 
+ * チャート設定オプションを提供するカスタムフック
+ * Lightweight Chartsの各種設定をmemoized値として提供
+ *
+ * 変更履歴:
+ * - 2023-06-05: 初期実装
+ * - 2023-08-10: ラインチャートとバーチャートのオプション追加
+ * - 2025-05-15: フックのリファクタリングに伴いhooks/chart/configディレクトリに移動
  */
 
 "use client"
@@ -7,6 +15,10 @@
 import { useMemo } from "react"
 import { CrosshairMode, LineStyle, LineWidth } from "lightweight-charts"
 
+/**
+ * チャート設定オプションを提供するフック
+ * @returns 各種チャート設定のオブジェクト
+ */
 export function useChartConfig() {
   const chartOptions = useMemo(
     () => ({
