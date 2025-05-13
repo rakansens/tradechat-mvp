@@ -4,13 +4,15 @@
  * 
  * 変更履歴:
  * - 2025-05-15: ChartCanvas.tsxから責務分離の一環として作成
+ * - 2025-05-30: useIndicatorStoreをuseRootStoreとセレクターに置き換え
  */
 
 import { useRef, useEffect, useCallback } from 'react';
 import { IChartApi, ISeriesApi } from 'lightweight-charts';
 import { OHLCData } from '@/types/chart';
 import { logger } from '@/utils/logger';
-import { useIndicatorStore } from '@/store';
+import { useRootStore } from '@/store';
+import { selectActiveIndicators } from '@/store/chart/indicator/selectors';
 import { 
   RSI, 
   MACD, 
@@ -74,7 +76,7 @@ export function useIndicators(): UseIndicatorsReturn {
   const paneMapRef = useRef<Record<string, number>>({});
   
   // インジケーターストアから状態を取得
-  const { activeIndicators } = useIndicatorStore();
+  const activeIndicators = useRootStore(selectActiveIndicators);
   
   // Paneインデックスを取得
   const getPaneIndex = useCallback((key: string): number => {

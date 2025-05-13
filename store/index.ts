@@ -1,121 +1,74 @@
 // store/index.ts
 // 更新: 新しく分割されたストアをエクスポートするように更新
-// 更新: ドメイン駆動設計ストア構造に完全移行
-// 更新: 全ての機能領域ごとに専用ストアを作成
-// 更新: 全てのコンポーネントが新しいドメインストアを使用
-// 更新: スライスベースのアーキテクチャに移行
-// 更新: 新しいRealTimeSliceをエクスポートに追加
-// 更新: 新しいChartDataSliceをエクスポートに追加
-// 更新: エクスポートの重複を修正
-// 更新: セレクターの競合を解決
-// 更新: チャット関連とその他不足しているセレクターを追加
-// 更新: 2025-05-14 - useWebSocketStoreを削除し、SocketSliceセレクターを追加
-// 更新: 2025-05-14 - useChatStoreとuseSymbolStore参照を削除
-// 更新: 2025-05-15 - useSymbolStoreとuseChatStoreの参照を完全に削除
-// 更新: 2025-05-15 - useUIStoreを削除しUIスライスに完全移行
-// 更新: 2025-05-15 - useEntryStoreを削除しEntryスライスに完全移行
+// 更新: TypeScriptエラーを修正
+// 更新: 2025-05-15 - useDebugStoreの参照を削除
+// 更新: 2025-05-15 - エクスポート衝突を解消
 
-// ルートストアをエクスポート
+// 汎用ストア
 export { useRootStore } from './rootStore';
 
-// 各ドメイン別ストアをエクスポート
+// セレクターの直接エクスポートを削除し、個別にインポートするように変更
+// export * from './selectors';  
 
-// 新しく分割されたストアをエクスポート
+// コアストア
 export { default as useDataFetchStore } from './useDataFetchStore';
-// useWebSocketStoreは削除され、SocketSliceに移行されました
-export { default as useDebugStore } from './useDebugStore';
 
-// SocketSliceのセレクターをエクスポート
-export {
-  useSocketConnected,
-  useSocketSubscriptions,
-  useSocketSubscription,
-  useSocketStatus
-} from './socket/selectors';
+// 各スライスのエクスポート
+export * from './chart';
+export * from './chat';
+export * from './entry';
+export * from './ui';
 
-// 分割されたチャートストアをエクスポート
-// @deprecated 以下のエクスポートは非推奨です。代わりにuseRootStoreを使用してください
-export { useChartDataStore as useChartDataStoreLegacy } from './chart/useChartDataStore';
-export { useChartConfigStore } from './chart/useChartConfigStore';
-// @deprecated レガシーになりました。rootStoreに統合された新しいものを使用してください
-export { useRealTimeStore as useRealTimeStoreLegacy } from './chart/useRealTimeStore';
-export { useIndicatorStore } from './chart/useIndicatorStore';
-export { useDrawingToolStore } from './chart/useDrawingToolStore';
+// エクスポート衝突を避けるために個別スライスのエクスポートは行わず、
+// 必要なものを個別にインポートするように変更
+// export * from './market';
+// export * from './symbol';
+// export * from './socket';
+// export * from './debug';
 
-// マーケットストアをエクスポート
+// 各スライスの基本エクスポート（内部で衝突しないもののみ）
+export { createMarketSlice } from './market';
+export { createSymbolSlice } from './symbol';
+export { createSocketSlice } from './socket';
+export { createDebugSlice } from './debug';
+
+// slice以外の関連ストア
 export { useOrderBookStore } from './market/useOrderBookStore';
 
-// 新しいスライスベースの実装
-export { createChartDataSlice, type ChartDataSlice, type ChartDataActions } from './chart/data';
-export { useChartDataStore as useChartDataStoreNew } from './chart/data';
-export { createRealTimeSlice, type RealTimeSlice, type RealTimeActions } from './chart/realTime';
-export { useRealTimeStore as useRealTimeStoreNew } from './chart/realTime';
+// 以下の古いストアはDeprecatedとして残しておく
+// 新しいスライスを使用するように移行してください。
 
-// Entryスライスの型をエクスポート
-export { type EntrySlice } from './entry';
+/**
+ * @deprecated このストアは非推奨です。代わりにSymbolSliceを使用してください。
+ * import { useRootStore } from '@/store';
+ * import { selectCurrentSymbol } from '@/store/symbol/selectors';
+ */
+// export { default as useSymbolStore } from './useSymbolStore'; - 削除済み
 
-// 重要なセレクターを明示的にエクスポート（競合を避けるため）
-// ChartDataSliceのセレクター
-export {
-  selectChartData,
-  selectIsLoading,
-  selectError,
-  selectCurrentPrice,
-  selectLatestCandle,
-  selectPriceRange,
-  // 以下のセレクターは両方の場所で定義されているので明示的なパスでインポートする必要があります
-  // selectCurrentSymbol,
-  // selectCurrentTimeFrame,
-} from './chart/data/selectors';
+/**
+ * @deprecated このストアは非推奨です。代わりにChatSliceを使用してください。
+ * import { useRootStore } from '@/store';
+ * import { selectMessages } from '@/store/chat/selectors';
+ */
+// export { default as useChatStore } from './useChatStore'; - 削除済み
 
-// ChartConfigSliceのセレクター
-export {
-  selectChartType,
-  // 以下のセレクターは両方の場所で定義されているので明示的なパスでインポートする必要があります
-  // selectExchangeType,
-} from './chart/config/selectors';
+/**
+ * @deprecated このストアは非推奨です。代わりにUISliceを使用してください。
+ * import { useRootStore } from '@/store';
+ * import { selectIsDarkMode } from '@/store/ui/selectors';
+ */
+// export { default as useUIStore } from './useUIStore'; - 削除済み
 
-// UIスライスのセレクター
-export {
-  selectActiveTab,
-  selectIsDarkMode,
-  selectIsSidebarOpen,
-  selectIsSettingsOpen,
-  selectIsModalOpen,
-  selectModalType,
-  selectModalData,
-} from './ui/selectors';
+/**
+ * @deprecated このストアは非推奨です。代わりにSocketSliceを使用してください。
+ * import { useRootStore } from '@/store';
+ * import { useSocketConnected } from '@/store/socket/selectors';
+ */
+// export { default as useWebSocketStore } from './useWebSocketStore'; - 削除済み
 
-// エントリースライスのセレクター
-export {
-  selectEntries,
-  selectPendingEntry,
-  selectHasPendingEntry,
-  selectOpenEntries,
-  selectClosedEntries,
-} from './entry/selectors';
-
-// その他の必要なセレクター
-export { selectPriceChangePercent } from './chart/selectors';
-
-// チャット関連のセレクター
-export {
-  selectMessages,
-  selectIsSearching,
-  selectInput,
-  selectLastMessage,
-  selectMessageCount,
-  selectUserMessages,
-  selectAIMessages,
-  selectProposalMessages,
-  selectLatestProposal,
-  selectMessagesWithStreaming,
-  selectStreamingMessage
-} from './chat/selectors';
-
-// ドメイン駆動設計ストア構造の参照ガイド:
-// - ルートストア: useRootStore（チャート、エントリー、チャット、シンボル、ソケット、UIスライスを含む統合ストア）
-// - チャートデータ: useRootStore + selectChartData などのセレクター
-// - オーダーブック: useOrderBookStore
-// - WebSocket状態: useSocketConnected などのセレクター（SocketSliceに移行）
-// - デバッグ機能: useDebugStore
+/**
+ * @deprecated このストアは非推奨です。代わりにDebugSliceを使用してください。
+ * import { useRootStore } from '@/store';
+ * import { selectIsDebugMode } from '@/store/debug/selectors';
+ */
+// export { default as useDebugStore } from './useDebugStore'; - 削除済み

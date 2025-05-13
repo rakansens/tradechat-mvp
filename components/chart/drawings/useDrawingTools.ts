@@ -4,13 +4,15 @@
  * 
  * 変更履歴:
  * - 2025-05-15: ChartCanvas.tsxから責務分離の一環として作成
+ * - 2025-05-30: useDrawingToolStoreをuseRootStoreとセレクターに置き換え
  */
 
 import { useRef, useState, useCallback, useEffect } from 'react';
 import { IChartApi, ISeriesApi } from 'lightweight-charts';
 import { OHLCData } from '@/types/chart';
 import { logger } from '@/utils/logger';
-import { useDrawingToolStore } from '@/store';
+import { useRootStore } from '@/store';
+import { selectActiveDrawingTools } from '@/store/chart/drawingTool/selectors';
 import { 
   FibonacciLineHandles, 
   drawFibonacciRetracement, 
@@ -40,7 +42,7 @@ export function useDrawingTools(): UseDrawingToolsReturn {
   const [fibonacciLines, setFibonacciLines] = useState<FibonacciLineHandles>({});
   
   // 描画ツールストアから状態を取得
-  const { activeDrawingTools } = useDrawingToolStore();
+  const activeDrawingTools = useRootStore(selectActiveDrawingTools);
   
   // 描画ツールの更新
   const updateDrawings = useCallback((

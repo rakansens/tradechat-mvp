@@ -8,11 +8,13 @@
 // 更新: SymbolSliceを追加してrootStoreに統合
 // 更新: プロパティ名変更と型互換性問題を解決
 // 更新: 2025-05-10 - SocketSliceを追加してrootStoreに統合
+// 更新: 2025-05-15 - DebugSliceを統合
+// 更新: 2025-05-15 - アクション名重複を解決
 
 import { create } from 'zustand'
 import { devtools, persist } from 'zustand/middleware'
 import { immer } from 'zustand/middleware/immer'
-import { logger } from './core/loggerMiddleware'
+import { logger as loggerFn } from '@/utils/logger'
 import { ChartSlice, createChartSlice } from './chart'
 import type { ChartSliceState } from './chart/state'
 import { EntrySlice, createEntrySlice } from './entry'
@@ -35,8 +37,12 @@ import { createChartDataSlice, type ChartDataSlice } from './chart/data'
 import type { ChartDataSliceState } from './chart/data/state'
 import { createSymbolSlice, type SymbolSlice } from './symbol'
 import type { SymbolSliceState } from './symbol/state'
-import { createSocketSlice, type SocketSlice } from './socket'
+import { createSocketSlice } from './socket'
+import type { SocketSlice } from './socket'
 import type { SocketSliceState } from './socket/state'
+import { createDebugSlice } from './debug'
+import type { DebugSlice } from './debug'
+import type { DebugSliceState } from './debug/state'
 
 // RootStore型定義 - 各スライスの状態を統合
 export interface RootState extends 
@@ -51,7 +57,8 @@ export interface RootState extends
   RealTimeSliceState,
   ChartDataSliceState,
   SymbolSliceState,
-  SocketSliceState
+  SocketSliceState,
+  DebugSliceState
 {}
 
 // 各スライスで追加されるアクションを型で事前定義
@@ -143,6 +150,13 @@ export interface RootActions {
   stopPolling: MarketSlice['stopPolling']
   setPollingInterval: MarketSlice['setPollingInterval']
   setDemoMode: MarketSlice['setDemoMode']
+  
+  // DebugSliceActions
+  toggleDebugMode: DebugSlice['toggleDebugMode']
+  getActiveFetchesInfo: DebugSlice['getActiveFetchesInfo']
+  getPollingStatus: DebugSlice['getPollingStatus']
+  getDebugSymbolChangeHistory: DebugSlice['getDebugSymbolChangeHistory']
+  getDebugWebSocketStatus: DebugSlice['getDebugWebSocketStatus']
 }
 
 // 完全なストア型
@@ -154,9 +168,23 @@ type StateCreator<T> = (
   get: () => T
 ) => T;
 
+// Zustandミドルウェア用のロガー関数
+const storeLogger = (storeName: string) => (
+  config: any
+) => (set: any, get: any, api: any) => {
+  const wrappedSet = (args: any) => {
+    loggerFn.info(`[${storeName}] state updating`, {
+      component: storeName,
+      action: 'set'
+    });
+    return set(args);
+  };
+  return config(wrappedSet, get, api);
+};
+
 // ルートストアの作成
 export const useRootStore = create<RootStore>()(
-  logger(
+  storeLogger('root')(
     devtools(
       persist(
         immer((set, get) => ({
@@ -269,6 +297,14 @@ export const useRootStore = create<RootStore>()(
               pollingInterval: get().pollingInterval,
               isDemoMode: get().isDemoMode
             } as MarketSliceState)
+          ),
+          
+          // デバッグスライスを統合
+          ...createDebugSlice(
+            (fn) => set(fn),
+            () => ({
+              isDebugMode: get().isDebugMode
+            } as DebugSliceState)
           )
         })),
         {

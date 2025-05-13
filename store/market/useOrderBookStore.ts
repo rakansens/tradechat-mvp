@@ -2,6 +2,7 @@
 // 作成: useAppStoreから分離したオーダーブック関連の状態と操作を管理するストア
 // 更新: 2025-05-12 - dataFetchServiceからorderBookServiceに移行
 // 更新: 2025-05-15 - useSymbolStoreをuseRootStoreに変更
+// 更新: 2025-05-30 - 循環参照問題を修正、初期化関数をエクスポートしてクライアントサイドのみ実行するよう変更
 // 
 // このストアはオーダーブックデータと、データの取得状態を管理します。
 // 主な機能:
@@ -332,13 +333,25 @@ export const useOrderBookStore = create<OrderBookState>()(
         }
       }
     }),
-    { name: 'orderbook-store' }
+    {
+      name: 'order-book-store',
+      enabled: process.env.NODE_ENV === 'development'
+    }
   )
 );
 
 // シンボルストアの変更を監視して自動的に更新する
 // コンポーネントのマウント時に一度だけ実行される初期化コード
-const initializeSymbolStoreSubscription = () => {
+export const initializeSymbolStoreSubscription = () => {
+  // サーバーサイドレンダリング中は実行しない
+  if (typeof window === 'undefined') {
+    logger.info('SSRモードでは購読を初期化しません', {
+      component: 'useOrderBookStore',
+      action: 'initializeSymbolStoreSubscription'
+    });
+    return;
+  }
+  
   try {
     // シンボルストアを購読
     const unsubscribe = useRootStore.subscribe((state) => {
@@ -375,8 +388,8 @@ const initializeSymbolStoreSubscription = () => {
   }
 };
 
-// 初期化を実行
-initializeSymbolStoreSubscription();
+// 直接初期化せず、エクスポートした関数をクライアントコンポーネントから呼び出す
+// initializeSymbolStoreSubscription();
 
 // デフォルトエクスポート
 export default useOrderBookStore;

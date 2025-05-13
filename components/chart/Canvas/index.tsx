@@ -5,6 +5,7 @@
  * 変更履歴:
  * - 2025-05-15: ChartCanvas.tsxから責務分離の一環として作成
  * - 2025-05-20: 古いストア参照を新しいRootStoreベースの実装に更新
+ * - 2025-05-30: 廃止されたストアの参照を削除し、RootStoreのセレクターに完全に置き換え
  */
 
 "use client"
@@ -12,13 +13,11 @@
 import { useEffect } from "react"
 import { OHLCData, ChartType } from "@/types/chart"
 import { logger } from '@/utils/logger'
-import { 
-  useRootStore,
-  useIndicatorStore, 
-  useDrawingToolStore 
-} from "@/store"
+import { useRootStore } from "@/store"
 import { selectChartData, selectCurrentSymbol, selectCurrentTimeFrame } from "@/store/chart/data/selectors"
 import { selectChartType } from "@/store/chart/config/selectors"
+import { selectActiveIndicators } from "@/store/chart/indicator/selectors"
+import { selectActiveDrawingTools } from "@/store/chart/drawingTool/selectors"
 import { CandlestickSeries, LineSeries, AreaSeries } from "lightweight-charts";
 
 // リファクタリングした各Hookをインポート
@@ -62,8 +61,8 @@ export default function ChartCanvas() {
   const currentSymbol = useRootStore(selectCurrentSymbol);
   const currentTimeFrame = useRootStore(selectCurrentTimeFrame);
   const chartType = useRootStore(selectChartType);
-  const { activeIndicators } = useIndicatorStore();
-  const { activeDrawingTools } = useDrawingToolStore();
+  const activeIndicators = useRootStore(selectActiveIndicators);
+  const activeDrawingTools = useRootStore(selectActiveDrawingTools);
   
   // チャートタイプが変更されたときにシリーズを切り替え
   useEffect(() => {

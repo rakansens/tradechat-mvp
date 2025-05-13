@@ -1,5 +1,5 @@
-import { useDebugStore } from '@/store/useDebugStore';
 import { useRootStore } from '@/store/rootStore';
+import { selectIsDebugMode } from '@/store/debug/selectors';
 import { cacheService } from '@/services/cache';
 import { requestHistoryService } from '@/services/history';
 import { useCallback } from 'react';
@@ -18,16 +18,18 @@ interface DebugInfo {
  * 
  * LogViewerコンポーネントで使用するすべてのストアセレクタとデバッグ関連の
  * サービス呼び出しを単一のインターフェースにまとめる
+ * 
+ * 更新: 2025-05-15 - useDebugStore → rootStoreのDebugSliceに移行
  */
 export function useDebugStores() {
-  // デバッグストアからのセレクタ
-  const isDebugMode = useDebugStore(state => state.isDebugMode);
-  const toggleDebugMode = useDebugStore(state => state.toggleDebugMode);
-  const getActiveFetchesInfo = useDebugStore(state => state.getActiveFetchesInfo);
-  const getPollingStatus = useDebugStore(state => state.getPollingStatus);
+  // デバッグ関連のセレクター - RootStoreから取得
+  const isDebugMode = useRootStore(selectIsDebugMode);
+  const toggleDebugMode = useRootStore(state => state.toggleDebugMode);
+  const getActiveFetchesInfo = useRootStore(state => state.getActiveFetchesInfo);
+  const getPollingStatus = useRootStore(state => state.getPollingStatus);
   
-  // シンボルストアからのセレクタ（rootStoreから取得）
-  const getSymbolChangeHistory = useRootStore(state => state.getSymbolChangeHistory);
+  // シンボル履歴情報の取得 - rootStoreから直接取得
+  const getDebugSymbolChangeHistory = useRootStore(state => state.getDebugSymbolChangeHistory);
   
   // デバッグ情報を更新する関数
   const refreshDebugInfo = useCallback((): DebugInfo => {
@@ -42,7 +44,7 @@ export function useDebugStores() {
     // ストアからデバッグ情報を取得
     const activeFetches = getActiveFetchesInfo();
     const pollingStatus = getPollingStatus();
-    const symbolHistory = getSymbolChangeHistory();
+    const symbolHistory = getDebugSymbolChangeHistory();
     
     // サービスからデバッグ情報を取得
     let cacheStats: Record<string, any> = {};
@@ -62,7 +64,7 @@ export function useDebugStores() {
       cacheStats,
       requestHistory
     };
-  }, [isDebugMode, getActiveFetchesInfo, getPollingStatus, getSymbolChangeHistory]);
+  }, [isDebugMode, getActiveFetchesInfo, getPollingStatus, getDebugSymbolChangeHistory]);
   
   return {
     // ストアの状態と操作

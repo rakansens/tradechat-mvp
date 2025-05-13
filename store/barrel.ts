@@ -2,6 +2,7 @@
 // Chart Slice関連のセレクター一覧をエクスポート
 // 他のSliceも今後ここに追加していく
 // 更新: SymbolSliceのセレクターを追加
+// 更新: 2025-05-30 - 明示的にSymbolSliceの特殊なセレクターをエクスポート
 
 // SocketSliceのセレクター
 export * from "./socket/selectors"
@@ -23,6 +24,20 @@ export * from "./chart/indicator/selectors"
 
 // SymbolSliceのセレクター
 export * from "./symbol/selectors"
+
+// 特定のSymbolSliceセレクターを明示的にエクスポート（名前衝突防止のため）
+export {
+  selectSymbolCurrentSymbol,
+  selectSymbolExchangeType,
+  selectSymbolList,
+  selectFilteredSymbols,
+  selectSymbolFilterOptions,
+  selectIsLoadingSymbols,
+  selectSymbolError,
+  selectSymbolChangeHistory,
+  selectFavoriteSymbols,
+  selectQuoteAssets
+} from './symbol/selectors';
 
 // Chart Sliceのセレクターをエクスポート
 export {

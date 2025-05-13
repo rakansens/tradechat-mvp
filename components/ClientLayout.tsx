@@ -5,9 +5,9 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { ErrorBoundary } from "@/components/ErrorBoundary"
 import { setupGlobalErrorHandlers } from "@/utils/errorHandlers"
 import { socketService } from '@/services/socket'
-import { useDebugStore } from '@/store/useDebugStore'
 import { useRootStore } from '@/store/rootStore'
-import { useOrderBookStore } from '@/store/market/useOrderBookStore'
+import { selectIsDebugMode } from '@/store/debug/selectors'
+import { useOrderBookStore, initializeSymbolStoreSubscription } from '@/store/market/useOrderBookStore'
 import { logger } from '@/utils/logger'
 import { LogViewer } from '@/components/debug'
 import { Button } from '@/components/ui/button'
@@ -15,9 +15,12 @@ import { BugIcon, XIcon } from 'lucide-react'
 
 // 更新: デバッグ機能の追加、SocketInitializerの機能を統合、useAppStoreの初期化を追加
 // 更新: useSymbolStoreをuseRootStoreに置き換え
+// 更新: 2025-05-15 - useDebugStoreをrootStoreセレクターに置き換え
+// 更新: 2025-05-30 - OrderBookStoreの初期化を循環参照を避けるために明示的に行うよう修正
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   const [showDebugPanel, setShowDebugPanel] = useState(false);
-  const isDebugMode = useDebugStore(state => state.isDebugMode);
+  const isDebugMode = useRootStore(selectIsDebugMode);
+  
   // グローバルエラーハンドラー、ソケットクライアント、ストアをセットアップ（クライアントサイドのみ）
   useEffect(() => {
     // グローバルエラーハンドラーをセットアップ
@@ -26,6 +29,9 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
     // 共通のソケットサービスを使用してSocket.ioクライアントを初期化
     if (typeof window !== 'undefined') {
       socketService.initializeMarketSocket();
+      
+      // OrderBookStoreのサブスクリプションを初期化（循環参照問題を解決）
+      initializeSymbolStoreSubscription();
       
       // シンボルと各ストアの初期化
       try {

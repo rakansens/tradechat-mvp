@@ -1,14 +1,15 @@
 // store/socket/index.ts
 // SocketSliceのエントリーポイント - 2025-05-13
+// 更新: 2025-05-15 - SocketSlice型をエクスポート追加
 
 import { StoreApi } from 'zustand';
 import { initialSocketState } from './state';
-import { createSocketSliceActions } from './actions';
+import { createSocketSliceActions, SocketSlice } from './actions';
 import { logger } from '@/utils/logger';
 
 // 型のリエクスポート
 export type { SocketSliceState } from './state';
-export type { SocketSliceActions } from './actions';
+export type { SocketSliceActions, SocketSlice } from './actions';
 
 // サイドエフェクトのエクスポート
 export { initializeSocketMonitoring, cleanupSocketMonitoring } from './dispatcher';

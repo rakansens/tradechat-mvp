@@ -6,14 +6,11 @@
 // 更新: 古いストア（useChartDataStore、useChartConfigStore、useUIStore）をuseRootStoreに置き換え
 // 更新: 古いuseSymbolStoreを新しいrootStoreのSymbolSliceに置き換え
 // 更新: 2025-05-15 - useEntryStoreをuseRootStoreに置き換え
+// 更新: 2025-05-15 - useIndicatorStore, useDrawingToolStore, useRealTimeStoreNewをuseRootStoreに置き換え
 
 import {
   // ルートストアとセレクター
   useRootStore,
-  // 分割されたチャートストア
-  useIndicatorStore,
-  useDrawingToolStore,
-  useRealTimeStoreNew,
   // セレクター
   selectEntries
 } from '@/store';
@@ -32,6 +29,18 @@ import {
   selectSymbolCurrentSymbol,
   selectSymbolExchangeType
 } from '@/store/barrel';
+// インジケーター関連のセレクターをインポート
+import {
+  selectActiveIndicators
+} from '@/store/chart/indicator/selectors';
+// 描画ツール関連のセレクターをインポート
+import {
+  selectActiveDrawingTools
+} from '@/store/chart/drawingTool/selectors';
+// リアルタイム更新関連のセレクターをインポート
+import {
+  selectUseRealTimeData
+} from '@/store/chart/realTime/selectors';
 import { Timeframe, ChartType } from '@/types/chart';
 import { IndicatorType, DrawingToolType } from '@/types/store';
 import { EntrySliceState } from '@/store/entry/state';
@@ -60,20 +69,23 @@ export function useToolbarStores() {
   const chartType = useRootStore(selectChartType);
   const setChartType = useRootStore((state) => state.setChartType);
 
-  // IndicatorStoreから状態とアクションを取得
-  const activeIndicators = useIndicatorStore(state => state.activeIndicators);
-  const toggleIndicator = useIndicatorStore(state => state.toggleIndicator);
-  const clearAllIndicators = useIndicatorStore(state => state.clearAllIndicators);
-  const isIndicatorActive = useIndicatorStore(state => state.isIndicatorActive);
+  // IndicatorStoreから状態とアクションを取得（RootStoreを使用）
+  const activeIndicators = useRootStore(selectActiveIndicators);
+  const toggleIndicator = useRootStore(state => state.toggleIndicator);
+  const clearAllIndicators = useRootStore(state => state.clearAllIndicators);
+  // isIndicatorActive関数を直接ストアから取得せず、自前で実装
+  const isIndicatorActive = (indicator: IndicatorType) => {
+    return activeIndicators.some(item => item.type === indicator);
+  };
 
-  // DrawingToolStoreから状態とアクションを取得
-  const activeDrawingTools = useDrawingToolStore(state => state.activeDrawingTools);
-  const toggleDrawingTool = useDrawingToolStore(state => state.toggleDrawingTool);
-  const clearAllDrawingTools = useDrawingToolStore(state => state.clearAllDrawingTools);
+  // DrawingToolStoreから状態とアクションを取得（RootStoreを使用）
+  const activeDrawingTools = useRootStore(selectActiveDrawingTools);
+  const toggleDrawingTool = useRootStore(state => state.toggleDrawingTool);
+  const clearAllDrawingTools = useRootStore(state => state.clearAllDrawingTools);
 
-  // RealTimeStoreから状態とアクションを取得
-  const useRealTimeData = useRealTimeStoreNew(state => state.useRealTimeData);
-  const toggleRealTimeData = useRealTimeStoreNew(state => state.toggleRealTimeData);
+  // RealTimeStoreから状態とアクションを取得（RootStoreを使用）
+  const useRealTimeData = useRootStore(selectUseRealTimeData);
+  const toggleRealTimeData = useRootStore(state => state.toggleRealTimeData);
   
   // エントリーストアから状態を取得（RootStoreとセレクターを使用）
   const entries = useRootStore(selectEntries);
