@@ -4,11 +4,12 @@
 // 更新: ストリーミングテキスト表示のためのリアルタイム更新機能を追加
 // 更新: ストリーミングメッセージの処理を改善し、isStreaming フラグを設定
 // 更新: any型キャストを具体的な型に置き換えて型安全性を向上
+// 更新: 2025-05-14 - useChatStoreをuseRootStoreに変更
 "use client"
 
 import { useState, useEffect, useRef } from "react"
 import { useChat } from "ai/react"
-import { useChatStore, useEntryStore, selectLatestProposal } from "@/store"
+import { useRootStore, useEntryStore, selectLatestProposal } from "@/store"
 import type { Entry, OpenEntry } from "@/types/entry"
 import type { ExtendedMessage, ProposalType } from "@/types/chat"
 import type { ChangeEvent, FormEvent } from "react"
@@ -122,10 +123,12 @@ Would you like to enter a long position at the current price of $60,500?`,
             isStreaming: true, // ストリーミング中であることを示すフラグを追加
           };
           
-          useChatStore.getState().addMessage(streamingMessage);
+          // useChatStoreをuseRootStoreに変更
+          useRootStore.getState().addMessage(streamingMessage);
         } else {
           // 既存のストリーミングメッセージを更新
-          useChatStore.getState().updateMessage(
+          // useChatStoreをuseRootStoreに変更
+          useRootStore.getState().updateMessage(
             streamingMessageIdRef.current,
             {
               content: lastMessage.content,
@@ -136,7 +139,8 @@ Would you like to enter a long position at the current price of $60,500?`,
       }
     } else if (!isLoading && streamingMessageIdRef.current) {
       // ストリーミングが終了した場合、isStreamingフラグをfalseに設定して参照をリセット
-      useChatStore.getState().updateMessage(
+      // useChatStoreをuseRootStoreに変更
+      useRootStore.getState().updateMessage(
         streamingMessageIdRef.current,
         { isStreaming: false }
       );
