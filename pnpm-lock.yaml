@@ -240,7 +240,7 @@ importers:
         specifier: ^8.18.2
         version: 8.18.2
       zod:
-        specifier: latest
+        specifier: ^3.24.3
         version: 3.24.3
       zustand:
         specifier: latest

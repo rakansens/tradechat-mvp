@@ -7,14 +7,21 @@
  * - 2025-05-14: 重複する関数宣言を修正
  * - 2025-05-14: ファイル名をindex.tsxからSymbolSelector.tsxに変更
  * - 2025-05-14: 不足している型定義を追加
+ * - 2025-05-14: モック実装を実際の実装に置き換え
  */
 
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useRootStore } from '@/store/rootStore';
-import { selectSymbolCurrentSymbol, selectSymbolList, selectFilteredSymbols, selectIsLoadingSymbols } from '@/store/barrel';
+import { 
+  selectSymbolCurrentSymbol, 
+  selectSymbolList, 
+  selectFilteredSymbols, 
+  selectIsLoadingSymbols
+} from '@/store/barrel';
 import { SymbolInfo } from '@/services/symbol/symbol-service';
+import { logger } from '@/utils/logger';
 
 import ExchangeTabs from './ui/ExchangeTabs';
 import SearchBar from './ui/SearchBar';
@@ -22,19 +29,14 @@ import FilterBar from './ui/FilterBar';
 import PopularList from './ui/PopularList';
 import SymbolList from './ui/SymbolList';
 import { ExchangeType } from '@/types/api';
+import { FilterOptions } from '@/store/useSymbolStore';
+import { validateSymbolSelectorProps } from '@/lib/validations/symbol';
+import type { SymbolSelectorPropsSchema } from '@/lib/validations/symbol';
 
 interface SymbolSelectorProps {
   onSelect?: (symbol: string) => void;
   defaultSymbol?: string;
   className?: string;
-}
-
-// 拡張されたProps定義
-interface AdvancedSymbolSelectorProps {
-  onSelect?: (symbol: string) => void;
-  currentSymbol?: string;
-  defaultExchangeType?: ExchangeType;
-  onExchangeTypeChange?: (type: ExchangeType) => void;
 }
 
 /**
@@ -102,25 +104,142 @@ export const SymbolSelector: React.FC<SymbolSelectorProps> = ({
   );
 };
 
-// 以下は簡易的な実装です。必要に応じて実際のロジックに置き換えてください
-const validateProps = (props: any) => ({ success: true });
-const useFilterState = () => ({
-  filterOptions: { searchTerm: '', showFavorites: false, quoteAsset: '' },
-  commonQuoteAssets: ['USDT', 'BTC', 'ETH'],
-  handleSearch: (term: string) => {},
-  handleQuoteAssetFilter: (asset: string) => {},
-  handleFavoritesToggle: () => {},
-  resetFilters: () => {}
-});
-const useSelectorStores = (options: any) => ({
-  symbols: { filteredSymbols: [], isLoading: false, error: null },
-  actions: { toggleFavorite: (symbol: string) => {}, retryFetch: () => {} },
-  exchangeType: { 
-    current: options.defaultExchangeType || 'spot', 
-    handleChange: options.onExchangeTypeChange || (() => {})
-  }
-});
-const usePopularSymbols = (options: any) => [];
+/**
+ * フィルター状態を管理するフック
+ */
+const useFilterState = () => {
+  const [filterOptions, setFilterOptions] = useState<FilterOptions>({
+    searchTerm: '',
+    quoteAsset: '',
+    favoritesOnly: false
+  });
+  
+  // よく使われる基軸通貨のリスト
+  const commonQuoteAssets = ['USDT', 'BTC', 'ETH', 'USD', 'BUSD'];
+  
+  // 検索語句のハンドラー
+  const handleSearch = useCallback((term: string) => {
+    setFilterOptions(prev => ({ ...prev, searchTerm: term }));
+  }, []);
+  
+  // 基軸通貨フィルターのハンドラー
+  const handleQuoteAssetFilter = useCallback((asset: string) => {
+    setFilterOptions(prev => ({ ...prev, quoteAsset: asset }));
+  }, []);
+  
+  // お気に入りフィルターのトグルハンドラー
+  const handleFavoritesToggle = useCallback(() => {
+    setFilterOptions(prev => ({ ...prev, favoritesOnly: !prev.favoritesOnly }));
+  }, []);
+  
+  // フィルターリセットハンドラー
+  const resetFilters = useCallback(() => {
+    setFilterOptions({
+      searchTerm: '',
+      quoteAsset: '',
+      favoritesOnly: false
+    });
+  }, []);
+  
+  return {
+    filterOptions,
+    commonQuoteAssets,
+    handleSearch,
+    handleQuoteAssetFilter,
+    handleFavoritesToggle,
+    resetFilters
+  };
+};
+
+/**
+ * セレクターで使用するストアのロジックを管理するフック
+ */
+const useSelectorStores = (options: {
+  defaultExchangeType?: ExchangeType;
+  onExchangeTypeChange?: (type: ExchangeType) => void;
+}) => {
+  // RootStoreから状態を取得
+  const symbols = useRootStore(selectFilteredSymbols);
+  const allSymbols = useRootStore(selectSymbolList);
+  const isLoading = useRootStore(selectIsLoadingSymbols);
+  const error = useRootStore(state => state.symbolError);
+  
+  // ストアからアクションを取得
+  const toggleFavorite = useRootStore(state => state.toggleFavorite);
+  const fetchSymbols = useRootStore(state => state.fetchSymbols);
+  const setExchangeType = useRootStore(state => state.setExchangeType);
+  const currentExchangeType = useRootStore(state => state.exchangeType);
+  
+  // 取引タイプの変更ハンドラー
+  const handleExchangeTypeChange = useCallback((type: ExchangeType) => {
+    setExchangeType(type);
+    
+    // コールバックが提供されている場合、外部に変更を通知
+    if (options.onExchangeTypeChange) {
+      options.onExchangeTypeChange(type);
+    }
+  }, [setExchangeType, options.onExchangeTypeChange]);
+  
+  // 再試行ハンドラー
+  const retryFetch = useCallback(() => {
+    fetchSymbols(currentExchangeType);
+  }, [fetchSymbols, currentExchangeType]);
+  
+  // デフォルトの取引タイプが指定されていれば設定
+  useEffect(() => {
+    if (options.defaultExchangeType && options.defaultExchangeType !== currentExchangeType) {
+      setExchangeType(options.defaultExchangeType);
+    }
+  }, [options.defaultExchangeType, currentExchangeType, setExchangeType]);
+  
+  return {
+    symbols: { filteredSymbols: symbols, isLoading, error },
+    actions: { toggleFavorite, retryFetch },
+    exchangeType: { current: currentExchangeType, handleChange: handleExchangeTypeChange }
+  };
+};
+
+/**
+ * 人気銘柄を取得するフック
+ */
+const usePopularSymbols = (options: {
+  symbols: SymbolInfo[];
+  filterOptions: FilterOptions;
+}) => {
+  const { symbols, filterOptions } = options;
+  
+  // 人気銘柄の基準：お気に入りかつ取引量が多い、または最近追加された上位銘柄
+  const popularSymbols = useMemo(() => {
+    // お気に入りの銘柄を優先的に取得
+    const favorites = symbols.filter(s => s.isFavorite);
+    
+    // もし現在のフィルターがお気に入りのみの場合は、空の配列を返す
+    // (PopularListとSymbolListが重複してしまうため)
+    if (filterOptions.favoritesOnly) {
+      return [];
+    }
+    
+    // お気に入りが3つ以下なら主要な銘柄を追加
+    if (favorites.length <= 3) {
+      const mainSymbols = ['BTC', 'ETH', 'BNB', 'SOL', 'XRP'];
+      const popularByName = symbols.filter(s => 
+        !s.isFavorite && mainSymbols.some(name => 
+          s.baseAsset === name && (
+            !filterOptions.quoteAsset || s.quoteAsset === filterOptions.quoteAsset
+          )
+        )
+      );
+      
+      // 重複を除去して返す
+      return [...favorites, ...popularByName].slice(0, 6);
+    }
+    
+    // お気に入りが十分あれば、それらのみを返す（最大6つ）
+    return favorites.slice(0, 6);
+  }, [symbols, filterOptions]);
+  
+  return popularSymbols;
+};
 
 /**
  * シンボルセレクターのメインコンポーネント
@@ -137,9 +256,9 @@ export default function AdvancedSymbolSelector({
   currentSymbol = 'BTCUSDT',
   defaultExchangeType = 'spot',
   onExchangeTypeChange,
-}: AdvancedSymbolSelectorProps) {
+}: SymbolSelectorPropsSchema) {
   // プロパティのバリデーション
-  const propsValidation = validateProps({
+  const propsValidation = validateSymbolSelectorProps({
     onSelect,
     currentSymbol,
     defaultExchangeType,
@@ -147,7 +266,10 @@ export default function AdvancedSymbolSelector({
   });
   
   if (!propsValidation.success) {
-    console.warn('SymbolSelector props validation failed:', propsValidation.error);
+    logger.warn('SymbolSelector props validation failed', {
+      component: 'AdvancedSymbolSelector',
+      error: propsValidation.error
+    });
   }
   
   // ストアから状態とアクションを取得
@@ -176,6 +298,13 @@ export default function AdvancedSymbolSelector({
     filterOptions
   });
   
+  // 実際のonSelect関数（オプショナルな関数を型安全に処理）
+  const handleSymbolSelect = useCallback((symbol: string) => {
+    if (onSelect) {
+      onSelect(symbol);
+    }
+  }, [onSelect]);
+  
   return (
     <div className="w-full space-y-4">
       {/* 取引タイプの選択 */}
@@ -200,11 +329,11 @@ export default function AdvancedSymbolSelector({
       />
       
       {/* 人気銘柄セクション */}
-      {!isLoading && (
+      {!isLoading && popularSymbols.length > 0 && (
         <PopularList
           symbols={popularSymbols}
           currentSymbol={currentSymbol}
-          onSelect={onSelect}
+          onSelect={handleSymbolSelect}
           onToggleFavorite={toggleFavorite}
         />
       )}
@@ -215,7 +344,7 @@ export default function AdvancedSymbolSelector({
         isLoading={isLoading}
         error={error}
         currentSymbol={currentSymbol}
-        onSelect={onSelect}
+        onSelect={handleSymbolSelect}
         onToggleFavorite={toggleFavorite}
         onRetry={retryFetch}
       />

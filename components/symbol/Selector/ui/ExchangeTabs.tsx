@@ -4,6 +4,7 @@
  * 
  * 変更履歴:
  * - 2023-06-05: SymbolSelector.tsxのリファクタリングに伴い作成
+ * - 2025-05-14: onExchangeTypeChangeの型をExchangeTypeに修正
  */
 
 "use client";
@@ -13,7 +14,7 @@ import type { ExchangeType } from '@/types/api';
 
 interface ExchangeTabsProps {
   currentExchangeType: ExchangeType;
-  onExchangeTypeChange: (value: string) => void;
+  onExchangeTypeChange: (value: ExchangeType) => void;
 }
 
 /**
@@ -23,8 +24,15 @@ export const ExchangeTabs = ({
   currentExchangeType,
   onExchangeTypeChange
 }: ExchangeTabsProps) => {
+  const handleValueChange = (value: string) => {
+    // 型安全に処理
+    if (value === 'spot' || value === 'futures') {
+      onExchangeTypeChange(value);
+    }
+  };
+
   return (
-    <Tabs defaultValue={currentExchangeType} onValueChange={onExchangeTypeChange}>
+    <Tabs defaultValue={currentExchangeType} onValueChange={handleValueChange}>
       <TabsList className="grid grid-cols-2">
         <TabsTrigger value="spot">現物</TabsTrigger>
         <TabsTrigger value="futures">先物</TabsTrigger>
