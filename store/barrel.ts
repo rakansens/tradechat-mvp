@@ -1,6 +1,7 @@
 // store/barrel.ts
 // Chart Slice関連のセレクター一覧をエクスポート
 // 他のSliceも今後ここに追加していく
+// 更新: SymbolSliceのセレクターを追加
 
 // ChartDataSliceのセレクター
 export * from "./chart/data/selectors"
@@ -16,6 +17,9 @@ export * from "./chart/drawingTool/selectors"
 
 // IndicatorSliceのセレクター
 export * from "./chart/indicator/selectors"
+
+// SymbolSliceのセレクター
+export * from "./symbol/selectors"
 
 // Chart Sliceのセレクターをエクスポート
 export {

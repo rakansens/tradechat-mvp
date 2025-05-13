@@ -4,9 +4,11 @@
 // 1. CustomEventの登録/解除を一元管理
 // 2. イベントデータをストアに反映する処理をカプセル化
 // 更新: useChartDataStoreをuseRootStoreに置き換え
+// 更新: 古いuseSymbolStoreをrootStoreのSymbolSliceに置き換え
 
 import { useEffect } from 'react';
-import { useRootStore, useSymbolStore } from '@/store';
+// useSymbolStoreを削除
+import { useRootStore } from '@/store';
 import { Timeframe } from '@/types/chart';
 
 /**
@@ -33,9 +35,9 @@ export function useToolbarEvents() {
     const handleSymbolUpdate = (event: CustomEvent) => {
       const { symbol } = event.detail;
       console.log(`ツールバーの銘柄を更新: ${symbol}`);
-      // SymbolStoreの銘柄を更新
+      // SymbolSliceの銘柄を更新（rootStoreから）
       // アクティブシンボルをローカルストレージに保存
-      useSymbolStore.getState().setCurrentSymbol(symbol, 'ToolbarEvents.updateSymbol');
+      useRootStore.getState().setCurrentSymbol(symbol, 'ToolbarEvents.updateSymbol');
     };
     
     // イベントリスナーを登録

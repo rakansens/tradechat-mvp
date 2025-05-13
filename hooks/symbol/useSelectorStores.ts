@@ -4,11 +4,19 @@
  * 
  * 変更履歴:
  * - 2023-06-05: SymbolSelector.tsxのリファクタリングに伴い作成
+ * - 更新: 古いuseSymbolStoreを新しいrootStoreのSymbolSliceに置き換え
  */
 
-import { useSymbolStore } from '@/store/useSymbolStore';
+// 古いインポートを削除
+// import { useSymbolStore } from '@/store/useSymbolStore';
 import { useState, useEffect } from 'react';
 import type { ExchangeType } from '@/types/api';
+import { useRootStore } from '@/store/rootStore';
+import { 
+  selectFilteredSymbols, 
+  selectIsLoadingSymbols, 
+  selectSymbolError 
+} from '@/store/barrel';
 
 interface UseSelectorStoresProps {
   defaultExchangeType?: ExchangeType;
@@ -30,12 +38,12 @@ export const useSelectorStores = ({
   defaultExchangeType = 'spot',
   onExchangeTypeChange
 }: UseSelectorStoresProps = {}) => {
-  // SymbolStoreから状態とアクションを取得
-  const filteredSymbols = useSymbolStore(state => state.filteredSymbols);
-  const isLoading = useSymbolStore(state => state.isLoadingSymbols);
-  const error = useSymbolStore(state => state.symbolError);
-  const fetchSymbols = useSymbolStore(state => state.fetchSymbols);
-  const toggleFavorite = useSymbolStore(state => state.toggleFavorite);
+  // SymbolSliceから状態とアクションを取得
+  const filteredSymbols = useRootStore(selectFilteredSymbols);
+  const isLoading = useRootStore(selectIsLoadingSymbols);
+  const error = useRootStore(selectSymbolError);
+  const fetchSymbols = useRootStore(state => state.fetchSymbols);
+  const toggleFavorite = useRootStore(state => state.toggleFavorite);
   
   // 取引タイプの状態
   const [exchangeType, setExchangeType] = useState<ExchangeType>(defaultExchangeType);

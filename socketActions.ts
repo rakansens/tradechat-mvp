@@ -5,27 +5,25 @@
 // - useAppStoreからドメイン別ストアへ移行
 // - シンボル操作はuseSymbolStoreで処理
 // - 時間足操作はuseChartDataStoreで処理
-// 更新: 2025-05-14 - 非推奨化、新しいSocketSliceを内部で使用するように変更
-// 更新: 2025-05-14 - useChartDataStoreのインポートパスを修正
+// 更新: 2025-05-10 - slice化に伴い非推奨化。次期PRで削除予定。
+
+/**
+ * @deprecated 2025-05-10 Slice 化に伴い未使用。次期 PR で削除予定。
+ * 代わりに store/socket、store/symbol、store/chart の各 Slice を使用してください。
+ */
 
 import { useSymbolStore } from './useSymbolStore';
-import { useChartDataStore } from './chart/useChartDataStore';
+import { useChartDataStore } from './chart';
 import { useWebSocketStore } from './useWebSocketStore';
 import { logger } from '@/utils/logger';
 import { Timeframe } from '@/types/chart';
 import { ExchangeType } from '@/types/api';
-import { storeEmit } from './socket/dispatcher';
-
-/**
- * @deprecated 新しい`store/socket/dispatcher`を使用してください
- * 次のメジャーバージョンで削除される予定です
- * 互換性のために維持されていますが、新しいコードでは使用しないでください
- */
 
 /**
  * 銘柄を更新する
  * @param symbol 設定する銘柄
  * @param source イベントのソース（ログ用）
+ * @deprecated 2025-05-10 代わりに store/symbol/actions から関数をインポートしてください
  */
 export const setSymbol = (symbol: string, source: string = 'socket-event') => {
   logger.info(`socketActions: 銘柄を${symbol}に更新します`, {
@@ -35,9 +33,7 @@ export const setSymbol = (symbol: string, source: string = 'socket-event') => {
     source
   });
   try {
-    // 新しいディスパッチャーを使用
-    storeEmit('symbol', symbol);
-    
+    useSymbolStore.getState().setCurrentSymbol(symbol, source);
     logger.info(`socketActions: 銘柄を${symbol}に更新しました`, {
       component: 'socketActions',
       action: 'setSymbol',
@@ -62,6 +58,7 @@ export const setSymbol = (symbol: string, source: string = 'socket-event') => {
  * @param type 設定する取引タイプ（'spot'または'futures'）
  * @param symbol 関連する銘柄（オプション）
  * @param source イベントのソース（ログ用）
+ * @deprecated 2025-05-10 代わりに store/symbol/actions から関数をインポートしてください
  */
 export const setExchangeType = (
   type: ExchangeType, 
@@ -82,13 +79,33 @@ export const setExchangeType = (
   });
   
   try {
-    // 新しいディスパッチャーを使用
-    storeEmit('exchangeType', type);
+    // 先物から現物への切り替え時は特別な処理
+    if (type === 'spot' && currentType === 'futures') {
+      logger.info(`socketActions: 先物→現物の切り替えを検出、銘柄を先に設定: ${currentSymbol}`, {
+        component: 'socketActions',
+        action: 'setExchangeType',
+        currentSymbol
+      });
+      
+      // 銘柄を先に設定
+      symbolStore.setCurrentSymbol(currentSymbol, '先物→現物切り替え前の銘柄設定');
+    }
     
-    // シンボルも更新する必要がある場合
-    if (symbol) {
+    // 取引タイプを更新
+    symbolStore.setExchangeType(type);
+    
+    // 現物から先物への切り替え時、または銘柄変更時
+    if ((type === 'futures' && currentType === 'spot') || 
+        (symbol && symbol !== symbolStore.currentSymbol)) {
+      logger.info(`socketActions: 取引タイプ変更後に銘柄を再設定: ${currentSymbol}`, {
+        component: 'socketActions',
+        action: 'setExchangeType',
+        currentSymbol
+      });
+      
+      // 少し遅延させて銘柄を再設定
       setTimeout(() => {
-        storeEmit('symbol', symbol);
+        symbolStore.setCurrentSymbol(currentSymbol, '取引タイプ変更後の銘柄再設定');
       }, 100);
     }
     
@@ -119,6 +136,7 @@ export const setExchangeType = (
  * 時間足を更新する
  * @param timeframe 設定する時間足
  * @param source イベントのソース（ログ用）
+ * @deprecated 2025-05-10 代わりに store/chart から関数をインポートしてください
  */
 export const setTimeframe = (
   timeframe: Timeframe,
@@ -134,8 +152,33 @@ export const setTimeframe = (
     source
   });
   try {
-    // 新しいディスパッチャーを使用
-    storeEmit('timeframe', timeframe);
+    // ChartDataStoreの時間足を更新
+    chartDataStore.updateTimeFrame(timeframe);
+    
+    // 現在のシンボルと取引タイプを取得
+    const currentSymbol = useSymbolStore.getState().currentSymbol;
+    const exchangeType = useSymbolStore.getState().exchangeType;
+    
+    // キャッシュもクリアする
+    // 循環依存を避けるために動的インポートを使用
+    import('../services/data').then(module => {
+      const { chartDataService } = module;
+      // 新しいAPIを使用してキャッシュをクリア
+      chartDataService.clearCacheOnSymbolChange(currentSymbol);
+      logger.info(`socketActions: 時間足変更に伴いキャッシュをクリアしました`, {
+          component: 'socketActions',
+          action: 'setTimeframe',
+          symbol: currentSymbol,
+          timeframe,
+          exchangeType
+        });
+    }).catch(e => {
+      logger.warn(`socketActions: キャッシュクリアに失敗しました`, {
+        component: 'socketActions',
+        action: 'setTimeframe',
+        error: e
+      });
+    });
     
     logger.info(`socketActions: 時間足を${timeframe}に更新しました`, {
       component: 'socketActions',
@@ -162,6 +205,7 @@ export const setTimeframe = (
  * ソケット接続状態を更新する
  * @param connected 接続状態 (true: 接続済み, false: 切断)
  * @param source イベントのソース（ログ用）
+ * @deprecated 2025-05-10 代わりに store/socket/actions から関数をインポートしてください
  */
 export const setConnected = (
   connected: boolean,
@@ -175,9 +219,8 @@ export const setConnected = (
     source
   });
   try {
-    // 新しいディスパッチャーを使用
-    storeEmit('connected', connected);
-    
+    // Socket接続状態をWebSocketStoreに反映
+    wsStore.setConnected(connected);
     logger.info(`socketActions: 接続状態を${connected}に更新しました`, {
       component: 'socketActions',
       action: 'setConnected',
@@ -199,6 +242,7 @@ export const setConnected = (
  * Socket ID を更新する
  * @param socketId 設定するSocket ID
  * @param source イベントのソース（ログ用）
+ * @deprecated 2025-05-10 代わりに store/socket/actions から関数をインポートしてください
  */
 export const setSocketId = (socketId: string, source: string = 'socket-event') => {
   logger.info(`socketActions: Socket ID ${socketId} を受信しました (ログのみ)`, {
@@ -208,9 +252,7 @@ export const setSocketId = (socketId: string, source: string = 'socket-event') =
     socketId
   });
   try {
-    // 新しいディスパッチャーを使用
-    storeEmit('socketId', socketId);
-    
+    // socketId は AppStore に保存されないため、ここではログ出力のみ
     logger.info(`socketActions: Socket ID ${socketId} を受信しました (ログのみ)`, {
       component: 'socketActions',
       action: 'setSocketId',
@@ -226,4 +268,4 @@ export const setSocketId = (socketId: string, source: string = 'socket-event') =
       socketId
     });
   }
-};
+}; 

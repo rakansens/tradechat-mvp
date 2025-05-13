@@ -1,5 +1,6 @@
 // store/useSymbolStore.ts
 // 作成: useAppStoreから分離したシンボル関連の状態と操作を管理するストア
+// 更新: 非推奨マーク - 新しいSymbolSliceに移行しました
 // 
 // このストアはシンボル情報の管理を一元化します。
 // 主な機能:
@@ -8,6 +9,10 @@
 // 3. シンボル正規化処理の統一
 // 4. 最後に使用したシンボルの保存と読み込み
 // 5. シンボルフィルタリング機能
+//
+// @deprecated このモジュールは非推奨です。代わりに新しいスライスベースのアーキテクチャを使用してください。
+// import { useRootStore } from './rootStore';
+// import { selectCurrentSymbol, selectSymbols, ... } from './barrel';
 
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
@@ -84,6 +89,21 @@ const mockSymbols: SymbolInfo[] = [
   { symbol: 'LINKUSDT', baseAsset: 'LINK', quoteAsset: 'USDT', isFavorite: false },
 ];
 
+/**
+ * @deprecated この関数は非推奨です。代わりにSymbolSliceを使用してください。
+ * 例: 
+ * ```
+ * // 古い使用方法
+ * const { currentSymbol, setCurrentSymbol } = useSymbolStore();
+ * 
+ * // 新しい使用方法
+ * import { useRootStore } from './rootStore';
+ * import { selectCurrentSymbol } from './barrel';
+ * 
+ * const currentSymbol = useRootStore(selectCurrentSymbol);
+ * const setCurrentSymbol = useRootStore(state => state.setCurrentSymbol);
+ * ```
+ */
 // Zustandストア作成
 export const useSymbolStore = create<SymbolState>()(
   devtools(
@@ -402,5 +422,8 @@ export const useSymbolStore = create<SymbolState>()(
   )
 );
 
+/**
+ * @deprecated このエクスポートは非推奨です。代わりにSymbolSliceを使用してください。
+ */
 // デフォルトエクスポート
 export default useSymbolStore;

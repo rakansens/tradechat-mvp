@@ -5,10 +5,12 @@
  * 変更履歴:
  * - 2023-06-04: ChartSection.tsxのリファクタリングに伴い作成
  * - 2025-05-20: useChartDataStoreをuseRootStoreに置き換え
+ * - 更新: 古いuseSymbolStoreをrootStoreのSymbolSliceに置き換え
  */
 
 import { useEffect, useCallback } from 'react';
-import { useSymbolStore, useRootStore } from '@/store';
+// useSymbolStoreを削除
+import { useRootStore } from '@/store';
 import type { Timeframe } from '@/types/chart';
 import type { ExchangeType } from '@/types/api';
 import { logger } from '@/utils/logger';
@@ -37,9 +39,10 @@ export const useChartSectionInit = ({
 }: UseChartSectionInitProps) => {
   // チャートデータをフェッチする関数
   const fetchData = useCallback(() => {
-    // 最新のシンボルとタイムフレームを取得
-    const latestSymbol = useSymbolStore.getState().currentSymbol;
-    const latestTimeFrame = useRootStore.getState().currentTimeFrame;
+    // 最新のシンボルとタイムフレームを取得（すべてrootStoreから）
+    const rootState = useRootStore.getState();
+    const latestSymbol = rootState.currentSymbol;
+    const latestTimeFrame = rootState.currentTimeFrame;
     
     logger.info(`チャートデータをフェッチします: シンボル=${latestSymbol}, タイムフレーム=${latestTimeFrame}`, {
       component: 'useChartSectionInit',

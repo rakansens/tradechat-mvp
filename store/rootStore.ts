@@ -5,6 +5,9 @@
 // 更新: IndicatorSliceを追加してrootStoreに統合
 // 更新: RealTimeSliceを追加してrootStoreに統合
 // 更新: ChartDataSliceを追加してrootStoreに統合
+// 更新: SymbolSliceを追加してrootStoreに統合
+// 更新: プロパティ名変更と型互換性問題を解決
+// 更新: 2025-05-10 - SocketSliceを追加してrootStoreに統合
 
 import { create } from 'zustand'
 import { devtools, persist } from 'zustand/middleware'
@@ -30,6 +33,10 @@ import { createRealTimeSlice, type RealTimeSlice } from './chart/realTime'
 import type { RealTimeSliceState } from './chart/realTime/state'
 import { createChartDataSlice, type ChartDataSlice } from './chart/data'
 import type { ChartDataSliceState } from './chart/data/state'
+import { createSymbolSlice, type SymbolSlice } from './symbol'
+import type { SymbolSliceState } from './symbol/state'
+import { createSocketSlice, type SocketSlice } from './socket'
+import type { SocketSliceState } from './socket/state'
 
 // RootStore型定義 - 各スライスの状態を統合
 export interface RootState extends 
@@ -42,11 +49,26 @@ export interface RootState extends
   DrawingToolSliceState,
   IndicatorSliceState,
   RealTimeSliceState,
-  ChartDataSliceState
+  ChartDataSliceState,
+  SymbolSliceState,
+  SocketSliceState
 {}
 
 // 各スライスで追加されるアクションを型で事前定義
 export interface RootActions {
+  // SocketSliceActions
+  setConnected: SocketSlice['setConnected']
+  setSocketId: SocketSlice['setSocketId']
+  // SymbolSliceActions
+  setCurrentSymbol: SymbolSlice['setCurrentSymbol']
+  setExchangeType: SymbolSlice['setExchangeType']
+  fetchSymbols: SymbolSlice['fetchSymbols']
+  setFilterOptions: SymbolSlice['setFilterOptions']
+  toggleFavorite: SymbolSlice['toggleFavorite']
+  clearFilters: SymbolSlice['clearFilters']
+  applyFilters: SymbolSlice['applyFilters']
+  getSymbolChangeHistory: SymbolSlice['getSymbolChangeHistory']
+
   // ChartDataSliceActions
   fetchData: ChartDataSlice['fetchData']
   updateData: ChartDataSlice['updateData']
@@ -71,7 +93,7 @@ export interface RootActions {
   
   // ChartConfigSliceActions
   setChartType: ChartConfigSlice['setChartType']
-  setExchangeType: ChartConfigSlice['setExchangeType']
+  // setExchangeType: ChartConfigSlice['setExchangeType'] // 名前衝突のためコメントアウト
   
   // ChartSliceActions
   setTimeframe: ChartSlice['setTimeframe']
@@ -108,12 +130,12 @@ export interface RootActions {
   closeModal: UISlice['closeModal']
   
   // MarketSliceActions
-  setCurrentSymbol: MarketSlice['setCurrentSymbol']
+  // setCurrentSymbol: MarketSlice['setCurrentSymbol'] // SymbolSliceに移行
   // setExchangeType: MarketSlice['setExchangeType'] // ChartConfigSliceに移行
   fetchOrderBook: MarketSlice['fetchOrderBook']
   fetchTrades: MarketSlice['fetchTrades']
   fetchMarketStats: MarketSlice['fetchMarketStats']
-  fetchSymbols: MarketSlice['fetchSymbols']
+  // fetchSymbols: MarketSlice['fetchSymbols'] // SymbolSliceに移行
   startPolling: MarketSlice['startPolling']
   stopPolling: MarketSlice['stopPolling']
   setPollingInterval: MarketSlice['setPollingInterval']
@@ -135,6 +157,19 @@ export const useRootStore = create<RootStore>()(
     devtools(
       persist(
         immer((set, get) => ({
+          // SocketSliceを統合
+          ...createSocketSlice(
+            set as any, 
+            get as any, 
+            {} as any
+          ),
+          
+          // SymbolSliceを統合
+          ...createSymbolSlice(
+            set as any,
+            get as any
+          ),
+
           // ChartDataSliceを統合
           ...createChartDataSlice(
             (fn) => set(fn),

@@ -5,12 +5,14 @@
  * 変更履歴:
  * - 2023-06-04: ChartSection.tsxのリファクタリングに伴い作成
  * - 2025-05-20: 古いストア参照をuseRootStoreとセレクターに置き換え
+ * - 更新: 古いuseSymbolStoreを新しいrootStoreのSymbolSliceに置き換え
  */
 
 import { useMemo } from 'react';
 import { 
   useRootStore,
-  useSymbolStore
+  // 古いSymbolStoreは削除
+  // useSymbolStore
 } from '@/store';
 
 // セレクターをインポート
@@ -21,6 +23,10 @@ import {
   selectError 
 } from '@/store/chart/data/selectors';
 import { selectChartType } from '@/store/chart/config/selectors';
+import {
+  selectSymbolCurrentSymbol,
+  selectSymbolExchangeType
+} from '@/store/barrel';
 
 import type { Timeframe, ChartType } from '@/types/chart';
 import { formatTimestamp } from '@/utils/chartUtils';
@@ -36,11 +42,11 @@ import { formatTimestamp } from '@/utils/chartUtils';
  * - derivedData: データから計算された派生値
  */
 export const useChartSectionStores = () => {
-  // SymbolStore
-  const currentSymbol = useSymbolStore(state => state.currentSymbol);
-  const exchangeType = useSymbolStore(state => state.exchangeType);
-  const setCurrentSymbol = useSymbolStore(state => state.setCurrentSymbol);
-  const setExchangeType = useSymbolStore(state => state.setExchangeType);
+  // SymbolSliceをrootStoreから取得
+  const currentSymbol = useRootStore(selectSymbolCurrentSymbol);
+  const exchangeType = useRootStore(selectSymbolExchangeType);
+  const setCurrentSymbol = useRootStore(state => state.setCurrentSymbol);
+  const setExchangeType = useRootStore(state => state.setExchangeType);
   
   // ChartDataStore (RootStoreから取得)
   const chartData = useRootStore(selectChartData);
@@ -112,7 +118,7 @@ export const useChartSectionStores = () => {
   };
 
   const handleSymbolChange = (symbol: string) => {
-    setCurrentSymbol(symbol);
+    setCurrentSymbol(symbol, 'ChartSectionStores.handleSymbolChange');
   };
 
   return {

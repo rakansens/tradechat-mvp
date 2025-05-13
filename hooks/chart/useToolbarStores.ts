@@ -4,6 +4,7 @@
 // 1. 必要なすべてのストアのstateとactionをまとめて提供
 // 2. コンポーネントとストアの結合度を下げる
 // 更新: 古いストア（useChartDataStore、useChartConfigStore、useUIStore）をuseRootStoreに置き換え
+// 更新: 古いuseSymbolStoreを新しいrootStoreのSymbolSliceに置き換え
 
 import {
   // ルートストアとセレクター
@@ -14,7 +15,8 @@ import {
   useRealTimeStoreNew,
   // 古いストア（まだマイグレーションされていないもの）
   useEntryStore,
-  useSymbolStore
+  // 古いSymbolStoreは削除
+  // useSymbolStore
 } from '@/store';
 // 各スライスのセレクターをインポート
 import { 
@@ -27,21 +29,26 @@ import {
   selectCurrentTimeFrame
 } from '@/store/chart/data/selectors';
 import { selectActiveTab } from '@/store/ui/selectors';
+import { 
+  selectSymbolCurrentSymbol,
+  selectSymbolExchangeType
+} from '@/store/barrel';
 import { Timeframe, ChartType } from '@/types/chart';
 import { IndicatorType, DrawingToolType } from '@/types/store';
 import { EntrySliceState } from '@/store/entry/state';
-import type { SymbolState } from '@/store/useSymbolStore';
+// 古いSymbolStateの型インポートを削除
+// import type { SymbolState } from '@/store/useSymbolStore';
 
 /**
  * チャートツールバーで必要なすべてのストアの状態とアクションを提供するカスタムフック
  * @returns ツールバーUIに必要なすべてのストア状態とアクション
  */
 export function useToolbarStores() {
-  // SymbolStoreから状態とアクションを取得
-  const currentSymbol = useSymbolStore((state: SymbolState) => state.currentSymbol);
-  const exchangeType = useSymbolStore((state: SymbolState) => state.exchangeType);
-  const setCurrentSymbol = useSymbolStore((state) => state.setCurrentSymbol);
-  const setExchangeType = useSymbolStore((state) => state.setExchangeType);
+  // SymbolStoreからSymbolSliceに移行
+  const currentSymbol = useRootStore(selectSymbolCurrentSymbol);
+  const exchangeType = useRootStore(selectSymbolExchangeType);
+  const setCurrentSymbol = useRootStore(state => state.setCurrentSymbol);
+  const setExchangeType = useRootStore(state => state.setExchangeType);
   
   // ChartDataSliceから状態とアクションを取得（RootStoreを使用）
   const chartData = useRootStore(selectChartData);

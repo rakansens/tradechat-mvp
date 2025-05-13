@@ -5,12 +5,20 @@
  * 変更履歴:
  * - 2023-06-01: ChartContainer.tsxのリファクタリングに伴い作成
  * - 2023-07-10: 新しいrootStoreからのチャートデータを追加
+ * - 更新: 古いuseSymbolStoreを新しいrootStoreのSymbolSliceに置き換え
  */
 
-import { useSymbolStore } from '@/store/useSymbolStore';
+// 古いインポートを削除
+// import { useSymbolStore } from '@/store/useSymbolStore';
 // 既存のフックをインポート
 import { useRootStore } from '@/store/rootStore';
-import { selectTimeframe, selectChartType, selectOHLCData } from '@/store/chart/selectors';
+import { 
+  selectTimeframe, 
+  selectChartType, 
+  selectOHLCData,
+  selectSymbolCurrentSymbol,
+  selectSymbolExchangeType
+} from '@/store/barrel';
 import type { IndicatorType, DrawingToolType } from '@/types/store';
 
 /**
@@ -18,11 +26,11 @@ import type { IndicatorType, DrawingToolType } from '@/types/store';
  * rootStoreからチャートデータとタイプを取得するように実装
  */
 export const useChartStores = () => {
-  // シンボルストアからデータ取得
-  const currentSymbol = useSymbolStore(s => s.currentSymbol);
-  const exchangeType = useSymbolStore(s => s.exchangeType);
-  const setCurrentSymbol = useSymbolStore(s => s.setCurrentSymbol);
-  const setExchangeType = useSymbolStore(s => s.setExchangeType);
+  // シンボルストアからデータ取得（rootStoreのSymbolSliceから）
+  const currentSymbol = useRootStore(selectSymbolCurrentSymbol);
+  const exchangeType = useRootStore(selectSymbolExchangeType);
+  const setCurrentSymbol = useRootStore(state => state.setCurrentSymbol);
+  const setExchangeType = useRootStore(state => state.setExchangeType);
   
   // rootStoreから直接取得
   const timeframe = useRootStore(selectTimeframe);

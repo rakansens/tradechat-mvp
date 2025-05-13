@@ -4,10 +4,14 @@
  * 
  * 変更履歴:
  * - 2023-06-05: SymbolSelector.tsxのリファクタリングに伴い作成
+ * - 更新: 古いuseSymbolStoreを新しいrootStoreのSymbolSliceに置き換え
  */
 
 import { useState, useEffect } from 'react';
-import { useSymbolStore } from '@/store/useSymbolStore';
+// 古いインポートを削除
+// import { useSymbolStore } from '@/store/useSymbolStore';
+import { useRootStore } from '@/store/rootStore';
+import { selectSymbolFilterOptions } from '@/store/barrel';
 import { validateFilterOptions } from '@/lib/validations/symbol';
 
 /**
@@ -20,11 +24,10 @@ import { validateFilterOptions } from '@/lib/validations/symbol';
  * @returns フィルター状態とハンドラー関数
  */
 export const useFilterState = () => {
-  const { 
-    setFilterOptions, 
-    clearFilters, 
-    filterOptions 
-  } = useSymbolStore();
+  // SymbolSliceからアクションと状態を取得
+  const setFilterOptions = useRootStore(state => state.setFilterOptions);
+  const clearFilters = useRootStore(state => state.clearFilters);
+  const filterOptions = useRootStore(selectSymbolFilterOptions);
   
   // 一般的な基軸通貨
   const commonQuoteAssets = ['USDT', 'USD', 'BTC', 'ETH'];
