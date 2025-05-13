@@ -7,7 +7,11 @@
 
 import { createSelector } from 'reselect';
 import type { ChatSliceState } from './state'
-import type { ChatSlice } from './index' // スライス全体の型をインポート（アクションを含む）
+// 循環参照を避けるため、型のみをインポート
+// import type { ChatSlice } from './index'
+// マニュアルで型を定義
+import type { ChatSliceActions } from './actions'
+type ChatSlice = ChatSliceState & ChatSliceActions
 import type { ExtendedMessage } from '@/types/chat';
 
 // 基本セレクター（状態のみ）

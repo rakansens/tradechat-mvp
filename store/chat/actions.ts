@@ -1,9 +1,11 @@
 // store/chat/actions.ts
 // 初期実装: チャットスライスのアクション
 
-import { useRootStore } from '../rootStore'
+// 循環参照を避けるため、直接インポートせずに動的にインポートする
+// import { useRootStore } from '../rootStore'
 import type { ExtendedMessage, ProposalType } from '@/types/chat'
 import type { ChatSliceState } from './state'
+import { logger } from '@/utils/logger'
 
 // チャットスライスのアクション定義
 export interface ChatSliceActions {
@@ -27,9 +29,20 @@ export interface ChatSliceActions {
 
 // チャートとエントリーストアからのデータ参照のためのヘルパー関数
 const getChartData = () => {
-  // ルートストアからチャートデータを取得
-  const { ohlcData } = useRootStore.getState()
-  return ohlcData
+  try {
+    // 動的にrootStoreをインポート
+    const rootStore = require('../rootStore');
+    // ルートストアからチャートデータを取得
+    const { ohlcData } = rootStore.useRootStore.getState();
+    return ohlcData;
+  } catch (error) {
+    logger.error('チャートデータの取得に失敗しました', {
+      component: 'ChatActions',
+      action: 'getChartData',
+      error
+    });
+    return [];
+  }
 }
 
 // チャットスライスのアクション作成関数
@@ -207,7 +220,9 @@ export const createChatActions = (
         const isBuy = !aiResponseContent.includes("sell") && !aiResponseContent.includes("short");
         
         // エントリーストアのアクションを呼び出し
-        useRootStore.getState().setPendingEntry({
+                  // 動的にrootStoreをインポート
+          const rootStore = require('../rootStore');
+          rootStore.useRootStore.getState().setPendingEntry({
           id: Date.now().toString(),
           side: isBuy ? "buy" : "sell",
           symbol: "BTC/USD",
@@ -289,7 +304,9 @@ Would you like to enter a long position at the current price of $${currentPrice.
     }
     
     // エントリーストアのアクションを呼び出し
-    useRootStore.getState().setPendingEntry({
+    // 動的にrootStoreをインポート
+    const rootStore = require('../rootStore');
+    rootStore.useRootStore.getState().setPendingEntry({
       id: Date.now().toString(),
       side: "buy",
       symbol: "BTC/USD",
@@ -376,7 +393,9 @@ Would you like to enter a ${isBuy ? "long" : "short"} position at the current pr
       }
       
       // エントリーストアのアクションを呼び出し
-      useRootStore.getState().setPendingEntry({
+      // 動的にrootStoreをインポート
+      const rootStore = require('../rootStore');
+      rootStore.useRootStore.getState().setPendingEntry({
         id: Date.now().toString(),
         side: isBuy ? "buy" : "sell",
         symbol: "BTC/USD",
