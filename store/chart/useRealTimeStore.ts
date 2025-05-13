@@ -4,6 +4,9 @@
 // このストアはリアルタイムデータの更新設定とWebSocket接続を管理します。
 // メモ化されたセレクターを使用してパフォーマンスを向上させます。
 // 2025-05-07: 重複API呼び出しを防ぐためのデバウンス機能と購読管理を追加
+//
+// @deprecated このストアはレガシーとして維持されていますが、新しい実装ではstore/chart/realTime/index.tsからエクスポートされるuseRealTimeStoreを使用してください。
+// 将来的にはrootStore内のRealTimeSliceに完全に統合される予定です。
 
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";

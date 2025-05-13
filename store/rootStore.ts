@@ -3,6 +3,8 @@
 // 更新: ChartConfigSliceを追加してrootStoreに統合
 // 更新: DrawingToolSliceを追加してrootStoreに統合
 // 更新: IndicatorSliceを追加してrootStoreに統合
+// 更新: RealTimeSliceを追加してrootStoreに統合
+// 更新: ChartDataSliceを追加してrootStoreに統合
 
 import { create } from 'zustand'
 import { devtools, persist } from 'zustand/middleware'
@@ -24,6 +26,10 @@ import { createDrawingToolSlice, type DrawingToolSlice } from './chart/drawingTo
 import type { DrawingToolSliceState } from './chart/drawingTool/state'
 import { createIndicatorSlice, type IndicatorSlice } from './chart/indicator'
 import type { IndicatorSliceState } from './chart/indicator/state'
+import { createRealTimeSlice, type RealTimeSlice } from './chart/realTime'
+import type { RealTimeSliceState } from './chart/realTime/state'
+import { createChartDataSlice, type ChartDataSlice } from './chart/data'
+import type { ChartDataSliceState } from './chart/data/state'
 
 // RootStore型定義 - 各スライスの状態を統合
 export interface RootState extends 
@@ -34,11 +40,26 @@ export interface RootState extends
   MarketSliceState, 
   ChartConfigSliceState, 
   DrawingToolSliceState,
-  IndicatorSliceState 
+  IndicatorSliceState,
+  RealTimeSliceState,
+  ChartDataSliceState
 {}
 
 // 各スライスで追加されるアクションを型で事前定義
 export interface RootActions {
+  // ChartDataSliceActions
+  fetchData: ChartDataSlice['fetchData']
+  updateData: ChartDataSlice['updateData']
+  updateTimeFrame: ChartDataSlice['updateTimeFrame']
+  updateSymbol: ChartDataSlice['updateSymbol']
+  updateLastCandle: ChartDataSlice['updateLastCandle']
+
+  // RealTimeSliceActions
+  startRealTimeUpdates: RealTimeSlice['startRealTimeUpdates']
+  stopRealTimeUpdates: RealTimeSlice['stopRealTimeUpdates']
+  toggleRealTimeData: RealTimeSlice['toggleRealTimeData']
+  initializeApi: RealTimeSlice['initializeApi']
+  
   // IndicatorSliceActions
   toggleIndicator: IndicatorSlice['toggleIndicator']
   updateIndicatorParams: IndicatorSlice['updateIndicatorParams']
@@ -114,6 +135,18 @@ export const useRootStore = create<RootStore>()(
     devtools(
       persist(
         immer((set, get) => ({
+          // ChartDataSliceを統合
+          ...createChartDataSlice(
+            (fn) => set(fn),
+            get
+          ),
+
+          // RealTimeSliceを統合
+          ...createRealTimeSlice(
+            (fn) => set(fn),
+            get
+          ),
+          
           // IndicatorSliceを統合
           ...createIndicatorSlice(
             (fn) => set(fn),

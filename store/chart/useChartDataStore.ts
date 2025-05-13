@@ -7,6 +7,8 @@
 // このストアはチャートのデータ（OHLC）と、データの取得状態を管理します。
 // リアルタイム更新用のメソッドも提供します。
 // シンボル管理はuseAppStoreに委譲し、循環参照を解消しました。
+//
+/** @deprecated ChartDataSliceへ移行済み。新しい実装ではstore/rootStoreを使用してください。削除予定。 */
 
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
