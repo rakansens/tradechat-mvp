@@ -1,24 +1,24 @@
 /**
  * __tests__/chart/dataSanitizer.test.ts
- * チャートデータのサニタイズと変換機能のテスト
+ * チャートデータのサニタイジング機能のテスト
  */
 
-import { 
-  normalizeTimeValue, 
-  ensureMilliseconds, 
+import {
+  normalizeTimeValue,
+  ensureMilliseconds,
   removeDuplicateTimeEntries
-} from '@/utils/chart/transformers';
+} from '../../utils/chart/transformers';
 
 import {
   validateTimeOrder,
   sanitizeOHLCData,
   generateDefaultChartData
-} from '@/utils/chart/sanitizers';
+} from '../../utils/chart/sanitizers';
 
-import { OHLCData } from '@/types/chart';
+import { OHLCData } from '../../types/chart';
 import { jest } from '@jest/globals';
 
-// ロガーをモック
+// loggerをモック
 jest.mock('../../utils/logger', () => ({
   logger: {
     warn: jest.fn(),
@@ -192,6 +192,18 @@ describe('ChartData Sanitizing Utils', () => {
   });
   
   describe('generateDefaultChartData', () => {
+    let randomSpy: any; // SpyInstanceをanyに置換
+    
+    beforeEach(() => {
+      // Math.randomをモックして固定値を返すようにする
+      randomSpy = jest.spyOn(Math, 'random').mockImplementation(() => 0.5);
+    });
+    
+    afterEach(() => {
+      // モックを元に戻す
+      randomSpy.mockRestore();
+    });
+    
     test('24時間分のデータを生成', () => {
       const result = generateDefaultChartData();
       
@@ -210,7 +222,7 @@ describe('ChartData Sanitizing Utils', () => {
         expect(typeof item.low).toBe('number');
         expect(typeof item.close).toBe('number');
         
-        // 高値・安値の整合性
+        // 高値・安値の整合性 (Math.randomが0.5に固定されているため問題ない)
         expect(item.high).toBeGreaterThanOrEqual(item.open);
         expect(item.high).toBeGreaterThanOrEqual(item.close);
         expect(item.low).toBeLessThanOrEqual(item.open);

@@ -84,7 +84,7 @@ export function normalizeFuturesSymbol(symbol: string): string {
  * @returns フォーマットされたシンボル（例: 'BTCUSDT'）
  */
 export function formatSymbol(symbol: string): string {
-  return symbol.replace('/', '-');
+  return symbol.replace('/', '').toUpperCase();
 }
 
 /**

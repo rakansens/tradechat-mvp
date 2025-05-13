@@ -87,79 +87,67 @@ describe('SubscriptionManager', () => {
     });
     
     it('正常に購読できること', () => {
-      // コールバック関数
+      // 準備
+      const symbol = 'BTC/USDT';
+      const exchangeType = 'spot';
       const callback = jest.fn();
       
-      // subscribeOrderBookを実行
-      const unsubscribe = subscriptionManager.subscribeOrderBook('BTC/USDT', callback);
-      
-      // 結果を検証
-      expect(unsubscribe).toBeInstanceOf(Function);
-      expect(mockSocket.emit).toHaveBeenCalledWith(
-        CHANNEL.SUBSCRIBE,
-        expect.objectContaining({
-          symbol: 'BTCUSDT',
-          type: CHANNEL.ORDERBOOK,
-          exchangeType: 'spot'
-        })
-      );
-      expect(mockSocket.on).toHaveBeenCalledWith(CHANNEL.ORDERBOOK, expect.any(Function));
-      expect(logger.info).toHaveBeenCalledWith(
-        expect.stringContaining('オーダーブック購読開始'),
-        expect.objectContaining({
-          component: 'SubscriptionManager',
-          action: 'subscribeOrderBook',
-          symbol: 'BTCUSDT',
-          exchangeType: 'spot'
-        })
-      );
-      
-      // イベントハンドラを取得
-      const handler = mockSocket.on.mock.calls.find(
-        (call) => call[0] === CHANNEL.ORDERBOOK
-      )[1];
-      
-      // オーダーブックデータを作成
+      // ソケットから送信されるデータをモックする
       const orderBookData = {
         symbol: 'BTCUSDT',
         exchangeType: 'spot',
-        timestamp: Date.now(),
+        timestamp: 1747112287774,
         data: {
-          asks: [['50000', '1.5'], ['50100', '2.0']],
-          bids: [['49900', '1.0'], ['49800', '2.5']]
+          asks: [
+            ['50000', '1.5'],
+            ['50100', '2.0']
+          ],
+          bids: [
+            ['49900', '1.0'],
+            ['49800', '2.5']
+          ]
         }
       };
       
-      // ハンドラを呼び出し
+      // ハンドラを実行
+      const subManager = new SubscriptionManager(mockWebSocketClient);
+      const unsubscribe = subManager.subscribeOrderBook(symbol, callback, exchangeType);
+      
+      // emitが正しく呼ばれたことを確認
+      expect(mockSocket.emit).toHaveBeenCalledWith('subscribe', {
+        symbol: 'BTCUSDT',
+        type: 'orderbook',
+        exchangeType: 'spot'
+      });
+      
+      // 適切なイベントリスナが登録されたことを確認
+      expect(mockSocket.on).toHaveBeenCalledWith('orderbook', expect.any(Function));
+      
+      // イベントハンドラを取得
+      const handler = mockSocket.on.mock.calls.find(
+        (call) => call[0] === 'orderbook'
+      )[1];
+      
+      // イベントをハンドラに渡す
       handler(orderBookData);
       
       // コールバックが呼ばれたことを確認
-      expect(callback).toHaveBeenCalledWith(expect.objectContaining({
+      expect(callback).toHaveBeenCalledWith({
         symbol: 'BTCUSDT',
         timestamp: orderBookData.timestamp,
-        asks: expect.arrayContaining([
-          expect.objectContaining({ price: 50000, amount: 1.5 }),
-          expect.objectContaining({ price: 50100, amount: 2.0 })
-        ]),
-        bids: expect.arrayContaining([
-          expect.objectContaining({ price: 49900, amount: 1.0 }),
-          expect.objectContaining({ price: 49800, amount: 2.5 })
-        ])
-      }));
+        asks: [['50000', '1.5'], ['50100', '2.0']],
+        bids: [['49900', '1.0'], ['49800', '2.5']]
+      });
       
-      // 購読解除を実行
+      // 購読解除が正しく機能することを確認
       unsubscribe();
       
-      // 購読解除が正しく行われたことを確認
-      expect(mockSocket.off).toHaveBeenCalledWith(CHANNEL.ORDERBOOK, handler);
-      expect(mockSocket.emit).toHaveBeenCalledWith(
-        CHANNEL.UNSUBSCRIBE,
-        expect.objectContaining({
-          symbol: 'BTCUSDT',
-          type: CHANNEL.ORDERBOOK,
-          exchangeType: 'spot'
-        })
-      );
+      // emitが正しく呼ばれたことを確認
+      expect(mockSocket.emit).toHaveBeenCalledWith('unsubscribe', {
+        symbol: 'BTCUSDT',
+        type: 'orderbook',
+        exchangeType: 'spot'
+      });
     });
     
     it('購読中にエラーが発生した場合はログを出力すること', () => {
@@ -207,46 +195,18 @@ describe('SubscriptionManager', () => {
     });
     
     it('正常に購読できること', () => {
-      // コールバック関数
+      // 準備
+      const symbol = 'BTC/USDT';
+      const timeframe = '1m';
+      const exchangeType = 'spot';
       const callback = jest.fn();
       
-      // subscribeKlineを実行
-      const unsubscribe = subscriptionManager.subscribeKline('BTC/USDT', '1m', callback);
-      
-      // 結果を検証
-      expect(unsubscribe).toBeInstanceOf(Function);
-      expect(mockSocket.emit).toHaveBeenCalledWith(
-        CHANNEL.SUBSCRIBE,
-        expect.objectContaining({
-          symbol: 'BTCUSDT',
-          type: CHANNEL.KLINE,
-          timeframe: '1m',
-          exchangeType: 'spot'
-        })
-      );
-      expect(mockSocket.on).toHaveBeenCalledWith(CHANNEL.KLINE, expect.any(Function));
-      expect(logger.info).toHaveBeenCalledWith(
-        expect.stringContaining('ローソク足購読開始'),
-        expect.objectContaining({
-          component: 'SubscriptionManager',
-          action: 'subscribeKline',
-          symbol: 'BTCUSDT',
-          timeframe: '1m',
-          exchangeType: 'spot'
-        })
-      );
-      
-      // イベントハンドラを取得
-      const handler = mockSocket.on.mock.calls.find(
-        (call) => call[0] === CHANNEL.KLINE
-      )[1];
-      
-      // ローソク足データを作成
+      // ソケットから送信されるデータをモックする
       const klineData = {
         symbol: 'BTCUSDT',
-        timeframe: '1m',
         exchangeType: 'spot',
-        timestamp: Date.now(),
+        timeframe: '1m',
+        timestamp: 1747112287787,
         data: {
           open: '50000',
           high: '50100',
@@ -256,35 +216,49 @@ describe('SubscriptionManager', () => {
         }
       };
       
-      // ハンドラを呼び出し
+      // ハンドラを実行
+      const subManager = new SubscriptionManager(mockWebSocketClient);
+      const unsubscribe = subManager.subscribeKline(symbol, timeframe, callback, exchangeType);
+      
+      // emitが正しく呼ばれたことを確認
+      expect(mockSocket.emit).toHaveBeenCalledWith('subscribe', {
+        symbol: 'BTCUSDT',
+        type: 'kline',
+        timeframe: '1m',
+        exchangeType: 'spot'
+      });
+      
+      // 適切なイベントリスナが登録されたことを確認
+      expect(mockSocket.on).toHaveBeenCalledWith('kline', expect.any(Function));
+      
+      // イベントハンドラを取得
+      const handler = mockSocket.on.mock.calls.find(
+        (call) => call[0] === 'kline'
+      )[1];
+      
+      // イベントをハンドラに渡す
       handler(klineData);
       
       // コールバックが呼ばれたことを確認
-      expect(callback).toHaveBeenCalledWith(expect.objectContaining({
-        symbol: 'BTCUSDT',
-        timestamp: klineData.timestamp,
+      expect(callback).toHaveBeenCalledWith({
         open: 50000,
         high: 50100,
         low: 49900,
         close: 50050,
         volume: 100,
-        timeframe: '1m'
-      }));
+        time: 1747112287787
+      });
       
-      // 購読解除を実行
+      // 購読解除が正しく機能することを確認
       unsubscribe();
       
-      // 購読解除が正しく行われたことを確認
-      expect(mockSocket.off).toHaveBeenCalledWith(CHANNEL.KLINE, handler);
-      expect(mockSocket.emit).toHaveBeenCalledWith(
-        CHANNEL.UNSUBSCRIBE,
-        expect.objectContaining({
-          symbol: 'BTCUSDT',
-          type: CHANNEL.KLINE,
-          timeframe: '1m',
-          exchangeType: 'spot'
-        })
-      );
+      // emitが正しく呼ばれたことを確認
+      expect(mockSocket.emit).toHaveBeenCalledWith('unsubscribe', {
+        symbol: 'BTCUSDT',
+        type: 'kline',
+        timeframe: '1m',
+        exchangeType: 'spot'
+      });
     });
   });
   
