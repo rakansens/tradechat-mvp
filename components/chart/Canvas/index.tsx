@@ -12,7 +12,7 @@
 
 import { useEffect } from "react"
 import { OHLCData, ChartType } from "@/types/chart"
-import { logger } from '@/utils/logger'
+import { logger } from '@/utils/common'
 import { useRootStore } from "@/store"
 import { selectChartData, selectCurrentSymbol, selectCurrentTimeFrame } from "@/store/chart/data/selectors"
 import { selectChartType } from "@/store/chart/config/selectors"

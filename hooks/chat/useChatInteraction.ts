@@ -14,6 +14,7 @@
  * - 2024-05-14: useChatStoreをuseRootStoreに変更
  * - 2024-05-15: useEntryStoreを削除し、すべてのエントリー処理をpropsから受け取るように変更
  * - 2025-05-14: フックのリファクタリングに伴いhooks/chatディレクトリに移動
+ * - 2025-05-20: 会話ID(conversationId)とシステムプロンプト(system_prompt)のサポートを追加
  */
 
 "use client"
@@ -27,21 +28,27 @@ import type { ChangeEvent, FormEvent } from "react"
 import type { Message } from "ai"
 
 interface UseChatInteractionProps {
-  ohlcData: any[]
-  pendingEntry: Entry | null
-  setPendingEntry: (entry: OpenEntry | null) => void
-  entries: Entry[]
-  executeEntry: () => void
-  setActiveTab: (tab: string) => void
+  ohlcData?: any[]
+  pendingEntry?: Entry | null
+  setPendingEntry?: (entry: OpenEntry | null) => void
+  entries?: Entry[]
+  executeEntry?: () => void
+  setActiveTab?: (tab: string) => void
+  // 追加: 会話IDとシステムプロンプト
+  conversationId?: string
+  system_prompt?: string
 }
 
 export function useChatInteraction({
-  ohlcData,
-  pendingEntry,
-  setPendingEntry,
-  entries,
-  executeEntry,
-  setActiveTab,
+  ohlcData = [],
+  pendingEntry = null,
+  setPendingEntry = () => {},
+  entries = [],
+  executeEntry = () => {},
+  setActiveTab = () => {},
+  // 追加: 会話IDとシステムプロンプト
+  conversationId,
+  system_prompt,
 }: UseChatInteractionProps) {
   const [isSearching, setIsSearching] = useState(false)
 
@@ -79,8 +86,17 @@ Would you like to enter a long position at the current price of $60,500?`,
     isLoading,
     error
   } = useChat({
-    api: "/api/mastra/chat",
-    initialMessages: initialMessages as Message[],
+    // 追加: 会話IDがある場合は専用のAPIエンドポイントにリクエスト
+    api: conversationId 
+      ? `/api/messages/${conversationId}`
+      : "/api/mastra/chat",
+    // 追加: システムプロンプトがある場合は指示として渡す
+    body: {
+      threadId: conversationId,
+      instructions: system_prompt,
+    },
+    // 追加: 会話IDがある場合は初期メッセージを空に
+    initialMessages: conversationId ? [] : (initialMessages as Message[]),
     onFinish: (message) => {
       // Check if the message suggests an entry
       if (message.content.includes("enter") || message.content.includes("position")) {
@@ -89,7 +105,7 @@ Would you like to enter a long position at the current price of $60,500?`,
         const priceMatch = message.content.match(/(\d+,?\d*)/)
         const price = priceMatch
           ? Number.parseFloat(priceMatch[0].replace(",", ""))
-          : ohlcData[ohlcData.length - 1].close
+          : ohlcData.length > 0 ? ohlcData[ohlcData.length - 1].close : 0
 
         setPendingEntry({
           id: Date.now().toString(),
@@ -173,6 +189,13 @@ Would you like to enter a long position at the current price of $60,500?`,
   // Handle sample responses for specific keywords
   const handleSubmitWithSamples = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
+
+    // 追加: 会話IDがある場合は常に通常のAI応答を使用
+    if (conversationId) {
+      setIsSearching(true)
+      originalHandleSubmit(e)
+      return
+    }
 
     // Set searching state
     setIsSearching(true)
@@ -342,12 +365,13 @@ I'll monitor this position and alert you of any significant price movements. You
   return {
     messages,
     input,
-    isSearching,
-    pendingEntry,
     handleInputChange,
     handleSubmit: handleSubmitWithSamples,
+    isSearching,
+    pendingEntry,
     handleProceedWithEntry,
     handleCancelEntry,
     handleAIProposalQuery,
+    error,
   }
 } 

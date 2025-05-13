@@ -12,7 +12,7 @@
 
 import { ExchangeType } from '@/types/api';
 import { Timeframe } from '@/types/chart';
-import { logger } from '@/utils/logger';
+import { logger } from '@/utils/common';
 import { getSocketService } from '@/services/socket';
 import { useRootStore } from '@/store/rootStore';
 import type { RootStore } from '@/store/rootStore';

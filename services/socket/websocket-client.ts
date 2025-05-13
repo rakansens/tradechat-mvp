@@ -8,7 +8,7 @@
  */
 
 import { Socket } from 'socket.io-client';
-import { logger } from '@/utils/logger';
+import { logger } from '@/utils/common';
 import { IWebSocketClient } from './interfaces';
 import { SocketCore } from './core';
 

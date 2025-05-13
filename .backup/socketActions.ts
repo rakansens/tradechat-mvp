@@ -15,7 +15,7 @@
 import { useSymbolStore } from './useSymbolStore';
 import { useChartDataStore } from './chart';
 import { useWebSocketStore } from './useWebSocketStore';
-import { logger } from '@/utils/logger';
+import { logger } from '@/utils/common';
 import { Timeframe } from '@/types/chart';
 import { ExchangeType } from '@/types/api';
 

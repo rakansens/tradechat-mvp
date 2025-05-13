@@ -9,7 +9,7 @@
  */
 
 import { useEffect } from 'react';
-import { logger } from '@/utils/logger';
+import { logger } from '@/utils/common';
 import type { ExchangeType } from '@/types/api';
 import type { Timeframe } from '@/types/chart';
 

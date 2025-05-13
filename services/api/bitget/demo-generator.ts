@@ -11,7 +11,7 @@ import { OHLCData } from '../../../types/chart';
 import { OrderBookData } from '../../../types/market';
 import { SymbolInfo } from '../../../types/symbol';
 import { ExchangeType } from '../../../types/api';
-import { logger } from '@/utils/logger';
+import { logger } from '@/utils/common';
 
 /**
  * BitgetDemoGeneratorクラス

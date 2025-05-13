@@ -19,7 +19,7 @@ import { devtools } from 'zustand/middleware';
 import { OrderBookData } from '@/types/market';
 import { ExchangeType } from '@/types/api';
 import { orderBookService } from '@/services/data';
-import { logger } from '@/utils/logger';
+import { logger } from '@/utils/common';
 
 // rootStoreからエクスポート
 export * from '../rootStore';

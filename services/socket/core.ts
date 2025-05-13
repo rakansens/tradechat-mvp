@@ -1,7 +1,7 @@
 // services/socket/core.ts - 新規作成
 // 責務: Socket.IOの低レベル接続管理のみを担当
 import { Socket, io } from 'socket.io-client';
-import { logger } from '@/utils/logger';
+import { logger } from '@/utils/common';
 
 // プライベートモジュール変数
 let socket: Socket | null = null;

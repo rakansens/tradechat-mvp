@@ -8,7 +8,7 @@
 
 import { OHLCData } from "@/types/chart";
 import { UTCTimestamp } from "lightweight-charts";
-import { logger } from "@/utils/logger";
+import { logger } from '@/utils/common';
 
 /**
  * OHLCデータをCandlestick用データに変換

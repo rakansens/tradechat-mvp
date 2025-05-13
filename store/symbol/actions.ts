@@ -6,7 +6,7 @@
 import { ExchangeType } from '@/types/api';
 import { symbolService, type FilterOptions, type SymbolInfo } from '@/services/symbol/symbol-service';
 import { SymbolSliceState } from './state';
-import { logger } from '@/utils/logger';
+import { logger } from '@/utils/common';
 
 /**
  * シンボルスライスのアクション型定義

@@ -8,7 +8,7 @@
 import { getApiClient } from '../api/client-factory';
 import { ExchangeType } from '@/types/api';
 import { normalizeSymbol } from '@/lib/utils';
-import { logger } from '@/utils/logger';
+import { logger } from '@/utils/common';
 
 // シンボル情報の型定義
 export interface SymbolInfo {

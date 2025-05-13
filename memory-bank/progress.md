@@ -92,15 +92,47 @@
 - **T-6** (完了): バレル排除
   - 検証の結果、コードベース内に `from "types/*.ts"` 形式のインポートはすでに存在しないことが確認されました
   - すべてのインポートが `@/types/chart` などのバレル経由でエイリアスを使用して行われています
-  - 一部ファイル間の相対パスインポート（例: `"./time"`）で解決できない問題があり、適宜修正しました
+  - 一部ファイル間の相互パスインポート（例: `"./time"`）で解決できない問題があり、適宜修正しました
   - 完了条件「grep 'from "types/.*\\.ts"' 0 件」はすでに達成されています
   - これにより、型定義リファクタリングプロジェクト（T-0〜T-6）のすべてのフェーズが完了しました
 
+### マルチスレッドチャット実装プロジェクト
+
+現在、マルチスレッドチャット機能を実装するプロジェクトを開始しました。この機能は、ユーザーが複数の会話を別々に管理できるようにするものです。各会話は固有のコンテキストとメモリを持ち、ChatGPTのようなUIでスレッドを切り替えることができます。
+
+実装計画：
+
+1. **データベース拡張（Supabase/Postgres）**:
+   - conversations テーブルを作成
+   - chat_messages テーブルに conversation_id カラムと外部キー制約を追加
+   - 既存メッセージを初期会話に移行するためのバックフィルスクリプトを作成
+   - RLS（Row Level Security）設定
+   - 適切なインデックスの作成
+
+2. **API実装（Next.js App Router）**:
+   - `/api/conversations` エンドポイントの実装（GET: 会話一覧取得、POST: 新規会話作成）
+   - `/api/messages/[conversationId]` エンドポイントの実装（GET: メッセージ取得、POST: メッセージ送信・AI応答取得）
+   - askAgent ヘルパー関数の拡張（threadId = conversationId）
+
+3. **フロントエンド実装**:
+   - App Router ルーティング構造の実装（`/app/(chat)/layout.tsx`, `/app/(chat)/[id]/page.tsx`）
+   - サイドバーコンポーネント（Sidebar.tsx）の実装
+   - 新規スレッド作成モーダル（NewThreadModal.tsx）の実装
+   - useChatInteraction フックの拡張（conversationId パラメータの追加）
+   - Zustand ストアのネームスペース化（会話IDごとの状態管理）
+
+4. **Mastra統合**:
+   - agent.stream 呼び出しに threadId パラメータを追加（conversationId と紐付け）
+   - system_prompt を instructions として渡すよう拡張
+   - スレッドメモリとグローバルメモリの自動フォールバック機能の実装
+
 ## 進行中の作業
 
-- ユーザー認証関連のフックの整理
-- アプリケーション設定関連のフックの整理
-- 関数コンポーネントの最適化
+- マルチスレッドチャット実装プロジェクト
+  - データベース拡張（Supabase migrations）
+  - API実装（conversations, messages）
+  - フロントエンド実装（サイドバー、モーダル、ルーティング）
+  - Mastra統合（スレッドID、メモリ）
 
 ## 今後の作業
 

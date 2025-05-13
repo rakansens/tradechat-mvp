@@ -15,7 +15,7 @@
 import { create } from 'zustand'
 import { devtools, persist } from 'zustand/middleware'
 import { immer } from 'zustand/middleware/immer'
-import { logger as loggerFn } from '@/utils/logger'
+import { logger as loggerFn } from '@/utils/common'
 import { ChartSlice, createChartSlice } from './chart'
 import type { ChartSliceState } from './chart/state'
 import { EntrySlice, createEntrySlice } from './entry'

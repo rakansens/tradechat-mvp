@@ -2,7 +2,7 @@
 // 作成: 2025-05-30 - dataFetchのスライス化に伴うアクション定義
 // 役割: DataFetchスライスのアクション（状態更新関数）を提供する
 
-import { logger } from '@/utils/logger';
+import { logger } from '@/utils/common';
 import { ActiveFetch, DataFetchSliceState } from './state';
 
 export interface DataFetchSliceActions {

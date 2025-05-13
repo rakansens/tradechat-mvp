@@ -3,7 +3,7 @@
 
 import type { IndicatorType, ActiveIndicator } from "@/types/store"
 import type { IndicatorSliceState } from "./state"
-import { getDefaultIndicatorParams } from "@/utils/indicatorFactory"
+import { getDefaultIndicatorParams } from "@/utils/chart/indicatorFactory"
 
 export interface IndicatorActions {
   // インジケーターの有効/無効を切り替えるアクション

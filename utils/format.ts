@@ -1,3 +1,10 @@
+/**
+ * @deprecated このファイルは utils/common/format.ts に移動しました。
+ * 新しい場所から import してください。
+ * 例: import { formatNumber } from '@/utils/common/format';
+ * または: import { formatNumber } from '@/utils';
+ */
+
 // utils/format.ts
 // 作成: フォーマット関連のユーティリティ関数
 
@@ -96,4 +103,4 @@ export const camelToSnakeCase = (str: string): string => {
  */
 export const snakeToCamelCase = (str: string): string => {
   return str.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
-};
+}; 

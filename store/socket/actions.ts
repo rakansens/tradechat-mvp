@@ -4,7 +4,7 @@
 
 import { StateCreator } from 'zustand';
 import { SocketSliceState } from './state';
-import { logger } from '@/utils/logger';
+import { logger } from '@/utils/common';
 import { type StoreApi } from 'zustand';
 
 export interface SocketSliceActions {

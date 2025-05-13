@@ -3,7 +3,7 @@
  * useQuickCommandsフックのテストスイート
  */
 
-import { logger } from '@/utils/logger';
+import { logger } from '@/utils/common';
 
 // アイコンコンポーネントのダミー
 const DummyIcon = 'dummy-icon';

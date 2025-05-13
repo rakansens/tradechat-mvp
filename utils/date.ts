@@ -1,3 +1,10 @@
+/**
+ * @deprecated このファイルは utils/common/date.ts に移動しました。
+ * 新しい場所から import してください。
+ * 例: import { formatDate } from '@/utils/common/date';
+ * または: import { formatDate } from '@/utils';
+ */
+
 // utils/date.ts
 // 作成: 日付関連のユーティリティ関数
 
@@ -88,4 +95,4 @@ export const getTimeIntervalFromTimeframe = (timeframe: string): number => {
   };
   
   return timeIntervalMap[timeframe] || 60 * 1000; // デフォルトは1分
-};
+}; 

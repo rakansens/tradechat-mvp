@@ -1,3 +1,10 @@
+/**
+ * @deprecated このファイルは types/validations/chart.ts に移動しました。
+ * 新しい場所から import してください。
+ * 例: import { ChartTypeSchema } from '@/types/validations/chart';
+ * または: import { ChartTypeSchema } from '@/types/validations';
+ */
+
 import { z } from "zod"
 import { Timeframe } from "@/types/chart"
 

@@ -3,7 +3,7 @@
 // 作成: 2025-05-09 - Mastraツールからの銘柄変更を直接UIに反映するための簡易化されたフロー用
 
 import { NextResponse } from 'next/server';
-import { logger } from '@/utils/logger';
+import { logger } from '@/utils/common';
 
 /**
  * 銘柄変更のログを記録するだけのPOSTハンドラ

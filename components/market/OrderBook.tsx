@@ -36,7 +36,7 @@ import {
   selectOrderBookError,
   selectOrderBookWsSubscribed 
 } from '@/store/barrel';
-import { getPrice, getAmount, normalizeOrderBookData } from '../../utils/orderbook-utils';
+import { getPrice, getAmount, normalizeOrderBookData } from '@/utils/market/orderbook-utils';
 import { useSocketConnected } from '@/store/barrel';
 import Decimal from 'decimal.js';
 import { BookEntry, OrderBookData } from '../../types/orderbook';

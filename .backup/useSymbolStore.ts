@@ -17,7 +17,7 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { ExchangeType } from '../types/api';
-import { logger } from '../utils/logger';
+import { logger } from '@/utils/common';
 import { normalizeSymbol } from '../lib/utils';
 
 // シンボル情報の型定義

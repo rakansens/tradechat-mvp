@@ -5,7 +5,7 @@
 
 import { useMemo } from 'react';
 import { OrderBookEntry, OrderBookData } from '@/types/market';
-import { getPrice, normalizeOrderBookData } from '@/utils/orderbook-utils';
+import { getPrice, normalizeOrderBookData } from '@/utils/market/orderbook-utils';
 
 interface OrderBookCalcProps {
   // オーダーブックデータ

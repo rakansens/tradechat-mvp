@@ -7,7 +7,7 @@ import { ExchangeType } from "@/types/api"
 import { ChartDataSliceState, initialTimeframe } from "./state"
 import { chartDataService } from "@/services/data"
 import { cacheService } from "@/services/cache"
-import { logger } from "@/utils/logger"
+import { logger } from '@/utils/common'
 import { generateOHLCData } from "@/utils/ohlcDummyData"
 // 直接ExchangeTypeを取得するように修正
 import { useRootStore } from "@/store/rootStore"

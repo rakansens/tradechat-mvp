@@ -4,7 +4,7 @@
 
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { logger } from '@/utils/logger';
+import { logger } from '@/utils/common';
 
 // server.jsで定義されたグローバル関数の型定義
 declare global {

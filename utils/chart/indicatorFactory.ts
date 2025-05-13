@@ -8,7 +8,7 @@ import { IChartApi } from 'lightweight-charts';
 import { OHLCData } from '@/types/chart';
 import { BaseIndicatorParams, ChartIndicator, IndicatorSeriesRefs, RSIParams, MACDParams, IchimokuParams, BollingerParams } from '@/types/indicators';
 import { IndicatorType } from '@/types/store';
-import { logger } from '@/utils/logger';
+import { logger } from '@/utils/common';
 
 // インジケーターのレジストリ
 const indicatorRegistry: Record<string, ChartIndicator<any>> = {};

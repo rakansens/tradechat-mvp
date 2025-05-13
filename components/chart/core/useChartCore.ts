@@ -18,7 +18,7 @@ import {
   UTCTimestamp
 } from 'lightweight-charts';
 import { ChartType, OHLCData, Timeframe } from '@/types/chart';
-import { logger } from '@/utils/logger';
+import { logger } from '@/utils/common';
 
 // utils/chart からユーティリティ関数をインポート
 import { 

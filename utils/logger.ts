@@ -1,4 +1,11 @@
 /**
+ * @deprecated このファイルは utils/common/logger.ts に移動しました。
+ * 新しい場所から import してください。
+ * 例: import { logger } from '@/utils/common/logger';
+ * または: import { logger } from '@/utils';
+ */
+
+/**
  * utils/logger.ts
  * アプリケーション全体で使用するロガーユーティリティ
  * 
@@ -245,4 +252,4 @@ export const logger = {
   }
 };
 
-export default logger;
+export default logger; 

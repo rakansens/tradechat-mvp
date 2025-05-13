@@ -10,7 +10,7 @@
 // - トレード統計計算
 
 import type { Entry, TradeSide, EntryStatus } from "@/types/entry";
-import { formatDate as formatDateUtil } from "./formatUtils";
+import { formatDate as formatDateUtil } from "@/utils/formatUtils";
 
 /**
  * トレードポジションの利益を計算する

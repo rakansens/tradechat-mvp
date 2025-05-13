@@ -6,7 +6,7 @@
 import WebSocket from 'ws';
 import { EventEmitter } from 'events';
 import { ExchangeType } from '../types/api';
-import { logger } from '../utils/logger';
+import { logger } from '@/utils/common';
 import { getApiConfig } from '../services/api/common/environment';
 
 // 接続状態の定義

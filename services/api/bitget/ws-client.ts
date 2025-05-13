@@ -11,7 +11,7 @@
 import { ExchangeType, BitgetCredentials } from '../../../types/api';
 import { OHLCData, Timeframe } from '../../../types/chart';
 import { OrderBookData } from '../../../types/market';
-import { logger } from '@/utils/logger';
+import { logger } from '@/utils/common';
 import { IS_DEV } from '../common/environment';
 import { getApiConfig } from '../common/environment';
 import { BitgetApiClientOptions } from './interfaces';

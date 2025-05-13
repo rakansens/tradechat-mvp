@@ -10,7 +10,7 @@
 
 import { useEffect } from 'react';
 import { useRootStore } from '@/store';
-import { logger } from '@/utils/logger';
+import { logger } from '@/utils/common';
 
 /**
  * コンポーネントのアンマウント時にリアルタイム更新を停止するフック

@@ -1,13 +1,23 @@
 // store/chat/state.ts
-// 初期実装: チャットスライスの状態と初期値を定義
+// チャットスライスの状態と初期値を定義
+// 更新: 2025/5/20 - 会話IDごとのネームスペースをサポート
 
 import type { ExtendedMessage } from '@/types/chat'
 
 // チャットスライスの状態インターフェース
 export interface ChatSliceState {
+  // 会話IDごとのメッセージを管理
+  byConversation: Record<string, {
+    messages: ExtendedMessage[]
+    isSearching: boolean
+    input: string
+  }>
+  // 後方互換性のためのフラットなメッセージリスト
   messages: ExtendedMessage[]
   isSearching: boolean
   input: string
+  // 現在アクティブな会話ID
+  activeConversationId: string | null
 }
 
 // 初期メッセージの設定
@@ -37,7 +47,18 @@ Would you like to enter a long position at the current price of $60,500?`,
 
 // チャットスライスの初期状態
 export const initialChatState: ChatSliceState = {
+  // 会話IDごとのメッセージ管理 - 最初はデフォルト会話のみ
+  byConversation: {
+    'default': {
+      messages: initialMessages,
+      isSearching: false,
+      input: "",
+    }
+  },
+  // 後方互換性のための直接アクセス可能なメッセージリスト
   messages: initialMessages,
   isSearching: false,
   input: "",
+  // 初期アクティブ会話IDはデフォルト
+  activeConversationId: 'default',
 } 

@@ -7,7 +7,7 @@
  */
 
 import { OHLCData } from "@/types/chart";
-import { logger } from '@/utils/logger';
+import { logger } from '@/utils/common';
 
 /**
  * HSL CSS変数の文字列をRGBA形式に変換

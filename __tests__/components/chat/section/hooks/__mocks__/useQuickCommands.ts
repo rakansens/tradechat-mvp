@@ -3,7 +3,7 @@
  * useQuickCommandsフックのモック実装
  */
 
-import { logger } from '@/utils/logger';
+import { logger } from '@/utils/common';
 
 // クイックコマンドの型定義（オリジナルと一致させる）
 export interface QuickCommand {

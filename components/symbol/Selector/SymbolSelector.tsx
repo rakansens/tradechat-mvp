@@ -22,7 +22,7 @@ import {
   selectIsLoadingSymbols
 } from '@/store/barrel';
 import { SymbolInfo } from '@/services/symbol/symbol-service';
-import { logger } from '@/utils/logger';
+import { logger } from '@/utils/common';
 
 import ExchangeTabs from './ui/ExchangeTabs';
 import SearchBar from './ui/SearchBar';

@@ -7,7 +7,7 @@
 import { EventEmitter } from 'events';
 import { initSocketMediator } from './mediator';
 import { storeEmit } from '@/store/socket/dispatcher';
-import { logger } from '@/utils/logger';
+import { logger } from '@/utils/common';
 
 // モック
 jest.mock('@/store/socket/dispatcher', () => ({

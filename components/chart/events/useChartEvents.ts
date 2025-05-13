@@ -9,7 +9,7 @@
 
 import { useEffect } from 'react';
 import { Timeframe } from '@/types/chart';
-import { logger } from '@/utils/logger';
+import { logger } from '@/utils/common';
 import { useRootStore } from '@/store';
 
 // カスタムイベントの型定義

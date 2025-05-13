@@ -12,8 +12,8 @@ import { IChartApi, LineSeries, AreaSeries, HistogramSeries, CandlestickSeries, 
 import { UTCTimestamp, ChartTimeCompatible } from '@/types/chart';
 import type { OHLCData } from '@/types/chart';
 import type { BaseIndicatorParams, IndicatorSeriesRefs } from '@/types/indicators';
-import { dedupAndSort } from '@/utils/chartUtils';
-import { logger } from '@/utils/logger';
+import { dedupAndSort } from './chartUtils';
+import { logger } from '@/utils/common';
 
 /**
  * NaN値をフィルタリングし、有効なデータのみを返す

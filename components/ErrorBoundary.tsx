@@ -5,7 +5,7 @@
 // アプリケーション全体がクラッシュするのを防ぎます。
 
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { logger } from '@/utils/logger';
+import { logger } from '@/utils/common';
 
 interface Props {
   children: ReactNode;

@@ -9,7 +9,7 @@ jest.mock('@/components/chat/section/hooks/useQuickCommands', () =>
 );
 
 import { useQuickCommands } from '@/components/chat/section/hooks/useQuickCommands';
-import { logger } from '@/utils/logger';
+import { logger } from '@/utils/common';
 
 // lucide-reactをモック
 jest.mock('lucide-react', () => ({

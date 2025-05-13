@@ -5,7 +5,7 @@
 import { StoreApi } from 'zustand';
 import { initialSocketState } from './state';
 import { createSocketSliceActions, SocketSlice } from './actions';
-import { logger } from '@/utils/logger';
+import { logger } from '@/utils/common';
 
 // 型のリエクスポート
 export type { SocketSliceState } from './state';

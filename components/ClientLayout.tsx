@@ -7,7 +7,7 @@ import { setupGlobalErrorHandlers } from "@/utils/errorHandlers"
 import { socketService } from '@/services/socket'
 import { useRootStore } from '@/store/rootStore'
 import { selectIsDebugMode } from '@/store/debug/selectors'
-import { logger } from '@/utils/logger'
+import { logger } from '@/utils/common'
 import { LogViewer } from '@/components/debug'
 import { Button } from '@/components/ui/button'
 import { BugIcon, XIcon } from 'lucide-react'

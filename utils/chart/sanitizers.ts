@@ -7,7 +7,7 @@
  */
 
 import { OHLCData } from "@/types/chart";
-import { logger } from '@/utils/logger';
+import { logger } from '@/utils/common';
 import { normalizeTimeValue, ensureMilliseconds } from './transformers';
 
 /**

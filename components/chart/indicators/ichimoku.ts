@@ -19,12 +19,12 @@ import {
   LineSeries,
   AreaSeries,
 } from 'lightweight-charts';
-import { filterValidData, createCompatibleSeries, safeRemoveSeries, sortAndPrepareData, convertLineData, convertAreaData } from '@/utils/chartIndicatorUtils';
+import { filterValidData, createCompatibleSeries, safeRemoveSeries, sortAndPrepareData, convertLineData, convertAreaData } from '@/utils/chart/chartIndicatorUtils';
 import type { OHLCData } from '@/types/chart';
 import type { IchimokuParams, ChartIndicator, IndicatorSeriesRefs } from '@/types/indicators';
-import { createIndicator, registerIndicator } from '@/utils/indicatorFactory';
+import { createIndicator, registerIndicator } from '@/utils/chart/indicatorFactory';
 import React from 'react';
-import { dedupAndSort } from '@/utils/chartUtils';
+import { dedupAndSort } from '@/utils/chart/chartUtils';
 
 /**
  * 一目均衡表の計算オプション

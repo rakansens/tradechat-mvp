@@ -2,7 +2,7 @@
 // 作成: 2025-05-10 - Socket-IOイベントをSliceアクションに橋渡しするメディエータ
 // 更新: 2025-05-14 - 実際のSocketServiceとの接続
 
-import { logger } from "@/utils/logger";
+import { logger } from '@/utils/common';
 import { ExchangeType } from "@/types/api";
 import { Timeframe } from "@/types/chart";
 import { storeEmit } from "@/store/socket/dispatcher";

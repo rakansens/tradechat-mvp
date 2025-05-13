@@ -15,11 +15,12 @@ import {
   createCompatibleSeries, 
   safeRemoveSeries,
   extractPrices,
-  convertToLineData 
-} from '@/utils/chartIndicatorUtils';
+  convertToLineData,
+  sortAndPrepareData
+} from '@/utils/chart/chartIndicatorUtils';
 import type { OHLCData } from '@/types/chart';
 import type { RSIParams, ChartIndicator, IndicatorSeriesRefs } from '@/types/indicators';
-import { createIndicator, registerIndicator } from '@/utils/indicatorFactory';
+import { createIndicator, registerIndicator } from '@/utils/chart/indicatorFactory';
 import { RSI as RsiIndicator } from 'technicalindicators';
 import { MutableRefObject } from 'react';
 

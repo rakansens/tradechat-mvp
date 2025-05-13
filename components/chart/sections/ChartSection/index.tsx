@@ -15,7 +15,7 @@ import { useChartSectionInit } from '@/hooks/chart/canvas';
 import { useChartSectionCleanup } from '@/hooks/chart/init';
 import { ChartHeader } from './ChartHeader';
 import { ChartBody } from './ChartBody';
-import { logger } from '@/utils/logger';
+import { logger } from '@/utils/common';
 
 /**
  * チャートセクションのメインコンポーネント

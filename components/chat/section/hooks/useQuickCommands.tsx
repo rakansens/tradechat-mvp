@@ -9,7 +9,7 @@
 
 import React, { ReactNode } from 'react';
 import { TrendingUp, BarChart2, Zap } from 'lucide-react';
-import { logger } from '@/utils/logger';
+import { logger } from '@/utils/common';
 
 // クイックコマンドの型定義
 export interface QuickCommand {

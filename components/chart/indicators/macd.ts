@@ -18,7 +18,7 @@ import {
     DeepPartial
 } from 'lightweight-charts';
 import { MACD as MacdIndicator } from 'technicalindicators';
-import { dedupAndSort } from '@/utils/chartUtils';
+import { dedupAndSort } from '@/utils/chart/chartUtils';
 import { 
     filterValidData, 
     createCompatibleSeries, 
@@ -27,11 +27,11 @@ import {
     sortAndPrepareData,
     convertLineData,
     convertHistogramData
-} from '@/utils/chartIndicatorUtils';
+} from '@/utils/chart/chartIndicatorUtils';
 import type { OHLCData } from '@/types/chart';
-import { logger } from '@/utils/logger';
+import { logger } from '@/utils/common';
 import type { MACDParams, ChartIndicator, IndicatorSeriesRefs } from '@/types/indicators';
-import { createIndicator, registerIndicator } from '@/utils/indicatorFactory';
+import { createIndicator, registerIndicator } from '@/utils/chart/indicatorFactory';
 import { MutableRefObject } from 'react';
 
 /**

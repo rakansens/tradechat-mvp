@@ -1,3 +1,10 @@
+/**
+ * @deprecated このファイルは types/validations/market.ts に移動しました。
+ * 新しい場所から import してください。
+ * 例: import { MarketOrderSchema } from '@/types/validations/market';
+ * または: import { MarketOrderSchema } from '@/types/validations';
+ */
+
 // lib/validations/market.ts
 // 作成: 市場データ関連のZodバリデーションスキーマ
 

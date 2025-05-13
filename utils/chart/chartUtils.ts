@@ -13,7 +13,7 @@ import type { Timeframe, OHLCData } from "@/types/chart";
 import { IChartApi, ISeriesApi, UTCTimestamp } from "lightweight-charts";
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
-import { logger } from './logger';
+import { logger } from '@/utils/common';
 
 /**
  * 指定されたタイムフレームに対する適切なデータポイント数を返す

@@ -4,7 +4,7 @@
 // 更新: 2025-05-07 - server.jsで定義されたグローバル関数を使用するように変更
 
 import { NextResponse } from 'next/server';
-import { logger } from '@/utils/logger';
+import { logger } from '@/utils/common';
 
 // server.jsで定義されたグローバル関数の型定義
 declare global {

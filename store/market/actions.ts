@@ -5,7 +5,7 @@ import type { ExchangeType } from '@/types/api'
 import type { OrderBookData, TradeData, MarketStatsData } from '@/types/market'
 import type { MarketSliceState } from './state'
 import { orderBookService } from '@/services/data'
-import { logger } from '@/utils/logger'
+import { logger } from '@/utils/common'
 
 // 一時的なスタブサービス（実際の実装では適切なサービスに置き換え）
 const tradeService = {

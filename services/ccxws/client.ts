@@ -12,7 +12,7 @@ import { BitmexClient } from 'ccxws';
 import { ExchangeType } from '@/types/api';
 import { OrderBookData } from '@/types/market';
 import { OHLCData, Timeframe } from '@/types/chart';
-import { logger } from '@/utils/logger';
+import { logger } from '@/utils/common';
 import { normalizeSymbol } from '@/lib/utils';
 import EventEmitter from 'events';
 

@@ -31,7 +31,7 @@ import {
 } from '@/store/barrel';
 
 import type { Timeframe, ChartType } from '@/types/chart';
-import { formatTimestamp } from '@/utils/chartUtils';
+import { formatTimestamp } from '@/utils/chart/chartUtils';
 
 /**
  * チャートセクションで使用される4つのストアからのデータとアクションを集約するフック

@@ -17,7 +17,7 @@ import { IS_DEV, IS_BROWSER } from './api/common/environment';
 import { getApiConfig } from './api/common/environment';
 import { ExchangeType, BitgetCredentials } from '../types/api';
 import { SymbolInfo } from '../types/symbol';
-import { logger } from '@/utils/logger';
+import { logger } from '@/utils/common';
 
 // 新しいBitgetApiClientをインポート
 import { BitgetApiClient as NewBitgetApiClient } from './api/bitget/client';

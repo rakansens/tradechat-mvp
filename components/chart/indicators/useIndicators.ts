@@ -10,7 +10,7 @@
 import { useRef, useEffect, useCallback } from 'react';
 import { IChartApi, ISeriesApi } from 'lightweight-charts';
 import { OHLCData } from '@/types/chart';
-import { logger } from '@/utils/logger';
+import { logger } from '@/utils/common';
 import { useRootStore } from '@/store';
 import { selectActiveIndicators } from '@/store/chart/indicator/selectors';
 import { 

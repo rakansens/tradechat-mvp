@@ -3,7 +3,7 @@
 
 import { entrySuggestionTool } from "../tools/entry-suggestion";
 import { multiTimeframeAnalysisWorkflow, MultiTimeframeAnalysisParams } from "./timeframe-analysis";
-import { logger } from "../../../utils/logger";
+import { logger } from "../../../utils/common";
 import { TradeSide } from "@/types/entry";
 
 // 入力パラメータの型定義

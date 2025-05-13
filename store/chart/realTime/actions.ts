@@ -5,7 +5,7 @@ import type { StateCreator } from "zustand"
 import type { ExchangeType } from "@/types/api"
 import type { Timeframe, OHLCData } from "@/types/chart"
 import type { RealTimeSliceState } from "./state"
-import { logger } from "@/utils/logger"
+import { logger } from '@/utils/common'
 import { socketService } from "@/services/socket"
 
 // 購読キーの型定義

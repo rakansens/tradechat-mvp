@@ -15,7 +15,7 @@ import { useEffect, useCallback } from 'react';
 import { useRootStore } from '@/store';
 import type { Timeframe } from '@/types/chart';
 import type { ExchangeType } from '@/types/api';
-import { logger } from '@/utils/logger';
+import { logger } from '@/utils/common';
 
 interface UseChartSectionInitProps {
   currentSymbol: string;
