@@ -11,6 +11,9 @@
 
 import type { Timeframe, OHLCData } from "@/types/chart";
 import { IChartApi, ISeriesApi, UTCTimestamp } from "lightweight-charts";
+import { format } from 'date-fns';
+import { ja } from 'date-fns/locale';
+import { logger } from './logger';
 
 /**
  * 指定されたタイムフレームに対する適切なデータポイント数を返す
@@ -277,43 +280,177 @@ export function safeRemoveSeries(
 }
 
 /**
- * 秒タイムスタンプをミリ秒に変換（必要な場合）
- * lightweight-charts は通常、秒単位のUTCTimestampを使用
- * 一方、JavaScriptのDateは常にミリ秒単位
- * @param timestamp 秒またはミリ秒のタイムスタンプ
- * @returns 常にミリ秒単位のタイムスタンプ
+ * タイムスタンプがミリ秒単位であることを確認し、必要に応じて変換する
  */
 export function ensureMilliseconds(timestamp: number): number {
-  // Unix時間の一般的な範囲をチェック
-  // 2000年前後の秒単位タイムスタンプは10桁、ミリ秒なら13桁
-  return timestamp < 10000000000 ? timestamp * 1000 : timestamp;
+  if (timestamp === undefined || timestamp === null) {
+    logger.warn('タイムスタンプが未定義です', {
+      component: 'chartUtils',
+      action: 'ensureMilliseconds'
+    });
+    return Date.now(); // 現在時刻をデフォルト値として使用
+  }
+  
+  // Unix秒からミリ秒に変換（タイムスタンプが13桁未満の場合）
+  if (timestamp > 0 && timestamp < 10000000000) {
+    return timestamp * 1000;
+  }
+  
+  return timestamp;
 }
 
 /**
- * 秒単位のUTCTimestampを日付文字列に変換
- * SSRとCSRで一貫性のある日付表示のために使用
- * @param timestamp 秒単位のUTCTimestamp
- * @param format 日付フォーマット (simple=YYYY/MM/DD, iso=ISO形式)
- * @returns フォーマットされた日付文字列
+ * タイムスタンプを読みやすい形式にフォーマットする
+ * 改善版: 日本語ロケールを使用し、エラーハンドリングを強化
  */
-export function formatTimestamp(
-  timestamp: UTCTimestamp | number, 
-  format: 'simple' | 'iso' = 'simple'
-): string {
-  if (!timestamp) return '';
+export function formatTimestamp(timestamp: number): string {
+  try {
+    // タイムスタンプがミリ秒単位であることを確認
+    const normalizedTimestamp = ensureMilliseconds(timestamp);
+    
+    // 日本語ロケールを使用して日付をフォーマット
+    return format(new Date(normalizedTimestamp), 'yyyy/MM/dd HH:mm', { locale: ja });
+  } catch (error) {
+    logger.warn('タイムスタンプのフォーマットに失敗しました', {
+      component: 'chartUtils',
+      action: 'formatTimestamp',
+      timestamp,
+      error
+    });
+    return '無効な日付';
+  }
+}
+
+/**
+ * 日付を YYYY/MM/DD 形式にフォーマットする
+ * @deprecated 代わりに formatTimestamp() を使用してください
+ */
+export function formatDate(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}/${month}/${day}`;
+}
+
+/**
+ * タイムフレームをミリ秒単位に変換する
+ */
+export function timeframeToMilliseconds(timeframe: Timeframe): number {
+  const minute = 60 * 1000;
+  const hour = 60 * minute;
+  const day = 24 * hour;
+  const week = 7 * day;
+  const month = 30 * day; // 近似値
+
+  switch (timeframe) {
+    case '1m': return minute;
+    case '3m': return 3 * minute;
+    case '5m': return 5 * minute;
+    case '15m': return 15 * minute;
+    case '30m': return 30 * minute;
+    case '1h': return hour;
+    case '2h': return 2 * hour;
+    case '4h': return 4 * hour;
+    case '6h': return 6 * hour;
+    case '8h': return 8 * hour;
+    case '12h': return 12 * hour;
+    case '1d': return day;
+    case '3d': return 3 * day;
+    case '1w': return week;
+    case '1M': return month;
+    default:
+      logger.warn(`不明なタイムフレーム: ${timeframe}`, {
+        component: 'chartUtils',
+        action: 'timeframeToMilliseconds'
+      });
+      return hour; // デフォルト値として1時間を返す
+  }
+}
+
+/**
+ * 指定したタイムフレームに基づいて、日付をスナップする
+ * （例: 1時間足なら、時間の始まりにスナップする）
+ */
+export function snapToTimeframe(date: Date, timeframe: Timeframe): Date {
+  const result = new Date(date);
   
-  // 秒→ミリ秒変換を確実に行う
-  const ms = ensureMilliseconds(Number(timestamp));
-  const date = new Date(ms);
-  
-  if (format === 'iso') {
-    return date.toISOString();
+  switch (timeframe) {
+    case '1m':
+    case '3m':
+    case '5m':
+    case '15m':
+    case '30m':
+      // 分足の場合は、秒とミリ秒をリセット
+      result.setSeconds(0, 0);
+      break;
+    case '1h':
+    case '2h':
+    case '4h':
+    case '6h':
+    case '8h':
+    case '12h':
+      // 時間足の場合は、分、秒、ミリ秒をリセット
+      result.setMinutes(0, 0, 0);
+      break;
+    case '1d':
+    case '3d':
+      // 日足の場合は、時間、分、秒、ミリ秒をリセット
+      result.setHours(0, 0, 0, 0);
+      break;
+    case '1w':
+      // 週足の場合は、その週の始まり（日曜日）にスナップ
+      const day = result.getDay();
+      result.setDate(result.getDate() - day);
+      result.setHours(0, 0, 0, 0);
+      break;
+    case '1M':
+      // 月足の場合は、その月の1日にスナップ
+      result.setDate(1);
+      result.setHours(0, 0, 0, 0);
+      break;
   }
   
-  // YYY/MM/DD形式（ロケール非依存）
-  const year = date.getUTCFullYear();
-  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-  const day = String(date.getUTCDate()).padStart(2, '0');
+  return result;
+}
+
+/**
+ * 指定した時間が有効かどうかを検証する
+ */
+export function isValidTime(time: any): boolean {
+  if (time === undefined || time === null) {
+    return false;
+  }
   
-  return `${year}/${month}/${day}`;
+  if (typeof time === 'number') {
+    return time > 0 && !isNaN(time);
+  }
+  
+  if (typeof time === 'string') {
+    const date = new Date(time);
+    return !isNaN(date.getTime());
+  }
+  
+  return false;
+}
+
+/**
+ * 時間値を標準化して常に数値のミリ秒タイムスタンプに変換する
+ */
+export function normalizeTimeValue(time: any): number {
+  if (!isValidTime(time)) {
+    logger.warn('無効な時間値が渡されました。現在時刻を使用します', {
+      component: 'chartUtils',
+      action: 'normalizeTimeValue',
+      time
+    });
+    return Date.now();
+  }
+  
+  // 文字列の場合はDateオブジェクトに変換
+  if (typeof time === 'string') {
+    return new Date(time).getTime();
+  }
+  
+  // 既に数値の場合はミリ秒単位であることを確認
+  return ensureMilliseconds(time);
 }

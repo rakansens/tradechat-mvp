@@ -7,7 +7,7 @@
 // - 時間足操作はuseChartDataStoreで処理
 
 import { useSymbolStore } from './useSymbolStore';
-import { useChartDataStore } from './chart/useChartDataStore';
+import { useChartDataStore } from './chart';
 import { useWebSocketStore } from './useWebSocketStore';
 import { logger } from '@/utils/logger';
 import { Timeframe } from '@/types/chart';
@@ -26,7 +26,7 @@ export const setSymbol = (symbol: string, source: string = 'socket-event') => {
     source
   });
   try {
-    useSymbolStore.getState().setCurrentSymbol(symbol, `socketActions/${source}`);
+    useSymbolStore.getState().setCurrentSymbol(symbol, source);
     logger.info(`socketActions: 銘柄を${symbol}に更新しました`, {
       component: 'socketActions',
       action: 'setSymbol',
@@ -35,10 +35,12 @@ export const setSymbol = (symbol: string, source: string = 'socket-event') => {
     });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorStack = error instanceof Error ? error.stack : 'No stack trace';
     logger.error(`socketActions: 銘柄更新エラー: ${errorMessage}`, {
       component: 'socketActions',
       action: 'setSymbol',
       errorMessage,
+      errorStack,
       symbol
     });
   }
@@ -134,7 +136,7 @@ export const setTimeframe = (
   const chartDataStore = useChartDataStore.getState();
   const currentTimeframe = chartDataStore.currentTimeFrame;
   
-  logger.info(`socketActions: 時間足を${currentTimeframe}から${timeframe}に更新します`, {
+  logger.info(`socketActions: 時間足を${timeframe}に更新します`, {
     component: 'socketActions',
     action: 'setTimeframe',
     timeframe,
@@ -151,17 +153,16 @@ export const setTimeframe = (
     // キャッシュもクリアする
     // 循環依存を避けるために動的インポートを使用
     import('../services/data').then(module => {
-      const { dataFetchService } = module;
-      if (typeof dataFetchService.handleTimeframeChange === 'function') {
-        dataFetchService.handleTimeframeChange(currentSymbol, timeframe, exchangeType);
-        logger.info(`socketActions: 時間足変更に伴いキャッシュをクリアしました`, {
+      const { chartDataService } = module;
+      // 新しいAPIを使用してキャッシュをクリア
+      chartDataService.clearCacheOnSymbolChange(currentSymbol);
+      logger.info(`socketActions: 時間足変更に伴いキャッシュをクリアしました`, {
           component: 'socketActions',
           action: 'setTimeframe',
           symbol: currentSymbol,
           timeframe,
           exchangeType
         });
-      }
     }).catch(e => {
       logger.warn(`socketActions: キャッシュクリアに失敗しました`, {
         component: 'socketActions',

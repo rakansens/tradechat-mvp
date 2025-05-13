@@ -34,6 +34,39 @@ export function setupGlobalErrorHandlers() {
 
   // グローバルなJavaScriptエラーをキャッチ
   window.addEventListener('error', (event) => {
+    // Chrome 固有の ResizeObserver ループ警告とSES例外は無視（noise が多いため）
+    if (
+      typeof event.message === 'string' &&
+      (event.message.includes('ResizeObserver loop') ||
+       event.message.startsWith('SES_UNCAUGHT_EXCEPTION'))
+    ) {
+      const warnType = event.message.startsWith('SES_UNCAUGHT_EXCEPTION') ? 'ses' : 'resizeObserverLoop';
+      // throttle: スロットリングを強化し、メッセージタイプごとに10秒間隔でのみログを記録
+      if (!(window as any).__ignoreWarns) {
+        (window as any).__ignoreWarns = {};
+        (window as any).__ignoreWarnTimers = {};
+      }
+
+      const now = Date.now();
+      const lastTime = (window as any).__ignoreWarnTimers[warnType] || 0;
+      
+      // 10秒以上経過している場合のみログを記録
+      if (now - lastTime > 10000) {
+        (window as any).__ignoreWarnTimers[warnType] = now;
+        (window as any).__ignoreWarns[warnType] = true;
+        logger.warn('ブラウザ警告をスロットリング（無視）:', {
+          component: 'GlobalErrorHandler',
+          action: warnType,
+          message: event.message.substring(0, 100), // 長いメッセージは切り詰める
+          filename: event.filename,
+          lineno: event.lineno,
+          colno: event.colno
+        });
+      }
+      // ブラウザ既定のエラー表示を抑制
+      event.preventDefault?.();
+      return;
+    }
     const errorInfo = {
       message: event.message,
       filename: event.filename,
@@ -85,6 +118,19 @@ export function setupGlobalErrorHandlers() {
         component: 'GlobalErrorHandler',
         action: 'reactError'
       });
+    }
+    
+    // SES / ResizeObserver など noise 系を無視
+    if (
+      typeof errorMessage === 'string' &&
+      (errorMessage.startsWith('SES_UNCAUGHT_EXCEPTION') || errorMessage.includes('lockdown-install'))
+    ) {
+      logger.warn('SES exception suppressed', {
+        component: 'GlobalErrorHandler',
+        action: 'sesConsoleError',
+        msg: errorMessage
+      });
+      return; // swallow
     }
     
     // 元のconsole.errorを呼び出す - 安全に処理

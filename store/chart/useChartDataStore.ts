@@ -11,7 +11,7 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { BitgetApiClient } from '../../services/api/bitget/client';
-import { dataFetchService } from '../../services/data';
+import { chartDataService } from '../../services/data';
 import { cacheService } from '../../services/cache';
 import { OHLCData, Timeframe } from '../../types/chart';
 import { generateOHLCData } from '../../utils/ohlcDummyData';
@@ -137,7 +137,7 @@ export const useChartDataStore = create<ChartDataState>()(
           });
           
           // 共通サービスを使用してチャートデータを取得（キャッシュを使用）
-          const data = await dataFetchService.fetchChartData(
+          const data = await chartDataService.fetchChartData(
             finalSymbol,
             finalTimeFrame,
             exchangeType,
@@ -322,9 +322,9 @@ export const useChartDataStore = create<ChartDataState>()(
             localStorage_selectedTimeframe: typeof window !== 'undefined' ? localStorage.getItem('selectedTimeframe') : null
           });
           
-          // 動的インポートを使わず、直接dataFetchServiceを参照する
+          // 動的インポートを使わず、直接chartDataServiceを参照する
           // これにより確実にキャッシュクリアが実行される
-          dataFetchService.handleTimeframeChange(currentSymbol, timeFrame, exchangeType);
+          chartDataService.clearCacheOnSymbolChange(currentSymbol);
           logger.info(`Cleared chart cache for timeframe change to ${timeFrame}`, {
             component: 'useChartDataStore',
             action: 'updateTimeFrame',
@@ -379,7 +379,7 @@ export const useChartDataStore = create<ChartDataState>()(
               cacheService.clear();
               
               // 2. 特定のキャッシュをクリア
-              dataFetchService.handleTimeframeChange(currentSymbol, timeFrame, exchangeType);
+              chartDataService.clearCacheOnSymbolChange(currentSymbol);
               
               // キャッシュを使用せずに新しいデータを取得
               logger.info(`新しい時間足データを取得します: ${currentSymbol} ${timeFrame}`, {

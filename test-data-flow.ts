@@ -6,9 +6,11 @@
  * 1. REST APIで過去データを取得
  * 2. WebSocketでリアルタイムデータを購読
  * 3. Ping/Pongメカニズムの動作確認
+ * 
+ * 更新: 2025-05-12 - dataFetchServiceからchartDataServiceに移行
  */
 
-import { dataFetchService } from './services/data/dataFetchService';
+import { chartDataService } from './services/data';
 
 // デバッグモード
 const DEBUG = true;
@@ -29,14 +31,14 @@ function log(message: string, data?: any) {
 
 // hybridChartServiceは使用しないため削除
 
-// dataFetchServiceのテスト
-async function testDataFetchService() {
-  log('=== dataFetchServiceのテスト開始 ===');
+// chartDataServiceのテスト
+async function testChartDataService() {
+  log('=== chartDataServiceのテスト開始 ===');
   
   try {
     // チャートデータの取得
     log(`REST APIからチャートデータの取得開始: ${TEST_SYMBOL} ${TEST_TIMEFRAME}`);
-    const chartData = await dataFetchService.fetchChartData(
+    const chartData = await chartDataService.fetchChartData(
       TEST_SYMBOL,
       TEST_TIMEFRAME as any,
       TEST_EXCHANGE_TYPE
@@ -51,7 +53,7 @@ async function testDataFetchService() {
     
     // リアルタイムデータの購読
     log(`リアルタイムローソク足データの購読開始: ${TEST_SYMBOL} ${TEST_TIMEFRAME}`);
-    const unsubscribe = dataFetchService.subscribeKlineRealtime(
+    const unsubscribe = chartDataService.subscribeKlineRealtime(
       TEST_SYMBOL,
       TEST_TIMEFRAME as any,
       (data) => {
@@ -68,7 +70,7 @@ async function testDataFetchService() {
     unsubscribe();
     log('購読を解除しました');
     
-    log('=== dataFetchServiceのテスト終了 ===');
+    log('=== chartDataServiceのテスト終了 ===');
   } catch (error) {
     log(`エラー発生: ${error}`);
   }
@@ -78,8 +80,8 @@ async function testDataFetchService() {
 async function main() {
   log('データフェッチフローのテスト開始');
   
-  // dataFetchServiceのテスト
-  await testDataFetchService();
+  // chartDataServiceのテスト
+  await testChartDataService();
   
   log('データフェッチフローのテスト終了');
   process.exit(0);

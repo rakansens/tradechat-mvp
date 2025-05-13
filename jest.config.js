@@ -7,7 +7,8 @@ module.exports = {
   testEnvironment: 'jsdom',
   testMatch: ['**/__tests__/**/*.test.{ts,tsx}'],
   moduleNameMapper: {
-    '^@/(.*)$': '<rootDir>/$1'
+    '^@/(.*)$': '<rootDir>/$1',
+    '^lightweight-charts$': '<rootDir>/__tests__/lightweight-charts.js'
   },
   transform: {
     '^.+\\.tsx?$': ['ts-jest', {

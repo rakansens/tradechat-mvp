@@ -129,9 +129,9 @@ class OrderBookService extends EventEmitter implements IOrderBookService {
   
   /**
    * WebSocketを使用してオーダーブックデータをリアルタイム購読
-   * @param symbol シンボル（例: 'BTC/USDT'）
+   * @param symbol シンボル
    * @param callback データ受信時のコールバック関数
-   * @param exchangeType 取引タイプ（'spot'または'futures'）
+   * @param exchangeType 取引タイプ
    * @returns 購読解除用の関数
    */
   subscribeOrderBookRealtime(
@@ -238,12 +238,12 @@ class OrderBookService extends EventEmitter implements IOrderBookService {
   }
   
   /**
-   * すべての購読を解除
+   * すべてのオーダーブック購読を解除
    */
-  unsubscribeAll(): void {
+  unsubscribeAllOrderBooks(): void {
     logger.info('すべてのオーダーブック購読を解除', {
       component: 'OrderBookService',
-      action: 'unsubscribeAll',
+      action: 'unsubscribeAllOrderBooks',
       subscriptionCount: this.subscriptions.size
     });
     
@@ -254,6 +254,15 @@ class OrderBookService extends EventEmitter implements IOrderBookService {
     
     // 購読リストをクリア
     this.subscriptions.clear();
+  }
+  
+  /**
+   * すべての購読を解除
+   * @deprecated 代わりにunsubscribeAllOrderBooksを使用してください
+   */
+  unsubscribeAll(): void {
+    // 互換性のためにunsubscribeAllOrderBooksを呼び出す
+    this.unsubscribeAllOrderBooks();
   }
 }
 

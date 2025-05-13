@@ -168,7 +168,8 @@ export class BitgetApiClient implements IBitgetApiClient {
       });
       
       // REST APIクライアントを使用してデータを取得
-      return await this.restClient.fetchCandles(symbol, timeframe, limit);
+      // 取引タイプを正しく渡す
+      return await this.restClient.fetchCandles(symbol, timeframe, limit, type);
     } catch (error) {
       logger.error(`Failed to fetch candles: ${error}`, {
         component: 'BitgetApiClient',
@@ -242,6 +243,40 @@ export class BitgetApiClient implements IBitgetApiClient {
         timestamp: Date.now()
       };
     }
+  }
+  
+  /**
+   * ローソク足データを購読（useRealTimeStore互換性用）
+   * @param symbol シンボル
+   * @param timeframe タイムフレーム
+   * @returns 購読解除用の関数
+   */
+  subscribeToKline(symbol: string, timeframe: string): () => void {
+    logger.info(`Subscribing to kline for ${symbol} with timeframe ${timeframe} (via subscribeToKline)`, {
+      component: 'BitgetApiClient',
+      action: 'subscribeToKline',
+      symbol,
+      timeframe
+    });
+    
+    // subscribeCandlesメソッドに委託
+    return this.subscribeCandles(symbol, timeframe, () => {
+      // ダミーコールバック
+    });
+  }
+  
+  /**
+   * ローソク足データ更新時のコールバック設定（useRealTimeStore互換性用）
+   * @param callback コールバック関数
+   */
+  onKlineUpdate(callback: (data: OHLCData) => void): void {
+    logger.info('Setting up kline update callback', {
+      component: 'BitgetApiClient',
+      action: 'onKlineUpdate'
+    });
+    
+    // WebSocketクライアントにコールバックを設定
+    this.wsClient.setKlineUpdateCallback(callback);
   }
   
   /**

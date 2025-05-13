@@ -192,7 +192,7 @@ export interface OrderBookData {
   asks: OrderBookEntry[] | [string, string][];
   bids: OrderBookEntry[] | [string, string][];
   timestamp: number;
-  symbol: string;
+  symbol?: string;
 }
 
 export interface ChartState {

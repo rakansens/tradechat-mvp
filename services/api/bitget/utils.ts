@@ -84,7 +84,7 @@ export function normalizeFuturesSymbol(symbol: string): string {
  * @returns フォーマットされたシンボル（例: 'BTCUSDT'）
  */
 export function formatSymbol(symbol: string): string {
-  return symbol.replace('/', '').toUpperCase();
+  return symbol.replace('/', '-');
 }
 
 /**
@@ -129,53 +129,82 @@ export function convertTimeframeToBitgetV2Format(timeframe: string): string {
 }
 
 /**
- * ローソク足データを標準形式に変換
- * @param responseData APIレスポンスデータ
- * @param timeframe タイムフレーム
- * @returns 標準化されたローソク足データ
+ * APIレスポンスからローソク足データに変換する
+ * 時間足に応じた処理を行う
  */
-export function convertCandleData(responseData: any[], timeframe: string): any[] {
+function convertCandleData(responseData: any[], timeframe: string): any[] {
   if (!Array.isArray(responseData) || responseData.length === 0) {
     return [];
   }
   
-  return responseData
+  // データを昇順にソート（時間の古い順）
+  const sortedData = [...responseData].sort((a, b) => {
+    // 配列形式と想定
+    if (Array.isArray(a) && Array.isArray(b)) {
+      return parseInt(a[0]) - parseInt(b[0]);
+    }
+    // オブジェクト形式と想定
+    if (a.timestamp && b.timestamp) {
+      return parseInt(String(a.timestamp)) - parseInt(String(b.timestamp));
+    }
+    if (a.time && b.time) {
+      return parseInt(String(a.time)) - parseInt(String(b.time));
+    }
+    // それ以外の場合はそのまま返す
+    return 0;
+  });
+  
+  return sortedData
     .map((candle: any) => {
       try {
-        let result;
-        // Bitget V2 APIのレスポンス形式に合わせて処理
-        // [タイムスタンプ, 始値, 高値, 安値, 終値, 出来高, 出来安]
+        let result: any = {};
+        
+        // 配列形式かオブジェクト形式か判断
         if (Array.isArray(candle)) {
-          // 必要なデータが存在するか確認
-          if (!candle[0] || !candle[1] || !candle[2] || !candle[3] || !candle[4]) {
+          // 必要なデータが存在するか確認（最低6要素必要）
+          if (candle.length < 6) {
             return null;
           }
           
-          const timestamp = parseInt(String(candle[0]));
+          // タイムスタンプを処理
+          const timestamp = parseInt(candle[0]);
           if (isNaN(timestamp) || timestamp <= 0) {
             return null;
           }
           
-          // 各値を個別に変換
-          const parsedOpen = parseFloat(String(candle[1]).trim());
-          const parsedHigh = parseFloat(String(candle[2]).trim());
-          const parsedLow = parseFloat(String(candle[3]).trim());
-          const parsedClose = parseFloat(String(candle[4]).trim());
-          const parsedVolume = parseFloat(String(candle[5] || candle[6] || '0').trim());
+          // 価格データを処理
+          const parsedOpen = parseFloat(candle[1]);
+          const parsedHigh = parseFloat(candle[2]);
+          const parsedLow = parseFloat(candle[3]);
+          const parsedClose = parseFloat(candle[4]);
+          const parsedVolume = parseFloat(candle[5]);
           
-          // 値が同一の場合（APIの問題）、微小な差を付ける
+          // 価格が有効か確認
+          if (isNaN(parsedOpen) || isNaN(parsedHigh) || isNaN(parsedLow) || isNaN(parsedClose) || isNaN(parsedVolume)) {
+            return null;
+          }
+          
+          // 価格の異常値を修正（極端に高いまたは低い値）
+          // 例：高値が安値より低い場合や始値・終値が範囲外の場合
           let adjustedHigh = parsedHigh;
           let adjustedLow = parsedLow;
           
-          if (parsedOpen === parsedHigh && parsedHigh === parsedLow && parsedLow === parsedClose) {
-            // すべての値が同じ場合、人工的に高値と安値を調整
-            const variation = parsedOpen * 0.0005; // 0.05%の変動
-            adjustedHigh = parsedOpen + variation;
-            adjustedLow = Math.max(parsedOpen - variation, 0); // 0未満にならないように
+          if (adjustedHigh < parsedOpen || adjustedHigh < parsedClose) {
+            adjustedHigh = Math.max(parsedOpen, parsedClose);
+          }
+          
+          if (adjustedLow > parsedOpen || adjustedLow > parsedClose) {
+            adjustedLow = Math.min(parsedOpen, parsedClose);
+          }
+          
+          // ミリ秒単位のタイムスタンプであることを確認
+          let normalizedTimestamp = timestamp;
+          if (timestamp < 10000000000) {
+            normalizedTimestamp = timestamp * 1000; // 秒からミリ秒に変換
           }
           
           result = {
-            time: timestamp, // lightweight-chartsの要件に合わせてtimeとして設定
+            time: normalizedTimestamp, // lightweight-chartsの要件に合わせてtimeとして設定
             open: parsedOpen,
             high: adjustedHigh,
             low: adjustedLow,
@@ -189,19 +218,34 @@ export function convertCandleData(responseData: any[], timeframe: string): any[]
             return null;
           }
           
+          // タイムスタンプの取得と検証
           const timestamp = parseInt(String(candle.timestamp || candle.ts || candle.time || Date.now()));
           if (isNaN(timestamp) || timestamp <= 0) {
-            return null;
+            // タイムスタンプが無効な場合は現在時刻を使用
+            result = {
+              time: Date.now(),
+              open: parseFloat(String(candle.open)),
+              high: parseFloat(String(candle.high)),
+              low: parseFloat(String(candle.low)),
+              close: parseFloat(String(candle.close)),
+              volume: parseFloat(String(candle.volume || candle.vol || '0'))
+            };
+          } else {
+            // ミリ秒単位のタイムスタンプであることを確認
+            let normalizedTimestamp = timestamp;
+            if (timestamp < 10000000000) {
+              normalizedTimestamp = timestamp * 1000; // 秒からミリ秒に変換
+            }
+            
+            result = {
+              time: normalizedTimestamp,
+              open: parseFloat(String(candle.open)),
+              high: parseFloat(String(candle.high)),
+              low: parseFloat(String(candle.low)),
+              close: parseFloat(String(candle.close)),
+              volume: parseFloat(String(candle.volume || candle.vol || '0'))
+            };
           }
-          
-          result = {
-            time: timestamp, // lightweight-chartsの要件に合わせてtimeとして設定
-            open: parseFloat(String(candle.open)),
-            high: parseFloat(String(candle.high)),
-            low: parseFloat(String(candle.low)),
-            close: parseFloat(String(candle.close)),
-            volume: parseFloat(String(candle.volume || candle.vol || '0'))
-          };
         }
         
         // 全ての値が有効か確認
@@ -216,4 +260,184 @@ export function convertCandleData(responseData: any[], timeframe: string): any[]
     })
     .filter((candle: any) => candle !== null) // nullを除外
     .sort((a: any, b: any) => a.time - b.time); // 時間順にソート
+}
+
+/**
+ * WebSocket送信キューマネージャー
+ * WebSocketが接続されていない場合はメッセージをキューに追加し、
+ * 接続が確立されたらキューから送信する
+ */
+export class WebSocketSendQueue {
+  private queue: string[] = [];
+  private ws: WebSocket | null = null;
+  private queueProcessorTimer: NodeJS.Timeout | null = null;
+  private lastWarnTime = 0;
+  private readonly WARN_THROTTLE = 10000; // 10秒
+  
+  /**
+   * コンストラクタ
+   */
+  constructor() {
+    // キュー処理を定期的に実行
+    this.startQueueProcessor();
+  }
+  
+  /**
+   * WebSocketを設定
+   * @param ws WebSocketインスタンス
+   */
+  setWebSocket(ws: WebSocket | null): void {
+    this.ws = ws;
+    
+    // 接続が確立されていれば即座にキューを処理
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      this.processQueue();
+    }
+    
+    // WebSocketが接続状態になったらキューを処理
+    if (ws) {
+      ws.addEventListener('open', () => {
+        logger.info('WebSocketが接続されました。キューを処理します', {
+          component: 'WebSocketSendQueue',
+          action: 'setWebSocket',
+          queueSize: this.queue.length
+        });
+        this.processQueue();
+      });
+    }
+  }
+  
+  /**
+   * メッセージを送信またはキューに追加
+   * @param message 送信メッセージ
+   */
+  send(message: any): void {
+    const stringMessage = typeof message === 'string' ? message : JSON.stringify(message);
+    
+    // WebSocketが接続済みであれば直接送信
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      try {
+        this.ws.send(stringMessage);
+        return;
+      } catch (error) {
+        logger.error('WebSocketメッセージの送信に失敗しました', {
+          component: 'WebSocketSendQueue',
+          action: 'send',
+          error
+        });
+        // 送信失敗時はキューに追加
+        this.queue.push(stringMessage);
+      }
+    } else {
+      // WebSocketが接続されていなければキューに追加
+      this.queue.push(stringMessage);
+      
+      // 警告のスロットリング
+      const now = Date.now();
+      if (now - this.lastWarnTime > this.WARN_THROTTLE) {
+        this.lastWarnTime = now;
+        logger.warn('WebSocketが接続されていないため、メッセージをキューに追加します', {
+          component: 'WebSocketSendQueue',
+          action: 'send',
+          queueSize: this.queue.length,
+          wsState: this.ws ? this.getReadyStateString(this.ws.readyState) : 'null'
+        });
+      }
+    }
+  }
+  
+  /**
+   * キューを処理
+   */
+  private processQueue(): void {
+    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+      return;
+    }
+    
+    // キューが空の場合は何もしない
+    if (this.queue.length === 0) {
+      return;
+    }
+    
+    logger.info(`キューからメッセージを処理します (${this.queue.length}件)`, {
+      component: 'WebSocketSendQueue',
+      action: 'processQueue'
+    });
+    
+    // キューからメッセージを取り出して送信
+    while (this.queue.length > 0 && this.ws.readyState === WebSocket.OPEN) {
+      const message = this.queue.shift();
+      if (message) {
+        try {
+          this.ws.send(message);
+        } catch (error) {
+          logger.error('キューからのメッセージ送信に失敗しました', {
+            component: 'WebSocketSendQueue',
+            action: 'processQueue',
+            error
+          });
+          // 送信に失敗したメッセージは再度キューに追加（先頭に）
+          this.queue.unshift(message);
+          break;
+        }
+      }
+    }
+  }
+  
+  /**
+   * キュー処理を定期的に実行
+   */
+  private startQueueProcessor(): void {
+    // 既存のタイマーをクリア
+    if (this.queueProcessorTimer) {
+      clearInterval(this.queueProcessorTimer);
+    }
+    
+    // 1秒ごとにキューを処理
+    this.queueProcessorTimer = setInterval(() => {
+      this.processQueue();
+    }, 1000);
+  }
+  
+  /**
+   * キュー処理を停止
+   */
+  stopQueueProcessor(): void {
+    if (this.queueProcessorTimer) {
+      clearInterval(this.queueProcessorTimer);
+      this.queueProcessorTimer = null;
+    }
+  }
+  
+  /**
+   * キューをクリア
+   */
+  clearQueue(): void {
+    this.queue = [];
+  }
+  
+  /**
+   * キューのサイズを取得
+   */
+  getQueueSize(): number {
+    return this.queue.length;
+  }
+  
+  /**
+   * ReadyStateの文字列表現を取得
+   */
+  private getReadyStateString(state: number): string {
+    switch (state) {
+      case WebSocket.CONNECTING:
+        return 'CONNECTING';
+      case WebSocket.OPEN:
+        return 'OPEN';
+      case WebSocket.CLOSING:
+        return 'CLOSING';
+      case WebSocket.CLOSED:
+        return 'CLOSED';
+      default:
+        return `UNKNOWN(${state})`;
+    }
+  }
 }

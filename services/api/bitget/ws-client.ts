@@ -15,7 +15,7 @@ import { logger } from '@/utils/logger';
 import { IS_DEV } from '../common/environment';
 import { getApiConfig } from '../common/environment';
 import { BitgetApiClientOptions } from './interfaces';
-import { formatSymbol, createWebSocket } from './utils';
+import { formatSymbol, createWebSocket, WebSocketSendQueue } from './utils';
 import { BitgetDataTransformer } from './data-transformer';
 import EventEmitter from 'events';
 
@@ -57,6 +57,10 @@ export class BitgetWebSocketClient extends EventEmitter {
   private onOrderBookUpdateCallbacks: Map<string, ((data: OrderBookData) => void)[]> = new Map();
   private onKlineUpdateCallbacks: Map<string, ((data: OHLCData) => void)[]> = new Map();
   
+  private lastWarnTime: number | null = null;
+  
+  private sendQueue: WebSocketSendQueue;
+  
   /**
    * コンストラクタ
    * @param options WebSocketクライアントのオプション
@@ -71,6 +75,9 @@ export class BitgetWebSocketClient extends EventEmitter {
     this.credentials = options.credentials || {};
     this.exchangeType = options.exchangeType || 'spot';
     this.dataTransformer = new BitgetDataTransformer();
+    
+    // 送信キューを初期化
+    this.sendQueue = new WebSocketSendQueue();
     
     logger.info('BitgetWebSocketClient initialized', {
       component: 'BitgetWebSocketClient',
@@ -110,6 +117,9 @@ export class BitgetWebSocketClient extends EventEmitter {
           reject(error);
           return;
         }
+        
+        // 送信キューにWebSocketをセット
+        this.sendQueue.setWebSocket(this.ws);
         
         // 接続成功時のハンドラ
         const onOpen = () => {
@@ -168,6 +178,10 @@ export class BitgetWebSocketClient extends EventEmitter {
       this.reconnectInterval = null;
     }
     
+    // 送信キューを停止
+    this.sendQueue.stopQueueProcessor();
+    this.sendQueue.clearQueue();
+    
     // WebSocketを閉じる
     if (this.ws) {
       try {
@@ -186,6 +200,8 @@ export class BitgetWebSocketClient extends EventEmitter {
         });
       } finally {
         this.ws = null;
+        // WebSocketをnullに設定したことを送信キューに通知
+        this.sendQueue.setWebSocket(null);
       }
     }
     
@@ -295,6 +311,31 @@ export class BitgetWebSocketClient extends EventEmitter {
         // 購読解除リクエストを送信（将来的に実装）
       }
     };
+  }
+  
+  /**
+   * ローソク足データ更新時のコールバックを設定
+   * @param callback コールバック関数
+   */
+  setKlineUpdateCallback(callback: (data: OHLCData) => void): void {
+    logger.info('Setting kline update callback', {
+      component: 'BitgetWebSocketClient',
+      action: 'setKlineUpdateCallback'
+    });
+    
+    // すべてのローソク足データのコールバックを登録
+    for (const key of this.onKlineUpdateCallbacks.keys()) {
+      const callbacks = this.onKlineUpdateCallbacks.get(key) || [];
+      
+      // 重複登録を避ける
+      if (!callbacks.includes(callback)) {
+        callbacks.push(callback);
+        this.onKlineUpdateCallbacks.set(key, callbacks);
+      }
+    }
+    
+    // グローバルコールバックとしてイベントリスナーを設定
+    this.on('klineUpdate', callback);
   }
   
   /**
@@ -416,6 +457,16 @@ export class BitgetWebSocketClient extends EventEmitter {
             action: 'processKlineData'
           });
         }
+      });
+      
+      // グローバルイベントとしてklineUpdateイベントを発火
+      this.emit('klineUpdate', candle);
+      
+      logger.debug('Emitted klineUpdate event', {
+        component: 'BitgetWebSocketClient',
+        action: 'processKlineData',
+        symbol,
+        timeframe
       });
     } catch (error) {
       logger.error('Error processing kline data', error, {
@@ -610,36 +661,24 @@ export class BitgetWebSocketClient extends EventEmitter {
    * @param subscription 購読情報
    */
   private sendSubscription(subscription: { instType: string; channel: string; instId: string }): void {
-    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
-      logger.warn('Cannot send subscription, WebSocket not open', {
-        component: 'BitgetWebSocketClient',
-        action: 'sendSubscription',
-        subscription
-      });
-      return;
-    }
+    // メッセージを作成
+    const message = {
+      op: 'subscribe',
+      args: [subscription]
+    };
     
-    try {
-      const message = JSON.stringify({
-        op: 'subscribe',
-        args: [subscription]
-      });
-      
-      this.ws.send(message);
-      this.currentSubscription = subscription;
-      
-      logger.info('Sent subscription', {
-        component: 'BitgetWebSocketClient',
-        action: 'sendSubscription',
-        subscription
-      });
-    } catch (error) {
-      logger.error('Error sending subscription', error, {
-        component: 'BitgetWebSocketClient',
-        action: 'sendSubscription',
-        subscription
-      });
-    }
+    // 送信キューを使用してメッセージを送信
+    this.sendQueue.send(message);
+    
+    // 現在の購読情報を保存
+    this.currentSubscription = subscription;
+    
+    logger.debug('Subscription queued', {
+      component: 'BitgetWebSocketClient',
+      action: 'sendSubscription',
+      subscription,
+      queueSize: this.sendQueue.getQueueSize()
+    });
   }
   
   /**

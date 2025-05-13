@@ -9,184 +9,208 @@
  */
 
 import { Socket } from 'socket.io-client';
-import { initializeSocketClient, getSocket } from '../../utils/socketClient';
+import { io } from 'socket.io-client';
 import { logger } from '../../utils/logger';
 
-// 定数
-const MAX_RECONNECT_ATTEMPTS = 5;
-const RECONNECT_DELAY = 2000;
+// シングルトンSocketインスタンス
+let socketInstance: Socket | null = null;
+let isConnecting = false;
+let connectionAttempts = 0;
+const MAX_CONNECTION_ATTEMPTS = 5;
+const RECONNECT_DELAY = 2000; // ms
 
-export class SocketClient {
-  private socket: Socket | null = null;
-  private connectedFlag = false;
-  private reconnectTimer: NodeJS.Timeout | null = null;
-  private reconnectAttempts = 0;
-
-  /**
-   * マーケットデータ用のSocket.IO接続を初期化
-   * @returns Socket.IOのソケットインスタンス
-   */
-  initialize(): Socket | null {
-    try {
-      // ブラウザ環境かどうかを確認
-      if (typeof window === 'undefined') {
-        logger.warn('SocketClientはブラウザ環境でのみ初期化できます', {
-          component: 'SocketClient',
-          action: 'initialize'
-        });
-        return null;
-      }
-      
-      // Socket.io接続を初期化（デフォルトの名前空間を使用、既存があれば再利用）
-      initializeSocketClient(false); // 既存ソケットがあれば再利用
-      this.socket = getSocket(true);
-      
-      // 接続イベントのハンドラを設定
-      if (this.socket) {
-        // 接続成功時
-        this.socket.on('connect', () => {
-          logger.info('Socket.IO接続成功', {
-            component: 'SocketClient',
-            action: 'connect'
-          });
-          
-          this.connectedFlag = true;
-          this.reconnectAttempts = 0;
-          
-          // 再接続タイマーをクリア
-          if (this.reconnectTimer) {
-            clearTimeout(this.reconnectTimer);
-            this.reconnectTimer = null;
-          }
-        });
-        
-        // 切断時
-        this.socket.on('disconnect', (reason) => {
-          logger.warn(`Socket.IO切断: ${reason}`, {
-            component: 'SocketClient',
-            action: 'disconnect'
-          });
-          
-          this.connectedFlag = false;
-          
-          // 自動再接続を試みる
-          this.scheduleReconnect();
-        });
-        
-        // 接続エラー時
-        this.socket.on('connect_error', (error) => {
-          logger.error(`Socket.IO接続エラー: ${error.message}`, {
-            component: 'SocketClient',
-            action: 'connect_error',
-            error
-          });
-          
-          this.connectedFlag = false;
-          
-          // 自動再接続を試みる
-          this.scheduleReconnect();
-        });
-      }
-      
-      return this.socket;
-    } catch (error) {
-      logger.error('Socket.IO初期化エラー:', error, {
-        component: 'SocketClient',
-        action: 'initialize'
-      });
-      return null;
-    }
-  }
-
-  /**
-   * 現在のSocket.IOインスタンスを取得、なければ初期化
-   */
-  getSocket(): Socket | null {
-    if (this.socket && this.socket.connected) return this.socket;
-    this.socket = getSocket(true);
-    if (!this.socket) {
-      this.initialize();
-      this.socket = getSocket(false);
-    }
-    return this.socket;
-  }
-
-  /**
-   * ソケット接続を切断
-   */
-  disconnect(): void {
-    if (this.socket) {
-      this.socket.disconnect();
-      this.socket = null;
-    }
-    
-    // 接続状態をリセット
-    this.connectedFlag = false;
-    
-    // 再接続タイマーをクリア
-    if (this.reconnectTimer) {
-      clearTimeout(this.reconnectTimer);
-      this.reconnectTimer = null;
-    }
-    
-    logger.info('Socket.IO接続を切断しました', {
+/**
+ * マーケットデータ用のSocket.IO接続を初期化
+ * @returns Socket.IOのソケットインスタンス
+ */
+export function initializeSocketClient(): Socket | null {
+  // サーバーサイドでは実行しない
+  if (typeof window === 'undefined') {
+    logger.warn('initializeSocketClientはブラウザ環境でのみ実行できます', {
       component: 'SocketClient',
-      action: 'disconnect'
+      action: 'initializeSocketClient'
     });
+    return null;
   }
 
-  /**
-   * 接続状態を取得
-   */
-  isConnected(): boolean {
-    if (!this.socket) return false;
-    return this.socket.connected;
+  // 既に接続済みの場合はそのインスタンスを返す
+  if (socketInstance && socketInstance.connected) {
+    logger.debug('既存のSocket.IO接続を返します', {
+      component: 'SocketClient',
+      action: 'initializeSocketClient',
+      connected: true,
+      id: socketInstance.id
+    });
+    return socketInstance;
   }
 
-  /**
-   * 再接続をスケジュール
-   */
-  scheduleReconnect(): void {
-    const attempts = this.reconnectAttempts;
-    const limit: number = MAX_RECONNECT_ATTEMPTS;
+  // 接続処理中の場合は待機
+  if (isConnecting) {
+    logger.debug('Socket.IO接続処理中です', {
+      component: 'SocketClient',
+      action: 'initializeSocketClient'
+    });
+    return null;
+  }
 
-    // 再接続試行回数が上限に達した場合は再接続を停止
-    if (attempts >= limit) {
-      logger.error(`最大再接続試行回数(${limit})に達しました`, {
-        component: 'SocketClient',
-        action: 'scheduleReconnect'
-      });
-      return;
+  // 接続試行回数が上限を超えた場合
+  if (connectionAttempts >= MAX_CONNECTION_ATTEMPTS) {
+    logger.error(`最大接続試行回数(${MAX_CONNECTION_ATTEMPTS})に達しました`, {
+      component: 'SocketClient',
+      action: 'initializeSocketClient',
+      attempts: connectionAttempts
+    });
+    return null;
+  }
+
+  try {
+    isConnecting = true;
+    connectionAttempts++;
+
+    // 既存の接続がある場合は切断
+    if (socketInstance) {
+      try {
+        socketInstance.disconnect();
+        socketInstance = null;
+      } catch (e) {
+        logger.warn('既存のSocket.IO接続の切断に失敗しました', {
+          component: 'SocketClient',
+          action: 'initializeSocketClient',
+          error: e
+        });
+      }
     }
 
-    // 既にタイマーがあれば何もしない
-    if (this.reconnectTimer) {
-      return;
-    }
+    // Socket.io接続を初期化（デフォルトの名前空間を使用、既存があれば再利用）
+    const baseUrl = process.env.API_BASE_URL || 'http://localhost:3000';
     
-    // 再接続タイマーの設定
-    this.reconnectTimer = global.setTimeout(() => {
-      this.reconnectTimer = null;
-      this.reconnectAttempts = attempts + 1;
+    // 接続オプションを設定
+    const options = {
+      reconnectionAttempts: 10,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      timeout: 30000,
+      transports: ['websocket', 'polling'] // WebSocketを優先し、フォールバックとしてポーリングを使用
+    };
 
-      logger.info(`再接続を試みます (${this.reconnectAttempts}/${limit})`, {
+    // Socket.IO接続を作成
+    socketInstance = io(baseUrl, options);
+    
+    // 接続成功時の処理
+    socketInstance.on('connect', () => {
+      logger.info('Socket.IO接続成功', {
         component: 'SocketClient',
-        action: 'reconnect'
+        action: 'connect',
+        id: socketInstance?.id
       });
-
-      // ソケットを再初期化
-      this.initialize();
-    }, RECONNECT_DELAY * Math.pow(2, this.reconnectAttempts)); // 指数バックオフ
+      
+      isConnecting = false;
+      connectionAttempts = 0;
+    });
+    
+    // 切断時の処理
+    socketInstance.on('disconnect', (reason) => {
+      logger.warn(`Socket.IO切断: ${reason}`, {
+        component: 'SocketClient',
+        action: 'disconnect',
+        reason
+      });
+      
+      // io client disconnect以外の理由で切断された場合は再接続しない
+      if (reason === 'io client disconnect') {
+        logger.info('クライアント側から切断されました。再接続は行いません。', {
+          component: 'SocketClient',
+          action: 'disconnect'
+        });
+        return;
+      }
+      
+      // 一定時間後に再接続を試みる
+      setTimeout(() => {
+        logger.info('Socket.IO再接続を試みます', {
+          component: 'SocketClient',
+          action: 'reconnect'
+        });
+        socketInstance = null;
+        isConnecting = false;
+        initializeSocketClient();
+      }, RECONNECT_DELAY);
+    });
+    
+    // 接続エラー時の処理
+    socketInstance.on('connect_error', (error) => {
+      logger.error(`Socket.IO接続エラー: ${error.message}`, {
+        component: 'SocketClient',
+        action: 'connect_error',
+        error
+      });
+      
+      isConnecting = false;
+      
+      // 一定時間後に再接続を試みる
+      setTimeout(() => {
+        logger.info(`Socket.IO接続エラー後、再接続を試みます(${connectionAttempts}/${MAX_CONNECTION_ATTEMPTS})`, {
+          component: 'SocketClient',
+          action: 'reconnect_after_error'
+        });
+        socketInstance = null;
+        initializeSocketClient();
+      }, RECONNECT_DELAY);
+    });
+    
+    return socketInstance;
+  } catch (error) {
+    logger.error('Socket.IO初期化エラー:', {
+      component: 'SocketClient',
+      action: 'initializeSocketClient',
+      error
+    });
+    
+    isConnecting = false;
+    return null;
   }
 }
 
-// シングルトンインスタンス
-let clientInstance: SocketClient | null = null;
-
-// シングルトンゲッター
-export function getSocketClient(): SocketClient {
-  if (!clientInstance) {
-    clientInstance = new SocketClient();
+/**
+ * 現在のSocket.IOインスタンスを取得、なければ初期化
+ * @param forceInit 強制的に初期化するかどうか
+ * @returns Socket.IOインスタンス
+ */
+export function getSocket(forceInit = false): Socket | null {
+  if (forceInit || !socketInstance) {
+    return initializeSocketClient();
   }
-  return clientInstance;
+  return socketInstance;
+}
+
+/**
+ * WebSocket接続を切断
+ */
+export function disconnectSocket(): void {
+  if (socketInstance) {
+    try {
+      socketInstance.disconnect();
+      socketInstance = null;
+      connectionAttempts = 0;
+      isConnecting = false;
+      
+      logger.info('Socket.IO接続を切断しました', {
+        component: 'SocketClient',
+        action: 'disconnectSocket'
+      });
+    } catch (error) {
+      logger.error('Socket.IO切断エラー:', {
+        component: 'SocketClient',
+        action: 'disconnectSocket',
+        error
+      });
+    }
+  }
+}
+
+// テスト用にソケットインスタンスをリセットする関数
+export function resetSocketForTesting(): void {
+  socketInstance = null;
+  connectionAttempts = 0;
+  isConnecting = false;
 }

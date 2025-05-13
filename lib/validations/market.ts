@@ -11,12 +11,25 @@ export const orderBookEntrySchema = z.object({
   total: z.number().positive().optional() // UI表示用の累積数量
 })
 
+// 板データの配列形式のスキーマ（[string, string]）
+export const depthTupleSchema = z.tuple([
+  z.string(), // price
+  z.string()  // amount/size
+])
+
 // OrderBookData（オーダーブック全体）のバリデーションスキーマ
 export const orderBookDataSchema = z.object({
   symbol: z.string().min(1),
   timestamp: z.number().int().positive(),
-  bids: z.array(orderBookEntrySchema), // 買い注文
-  asks: z.array(orderBookEntrySchema)  // 売り注文
+  // 配列形式([string, string][])またはオブジェクト形式(OrderBookEntry[])を許可
+  bids: z.union([
+    z.array(orderBookEntrySchema), 
+    z.array(depthTupleSchema)
+  ]),
+  asks: z.union([
+    z.array(orderBookEntrySchema), 
+    z.array(depthTupleSchema)
+  ])
 })
 
 // OrderBookProps（コンポーネントのプロパティ）のバリデーションスキーマ

@@ -15,7 +15,7 @@ export interface OrderBookEntry {
  * chart.tsの定義と互換性を持たせるために、配列形式もサポート
  */
 export interface OrderBookData {
-  symbol: string;
+  symbol?: string;
   timestamp: number;
   bids: OrderBookEntry[] | [string, string][]; // 買い注文
   asks: OrderBookEntry[] | [string, string][]; // 売り注文

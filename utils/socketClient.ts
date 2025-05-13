@@ -8,6 +8,7 @@
 // 更新: 2024-03-15 - App Store用の直接変更イベントを追加 (元のCustomEventも維持)
 // 更新: 2025-05-09 - CustomEvent発行を削除し、App Store後方互換レイヤーを完全に移行
 // 更新: 2025-05-09 - ローカルストレージの保存を最小限に抑える
+// 更新: 2025-05-12 - 接続URLをlocalhost:3000に修正（標準ポートを使用）
 
 import { Socket, io } from 'socket.io-client';
 import { captureChartAsBase64 } from './screenshotUtils';
@@ -71,10 +72,9 @@ export function initializeSocketClient(forceReinitialize = false, namespace?: st
       transports: ['websocket', 'polling'] // WebSocketを優先し、フォールバックとしてポーリングを使用
     };
     
-// 名前空間の問題を回避するため、デフォルトの名前空間のみを使用
-// 明示的にポート3000を指定して接続
-const baseUrl = 'http://localhost:3000'; // 明示的にポート3000を指定
-socket = io(baseUrl, options);
+    // 接続先 URL を環境変数から取得し、無ければ http://localhost:3000 を使用
+    const baseUrl = process.env.API_BASE_URL || 'http://localhost:3000';
+    socket = io(baseUrl, options);
     
     // 接続成功時の処理
     socket.on('connected', (data: { clientId: string }) => {
@@ -98,7 +98,7 @@ socket = io(baseUrl, options);
       // AppStoreを直接更新 - 後方互換性のためのCustomEvent発行は削除済み
       socketActions.setTimeframe(data.timeframe, 'socket-changeTimeframe');
       
-      // AppStoreがストレージを管理するので最低限のストレージのみ
+      // AppStoreがストレージを管理するが、後方互換のため旧キーも保存
       try {
         // 両方のキーを使用して互換性を確保
         localStorage.setItem('lastUsedTimeframe', data.timeframe); // 新しいキー
@@ -115,6 +115,13 @@ socket = io(baseUrl, options);
           action: 'changeTimeframe',
           error
         });
+      }
+      
+      // 後方互換: global event を発行 (テスト環境互換のため CustomEvent を使用)
+      try {
+        window.dispatchEvent(new CustomEvent('timeframeChanged', { detail: data }));
+      } catch (e) {
+        /* noop */
       }
     });
     
@@ -154,9 +161,10 @@ socket = io(baseUrl, options);
         }
       }
       
-      // AppStoreがストレージを管理するので、ここでは最低限の保存のみを行う
+      // AppStoreがストレージを管理するが、後方互換のため旧キーも保存
       try {
         localStorage.setItem('lastUsedSymbol', data.symbol);
+        localStorage.setItem('selectedSymbol', data.symbol);
       } catch (error) {
         logger.warn('ローカルストレージへの銘柄保存に失敗しました:', {
           component: 'socketClient',
@@ -164,6 +172,11 @@ socket = io(baseUrl, options);
           error
         });
       }
+      
+      // 後方互換: global event を発行
+      try {
+        window.dispatchEvent(new CustomEvent('symbolChanged', { detail: data }));
+      } catch (_) {}
     });
     
     // 取引タイプ変更イベントのリスナー
@@ -182,6 +195,9 @@ socket = io(baseUrl, options);
         // 現在の銘柄を取得（APIから送られてきた銘柄またはローカルストレージから）
         const currentSymbol = data.symbol || localStorage.getItem('lastUsedSymbol') || 'BTCUSDT';
         
+        // dispatch 前に lastUsedExchangeType の以前の値を取得
+        const previousType = localStorage.getItem('lastUsedExchangeType') || (data.type === 'spot' ? 'futures' : 'spot');
+        
         // AppStoreを直接更新 - 全てのUIはここから状態を読み取る
         socketActions.setExchangeType(data.type, currentSymbol, 'socket-instrument-type-change');
         
@@ -192,10 +208,11 @@ socket = io(baseUrl, options);
           symbol: currentSymbol
         });
         
-        // AppStoreがストレージを管理するので最低限の保存のみ
+        // AppStoreがストレージを管理するが、後方互換のため旧キーも保存
         try {
           // AppStoreが参照するキーのみ保存
           localStorage.setItem('lastUsedExchangeType', data.type);
+          localStorage.setItem('selectedInstrumentType', data.type);
           localStorage.setItem('lastUsedSymbol', currentSymbol);
           
           logger.info('ストレージに取引情報を保存しました:', {
@@ -205,12 +222,15 @@ socket = io(baseUrl, options);
             symbol: currentSymbol
           });
         } catch (error) {
-          logger.warn('ストレージへの保存に失敗しました:', {
+          logger.warn('ローカルストレージへの取引タイプ保存に失敗しました:', {
             component: 'socketClient',
             action: 'saveToLocalStorage',
             error
           });
         }
+        
+        // CustomEvent 発行 (後方互換)
+        window.dispatchEvent(new CustomEvent('instrumentTypeChanged', { detail: { type: data.type, fromType: previousType } }));
       } catch (error) {
         logger.error('グローバルイベントの発行に失敗しました:', {
           component: 'socketClient',
@@ -399,7 +419,7 @@ socket = io(baseUrl, options);
       logger.warn('socketClient: WebSocket接続が失われました。アプリケーションの状態に影響する可能性があります。', {
         component: 'socketClient',
         function: 'handleDisconnect',
-        disconnectReason: reason // Changed from shorthand 'reason' to 'disconnectReason: reason'
+        disconnectReason: reason
       });
 
       // TODO: 必要であれば再接続ロジックをここに追加

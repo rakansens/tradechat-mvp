@@ -8,10 +8,9 @@
  * 単一責任の原則（SRP）に基づき、HTTP APIを使用した過去データの取得のみに責任を持ちます。
  */
 
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import { ExchangeType } from '../../../types/api';
-import { OHLCData, Timeframe } from '../../../types/chart';
-import { OrderBookData } from '../../../types/market';
+import { OHLCData, Timeframe, OrderBookData } from '../../../types/chart';
 import { IRestApiClient } from '../interfaces';
 import { logger } from '../../../utils/logger';
 
@@ -19,17 +18,43 @@ import { logger } from '../../../utils/logger';
 const BITGET_REST_ENDPOINT = 'https://api.bitget.com';
 
 // REST APIのタイムフレームマッピング
-const REST_TIMEFRAME_MAP: { [key: string]: string } = {
-  '1m': '1min',
-  '3m': '3min',
-  '5m': '5min',
-  '15m': '15min',
+// Spot API と Futures API でフォーマットが異なるため分離
+const TIMEFRAME_MAP_SPOT: Record<string, string> = {
+  '1m': '1min', 
+  '3m': '3min', 
+  '5m': '5min', 
+  '15m': '15min', 
   '30m': '30min',
-  '1h': '1hour',
-  '4h': '4hour',
-  '12h': '12hour',
-  '1d': '1day',
-  '1w': '1week'
+  '1h': '1h',   
+  '4h': '4h',   
+  '6h': '6h',   
+  '12h': '12h',
+  '1d': '1day', 
+  '3d': '3day', 
+  '1w': '1week', 
+  '1M': '1M'
+};
+
+const TIMEFRAME_MAP_FUTURES: Record<string, string> = {
+  // futuresは基本が大文字
+  '1m': '1min', 
+  '3m': '3min', 
+  '5m': '5min', 
+  '15m': '15min', 
+  '30m': '30min',
+  '1h': '1H', 
+  '4h': '4H', 
+  '6h': '6H', 
+  '12h': '12H',
+  '1d': '1D', 
+  '3d': '3D', 
+  '1w': '1W', 
+  '1M': '1M'
+};
+
+// 既存のマッピングを更新
+const REST_TIMEFRAME_MAP: { [key: string]: string } = {
+  ...TIMEFRAME_MAP_SPOT
 };
 
 /**
@@ -67,8 +92,11 @@ export class BitgetRestClient implements IRestApiClient {
       const endpoint = `${BITGET_REST_ENDPOINT}/api/v2/spot/market/orderbook`;
       
       // パラメータの準備
+      // Bitget REST API ではスラッシュ無し形式 (BTCUSDT) が必要
+      const formattedSymbol = symbol.replace('/', '');
+      
       const params = {
-        symbol: symbol,
+        symbol: formattedSymbol,
         limit: limit.toString()  // 取得する深さ
       };
       
@@ -88,9 +116,9 @@ export class BitgetRestClient implements IRestApiClient {
         const orderBookData: OrderBookData = {
           asks: data.asks || [],
           bids: data.bids || [],
-          timestamp: Date.now(),
-          symbol: symbol
-        };
+          symbol,
+          timestamp: Date.now()
+        } as OrderBookData;
         
         logger.debug(`オーダーブックデータを取得しました: asks=${orderBookData.asks.length}, bids=${orderBookData.bids.length}`, {
           component: 'BitgetRestClient',
@@ -115,9 +143,9 @@ export class BitgetRestClient implements IRestApiClient {
       return {
         asks: [[symbol.split('/')[0] === 'BTC' ? '30000.00' : '2000.00', '1.0']],
         bids: [[symbol.split('/')[0] === 'BTC' ? '29900.00' : '1990.00', '1.0']],
-        timestamp: Date.now(),
-        symbol: symbol
-      };
+        symbol,
+        timestamp: Date.now()
+      } as OrderBookData;
     }
   }
   
@@ -156,42 +184,72 @@ export class BitgetRestClient implements IRestApiClient {
     symbol: string,
     timeframe: string,
     limit: number = 100,
+    exchangeType: ExchangeType = 'spot',
     endTime?: number
   ): Promise<OHLCData[]> {
     try {
-      // Bitget REST APIの正しいエンドポイント
-      const endpoint = `${BITGET_REST_ENDPOINT}/api/v2/spot/market/candles`;
-      
-      // タイムフレームをBitgetの正しいフォーマットに変換
-      const granularity = REST_TIMEFRAME_MAP[timeframe] || timeframe;
-      
-      // パラメータの準備
-      const params = {
-        symbol: symbol,
-        granularity: granularity,
-        limit: limit.toString()
-      };
-      
-      logger.debug(`REST APIリクエスト: ${endpoint}`, {
+      logger.info('fetchCandles called', {
         component: 'BitgetRestClient',
         action: 'fetchCandles',
-        params
+        symbol,
+        timeframe,
+        limit
       });
       
-      // APIリクエスト
+      // シンボルをフォーマット
+      const formattedSymbol = symbol.replace('/', '');
+      
+      // タイムフレームを変換
+      const granularity = exchangeType === 'spot' 
+        ? TIMEFRAME_MAP_SPOT[timeframe] || timeframe
+        : TIMEFRAME_MAP_FUTURES[timeframe] || timeframe;
+      
+      // APIパスを決定
+      const endpoint = BITGET_REST_ENDPOINT + (exchangeType === 'spot'
+        ? '/api/v2/spot/market/candles'
+        : '/api/v2/mix/market/history-candles');
+      
+      // リクエストパラメータ
+      const params: any = {
+        symbol: formattedSymbol,
+        granularity,
+        limit: Math.min(limit, 500) // API上限を超えないよう制限
+      };
+      
+      // endTimeが指定されていれば追加
+      if (endTime !== undefined && endTime !== null) {
+        params.endTime = endTime.toString();
+      }
+      
+      // Futures APIの場合は追加パラメータが必要
+      if (exchangeType === 'futures') {
+        params.productType = 'UMCBL'; // Unified Margin Contract
+      }
+      
+      logger.debug('Fetching candles', {
+        component: 'BitgetRestClient',
+        action: 'fetchCandles',
+        endpoint,
+        params
+      });
+
       const response = await axios.get(endpoint, { params });
       
       if (response.data && response.data.data) {
-        logger.debug(`取得したデータ: ${response.data.data.length}件`, {
-          component: 'BitgetRestClient',
-          action: 'fetchCandles',
-          symbol,
-          timeframe
-        });
+        if (response.data.data.length === 0) {
+          logger.warn('Empty candle data received', {
+            component: 'BitgetRestClient',
+            action: 'fetchCandles',
+            symbol,
+            timeframe
+          });
+        }
         
-        // レスポンスデータを変換
         return response.data.data.map((item: any[]) => ({
-          timestamp: parseInt(item[0]),
+          time: (() => {
+            const ts = parseInt(item[0]);
+            return ts < 10000000000 ? ts * 1000 : ts; // 秒→ミリ秒
+          })(),
           open: parseFloat(item[1]),
           high: parseFloat(item[2]),
           low: parseFloat(item[3]),
@@ -200,21 +258,27 @@ export class BitgetRestClient implements IRestApiClient {
         }));
       }
       
-      return [];
+      throw new Error('Invalid response from Bitget API');
     } catch (error) {
-      logger.error(`過去のローソク足データの取得に失敗しました: ${error}`, {
+      // APIのエラーレスポンスを取得
+      const errorResponse = (error as AxiosError<any>)?.response?.data;
+      
+      if (errorResponse) {
+        logger.error('APIエラーレスポンス:', {
+          ...errorResponse
+        });
+      }
+      
+      logger.error('過去のローソク足データの取得に失敗しました:', error, {
         component: 'BitgetRestClient',
         action: 'fetchCandles',
         symbol,
         timeframe,
-        error
+        exchangeType,
+        error: (error as Error).message
       });
       
-      if (axios.isAxiosError(error) && error.response) {
-        logger.error('APIエラーレスポンス:', error.response.data);
-      }
-      
-      // エラー時は空の配列を返す
+      // 空のレスポンスを返す
       return [];
     }
   }

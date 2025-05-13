@@ -3,28 +3,19 @@
  * WebSocket接続管理を担当
  * 
  * 作成: 2025-05-12 - WebSocketサービスのリファクタリングの一環として
- * 変更: client.tsを改良し、インターフェースに準拠
+ * 更新: 2025-05-13 - client.tsの新しいシングルトン方式を使用
  */
 
 import { Socket } from 'socket.io-client';
-import { initializeSocketClient, getSocket } from '../../utils/socketClient';
+import { initializeSocketClient, getSocket, disconnectSocket } from '../socket/client';
 import { logger } from '../../utils/logger';
 import { IWebSocketClient } from './interfaces';
-
-// 定数
-const MAX_RECONNECT_ATTEMPTS = 5;
-const RECONNECT_DELAY = 2000;
 
 /**
  * WebSocket接続管理クラス
  * Socket.IOの接続と切断機能を提供
  */
 export class WebSocketClient implements IWebSocketClient {
-  private socket: Socket | null = null;
-  private connectedFlag = false;
-  private reconnectTimer: NodeJS.Timeout | null = null;
-  private reconnectAttempts = 0;
-
   /**
    * WebSocket接続を初期化
    * @returns Socket.IOのソケットインスタンス、または接続失敗時はnull
@@ -40,59 +31,25 @@ export class WebSocketClient implements IWebSocketClient {
         return null;
       }
       
-      // Socket.io接続を初期化（デフォルトの名前空間を使用、既存があれば再利用）
-      initializeSocketClient(false); // 既存ソケットがあれば再利用
-      this.socket = getSocket(true);
+      // 共通のSocket.IOクライアントを取得
+      const socket = getSocket(true);
       
-      // 接続イベントのハンドラを設定
-      if (this.socket) {
-        // 接続成功時
-        this.socket.on('connect', () => {
-          logger.info('Socket.IO接続成功', {
-            component: 'WebSocketClient',
-            action: 'connect'
-          });
-          
-          this.connectedFlag = true;
-          this.reconnectAttempts = 0;
-          
-          // 再接続タイマーをクリア
-          if (this.reconnectTimer) {
-            clearTimeout(this.reconnectTimer);
-            this.reconnectTimer = null;
-          }
+      if (!socket) {
+        logger.warn('Socket.IOクライアントの初期化に失敗しました', {
+          component: 'WebSocketClient',
+          action: 'initialize'
         });
-        
-        // 切断時
-        this.socket.on('disconnect', (reason) => {
-          logger.warn(`Socket.IO切断: ${reason}`, {
-            component: 'WebSocketClient',
-            action: 'disconnect',
-            reason
-          });
-          
-          this.connectedFlag = false;
-          
-          // 自動再接続を試みる
-          this.scheduleReconnect();
-        });
-        
-        // 接続エラー時
-        this.socket.on('connect_error', (error) => {
-          logger.error(`Socket.IO接続エラー: ${error.message}`, {
-            component: 'WebSocketClient',
-            action: 'connect_error',
-            error
-          });
-          
-          this.connectedFlag = false;
-          
-          // 自動再接続を試みる
-          this.scheduleReconnect();
-        });
+        return null;
       }
       
-      return this.socket;
+      logger.info('WebSocketClient: Socket.IO接続を初期化しました', {
+        component: 'WebSocketClient',
+        action: 'initialize',
+        connected: socket.connected,
+        id: socket.id
+      });
+      
+      return socket;
     } catch (error) {
       logger.error('Socket.IO初期化エラー:', error, {
         component: 'WebSocketClient',
@@ -108,7 +65,7 @@ export class WebSocketClient implements IWebSocketClient {
    * @returns Socket.IOのソケットインスタンス、または未接続時はnull
    */
   getSocket(): Socket | null {
-    return this.socket;
+    return getSocket(false);
   }
 
   /**
@@ -116,75 +73,26 @@ export class WebSocketClient implements IWebSocketClient {
    * @returns 接続されている場合はtrue
    */
   isConnected(): boolean {
-    return this.connectedFlag && !!this.socket?.connected;
+    const socket = this.getSocket();
+    return !!socket?.connected;
   }
 
   /**
    * WebSocket接続を切断
    */
   disconnect(): void {
-    if (this.socket) {
-      try {
-        this.socket.disconnect();
-        this.connectedFlag = false;
-        
-        logger.info('Socket.IO接続を切断しました', {
-          component: 'WebSocketClient',
-          action: 'disconnect'
-        });
-      } catch (error) {
-        logger.error('Socket.IO切断エラー:', error, {
-          component: 'WebSocketClient',
-          action: 'disconnect',
-          error
-        });
-      }
-    }
-    
-    // 再接続タイマーをクリア
-    if (this.reconnectTimer) {
-      clearTimeout(this.reconnectTimer);
-      this.reconnectTimer = null;
-    }
+    disconnectSocket();
   }
 
   /**
    * 再接続をスケジュール
    */
   scheduleReconnect(): void {
-    // 既に再接続タイマーが設定されている場合は何もしない
-    if (this.reconnectTimer) {
-      return;
-    }
-    
-    // 再接続試行回数が上限に達した場合
-    if (this.reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
-      logger.error('最大再接続試行回数に達しました', {
-        component: 'WebSocketClient',
-        action: 'scheduleReconnect',
-        attempts: this.reconnectAttempts,
-        maxAttempts: MAX_RECONNECT_ATTEMPTS
-      });
-      return;
-    }
-    
-    // 再接続タイマーを設定
-    this.reconnectTimer = setTimeout(() => {
-      this.reconnectAttempts++;
-      
-      logger.info(`再接続を試みています (${this.reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})`, {
-        component: 'WebSocketClient',
-        action: 'scheduleReconnect',
-        attempts: this.reconnectAttempts,
-        maxAttempts: MAX_RECONNECT_ATTEMPTS
-      });
-      
-      // 再接続を試みる
-      this.initialize();
-      
-      // タイマーをクリア
-      this.reconnectTimer = null;
-    }, RECONNECT_DELAY);
+    // 新しいclient.tsは自動的に再接続を処理するので何もしない
+    logger.info('WebSocketClientの再接続は自動的に処理されます', {
+      component: 'WebSocketClient',
+      action: 'scheduleReconnect'
+    });
   }
 }
 
