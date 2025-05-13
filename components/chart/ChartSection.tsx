@@ -5,11 +5,12 @@
 // 2. 循環参照を解消
 // 3. 非同期処理の問題を解決
 // 4. ハイドレーションエラーの修正
+// 5. リファクタリングされたChartCanvasを参照するように修正
 "use client"
 
 import React, { useMemo, useEffect, useState } from 'react';
 import { getTimeframeDisplayName } from "@/utils/ohlcDummyData"
-import ChartCanvas from "@/components/chart/ChartCanvas"
+import ChartCanvas from "@/components/chart/Canvas"
 import type { Entry } from "@/types/entry"
 import type { Timeframe, ChartType } from "@/types/chart"
 import type { ChartViewProps, TimeframeControlProps, ChartTypeControlProps } from "@/types/common-interfaces"
