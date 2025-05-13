@@ -6,7 +6,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary"
 import { setupGlobalErrorHandlers } from "@/utils/errorHandlers"
 import { socketService } from '@/services/socket'
 import { useDebugStore } from '@/store/useDebugStore'
-import { useSymbolStore } from '@/store/useSymbolStore'
+import { useRootStore } from '@/store/rootStore'
 import { useOrderBookStore } from '@/store/market/useOrderBookStore'
 import { logger } from '@/utils/logger'
 import { LogViewer } from '@/components/debug'
@@ -32,15 +32,15 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
       
       // シンボルと各ストアの初期化
       try {
-        // シンボルストアから情報を取得
-        const symbolStore = useSymbolStore.getState();
-        const symbol = symbolStore.currentSymbol;
-        const exchangeType = symbolStore.exchangeType;
+        // シンボルストア情報をrootStoreから取得
+        const rootStore = useRootStore.getState();
+        const symbol = rootStore.currentSymbol;
+        const exchangeType = rootStore.exchangeType;
         
         // シンボルが空の場合はデフォルト使用
         const finalSymbol = symbol || 'BTCUSDT';
         if (!symbol) {
-          symbolStore.setCurrentSymbol(finalSymbol, '初期化時のデフォルト設定');
+          rootStore.setCurrentSymbol(finalSymbol, '初期化時のデフォルト設定');
         }
         
         // オーダーブックを取得
