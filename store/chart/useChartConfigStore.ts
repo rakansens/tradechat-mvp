@@ -2,6 +2,9 @@
 // 作成: チャート設定関連の状態管理ストア
 // 
 // このストアはチャートの表示設定（チャートタイプ、取引種別など）を管理します。
+/**
+ * @deprecated rootStore の ChartConfigSlice に置き換えられました。削除予定。
+ */
 
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
