@@ -4,6 +4,7 @@
  * 
  * 作成: 2025-05-12 - SRPに基づいたBitget REST APIクライアントの実装
  * 更新: 2025-05-13 - パラメータ形式を修正し、異なるAPIエンドポイントを正しくハンドリング
+ * 更新: 2025-05-13 - シンボル名からダブルクォートを削除するように修正
  * 
  * このファイルは、IRestApiClientインターフェースに準拠したBitgetのREST APIクライアントを実装します。
  * 単一責任の原則（SRP）に基づき、HTTP APIを使用した過去データの取得のみに責任を持ちます。
@@ -16,7 +17,12 @@ import { IRestApiClient } from '../interfaces';
 import { logger } from '../../../utils/logger';
 
 /* --- ① symbol を API 仕様に合わせて正規化 --- */
-const normalizeSymbol = (raw: string) => raw.replace('/', '').toUpperCase();
+const normalizeSymbol = (raw: string) => {
+  // シンボル名に含まれるダブルクォートを削除
+  let cleaned = raw.replace(/"/g, '');
+  // スラッシュを削除して大文字に変換
+  return cleaned.replace('/', '').toUpperCase();
+};
 
 /* --- ② Futures 用 productType を正式名に --- */
 const FUTURES_PRODUCT_TYPES = {

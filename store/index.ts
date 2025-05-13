@@ -9,6 +9,7 @@
 // 更新: エクスポートの重複を修正
 // 更新: セレクターの競合を解決
 // 更新: チャット関連とその他不足しているセレクターを追加
+// 更新: 2025-05-14 - useWebSocketStoreを削除し、SocketSliceセレクターを追加
 
 // ルートストアをエクスポート
 export { useRootStore } from './rootStore';
@@ -18,8 +19,16 @@ export { useRootStore } from './rootStore';
 // 新しく分割されたストアをエクスポート
 export { default as useSymbolStore } from './useSymbolStore';
 export { default as useDataFetchStore } from './useDataFetchStore';
-export { default as useWebSocketStore } from './useWebSocketStore';
+// useWebSocketStoreは削除され、SocketSliceに移行されました
 export { default as useDebugStore } from './useDebugStore';
+
+// SocketSliceのセレクターをエクスポート
+export {
+  useSocketConnected,
+  useSocketSubscriptions,
+  useSocketSubscription,
+  useSocketStatus
+} from './socket/selectors';
 
 // 分割されたチャートストアをエクスポート
 // @deprecated 以下のエクスポートは非推奨です。代わりにuseRootStoreを使用してください
@@ -110,5 +119,5 @@ export {
 // - シンボル管理: useSymbolStore
 // - チャートデータ: useRootStore + selectChartData などのセレクター
 // - オーダーブック: useOrderBookStore
-// - WebSocket状態: useWebSocketStore
+// - WebSocket状態: useSocketConnected などのセレクター（SocketSliceに移行）
 // - デバッグ機能: useDebugStore

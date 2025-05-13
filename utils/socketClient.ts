@@ -10,11 +10,12 @@
 // 更新: 2025-05-09 - ローカルストレージの保存を最小限に抑える
 // 更新: 2025-05-12 - 接続URLをlocalhost:3000に修正（標準ポートを使用）
 // 更新: 2025-05-13 - 全ての機能をSocketCoreに委譲するように変更
+// 更新: 2025-05-14 - socketActionsを削除し、store/socket/dispatcherを使用
 
 import { Socket } from 'socket.io-client';
 import { SocketCore } from '@/services/socket/core';
 import { logger } from './logger';
-import * as socketActions from '../store/socketActions';
+import { storeEmit } from '@/store/socket/dispatcher';
 import { Timeframe } from '@/types/chart';
 import { ExchangeType } from '@/types/api';
 import { captureChartAsBase64 } from './screenshotUtils';
@@ -41,8 +42,8 @@ export function initializeSocketClient(forceReinitialize = false, namespace?: st
     if (socket.connected && socket.id) {
       clientId = socket.id;
       // AppStore状態を更新
-      socketActions.setConnected(true, 'connect-event');
-      socketActions.setSocketId(clientId, 'connect-event');
+      storeEmit('connected', true);
+      storeEmit('socketId', clientId);
     }
     
     // イベントハンドラの設定
@@ -144,8 +145,8 @@ function setupLegacyEventHandlers(socket: Socket): void {
   socket.on('connected', (data: { clientId: string }) => {
     clientId = data.clientId;
     isInitialized = true;
-    socketActions.setConnected(true, 'connect-event');
-    socketActions.setSocketId(clientId, 'connect-event');
+    storeEmit('connected', true);
+    storeEmit('socketId', clientId);
     
     logger.info('Socket.IO接続成功:', {
       component: 'socketClient',
@@ -163,7 +164,7 @@ function setupLegacyEventHandlers(socket: Socket): void {
     });
     
     // AppStoreを直接更新
-    socketActions.setTimeframe(data.timeframe, 'socket-changeTimeframe');
+    storeEmit('timeframe', data.timeframe);
     
     // ローカルストレージに保存
     try {
@@ -191,16 +192,16 @@ function setupLegacyEventHandlers(socket: Socket): void {
     
     // 取引タイプが指定されている場合は先に設定
     if (data.exchangeType) {
-      socketActions.setExchangeType(data.exchangeType, data.symbol, 'socket-changeSymbol');
+      storeEmit('exchangeType', data.exchangeType);
       
       setTimeout(() => {
-        socketActions.setSymbol(data.symbol, 'socket-changeSymbol-with-type');
+        storeEmit('symbol', data.symbol);
       }, 100);
     } else {
-      socketActions.setSymbol(data.symbol, 'socket-changeSymbol');
+      storeEmit('symbol', data.symbol);
       
       if (data.timeframe) {
-        socketActions.setTimeframe(data.timeframe, 'socket-changeSymbol');
+        storeEmit('timeframe', data.timeframe);
       }
     }
     
@@ -230,7 +231,7 @@ function setupLegacyEventHandlers(socket: Socket): void {
     
     isInitialized = false;
     clientId = '';
-    socketActions.setConnected(false, 'disconnect-event');
+    storeEmit('connected', false);
   });
   
   // 再接続成功時の処理
@@ -241,6 +242,6 @@ function setupLegacyEventHandlers(socket: Socket): void {
     });
     
     isInitialized = true;
-    socketActions.setConnected(true, 'reconnect-event');
+    storeEmit('connected', true);
   });
 }
