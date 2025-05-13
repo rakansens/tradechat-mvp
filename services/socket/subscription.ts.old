@@ -6,6 +6,8 @@
  * - 元のsocketService.tsから購読関連機能を分離
  * - オーダーブック、ローソク足、取引データの購読管理
  * - データ受信時のコールバック処理
+ * 
+ * 更新: 2025-05-13 - getSocketClientではなくSocketCoreを使用するように変更
  */
 
 import { Socket } from 'socket.io-client';
@@ -14,7 +16,7 @@ import { OHLCData } from '../../types/chart';
 import { ExchangeType } from '../../types/api';
 import { normalizeSymbol } from '../../lib/utils';
 import { logger } from '../../utils/logger';
-import { getSocketClient } from './client';
+import { SocketCore } from './core';
 
 // チャンネル名の定数
 export const CHANNEL = {
@@ -47,8 +49,7 @@ export class SubscriptionManager {
     exchangeType: ExchangeType = 'spot'
   ): () => void {
     try {
-      const client = getSocketClient();
-      const socket = client.getSocket();
+      const socket = SocketCore.getSocket();
       if (!socket) {
         logger.error('ソケットが初期化されていません', {
           component: 'SubscriptionManager',
@@ -97,6 +98,7 @@ export class SubscriptionManager {
       
       // 購読解除関数の作成
       const unsubscribe = () => {
+        const socket = SocketCore.getSocket();
         if (socket) {
           // イベントリスナーの削除
           socket.off(CHANNEL.ORDERBOOK, handleData);
@@ -162,8 +164,7 @@ export class SubscriptionManager {
     exchangeType: ExchangeType = 'spot'
   ): () => void {
     try {
-      const client = getSocketClient();
-      const socket = client.getSocket();
+      const socket = SocketCore.getSocket();
       if (!socket) {
         logger.error('ソケットが初期化されていません', {
           component: 'SubscriptionManager',
@@ -209,6 +210,7 @@ export class SubscriptionManager {
       
       // 購読解除関数の作成
       const unsubscribe = () => {
+        const socket = SocketCore.getSocket();
         if (socket) {
           // イベントリスナーの削除
           socket.off(CHANNEL.KLINE, handleData);
@@ -276,8 +278,7 @@ export class SubscriptionManager {
     exchangeType: ExchangeType = 'spot'
   ): () => void {
     try {
-      const client = getSocketClient();
-      const socket = client.getSocket();
+      const socket = SocketCore.getSocket();
       if (!socket) {
         logger.error('ソケットが初期化されていません', {
           component: 'SubscriptionManager',
@@ -312,6 +313,7 @@ export class SubscriptionManager {
       
       // 購読解除関数の作成
       const unsubscribe = () => {
+        const socket = SocketCore.getSocket();
         if (socket) {
           // イベントリスナーの削除
           socket.off(CHANNEL.TRADE, handleData);
