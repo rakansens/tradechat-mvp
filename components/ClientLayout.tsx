@@ -9,7 +9,7 @@ import { useDebugStore } from '@/store/useDebugStore'
 import { useSymbolStore } from '@/store/useSymbolStore'
 import { useOrderBookStore } from '@/store/market/useOrderBookStore'
 import { logger } from '@/utils/logger'
-import LogViewer from '@/components/LogViewer'
+import { LogViewer } from '@/components/debug'
 import { Button } from '@/components/ui/button'
 import { BugIcon, XIcon } from 'lucide-react'
 
