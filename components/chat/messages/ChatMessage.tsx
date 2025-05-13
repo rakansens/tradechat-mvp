@@ -116,7 +116,7 @@ export const ChatMessage = memo(({
         {/* Actions menu appears on hover */}
         <MessageActions 
           message={message} 
-          isVisible={isHovering}
+          isVisible={isHovering} 
           conversationId={conversationId} // 追加: 会話ID
         />
 
