@@ -4,14 +4,15 @@
  * 
  * 変更履歴:
  * - 2023-06-04: ChartSection.tsxのリファクタリングに伴い作成
+ * - 更新: フックパスをリファクタリング後のパスに更新
  */
 
 "use client"
 
 import React, { useState, useEffect } from 'react';
-import { useChartSectionStores } from '@/hooks/chart/useChartSectionStores';
-import { useChartSectionInit } from '@/hooks/chart/useChartSectionInit';
-import { useChartSectionCleanup } from '@/hooks/chart/useChartSectionCleanup';
+import { useChartSectionStores } from '@/hooks/chart/canvas';
+import { useChartSectionInit } from '@/hooks/chart/canvas';
+import { useChartSectionCleanup } from '@/hooks/chart/init';
 import { ChartHeader } from './ChartHeader';
 import { ChartBody } from './ChartBody';
 import { logger } from '@/utils/logger';

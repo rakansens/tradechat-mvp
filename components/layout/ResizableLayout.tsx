@@ -8,7 +8,7 @@ import { PanelGroup, Panel } from "react-resizable-panels"
 import { Card } from "@/components/ui/card"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { ResizeHandle } from "@/components/ui/ResizeHandle"
-import { useLayoutState } from "@/hooks/useLayoutState"
+import { useLayoutState } from "@/hooks/chart/layout"
 import { theme } from "@/styles/colors"
 
 interface ResizableLayoutProps {
