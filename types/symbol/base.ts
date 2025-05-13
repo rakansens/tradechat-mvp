@@ -1,14 +1,14 @@
 /**
- * @deprecated このファイルはT-4フェーズで非推奨となりました。代わりに types/symbol/base.ts を使用してください。
- * 後方互換性のために保持されていますが、今後は types/symbol からインポートすることを推奨します。
+ * シンボル関連の型定義
+ * 
+ * このファイルは銘柄情報と関連機能の型定義を集約しています。
+ * T-4フェーズでtypes/symbol.tsから移動されました。
  */
 
-// types/symbol.ts
-// 作成: 銘柄情報の型定義
+import { ExchangeType } from '../network/api';
 
 /**
  * 銘柄情報の型定義
- * 更新: 取引量データのプロパティを追加
  */
 export interface SymbolInfo {
   /** 銘柄のシンボル (例: BTCUSDT) */
@@ -50,22 +50,17 @@ export interface SymbolFilterOptions {
 }
 
 /**
- * types/symbol.ts
- * シンボル関連の型定義
- * 
- * 作成: 2025-06-05 - 古いuseSymbolStoreからの型定義を移行
+ * フィルターオプションの型定義
  */
-
-import { ExchangeType } from './api';
-
-// フィルターオプションの型定義
 export interface FilterOptions {
   searchTerm: string;
   quoteAsset: string;
   favoritesOnly: boolean;
 }
 
-// シンボル変更履歴エントリの型定義
+/**
+ * シンボル変更履歴エントリの型定義
+ */
 export interface SymbolChangeHistoryEntry {
   symbol: string;
   exchangeType: ExchangeType;
@@ -73,7 +68,9 @@ export interface SymbolChangeHistoryEntry {
   source: string;
 }
 
-// シンボルスライスの状態型定義
+/**
+ * シンボルスライスの状態型定義
+ */
 export interface SymbolSliceState {
   currentSymbol: string;
   exchangeType: ExchangeType;
@@ -83,4 +80,4 @@ export interface SymbolSliceState {
   error: string | null;
   filterOptions: FilterOptions;
   changeHistory: SymbolChangeHistoryEntry[];
-}
+} 

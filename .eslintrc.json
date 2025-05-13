@@ -2,5 +2,44 @@
   "extends": [
     "next/core-web-vitals",
     "next/typescript"
-  ]
+  ],
+  "rules": {
+    "no-restricted-imports": [
+      "warn",
+      {
+        "paths": [
+          {
+            "name": "./types/ui.ts",
+            "message": "このファイルは非推奨です。代わりに 'types/ui' をインポートしてください。"
+          },
+          {
+            "name": "./types/chat.ts",
+            "message": "このファイルは非推奨です。代わりに 'types/chat' をインポートしてください。"
+          },
+          {
+            "name": "./types/entry.ts",
+            "message": "このファイルは非推奨です。代わりに 'types/entry' をインポートしてください。"
+          },
+          {
+            "name": "./types/symbol.ts",
+            "message": "このファイルは非推奨です。代わりに 'types/symbol' をインポートしてください。"
+          },
+          {
+            "name": "./types/common.ts",
+            "message": "このファイルは非推奨です。代わりに 'types/common' をインポートしてください。"
+          },
+          {
+            "name": "./types/common-interfaces.ts",
+            "message": "このファイルは非推奨です。代わりに 'types/common' をインポートしてください。"
+          }
+        ],
+        "patterns": [
+          {
+            "group": ["types/*.ts"],
+            "message": "直接ファイルをインポートするのではなく、バレルファイルを使用してください。例: 'types/chart' など"
+          }
+        ]
+      }
+    ]
+  }
 }

@@ -1,10 +1,9 @@
 /**
- * @deprecated このファイルはT-4フェーズで非推奨となりました。代わりに types/chat/base.ts を使用してください。
- * 後方互換性のために保持されていますが、今後は types/chat からインポートすることを推奨します。
+ * チャット関連の型定義
+ * 
+ * このファイルはチャット機能とAIトレード提案に関連する型定義を集約しています。
+ * T-4フェーズでtypes/chat.tsから移動されました。
  */
-
-// types/chat.ts
-// 作成: チャット関連の型定義
 
 import type { Message } from "ai";
 
@@ -60,4 +59,4 @@ export interface ChatUIOptions {
   showTimestamp?: boolean;   // タイムスタンプを表示するか
   enableAutoScroll?: boolean; // 新しいメッセージが来たときに自動スクロールするか
   messageLayout?: "default" | "compact" | "expanded"; // メッセージのレイアウトスタイル
-}
+} 

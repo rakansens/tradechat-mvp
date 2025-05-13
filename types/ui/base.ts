@@ -1,10 +1,9 @@
 /**
- * @deprecated このファイルはT-4フェーズで非推奨となりました。代わりに types/ui/base.ts を使用してください。
- * 後方互換性のために保持されていますが、今後は types/ui からインポートすることを推奨します。
+ * UI関連の基本型定義
+ * 
+ * このファイルはUIコンポーネントとインタラクションに関連する型定義を集約しています。
+ * T-4フェーズでtypes/ui.tsから移動されました。
  */
-
-// types/ui.ts
-// 作成: UI関連の型定義
 
 /**
  * アプリケーションのタブ
@@ -36,8 +35,7 @@ export interface UIStateDeprecated {
   toggleSettings?: () => void;
 }
 
-// types/store.ts からUIStateをエクスポート
-export type { UIState, TabType } from './store';
+// 注: store.tsの再エクスポートはindex.tsで行います
 
 /**
  * レスポンシブ表示のブレークポイント
@@ -56,4 +54,4 @@ export interface ModalState {
   isOpen: boolean;
   type: ModalType;
   data?: any; // モーダルに渡すデータ
-}
+} 

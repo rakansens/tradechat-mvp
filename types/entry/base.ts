@@ -1,10 +1,9 @@
 /**
- * @deprecated このファイルはT-4フェーズで非推奨となりました。代わりに types/entry/base.ts を使用してください。
- * 後方互換性のために保持されていますが、今後は types/entry からインポートすることを推奨します。
+ * トレードエントリー関連の型定義
+ * 
+ * このファイルはトレードポジションと関連機能の型定義を集約しています。
+ * T-4フェーズでtypes/entry.tsから移動されました。
  */
-
-// types/entry.ts
-// 作成: トレードエントリー関連の型定義
 
 /**
  * トレードの方向（買い/売り）
@@ -71,4 +70,4 @@ export interface EntryState {
   executeEntry: () => void;
   closePosition: (entryId: string, exitPrice: number) => void;
   cancelPosition: (entryId: string) => void;
-}
+} 

@@ -1,11 +1,21 @@
 /**
  * ネットワーク関連の型定義をエクスポートするバレルファイル
  * 
- * このファイルはT-0フェーズでの作成時点では実際のエクスポートはありません。
- * T-3フェーズでtypes/api.ts, types/websocket.ts, types/external-libs.tsの型が移動される予定です。
+ * このファイルは以下のネットワーク関連の型定義をエクスポートします：
+ * - API通信関連の型 (api.ts)
+ * - WebSocket通信関連の型 (websocket.ts)
+ * - Supabaseデータモデル (supabase.ts)
+ * - 外部ライブラリ型定義 (external.ts)
  */
 
-// T-3で実装予定
-// export * from './api';
-// export * from './ws';
-// export * from './external'; 
+// API通信関連の型定義
+export * from './api';
+
+// WebSocket通信関連の型定義
+export * from './websocket';
+
+// Supabaseデータモデル関連の型定義
+export * from './supabase';
+
+// 外部ライブラリ統合用の型定義
+export * from './external'; 
