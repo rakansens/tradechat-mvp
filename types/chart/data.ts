@@ -6,7 +6,7 @@ import {
   ohlcDataSchema,
   chartDataStateSchema
 } from "@/lib/validations/chart";
-import { Time, Timeframe, ChartType } from "./time";
+import { Time, Timeframe, ChartType } from "../chart/time";
 
 /**
  * OHLC（始値・高値・安値・終値）データの型
