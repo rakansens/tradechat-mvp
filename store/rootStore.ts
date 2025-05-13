@@ -1,6 +1,7 @@
 // store/rootStore.ts
 // 更新: チャートスライス、エントリースライス、チャットスライス、UIスライス、マーケットスライスをルートストアに統合
 // 更新: ChartConfigSliceを追加してrootStoreに統合
+// 更新: DrawingToolSliceを追加してrootStoreに統合
 
 import { create } from 'zustand'
 import { devtools, persist } from 'zustand/middleware'
@@ -18,12 +19,18 @@ import { MarketSlice, createMarketSlice } from './market'
 import type { MarketSliceState } from './market/state'
 import { createChartConfigSlice, type ChartConfigSlice } from './chart/config'
 import type { ChartConfigSliceState } from './chart/config/state'
+import { createDrawingToolSlice, type DrawingToolSlice } from './chart/drawingTool'
+import type { DrawingToolSliceState } from './chart/drawingTool/state'
 
 // RootStore型定義 - 各スライスの状態を統合
-export interface RootState extends ChartSliceState, EntrySliceState, ChatSliceState, UISliceState, MarketSliceState, ChartConfigSliceState {}
+export interface RootState extends ChartSliceState, EntrySliceState, ChatSliceState, UISliceState, MarketSliceState, ChartConfigSliceState, DrawingToolSliceState {}
 
 // 各スライスで追加されるアクションを型で事前定義
 export interface RootActions {
+  // DrawingToolSliceActions
+  toggleDrawingTool: DrawingToolSlice['toggleDrawingTool']
+  clearAllDrawingTools: DrawingToolSlice['clearAllDrawingTools']
+  
   // ChartConfigSliceActions
   setChartType: ChartConfigSlice['setChartType']
   setExchangeType: ChartConfigSlice['setExchangeType']
@@ -90,6 +97,12 @@ export const useRootStore = create<RootStore>()(
     devtools(
       persist(
         immer((set, get) => ({
+          // DrawingToolスライスを統合
+          ...createDrawingToolSlice(
+            (fn) => set(fn),
+            get
+          ),
+          
           // ChartConfigスライスを統合
           ...createChartConfigSlice(
             (fn) => set(fn),

@@ -2,6 +2,12 @@
 // Chart Slice関連のセレクター一覧をエクスポート
 // 他のSliceも今後ここに追加していく
 
+// DrawingToolスライスのセレクターをエクスポート
+export {
+  selectActiveDrawingTools,
+  selectIsToolActive
+} from './chart/drawingTool/selectors'
+
 // ChartConfigスライスのセレクターをエクスポート
 export {
   selectChartType,

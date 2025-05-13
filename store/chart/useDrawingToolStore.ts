@@ -2,6 +2,9 @@
 // 作成: 描画ツール関連の状態管理ストア
 // 
 // このストアはチャートの描画ツール（フィボナッチリトレースメント、長方形など）の状態を管理します。
+/**
+ * @deprecated rootStore の DrawingToolSlice へ移行済み。削除予定。
+ */
 
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
