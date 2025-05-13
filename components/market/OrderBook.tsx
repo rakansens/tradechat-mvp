@@ -19,6 +19,7 @@
 // - useAppStoreからuseOrderBookStoreとuseSymbolStoreに移行
 // - WebSocketの状態管理を更新
 // - データフェッチロジックを新しいストア構造に合わせて更新
+// 更新: useSymbolStoreからrootStore経由のセレクタに移行
 
 'use client';
 
@@ -28,7 +29,7 @@ import { cn, normalizeSymbol } from '../../lib/utils';
 import { theme } from '../../styles/colors';
 import { orderBookPropsSchema, validateOrderBookProps } from '@/lib/validations/market';
 import { useOrderBookStore } from '../../store/market/useOrderBookStore';
-import { useSymbolStore } from '../../store/useSymbolStore';
+import { useRootStore } from '../../store/rootStore';
 import { getPrice, getAmount, normalizeOrderBookData } from '../../utils/orderbook-utils';
 import { useSocketConnected } from '@/store/barrel';
 import Decimal from 'decimal.js';
@@ -78,7 +79,7 @@ export const OrderBook: React.FC<OrderBookPropsSchema> = (props) => {
   const orderBook = useOrderBookStore(state => state.orderBook);
   const isLoadingOrderBook = useOrderBookStore(state => state.isLoadingOrderBook);
   const orderBookError = useOrderBookStore(state => state.orderBookError);
-  const currentSymbol = useSymbolStore(state => state.currentSymbol);
+  const currentSymbol = useRootStore(state => state.currentSymbol);
   const fetchOrderBook = useOrderBookStore((state) => state.fetchOrderBook);
   // WebSocketの接続状態を取得（無限ループを防ぐために個別のステートを取得）
   const wsConnected = useSocketConnected();
@@ -186,7 +187,7 @@ export const OrderBook: React.FC<OrderBookPropsSchema> = (props) => {
   }, [processedData]);
 
   // シンボルストアから直接シンボルを取得
-  const appStoreSymbol = useSymbolStore(state => state.currentSymbol);
+  const appStoreSymbol = useRootStore(state => state.currentSymbol);
   
   // シンボル変更を検出するための参照
   const prevSymbolRef = useRef(currentSymbol);

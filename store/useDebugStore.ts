@@ -8,11 +8,12 @@
 // 3. ポーリング状態の管理
 // 4. WebSocket状態の管理
 // 更新: 2025-05-14 - useWebSocketStoreの代わりにSocketSliceセレクターを使用するように変更
+// 更新: 2025-05-15 - useSymbolStoreをuseRootStoreに変更
 
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { logger } from '../utils/logger';
-import { useSymbolStore } from './useSymbolStore';
+import { useRootStore } from './rootStore';
 import { useOrderBookStore } from './market/useOrderBookStore';
 import { useDataFetchStore } from './useDataFetchStore';
 // useWebSocketStoreは削除されSocketSliceに移行
@@ -57,7 +58,7 @@ export const useDebugStore = create<DebugState>()(
       
       // シンボル変更履歴を取得
       getSymbolChangeHistory: () => {
-        return useSymbolStore.getState().getSymbolChangeHistory();
+        return useRootStore.getState().getSymbolChangeHistory();
       },
       
       // WebSocketの接続状態を取得

@@ -1,6 +1,7 @@
 // store/market/useOrderBookStore.ts
 // 作成: useAppStoreから分離したオーダーブック関連の状態と操作を管理するストア
 // 更新: 2025-05-12 - dataFetchServiceからorderBookServiceに移行
+// 更新: 2025-05-15 - useSymbolStoreをuseRootStoreに変更
 // 
 // このストアはオーダーブックデータと、データの取得状態を管理します。
 // 主な機能:
@@ -15,7 +16,7 @@ import { ExchangeType } from '../../types/api';
 import { OrderBookData } from '../../types/chart';
 import { logger } from '../../utils/logger';
 import { orderBookService } from '../../services/data';
-import { useSymbolStore } from '../useSymbolStore';
+import { useRootStore } from '../rootStore';
 
 // ポーリング情報の型定義
 export interface PollingInfo {
@@ -80,9 +81,9 @@ export const useOrderBookStore = create<OrderBookState>()(
       // オーダーブックデータを取得
       fetchOrderBook: async (symbol?: string, exchangeType?: ExchangeType) => {
         // 最新の状態を取得
-        const symbolStore = useSymbolStore.getState();
-        const finalSymbol = symbol || symbolStore.currentSymbol;
-        const finalExchangeType = exchangeType || symbolStore.exchangeType;
+        const rootStore = useRootStore.getState();
+        const finalSymbol = symbol || rootStore.currentSymbol;
+        const finalExchangeType = exchangeType || rootStore.exchangeType;
         
         // シンボルが空の場合は何もしない
         if (!finalSymbol) {
@@ -134,9 +135,9 @@ export const useOrderBookStore = create<OrderBookState>()(
         get().stopOrderBookPolling();
         
         // シンボルストアから現在のシンボルを取得
-        const symbolStore = useSymbolStore.getState();
-        const symbol = symbolStore.currentSymbol;
-        const exchangeType = symbolStore.exchangeType;
+        const rootStore = useRootStore.getState();
+        const symbol = rootStore.currentSymbol;
+        const exchangeType = rootStore.exchangeType;
         
         // シンボルが空の場合はポーリングを開始しない
         if (!symbol) {
@@ -174,9 +175,9 @@ export const useOrderBookStore = create<OrderBookState>()(
           }
           
           // 最新の状態を取得
-          const symbolStore = useSymbolStore.getState();
-          const currentSymbol = symbolStore.currentSymbol;
-          const currentExchangeType = symbolStore.exchangeType;
+          const rootStore = useRootStore.getState();
+          const currentSymbol = rootStore.currentSymbol;
+          const currentExchangeType = rootStore.exchangeType;
           
           // シンボルが変更されている場合はポーリングを停止
           if (symbol !== currentSymbol) {
@@ -268,9 +269,9 @@ export const useOrderBookStore = create<OrderBookState>()(
         get().unsubscribeOrderBookWebSocket();
         
         // シンボルストアから現在のシンボルを取得
-        const symbolStore = useSymbolStore.getState();
-        const symbol = symbolStore.currentSymbol;
-        const exchangeType = symbolStore.exchangeType;
+        const rootStore = useRootStore.getState();
+        const symbol = rootStore.currentSymbol;
+        const exchangeType = rootStore.exchangeType;
         
         // シンボルが空の場合は購読しない
         if (!symbol) {
@@ -340,7 +341,7 @@ export const useOrderBookStore = create<OrderBookState>()(
 const initializeSymbolStoreSubscription = () => {
   try {
     // シンボルストアを購読
-    const unsubscribe = useSymbolStore.subscribe((state) => {
+    const unsubscribe = useRootStore.subscribe((state) => {
       const orderBookStore = useOrderBookStore.getState();
       
       // シンボルが変更された場合はオーダーブックを更新

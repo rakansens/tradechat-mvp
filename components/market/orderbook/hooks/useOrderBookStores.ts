@@ -1,10 +1,11 @@
 /**
  * components/market/orderbook/hooks/useOrderBookStores.ts
  * 作成: オーダーブックに必要なすべてのストアデータとアクションを集約するフック
+ * 更新: useSymbolStoreをuseRootStoreに変更
  */
 
 import { useOrderBookStore } from '@/store/market/useOrderBookStore';
-import { useSymbolStore } from '@/store/useSymbolStore';
+import { useRootStore } from '@/store/rootStore';
 import { useSocketConnected } from '@/store/barrel';
 
 /**
@@ -19,8 +20,8 @@ export default function useOrderBookStores() {
   const fetchOrderBook = useOrderBookStore(state => state.fetchOrderBook);
   const wsSubscribed = useOrderBookStore(state => state.wsSubscribed);
 
-  // SymbolStore
-  const currentSymbol = useSymbolStore(state => state.currentSymbol);
+  // SymbolStore（rootStoreから取得）
+  const currentSymbol = useRootStore(state => state.currentSymbol);
 
   // WebSocketStore
   const wsConnected = useSocketConnected();

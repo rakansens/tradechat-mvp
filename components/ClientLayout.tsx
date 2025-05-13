@@ -13,9 +13,8 @@ import { LogViewer } from '@/components/debug'
 import { Button } from '@/components/ui/button'
 import { BugIcon, XIcon } from 'lucide-react'
 
-
-
 // 更新: デバッグ機能の追加、SocketInitializerの機能を統合、useAppStoreの初期化を追加
+// 更新: useSymbolStoreをuseRootStoreに置き換え
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   const [showDebugPanel, setShowDebugPanel] = useState(false);
   const isDebugMode = useDebugStore(state => state.isDebugMode);
@@ -27,8 +26,6 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
     // 共通のソケットサービスを使用してSocket.ioクライアントを初期化
     if (typeof window !== 'undefined') {
       socketService.initializeMarketSocket();
-      
-
       
       // シンボルと各ストアの初期化
       try {

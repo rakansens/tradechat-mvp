@@ -6,6 +6,7 @@
 // 更新: 2025-05-14 - 型安全性の向上と循環参照の解決
 // 更新: 2025-05-14 - ソケットスライスの参照パスを修正
 // 更新: 2025-05-14 - 動的インポートを最適化して、Webpackの警告を解消
+// 更新: 2025-05-15 - useSymbolStoreの参照を削除し、代わりにuseRootStoreを使用
 // WebSocket接続監視と副作用の管理
 
 import { ExchangeType } from '@/types/api';
@@ -16,12 +17,6 @@ import { useRootStore } from '@/store/rootStore';
 import type { RootStore } from '@/store/rootStore';
 
 // 循環参照を避けるための前方参照型
-type SymbolStoreType = {
-  setCurrentSymbol: (symbol: string) => void;
-  setExchangeType: (type: ExchangeType) => void;
-  currentSymbol: string;
-};
-
 type ChartDataStoreType = {
   updateTimeFrame: (timeframe: Timeframe) => void;
 };
@@ -61,9 +56,7 @@ export type SocketPayload<T extends SocketEvent> =
 const importStore = async <T>(storePath: string): Promise<T | null> => {
   try {
     // 明示的に各ストアへのパスを指定
-    if (storePath === '@/store/useSymbolStore') {
-      return (await import('@/store/useSymbolStore')).useSymbolStore.getState() as T;
-    } else if (storePath === '@/store/chart/useChartDataStore') {
+    if (storePath === '@/store/chart/useChartDataStore') {
       return (await import('@/store/chart/useChartDataStore')).useChartDataStore.getState() as T;
     } else if (storePath === '@/services/data') {
       return await import('@/services/data') as unknown as T;
@@ -93,23 +86,17 @@ export const storeEmit = <T extends SocketEvent>(event: T, payload: SocketPayloa
   });
   
   try {
+    const rootStore = useRootStore.getState();
+    
     switch (event) {
       case 'symbol':
         // シンボル変更イベント
-        importStore<SymbolStoreType>('@/store/useSymbolStore').then(store => {
-          if (store) {
-            store.setCurrentSymbol(payload as string);
-          }
-        });
+        rootStore.setCurrentSymbol(payload as string, 'SocketDispatcher');
         break;
         
       case 'exchangeType':
         // 取引タイプ変更イベント
-        importStore<SymbolStoreType>('@/store/useSymbolStore').then(store => {
-          if (store) {
-            store.setExchangeType(payload as ExchangeType);
-          }
-        });
+        rootStore.setExchangeType(payload as ExchangeType);
         break;
         
       case 'timeframe':
@@ -121,12 +108,8 @@ export const storeEmit = <T extends SocketEvent>(event: T, payload: SocketPayloa
             // キャッシュもクリアする
             importStore<DataServiceType>('@/services/data').then(dataService => {
               if (dataService) {
-                importStore<SymbolStoreType>('@/store/useSymbolStore').then(symbolStore => {
-                  if (symbolStore) {
-                    const currentSymbol = symbolStore.currentSymbol;
-                    dataService.chartDataService.clearCacheOnSymbolChange(currentSymbol);
-                  }
-                });
+                const currentSymbol = rootStore.currentSymbol;
+                dataService.chartDataService.clearCacheOnSymbolChange(currentSymbol);
               }
             });
           }
@@ -135,12 +118,12 @@ export const storeEmit = <T extends SocketEvent>(event: T, payload: SocketPayloa
         
       case 'connected':
         // 接続状態変更イベント
-        useRootStore.getState().setConnected(payload as boolean);
+        rootStore.setConnected(payload as boolean);
         break;
         
       case 'socketId':
         // ソケットID変更イベント
-        useRootStore.getState().setSocketId(payload as string);
+        rootStore.setSocketId(payload as string);
         break;
         
       default:

@@ -1,5 +1,5 @@
 import { useDebugStore } from '@/store/useDebugStore';
-import { useSymbolStore } from '@/store/useSymbolStore';
+import { useRootStore } from '@/store/rootStore';
 import { cacheService } from '@/services/cache';
 import { requestHistoryService } from '@/services/history';
 import { useCallback } from 'react';
@@ -26,8 +26,8 @@ export function useDebugStores() {
   const getActiveFetchesInfo = useDebugStore(state => state.getActiveFetchesInfo);
   const getPollingStatus = useDebugStore(state => state.getPollingStatus);
   
-  // シンボルストアからのセレクタ
-  const getSymbolChangeHistory = useSymbolStore(state => state.getSymbolChangeHistory);
+  // シンボルストアからのセレクタ（rootStoreから取得）
+  const getSymbolChangeHistory = useRootStore(state => state.getSymbolChangeHistory);
   
   // デバッグ情報を更新する関数
   const refreshDebugInfo = useCallback((): DebugInfo => {
