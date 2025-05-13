@@ -1,10 +1,11 @@
 /**
- * hooks/symbol/useSelectorStores.ts
+ * hooks/symbol/selector/useSelectorStores.ts
  * シンボルセレクタで使用するストアのデータとアクションを集約するフック
  * 
  * 変更履歴:
  * - 2023-06-05: SymbolSelector.tsxのリファクタリングに伴い作成
  * - 更新: 古いuseSymbolStoreを新しいrootStoreのSymbolSliceに置き換え
+ * - 更新: リファクタリングによりhooks/symbol/selector/に移動
  */
 
 // 古いインポートを削除

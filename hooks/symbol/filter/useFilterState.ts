@@ -1,10 +1,11 @@
 /**
- * hooks/symbol/useFilterState.ts
+ * hooks/symbol/filter/useFilterState.ts
  * シンボルセレクタのフィルター状態を管理するフック
  * 
  * 変更履歴:
  * - 2023-06-05: SymbolSelector.tsxのリファクタリングに伴い作成
  * - 更新: 古いuseSymbolStoreを新しいrootStoreのSymbolSliceに置き換え
+ * - 更新: リファクタリングによりhooks/symbol/filter/に移動
  */
 
 import { useState, useEffect } from 'react';

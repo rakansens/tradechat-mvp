@@ -20,6 +20,7 @@ interface DebugInfo {
  * サービス呼び出しを単一のインターフェースにまとめる
  * 
  * 更新: 2025-05-15 - useDebugStore → rootStoreのDebugSliceに移行
+ * 更新: リファクタリングによりhooks/debug/store/に移動
  */
 export function useDebugStores() {
   // デバッグ関連のセレクター - RootStoreから取得

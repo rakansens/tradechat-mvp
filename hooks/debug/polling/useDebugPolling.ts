@@ -5,6 +5,8 @@ import { useState, useEffect } from 'react';
  * 
  * isDebugModeがtrueの場合、定期的に更新処理を実行し、
  * falseの場合はポーリングを停止する
+ * 
+ * 更新: リファクタリングによりhooks/debug/polling/に移動
  */
 export function useDebugPolling({
   isDebugMode,

@@ -3,6 +3,13 @@ import { getStoredLogs, clearStoredLogs, StoredLog } from '@/utils/logStorage';
 
 export type LogLevel = 'all' | 'error' | 'warn' | 'debug';
 
+/**
+ * ログ表示と管理に関するフック
+ * 
+ * 指定されたレベルでログをフィルタリングし、表示/クリア機能を提供
+ * 
+ * 更新: リファクタリングによりhooks/debug/logs/に移動
+ */
 export function useLogs(activeTab: LogLevel = 'all') {
   const [logs, setLogs] = useState<StoredLog[]>([]);
   

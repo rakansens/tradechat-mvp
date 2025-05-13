@@ -1,13 +1,15 @@
 /**
- * hooks/symbol/usePopularSymbols.ts
+ * hooks/symbol/popular/usePopularSymbols.ts
  * 人気銘柄リストを管理するフック
  * 
  * 変更履歴:
  * - 2023-06-05: SymbolSelector.tsxのリファクタリングに伴い作成
+ * - 更新: リファクタリングによりhooks/symbol/popular/に移動
+ * - 更新: 型定義インポートをrootStoreに対応
  */
 
 import { useMemo } from 'react';
-import type { SymbolInfo, FilterOptions } from '@/store/useSymbolStore';
+import type { SymbolInfo, FilterOptions } from '@/types/symbol';
 
 /**
  * 人気銘柄のリスト
