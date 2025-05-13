@@ -10,6 +10,7 @@
 // 更新: セレクターの競合を解決
 // 更新: チャット関連とその他不足しているセレクターを追加
 // 更新: 2025-05-14 - useWebSocketStoreを削除し、SocketSliceセレクターを追加
+// 更新: 2025-05-14 - useChatStoreとuseSymbolStore参照を削除
 
 // ルートストアをエクスポート
 export { useRootStore } from './rootStore';
@@ -17,7 +18,7 @@ export { useRootStore } from './rootStore';
 // 各ドメイン別ストアをエクスポート
 
 // 新しく分割されたストアをエクスポート
-export { default as useSymbolStore } from './useSymbolStore';
+// useSymbolStoreは削除されSymbolSliceに移行されました
 export { default as useDataFetchStore } from './useDataFetchStore';
 // useWebSocketStoreは削除され、SocketSliceに移行されました
 export { default as useDebugStore } from './useDebugStore';
@@ -44,7 +45,7 @@ export { useOrderBookStore } from './market/useOrderBookStore';
 
 // その他のストアをエクスポート
 export { useEntryStore } from './useEntryStore';
-export { useChatStore } from './useChatStore';
+// useChatStoreは削除されChatSliceに移行されました
 
 // 従来のストア（非推奨、将来的には削除予定）
 export { useUIStore } from './useUIStore';
