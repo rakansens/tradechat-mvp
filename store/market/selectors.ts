@@ -47,7 +47,18 @@ export const selectBids = createSelector(
   [selectOrderBook],
   (orderBook: OrderBookData | null): OrderBookEntry[] => {
     if (!orderBook || !orderBook.bids) return [];
-    return orderBook.bids;
+    
+    // 文字列ペアの配列形式の場合は変換
+    if (orderBook.bids.length > 0 && Array.isArray(orderBook.bids[0]) && typeof orderBook.bids[0][0] === 'string') {
+      // [string, string][] 形式から OrderBookEntry[] へ変換
+      return (orderBook.bids as [string, string][]).map(([price, amount]) => ({
+        price: parseFloat(price),
+        amount: parseFloat(amount)
+      }));
+    }
+    
+    // 既にOrderBookEntry[]形式の場合
+    return orderBook.bids as OrderBookEntry[];
   }
 );
 
@@ -55,7 +66,18 @@ export const selectAsks = createSelector(
   [selectOrderBook],
   (orderBook: OrderBookData | null): OrderBookEntry[] => {
     if (!orderBook || !orderBook.asks) return [];
-    return orderBook.asks;
+    
+    // 文字列ペアの配列形式の場合は変換
+    if (orderBook.asks.length > 0 && Array.isArray(orderBook.asks[0]) && typeof orderBook.asks[0][0] === 'string') {
+      // [string, string][] 形式から OrderBookEntry[] へ変換
+      return (orderBook.asks as [string, string][]).map(([price, amount]) => ({
+        price: parseFloat(price),
+        amount: parseFloat(amount)
+      }));
+    }
+    
+    // 既にOrderBookEntry[]形式の場合
+    return orderBook.asks as OrderBookEntry[];
   }
 );
 

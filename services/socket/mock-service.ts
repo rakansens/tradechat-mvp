@@ -299,7 +299,7 @@ export class MockSocketService extends EventEmitter implements ISocketService {
    */
   private generateMockKline(symbol: string, timeframe: Timeframe): OHLCData {
     const basePrice = symbol.includes('BTC') ? 50000 : 2000;
-    const timestamp = Date.now();
+    const currentTimestamp = Date.now();
     
     // ランダムな価格変動を生成
     const randomFactor = 0.995 + Math.random() * 0.01; // 0.995 ~ 1.005
@@ -313,15 +313,15 @@ export class MockSocketService extends EventEmitter implements ISocketService {
     const low = Math.min(open, close) - range * 0.3;
     const volume = Math.random() * 100;
     
+    // OHLCData型に合わせて返す
+    // symbolとtimeframeはメタデータとして使用し、実際のOHLCDataには含めない
     return {
-      symbol,
-      timestamp,
+      time: currentTimestamp,
       open,
       high,
       low,
       close,
-      volume,
-      timeframe
+      volume
     };
   }
 }

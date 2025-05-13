@@ -25,6 +25,6 @@ module.exports = {
     url: 'http://localhost'
   },
   transformIgnorePatterns: [
-    '/node_modules/(?!(@testing-library|react|react-dom)/)'
+    '/node_modules/(?!(@testing-library|react|react-dom|lucide-react)/)'
   ]
 };

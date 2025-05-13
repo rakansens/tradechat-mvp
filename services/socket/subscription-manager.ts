@@ -202,14 +202,12 @@ export class SubscriptionManager implements ISubscriptionManager {
         ) {
           // データの変換
           const klineData: OHLCData = {
-            symbol: data.symbol,
-            timestamp: data.timestamp,
-            open: parseFloat(data.data.open),
-            high: parseFloat(data.data.high),
-            low: parseFloat(data.data.low),
-            close: parseFloat(data.data.close),
-            volume: parseFloat(data.data.volume),
-            timeframe: data.timeframe
+            time: data.timestamp || Date.now(),
+            open: typeof data.data.open === 'string' ? parseFloat(data.data.open) : data.data.open,
+            high: typeof data.data.high === 'string' ? parseFloat(data.data.high) : data.data.high,
+            low: typeof data.data.low === 'string' ? parseFloat(data.data.low) : data.data.low,
+            close: typeof data.data.close === 'string' ? parseFloat(data.data.close) : data.data.close,
+            volume: typeof data.data.volume === 'string' ? parseFloat(data.data.volume) : data.data.volume
           };
           
           // コールバック関数の呼び出し

@@ -54,23 +54,26 @@ export interface UseChartCoreReturn {
 }
 
 /**
- * チャートコア管理フック
- * - チャートインスタンスの作成と管理
- * - リサイズ処理
- * - シリーズ管理
- * - データ更新
+ * useChartCoreフック
+ * 
+ * チャートのコア機能を提供するカスタムフック
+ * レンダリング、リサイズ、データ更新などを処理
+ * 
+ * @returns チャート操作用のオブジェクト
  */
 export function useChartCore(): UseChartCoreReturn {
-  // チャート要素・インスタンス参照
+  // DOM参照
   const chartRef = useRef<HTMLDivElement>(null);
+  
+  // チャートインスタンス参照
   const chartInstanceRef = useRef<IChartApi | null>(null);
   
-  // シリーズ参照
+  // シリーズの参照
   const candleSeries = useRef<ISeriesApi<"Candlestick"> | null>(null);
   const lineSeries = useRef<ISeriesApi<"Line"> | null>(null);
   const areaSeries = useRef<ISeriesApi<"Area"> | null>(null);
   
-  // 直近のコンテナサイズを保持してResizeObserverループを防止
+  // 最後のリサイズ寸法を保持
   const lastDimensionsRef = useRef<{ width: number; height: number }>({ width: 0, height: 0 });
   
   // チャートのリサイズ処理
@@ -312,7 +315,7 @@ export function useChartCore(): UseChartCoreReturn {
   }, []);
   
   return {
-    chartRef,
+    chartRef: chartRef as React.RefObject<HTMLDivElement>,
     chartInstanceRef,
     seriesRefs: {
       candleSeries,

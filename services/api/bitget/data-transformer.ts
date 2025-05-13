@@ -3,6 +3,7 @@
  * Bitget APIのデータ変換クラス
  * 
  * 作成: 2025-05-12 - BitgetApiClientのリファクタリング
+ * 更新: 2025-05-20 - 型定義の修正とnull処理の改善
  * 
  * このファイルは、APIレスポンスの正規化とWebSocketメッセージのパースを担当します。
  */
@@ -12,6 +13,16 @@ import { OHLCData, Timeframe } from '../../../types/chart';
 import { OrderBookData } from '../../../types/market';
 import { logger } from '@/utils/logger';
 import { IS_DEV } from '../common/environment';
+
+// マップ関数で返す中間型を定義
+interface CandleDataRaw {
+  time: number;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume?: number;
+}
 
 /**
  * BitgetDataTransformerクラス
@@ -38,106 +49,110 @@ export class BitgetDataTransformer {
       throw new Error('Invalid candle data format');
     }
 
-    // キャンドルデータを正規化して返す
-    const processedData = responseData
-      .map((candle: any) => {
-        try {
-          let result;
-          // Bitget V2 APIのレスポンス形式に合わせて処理
-          // [タイムスタンプ, 始値, 高値, 安値, 終値, 出来高, 出来安]
-          if (Array.isArray(candle)) {
-            // 必要なデータが存在するか確認
-            if (!candle[0] || !candle[1] || !candle[2] || !candle[3] || !candle[4]) {
-              if (IS_DEV) logger.warn('Skipping invalid candle array data', {
-                component: 'BitgetDataTransformer',
-                action: 'normalizeCandles',
-                candle
-              });
-              return null;
-            }
-            
-            const timestamp = parseInt(String(candle[0]));
-            if (isNaN(timestamp) || timestamp <= 0) {
-              if (IS_DEV) logger.warn('Invalid timestamp in candle array data', {
-                component: 'BitgetDataTransformer',
-                action: 'normalizeCandles',
-                timestamp: candle[0]
-              });
-              return null;
-            }
-            
-            result = {
-              time: timestamp,
-              open: parseFloat(String(candle[1])),
-              high: parseFloat(String(candle[2])),
-              low: parseFloat(String(candle[3])),
-              close: parseFloat(String(candle[4])),
-              volume: parseFloat(String(candle[5] || '0'))
-            };
-            
-            // 変換後の配列データをログ出力
-            if (IS_DEV) console.log('配列形式の変換後ローソク足データ:', result);
-          } else if (typeof candle === 'object' && candle !== null) {
-            // オブジェクト形式の場合
-            if (!candle.timestamp && !candle.time) {
-              if (IS_DEV) logger.warn('Skipping candle without timestamp', {
-                component: 'BitgetDataTransformer',
-                action: 'normalizeCandles',
-                candle
-              });
-              return null;
-            }
-            
-            // タイムスタンプを解析
-            const timestamp = parseInt(String(candle.timestamp || candle.time));
-            if (isNaN(timestamp) || timestamp <= 0) {
-              if (IS_DEV) logger.warn('Invalid timestamp in candle object data', {
-                component: 'BitgetDataTransformer',
-                action: 'normalizeCandles',
-                timestamp: candle.timestamp || candle.time
-              });
-              return null;
-            }
-            
-            // デバッグ情報
-            if (IS_DEV) console.log('オブジェクト形式のローソク足データ:', {
-              timestamp,
-              open: candle.open,
-              high: candle.high,
-              low: candle.low,
-              close: candle.close,
-              volume: candle.volume || candle.vol || '0'
-            });
-            
-            result = {
-              time: timestamp, // lightweight-chartsの要件に合わせてtimeとして設定
-              open: parseFloat(String(candle.open)),
-              high: parseFloat(String(candle.high)),
-              low: parseFloat(String(candle.low)),
-              close: parseFloat(String(candle.close)),
-              volume: parseFloat(String(candle.volume || candle.vol || '0'))
-            };
-            
-            // 変換後のオブジェクトデータをログ出力
-            if (IS_DEV) console.log('オブジェクト形式の変換後ローソク足データ:', result);
-          }
-          
-          // 全ての値が有効か確認
-          if (result && (isNaN(result.open) || isNaN(result.high) || isNaN(result.low) || isNaN(result.close))) {
-            if (IS_DEV) console.warn('Skipping candle with NaN values:', result);
-            return null;
-          }
-          
-          return result;
-        } catch (err) {
-          if (IS_DEV) console.error('Error processing candle data:', err, candle);
-          return null;
-        }
-      })
-      .filter((candle): candle is OHLCData => candle !== null && typeof candle?.time === 'number') // nullを除外
-      .sort((a, b) => a?.time && b?.time ? a.time - b.time : 0); // 時間順にソート
+    // 明示的な中間型を使用して処理
+    const validCandles: OHLCData[] = [];
     
-    return processedData as OHLCData[];
+    for (const candle of responseData) {
+      let processedCandle: CandleDataRaw | null = null;
+      
+      try {
+        // Bitget V2 APIのレスポンス形式に合わせて処理
+        // [タイムスタンプ, 始値, 高値, 安値, 終値, 出来高, 出来安]
+        if (Array.isArray(candle)) {
+          // 必要なデータが存在するか確認
+          if (!candle[0] || !candle[1] || !candle[2] || !candle[3] || !candle[4]) {
+            if (IS_DEV) logger.warn('Skipping invalid candle array data', {
+              component: 'BitgetDataTransformer',
+              action: 'normalizeCandles',
+              candle
+            });
+            continue;
+          }
+          
+          const timestamp = parseInt(String(candle[0]));
+          if (isNaN(timestamp) || timestamp <= 0) {
+            if (IS_DEV) logger.warn('Invalid timestamp in candle array data', {
+              component: 'BitgetDataTransformer',
+              action: 'normalizeCandles',
+              timestamp: candle[0]
+            });
+            continue;
+          }
+          
+          processedCandle = {
+            time: timestamp,
+            open: parseFloat(String(candle[1])),
+            high: parseFloat(String(candle[2])),
+            low: parseFloat(String(candle[3])),
+            close: parseFloat(String(candle[4])),
+            volume: parseFloat(String(candle[5] || '0'))
+          };
+          
+          // 変換後の配列データをログ出力
+          if (IS_DEV) console.log('配列形式の変換後ローソク足データ:', processedCandle);
+        } else if (typeof candle === 'object' && candle !== null) {
+          // オブジェクト形式の場合
+          if (!candle.timestamp && !candle.time) {
+            if (IS_DEV) logger.warn('Skipping candle without timestamp', {
+              component: 'BitgetDataTransformer',
+              action: 'normalizeCandles',
+              candle
+            });
+            continue;
+          }
+          
+          // タイムスタンプを解析
+          const timestamp = parseInt(String(candle.timestamp || candle.time));
+          if (isNaN(timestamp) || timestamp <= 0) {
+            if (IS_DEV) logger.warn('Invalid timestamp in candle object data', {
+              component: 'BitgetDataTransformer',
+              action: 'normalizeCandles',
+              timestamp: candle.timestamp || candle.time
+            });
+            continue;
+          }
+          
+          // デバッグ情報
+          if (IS_DEV) console.log('オブジェクト形式のローソク足データ:', {
+            timestamp,
+            open: candle.open,
+            high: candle.high,
+            low: candle.low,
+            close: candle.close,
+            volume: candle.volume || candle.vol || '0'
+          });
+          
+          processedCandle = {
+            time: timestamp, // lightweight-chartsの要件に合わせてtimeとして設定
+            open: parseFloat(String(candle.open)),
+            high: parseFloat(String(candle.high)),
+            low: parseFloat(String(candle.low)),
+            close: parseFloat(String(candle.close)),
+            volume: parseFloat(String(candle.volume || candle.vol || '0'))
+          };
+          
+          // 変換後のオブジェクトデータをログ出力
+          if (IS_DEV) console.log('オブジェクト形式の変換後ローソク足データ:', processedCandle);
+        }
+        
+        // 全ての値が有効か確認
+        if (processedCandle && 
+            !isNaN(processedCandle.open) && 
+            !isNaN(processedCandle.high) && 
+            !isNaN(processedCandle.low) && 
+            !isNaN(processedCandle.close)) {
+          // 有効なデータとして追加
+          validCandles.push(processedCandle as OHLCData);
+        } else if (IS_DEV && processedCandle) {
+          console.warn('Skipping candle with NaN values:', processedCandle);
+        }
+      } catch (err) {
+        if (IS_DEV) console.error('Error processing candle data:', err, candle);
+      }
+    }
+    
+    // 時間順にソート
+    return validCandles.sort((a, b) => a.time - b.time);
   }
 
   /**

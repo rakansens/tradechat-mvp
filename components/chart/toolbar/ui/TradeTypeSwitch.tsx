@@ -6,9 +6,11 @@
 // 1. 現物/先物切り替えUIの表示
 // 2. 現在選択中の取引種別のハイライト
 // 3. 取引種別変更時のコールバック
+// 更新: 2025-05-20 - fetchChartDataの型を修正
 
 import React, { memo } from 'react';
 import { ExchangeType } from '@/types/api';
+import { Timeframe } from '@/types/chart';
 
 interface TradeTypeSwitchProps {
   // 現在選択中の取引種別
@@ -16,7 +18,7 @@ interface TradeTypeSwitchProps {
   // 取引種別変更時のコールバック
   onExchangeTypeChange: (type: ExchangeType) => void;
   // データ再取得のコールバック
-  fetchChartData: (symbol: string, timeFrame: string) => void;
+  fetchChartData: (symbol: string, timeFrame: Timeframe | string, signal?: AbortSignal, useCache?: boolean) => Promise<any>;
   // 現在の銘柄と時間足
   currentSymbol: string;
   currentTimeFrame: string;

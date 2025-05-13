@@ -149,7 +149,9 @@ const ChartToolbar = memo(function ChartToolbar({
           <TradeTypeSwitch
             exchangeType={symbolStore.exchangeType}
             onExchangeTypeChange={symbolStore.setExchangeType}
-            fetchChartData={chartDataStore.fetchChartData}
+            fetchChartData={(symbol, timeFrame, signal, useCache) => {
+              return chartDataStore.fetchChartData(symbol, timeFrame as Timeframe, signal, useCache);
+            }}
             currentSymbol={symbolStore.currentSymbol}
             currentTimeFrame={chartDataStore.currentTimeFrame}
             isClient={isClient}

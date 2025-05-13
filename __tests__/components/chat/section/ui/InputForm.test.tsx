@@ -1,10 +1,27 @@
 /**
- * __tests__/components/chat/InputForm.test.tsx
+ * __tests__/components/chat/section/ui/InputForm.test.tsx
  * InputFormコンポーネントのテストスイート
  */
 
+import React from 'react';
 import { render, fireEvent, screen } from '@testing-library/react';
 import { InputForm } from '@/components/chat/section/ui/InputForm';
+
+// InputBoxコンポーネントをモック
+jest.mock('@/components/chat/InputBox', () => {
+  return {
+    __esModule: true,
+    default: (props: any) => 
+      React.createElement('input', {
+        type: 'text',
+        'data-testid': 'mock-input',
+        value: props.value,
+        onChange: props.onChange,
+        placeholder: props.placeholder,
+        className: props.className
+      })
+  };
+});
 
 describe('InputForm', () => {
   const mockOnChange = jest.fn();
@@ -17,39 +34,39 @@ describe('InputForm', () => {
   
   test('入力値が正しく表示されること', () => {
     render(
-      <InputForm 
-        value="Test message" 
-        onChange={mockOnChange} 
-        onSubmit={mockOnSubmit} 
-      />
+      React.createElement(InputForm, { 
+        value: 'Test message', 
+        onChange: mockOnChange, 
+        onSubmit: mockOnSubmit
+      })
     );
     
-    const inputElement = screen.getByPlaceholderText('Ask about the market...');
+    const inputElement = screen.getByTestId('mock-input');
     expect(inputElement).toHaveValue('Test message');
   });
   
   test('onChange関数が呼ばれること', () => {
     render(
-      <InputForm 
-        value="Test message" 
-        onChange={mockOnChange} 
-        onSubmit={mockOnSubmit} 
-      />
+      React.createElement(InputForm, { 
+        value: 'Test message', 
+        onChange: mockOnChange, 
+        onSubmit: mockOnSubmit
+      })
     );
     
-    const inputElement = screen.getByPlaceholderText('Ask about the market...');
+    const inputElement = screen.getByTestId('mock-input');
     fireEvent.change(inputElement, { target: { value: 'New message' } });
     
     expect(mockOnChange).toHaveBeenCalled();
   });
   
-  test('空の入力でsubmitした場合、onSubmitは呼ばれるがフォーム内での検証はトリムが関数側で行われる', () => {
+  test('空の入力でsubmitした場合、onSubmitは呼ばれること', () => {
     render(
-      <InputForm 
-        value="" 
-        onChange={mockOnChange} 
-        onSubmit={mockOnSubmit} 
-      />
+      React.createElement(InputForm, { 
+        value: '', 
+        onChange: mockOnChange, 
+        onSubmit: mockOnSubmit
+      })
     );
     
     const formElement = screen.getByRole('form');
@@ -61,11 +78,11 @@ describe('InputForm', () => {
   
   test('送信ボタンをクリックするとonSubmitが呼ばれること', () => {
     render(
-      <InputForm 
-        value="Test message" 
-        onChange={mockOnChange} 
-        onSubmit={mockOnSubmit} 
-      />
+      React.createElement(InputForm, { 
+        value: 'Test message', 
+        onChange: mockOnChange, 
+        onSubmit: mockOnSubmit
+      })
     );
     
     const submitButton = screen.getByRole('button');

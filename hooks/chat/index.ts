@@ -1,6 +1,6 @@
 /**
  * hooks/chat/index.ts
- * チャット関連フックのバレルエクスポート
+ * チャット関連フックのバレルファイル
  * 
  * 変更履歴:
  * - 2023-06-10: ChatSection.tsxのリファクタリングに伴い作成
@@ -8,7 +8,12 @@
  * - 2023-06-30: バレルエクスポート更新
  */
 
-export { default as useChatSectionStores } from '@/components/chat/section/hooks/useChatSectionStores';
+// フックのエクスポート
+export { useChatSectionStores } from "@/components/chat/section/hooks/useChatSectionStores";
+export { useQuickCommands } from "@/components/chat/section/hooks/useQuickCommands";
+
+// 型定義のエクスポート
+export type { QuickCommand } from "@/components/chat/section/hooks/useQuickCommands";
+
 export { default as useChatWindowStores } from '@/components/chat/window/hooks/useChatWindowStores';
-export { default as useScrollManager } from '@/components/chat/window/hooks/useScrollManager';
-export { default as useQuickCommands, type QuickCommand } from '@/components/chat/section/hooks/useQuickCommands'; 
+export { default as useScrollManager } from '@/components/chat/window/hooks/useScrollManager'; 

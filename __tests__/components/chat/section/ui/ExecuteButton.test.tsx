@@ -1,11 +1,29 @@
 /**
- * __tests__/components/chat/ExecuteButton.test.tsx
+ * __tests__/components/chat/section/ui/ExecuteButton.test.tsx
  * ExecuteButtonコンポーネントのテストスイート
  */
 
+import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ExecuteButton } from '@/components/chat/section/ui/ExecuteButton';
 import type { OpenEntry } from '@/types/entry';
+
+// Lucideのアイコンをモック
+jest.mock('lucide-react', () => ({
+  Send: () => React.createElement('span', { 'data-testid': 'send-icon' }, 'Send'),
+}));
+
+// Buttonコンポーネントをモック
+jest.mock('@/components/ui/button', () => ({
+  Button: (props: any) => {
+    const { children, onClick, ...rest } = props;
+    return React.createElement('button', {
+      'data-testid': 'button',
+      onClick,
+      ...rest
+    }, children);
+  }
+}));
 
 describe('ExecuteButton', () => {
   const mockExecuteEntry = jest.fn();
@@ -29,10 +47,10 @@ describe('ExecuteButton', () => {
   
   test('pendingEntryがnullの場合、コンポーネントはレンダリングされないこと', () => {
     const { container } = render(
-      <ExecuteButton 
-        pendingEntry={null} 
-        executeEntry={mockExecuteEntry} 
-      />
+      React.createElement(ExecuteButton, { 
+        pendingEntry: null, 
+        executeEntry: mockExecuteEntry 
+      })
     );
     
     // コンポーネントが何もレンダリングしていないことを確認
@@ -41,27 +59,28 @@ describe('ExecuteButton', () => {
   
   test('pendingEntryがある場合、ボタンが表示されること', () => {
     render(
-      <ExecuteButton 
-        pendingEntry={mockEntry} 
-        executeEntry={mockExecuteEntry} 
-      />
+      React.createElement(ExecuteButton, { 
+        pendingEntry: mockEntry, 
+        executeEntry: mockExecuteEntry 
+      })
     );
     
     // ボタンが表示されていることを確認
-    const button = screen.getByText(/Execute Entry/i);
+    const button = screen.getByTestId('button');
     expect(button).toBeInTheDocument();
+    expect(screen.getByText(/Execute Entry/i)).toBeInTheDocument();
   });
   
   test('ボタンをクリックするとexecuteEntry関数が呼ばれること', () => {
     render(
-      <ExecuteButton 
-        pendingEntry={mockEntry} 
-        executeEntry={mockExecuteEntry} 
-      />
+      React.createElement(ExecuteButton, { 
+        pendingEntry: mockEntry, 
+        executeEntry: mockExecuteEntry 
+      })
     );
     
     // ボタンをクリックしてexecuteEntry関数が呼ばれることを確認
-    const button = screen.getByText(/Execute Entry/i);
+    const button = screen.getByTestId('button');
     fireEvent.click(button);
     
     expect(mockExecuteEntry).toHaveBeenCalledTimes(1);

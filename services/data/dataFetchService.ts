@@ -130,19 +130,20 @@ class DataFetchService extends EventEmitter implements IDataFetchService {
       
       // エラー時はデモデータを返す
       const now = Date.now();
-      const demoData: OHLCData[] = Array(100).fill(0).map((_, i) => {
+      const demoData = Array(100).fill(0).map((_, i) => {
         const time = now - (99 - i) * getTimeframeMilliseconds(timeFrame);
         const basePrice = normalizedSymbol.split('/')[0] === 'BTC' ? 30000 : 2000;
         const randomFactor = 0.01 * Math.sin(i / 10);
         
+        // 数値型として定義
         return {
           time: time,
-          open: (basePrice * (1 + randomFactor * 0.9)).toFixed(2),
-          high: (basePrice * (1 + randomFactor * 1.1)).toFixed(2),
-          low: (basePrice * (1 + randomFactor * 0.8)).toFixed(2),
-          close: (basePrice * (1 + randomFactor)).toFixed(2),
-          volume: (100 * (1 + Math.random())).toFixed(2)
-        };
+          open: basePrice * (1 + randomFactor * 0.9),
+          high: basePrice * (1 + randomFactor * 1.1),
+          low: basePrice * (1 + randomFactor * 0.8),
+          close: basePrice * (1 + randomFactor),
+          volume: 100 * (1 + Math.random())
+        } as OHLCData;
       });
       
       return demoData;

@@ -1,6 +1,7 @@
 /**
  * components/chat/window/hooks/useScrollManager.ts
  * 作成: スクロール位置管理と表示制御を行うカスタムフック
+ * 更新: 2025-05-20 - RefObjectの型定義を修正
  */
 
 import { useState, useRef, useCallback } from "react";
@@ -58,7 +59,7 @@ export default function useScrollManager(): ScrollManagerReturn {
   }, []);
 
   return {
-    containerRef,
+    containerRef: containerRef as React.RefObject<HTMLDivElement>,
     showScrollButton,
     handleScroll,
     scrollToBottom
