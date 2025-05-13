@@ -3,6 +3,9 @@
 // 更新: ファクトリーパターンを使用し、パラメーター管理を追加
 // 
 // このストアはチャートのテクニカルインジケーターの表示状態とパラメーターを管理します。
+/**
+ * @deprecated rootStore の IndicatorSlice へ移行済み。削除予定。
+ */
 
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";

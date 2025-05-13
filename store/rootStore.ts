@@ -2,6 +2,7 @@
 // 更新: チャートスライス、エントリースライス、チャットスライス、UIスライス、マーケットスライスをルートストアに統合
 // 更新: ChartConfigSliceを追加してrootStoreに統合
 // 更新: DrawingToolSliceを追加してrootStoreに統合
+// 更新: IndicatorSliceを追加してrootStoreに統合
 
 import { create } from 'zustand'
 import { devtools, persist } from 'zustand/middleware'
@@ -21,12 +22,28 @@ import { createChartConfigSlice, type ChartConfigSlice } from './chart/config'
 import type { ChartConfigSliceState } from './chart/config/state'
 import { createDrawingToolSlice, type DrawingToolSlice } from './chart/drawingTool'
 import type { DrawingToolSliceState } from './chart/drawingTool/state'
+import { createIndicatorSlice, type IndicatorSlice } from './chart/indicator'
+import type { IndicatorSliceState } from './chart/indicator/state'
 
 // RootStore型定義 - 各スライスの状態を統合
-export interface RootState extends ChartSliceState, EntrySliceState, ChatSliceState, UISliceState, MarketSliceState, ChartConfigSliceState, DrawingToolSliceState {}
+export interface RootState extends 
+  ChartSliceState, 
+  EntrySliceState, 
+  ChatSliceState, 
+  UISliceState, 
+  MarketSliceState, 
+  ChartConfigSliceState, 
+  DrawingToolSliceState,
+  IndicatorSliceState 
+{}
 
 // 各スライスで追加されるアクションを型で事前定義
 export interface RootActions {
+  // IndicatorSliceActions
+  toggleIndicator: IndicatorSlice['toggleIndicator']
+  updateIndicatorParams: IndicatorSlice['updateIndicatorParams']
+  clearAllIndicators: IndicatorSlice['clearAllIndicators']
+  
   // DrawingToolSliceActions
   toggleDrawingTool: DrawingToolSlice['toggleDrawingTool']
   clearAllDrawingTools: DrawingToolSlice['clearAllDrawingTools']
@@ -97,6 +114,12 @@ export const useRootStore = create<RootStore>()(
     devtools(
       persist(
         immer((set, get) => ({
+          // IndicatorSliceを統合
+          ...createIndicatorSlice(
+            (fn) => set(fn),
+            get
+          ),
+          
           // DrawingToolスライスを統合
           ...createDrawingToolSlice(
             (fn) => set(fn),

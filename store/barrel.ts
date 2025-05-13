@@ -2,6 +2,13 @@
 // Chart Slice関連のセレクター一覧をエクスポート
 // 他のSliceも今後ここに追加していく
 
+// IndicatorSliceのセレクターをエクスポート
+export {
+  selectActiveIndicators,
+  selectIndicatorParams,
+  selectIsIndicatorActive
+} from './chart/indicator/selectors'
+
 // DrawingToolスライスのセレクターをエクスポート
 export {
   selectActiveDrawingTools,
