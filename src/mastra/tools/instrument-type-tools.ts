@@ -5,7 +5,7 @@
 import { createTool } from "@mastra/core/tools";
 import { z } from "zod";
 import { logger } from "../../../utils/logger";
-import fetch from "node-fetch";
+import fetch, { Response } from "node-fetch";
 import { ExchangeType } from "../../../types/api";
 
 // APIレスポンスの型定義
@@ -80,11 +80,11 @@ export const changeInstrumentTypeTool = createTool({
           }
           
           // エラーの場合はリトライ
-          logger.warn(`取引タイプ変更APIリクエストが失敗しました (${response.status}): ${responseText}`, {
+          logger.warn(`取引タイプ変更APIリクエストが失敗しました (${response?.status}): ${responseText}`, {
             component: 'changeInstrumentTypeTool',
             action: 'execute',
             retryCount,
-            status: response.status,
+            status: response?.status,
             responseText
           });
           

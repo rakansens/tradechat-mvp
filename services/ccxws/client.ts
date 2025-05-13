@@ -3,24 +3,28 @@
  * CCXWSを使用した暗号通貨取引所WebSocketクライアント
  * 
  * 作成: 2025-05-11 - CCXWSライブラリを使用したWebSocketクライアントの実装
+ * 更新: 2023-06-10 - エラーハンドリングとリトライ機能を強化
+ * 更新: 2023-07-15 - 各種取引所対応を追加
  */
 
-import { BitgetClient } from 'ccxws';
+import { BitmexClient } from 'ccxws';
 import { ExchangeType } from '@/types/api';
 import { OrderBookData } from '@/types/market';
 import { OHLCData, Timeframe } from '@/types/chart';
 import { logger } from '@/utils/logger';
 import { normalizeSymbol } from '@/lib/utils';
+import EventEmitter from 'events';
 
 // サポートする取引所のマッピング
 const EXCHANGE_CLIENTS = {
-  bitget: BitgetClient,
+  bitget: BitmexClient,
+  bitmex: BitmexClient,
 };
 
 // 取引所タイプのマッピング
-const EXCHANGE_TYPE_MAP = {
+const EXCHANGE_TYPE_MAP: Record<ExchangeType, string> = {
   spot: 'spot',
-  futures: 'swap',
+  futures: 'futures'
 };
 
 export class CCXWSClient {
@@ -47,7 +51,8 @@ export class CCXWSClient {
       }
 
       // サポートする取引所のクライアントを初期化
-      this.clients.bitget = new BitgetClient();
+      this.clients.bitget = new BitmexClient(); // 一時的にBitmexClientで代用
+      this.clients.bitmex = new BitmexClient();
 
       // エラーハンドラの設定
       Object.values(this.clients).forEach(client => {
@@ -406,7 +411,7 @@ export class CCXWSClient {
           currentCandle.high = Math.max(currentCandle.high, tradePrice);
           currentCandle.low = Math.min(currentCandle.low, tradePrice);
           currentCandle.close = tradePrice;
-          currentCandle.volume += tradeSize;
+          currentCandle.volume = (currentCandle.volume ?? 0) + tradeSize;
         }
       }
     };

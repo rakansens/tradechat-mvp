@@ -123,7 +123,7 @@ export class BitgetDataTransformer {
           }
           
           // 全ての値が有効か確認
-          if (isNaN(result.open) || isNaN(result.high) || isNaN(result.low) || isNaN(result.close)) {
+          if (result && (isNaN(result.open) || isNaN(result.high) || isNaN(result.low) || isNaN(result.close))) {
             if (IS_DEV) console.warn('Skipping candle with NaN values:', result);
             return null;
           }
@@ -134,10 +134,10 @@ export class BitgetDataTransformer {
           return null;
         }
       })
-      .filter((candle: any): candle is OHLCData => candle !== null) // nullを除外
-      .sort((a: OHLCData, b: OHLCData) => a.time - b.time); // 時間順にソート
+      .filter((candle): candle is OHLCData => candle !== null && typeof candle?.time === 'number') // nullを除外
+      .sort((a, b) => a?.time && b?.time ? a.time - b.time : 0); // 時間順にソート
     
-    return processedData;
+    return processedData as OHLCData[];
   }
 
   /**

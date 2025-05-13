@@ -221,11 +221,11 @@ class SocketService extends EventEmitter implements ISocketService {
         symbol: 'BTC/USDT',
         timeframe: '1m',
         time: Date.now(),
-        open: '30000.00',
-        high: '30100.00',
-        low: '29900.00',
-        close: '30050.00',
-        volume: '100.00'
+        open: 30000.00,
+        high: 30100.00,
+        low: 29900.00,
+        close: 30050.00,
+        volume: 100.00
       };
       
       this.emit('orderbook', orderBookData);

@@ -151,7 +151,7 @@ export default function ChartCanvas() {
       action: 'updateData',
       dataLength: data.length
     });
-  }, [data, chartType, updateChartData]);
+  }, [data, chartType, updateChartData, chartInstanceRef]);
   
   // インジケーターの状態が変化した場合に更新
   useEffect(() => {
