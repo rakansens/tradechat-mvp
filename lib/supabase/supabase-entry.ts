@@ -1,14 +1,15 @@
 // lib/supabase-entry.ts
 // Supabaseトレードエントリー関連ユーティリティ関数
 // 作成日: 2025/5/7
+// 更新日: 2025/5/14 - 型参照を最新の型定義に更新し、戻り値の型を明確化
 
 import { supabase } from './supabase';
-import { Database } from '@/types/supabase';
+import { Tables, TablesInsert, TablesUpdate } from '@/types/network/supabase';
 
-type Entry = Database['public']['Tables']['entries']['Row'];
-
-// この型を追加
-export type EntryUpdateParams = Partial<Omit<Entry, 'id' | 'user_id' | 'created_at' | 'updated_at'>>;
+// エントリー関連の型定義
+type Entry = Tables<'entries'>;
+type EntryInsert = TablesInsert<'entries'>;
+export type EntryUpdateParams = TablesUpdate<'entries'>;
 
 /**
  * エントリー一覧を取得
@@ -157,21 +158,21 @@ export const createEntry = async (
   stopLoss?: number,
   isPublic = false
 ): Promise<Entry> => {
+  const entryData: EntryInsert = {
+    user_id: userId,
+    side,
+    symbol,
+    price,
+    time: time.toISOString(),
+    take_profit: takeProfit || null,
+    stop_loss: stopLoss || null,
+    status: 'open',
+    is_public: isPublic,
+  };
+
   const { data, error } = await supabase
     .from('entries')
-    .insert([
-      {
-        user_id: userId,
-        side,
-        symbol,
-        price,
-        time: time.toISOString(),
-        take_profit: takeProfit,
-        stop_loss: stopLoss,
-        status: 'open',
-        is_public: isPublic,
-      },
-    ])
+    .insert([entryData])
     .select()
     .single();
 
@@ -190,7 +191,7 @@ export const createEntry = async (
  */
 export const updateEntry = async (
   entryId: string,
-  updates: Partial<Omit<Entry, 'id' | 'user_id' | 'created_at' | 'updated_at'>>
+  updates: EntryUpdateParams
 ): Promise<Entry> => {
   const { data, error } = await supabase
     .from('entries')
@@ -258,14 +259,16 @@ export const closeEntry = async (
   }
 
   // エントリーを更新
+  const updates: EntryUpdateParams = {
+    status: 'closed',
+    exit_price: exitPrice,
+    exit_time: exitTime.toISOString(),
+    profit,
+  };
+
   const { data, error } = await supabase
     .from('entries')
-    .update({
-      status: 'closed',
-      exit_price: exitPrice,
-      exit_time: exitTime.toISOString(),
-      profit,
-    })
+    .update(updates)
     .eq('id', entryId)
     .select()
     .single();

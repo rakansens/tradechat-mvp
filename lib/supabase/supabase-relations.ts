@@ -1,12 +1,21 @@
 // lib/supabase-relations.ts
 // Supabaseユーザー関係（フォロー/フォロワー）関連ユーティリティ関数
-// 更新日: 2025/5/8 - 型エラー修正
+// 更新日: 2025/5/14 - 型参照を最新の型定義に更新し、型安全性を強化
 
 import { supabase } from './supabase';
-import { Database } from '@/types/supabase';
+import { Tables, TablesInsert } from '@/types/network/supabase';
 
-type UserRelation = Database['public']['Tables']['user_relations']['Row'];
-type Profile = Database['public']['Tables']['profiles']['Row'];
+// ユーザー関係の型定義
+type UserRelation = Tables<'user_relations'>;
+type UserRelationInsert = TablesInsert<'user_relations'>;
+type Profile = Tables<'profiles'>;
+
+// 型安全な処理のためのインターフェース
+interface RelationWithProfile {
+  following_id?: string;
+  follower_id?: string;
+  profiles: unknown;
+}
 
 /**
  * ユーザーをフォローする
@@ -23,14 +32,14 @@ export const followUser = async (
     throw new Error('自分自身をフォローすることはできません');
   }
 
+  const relationData: UserRelationInsert = {
+    follower_id: followerId,
+    following_id: followingId,
+  };
+
   const { data, error } = await supabase
     .from('user_relations')
-    .insert([
-      {
-        follower_id: followerId,
-        following_id: followingId,
-      },
-    ])
+    .insert([relationData])
     .select()
     .single();
 
@@ -93,6 +102,18 @@ export const isFollowing = async (
 };
 
 /**
+ * プロフィールオブジェクトの型チェック
+ */
+function isValidProfile(profile: unknown): profile is Profile {
+  return (
+    !!profile &&
+    typeof profile === 'object' &&
+    'id' in profile &&
+    'user_id' in profile
+  );
+}
+
+/**
  * ユーザーのフォロー一覧を取得する
  * @param userId ユーザーID
  * @param limit 取得件数
@@ -114,16 +135,16 @@ export const getFollowing = async (
     throw error;
   }
 
-  // プロフィール情報を抽出
-  return data.map(item => {
-    // 型安全のためにプロフィールデータをチェック
-    if (item.profiles && typeof item.profiles === 'object' && 'id' in item.profiles) {
-      return item.profiles as Profile;
+  // プロフィール情報を抽出して型安全に処理
+  const profiles: Profile[] = [];
+  
+  for (const item of data as RelationWithProfile[]) {
+    if (isValidProfile(item.profiles)) {
+      profiles.push(item.profiles as Profile);
     }
-    // エラーケースの場合は空のプロフィールを返す（実際の実装に応じて調整）
-    console.warn('Invalid profile data found', item);
-    return null;
-  }).filter((profile): profile is Profile => profile !== null);
+  }
+  
+  return profiles;
 };
 
 /**
@@ -148,16 +169,16 @@ export const getFollowers = async (
     throw error;
   }
 
-  // プロフィール情報を抽出
-  return data.map(item => {
-    // 型安全のためにプロフィールデータをチェック
-    if (item.profiles && typeof item.profiles === 'object' && 'id' in item.profiles) {
-      return item.profiles as Profile;
+  // プロフィール情報を抽出して型安全に処理
+  const profiles: Profile[] = [];
+  
+  for (const item of data as RelationWithProfile[]) {
+    if (isValidProfile(item.profiles)) {
+      profiles.push(item.profiles as Profile);
     }
-    // エラーケースの場合は空のプロフィールを返す（実際の実装に応じて調整）
-    console.warn('Invalid profile data found', item);
-    return null;
-  }).filter((profile): profile is Profile => profile !== null);
+  }
+  
+  return profiles;
 };
 
 /**
@@ -237,20 +258,20 @@ export const getMutualFollows = async (
     throw error;
   }
 
-  // プロフィール情報を抽出
-  return data.map(item => {
-    // 型安全のためにプロフィールデータをチェック
-    if (item.profiles && typeof item.profiles === 'object' && 'id' in item.profiles) {
-      return item.profiles as Profile;
+  // プロフィール情報を抽出して型安全に処理
+  const profiles: Profile[] = [];
+  
+  for (const item of data as RelationWithProfile[]) {
+    if (isValidProfile(item.profiles)) {
+      profiles.push(item.profiles as Profile);
     }
-    // エラーケースの場合は空のプロフィールを返す（実際の実装に応じて調整）
-    console.warn('Invalid profile data found', item);
-    return null;
-  }).filter((profile): profile is Profile => profile !== null);
+  }
+  
+  return profiles;
 };
 
 /**
- * フォロー関係のリアルタイム購読
+ * ユーザー関係のリアルタイム購読
  * @param userId ユーザーID
  * @param callback コールバック関数
  * @returns 購読解除関数
@@ -259,35 +280,43 @@ export const subscribeToUserRelations = (
   userId: string,
   callback: (relation: UserRelation, eventType: 'INSERT' | 'DELETE') => void
 ) => {
-  const channel = supabase
-    .channel('user_relations')
+  // フォロワーの変更を購読 (ユーザーがフォローされたとき)
+  const followersChannel = supabase
+    .channel('followers_changes')
     .on(
       'postgres_changes',
       {
-        event: 'INSERT',
+        event: '*',
         schema: 'public',
         table: 'user_relations',
-        filter: `follower_id=eq.${userId}`,
+        filter: `following_id=eq.${userId}`,
       },
       (payload) => {
-        callback(payload.new as UserRelation, 'INSERT');
-      }
-    )
-    .on(
-      'postgres_changes',
-      {
-        event: 'DELETE',
-        schema: 'public',
-        table: 'user_relations',
-        filter: `follower_id=eq.${userId}`,
-      },
-      (payload) => {
-        callback(payload.old as UserRelation, 'DELETE');
+        callback(payload.new as UserRelation, payload.eventType as 'INSERT' | 'DELETE');
       }
     )
     .subscribe();
 
+  // フォロー中の変更を購読 (ユーザーが他のユーザーをフォローしたとき)
+  const followingChannel = supabase
+    .channel('following_changes')
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'user_relations',
+        filter: `follower_id=eq.${userId}`,
+      },
+      (payload) => {
+        callback(payload.new as UserRelation, payload.eventType as 'INSERT' | 'DELETE');
+      }
+    )
+    .subscribe();
+
+  // 購読解除関数を返す
   return () => {
-    supabase.removeChannel(channel);
+    supabase.removeChannel(followersChannel);
+    supabase.removeChannel(followingChannel);
   };
 };

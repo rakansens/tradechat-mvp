@@ -1,11 +1,15 @@
 // lib/supabase-cache.ts
 // Supabaseキャッシュデータ関連ユーティリティ関数
 // 作成日: 2025/5/7
+// 更新日: 2025/5/14 - 型参照を最新の型定義に更新し、型安全性を強化
 
 import { supabase } from './supabase';
-import { Database } from '@/types/supabase';
+import { Tables, TablesInsert, TablesUpdate, Json } from '@/types/network/supabase';
 
-type CachedData = Database['public']['Tables']['cached_data']['Row'];
+// キャッシュ関連の型定義
+type CachedData = Tables<'cached_data'>;
+type CachedDataInsert = TablesInsert<'cached_data'>;
+type CachedDataUpdate = TablesUpdate<'cached_data'>;
 
 /**
  * キャッシュデータを取得
@@ -53,7 +57,7 @@ export const getCachedData = async (
 export const setCachedData = async (
   dataType: string,
   symbol: string,
-  data: Record<string, any>,
+  data: Json,
   expiresIn = 300, // デフォルト5分
   timeframe?: string
 ): Promise<CachedData> => {
@@ -81,13 +85,15 @@ export const setCachedData = async (
 
   if (existingData) {
     // 既存のキャッシュを更新
+    const updateData: CachedDataUpdate = {
+      data,
+      expires_at: expiresAt.toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
     const { data: updatedData, error: updateError } = await supabase
       .from('cached_data')
-      .update({
-        data,
-        expires_at: expiresAt.toISOString(),
-        updated_at: new Date().toISOString(),
-      })
+      .update(updateData)
       .eq('id', existingData.id)
       .select()
       .single();
@@ -99,17 +105,17 @@ export const setCachedData = async (
     return updatedData;
   } else {
     // 新しいキャッシュを作成
+    const newCacheData: CachedDataInsert = {
+      data_type: dataType,
+      symbol,
+      timeframe: timeframe || null,
+      data,
+      expires_at: expiresAt.toISOString(),
+    };
+
     const { data: newData, error: insertError } = await supabase
       .from('cached_data')
-      .insert([
-        {
-          data_type: dataType,
-          symbol,
-          timeframe,
-          data,
-          expires_at: expiresAt.toISOString(),
-        },
-      ])
+      .insert([newCacheData])
       .select()
       .single();
 
@@ -181,7 +187,7 @@ export const cleanupExpiredCache = async (): Promise<boolean> => {
  * @param timeframe タイムフレーム
  * @returns 取得したデータ
  */
-export const withCache = async <T extends Record<string, any>>(
+export const withCache = async <T extends Json>(
   dataType: string,
   symbol: string,
   fetchFn: () => Promise<T>,
@@ -249,17 +255,20 @@ export const getBulkCachedData = async (
     throw error;
   }
 
-  // シンボルごとにデータをマッピング
+  // シンボルごとにマップを作成
   const result: Record<string, CachedData | null> = {};
+  
+  // 初期化
   symbols.forEach(symbol => {
     result[symbol] = null;
   });
-
+  
+  // 取得したデータをマップに設定
   if (data) {
     data.forEach(item => {
       result[item.symbol] = item;
     });
   }
-
+  
   return result;
 };

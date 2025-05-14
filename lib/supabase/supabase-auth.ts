@@ -1,9 +1,16 @@
 // lib/supabase-auth.ts
 // Supabase認証関連ユーティリティ関数
 // 作成日: 2025/5/7
+// 更新日: 2025/5/14 - 型参照とプロフィール操作メソッドを最新の型定義に更新
 
 import { supabase } from './supabase';
 import { User, Session } from '@supabase/supabase-js';
+import { Tables, TablesInsert, TablesUpdate } from '@/types/network/supabase';
+
+// プロフィール操作関連の型定義
+type Profile = Tables<'profiles'>;
+type ProfileInsert = TablesInsert<'profiles'>;
+type ProfileUpdate = TablesUpdate<'profiles'>;
 
 /**
  * ユーザーサインアップ
@@ -132,24 +139,24 @@ export const createProfile = async (
   displayName?: string,
   avatarUrl?: string,
   bio?: string
-) => {
+): Promise<Profile | null> => {
+  const profileData: ProfileInsert = {
+    user_id: userId,
+    display_name: displayName || null,
+    avatar_url: avatarUrl || null,
+    bio: bio || null,
+  };
+
   const { data, error } = await supabase
     .from('profiles')
-    .insert([
-      {
-        user_id: userId,
-        display_name: displayName,
-        avatar_url: avatarUrl,
-        bio,
-      },
-    ])
+    .insert([profileData])
     .select();
   
   if (error) {
     throw error;
   }
   
-  return data;
+  return data?.[0] || null;
 };
 
 /**
@@ -157,7 +164,7 @@ export const createProfile = async (
  * @param userId ユーザーID
  * @returns ユーザープロフィール
  */
-export const getProfile = async (userId: string) => {
+export const getProfile = async (userId: string): Promise<Profile | null> => {
   const { data, error } = await supabase
     .from('profiles')
     .select('*')
@@ -165,6 +172,10 @@ export const getProfile = async (userId: string) => {
     .single();
   
   if (error) {
+    // レコードが見つからない場合はnullを返す（エラーをスローしない）
+    if (error.code === 'PGRST116') {
+      return null;
+    }
     throw error;
   }
   
@@ -179,12 +190,8 @@ export const getProfile = async (userId: string) => {
  */
 export const updateProfile = async (
   userId: string,
-  updates: {
-    display_name?: string;
-    avatar_url?: string;
-    bio?: string;
-  }
-) => {
+  updates: ProfileUpdate
+): Promise<Profile | null> => {
   const { data, error } = await supabase
     .from('profiles')
     .update(updates)
@@ -195,7 +202,7 @@ export const updateProfile = async (
     throw error;
   }
   
-  return data;
+  return data?.[0] || null;
 };
 
 /**

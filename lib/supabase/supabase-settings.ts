@@ -1,13 +1,22 @@
 // lib/supabase-settings.ts
 // Supabase設定関連ユーティリティ関数
-// 更新日: 2025/5/8 - 型エラー修正
+// 更新日: 2025/5/14 - 型参照を最新の型定義に更新し、型安全性を強化
 
 import { supabase } from './supabase';
-import { Database } from '@/types/supabase';
+import { Tables, TablesInsert, TablesUpdate, Json } from '@/types/network/supabase';
 
-type SymbolSettings = Database['public']['Tables']['symbol_settings']['Row'];
-type ChartSettings = Database['public']['Tables']['chart_settings']['Row'];
-type IndicatorSettings = Database['public']['Tables']['indicator_settings']['Row'];
+// 設定関連の型定義
+type SymbolSettings = Tables<'symbol_settings'>;
+type SymbolSettingsInsert = TablesInsert<'symbol_settings'>;
+type SymbolSettingsUpdate = TablesUpdate<'symbol_settings'>;
+
+type ChartSettings = Tables<'chart_settings'>;
+type ChartSettingsInsert = TablesInsert<'chart_settings'>;
+type ChartSettingsUpdate = TablesUpdate<'chart_settings'>;
+
+type IndicatorSettings = Tables<'indicator_settings'>;
+type IndicatorSettingsInsert = TablesInsert<'indicator_settings'>;
+type IndicatorSettingsUpdate = TablesUpdate<'indicator_settings'>;
 
 /**
  * シンボル設定一覧を取得
@@ -320,7 +329,7 @@ export const deleteIndicatorSettings = async (
  * @param userId ユーザーID
  * @returns ユーザー設定
  */
-export const getUserSettings = async (userId: string): Promise<Record<string, any> | null> => {
+export const getUserSettings = async (userId: string): Promise<Json | null> => {
   const { data, error } = await supabase
     .from('users')
     .select('settings')
@@ -328,25 +337,25 @@ export const getUserSettings = async (userId: string): Promise<Record<string, an
     .single();
 
   if (error) {
+    if (error.code === 'PGRST116') {
+      // レコードが見つからない場合
+      return null;
+    }
     throw error;
   }
 
-  // 型安全のために明示的に変換
-  if (data?.settings && typeof data.settings === 'object') {
-    return data.settings as Record<string, any>;
-  }
-  return null;
+  return data?.settings;
 };
 
 /**
  * ユーザー設定を更新
  * @param userId ユーザーID
- * @param settings 設定
+ * @param settings 設定内容
  * @returns 更新結果
  */
 export const updateUserSettings = async (
   userId: string,
-  settings: Record<string, any>
+  settings: Json
 ): Promise<boolean> => {
   const { error } = await supabase
     .from('users')
