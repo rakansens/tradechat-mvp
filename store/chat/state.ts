@@ -2,8 +2,18 @@
 // チャットスライスの状態と初期値を定義
 // 更新: 2025/5/20 - 会話IDごとのネームスペースをサポート
 // 更新: 2025/5/28 - システムプロンプト情報をサポート
+// 更新: 2025/6/2 - リアルタイム購読の接続状態とエラー管理フィールドを追加
 
 import type { ExtendedMessage } from '@/types/chat'
+
+// リアルタイム接続状態タイプ
+export type ConnectionStatus = 
+  | 'DISCONNECTED'
+  | 'CONNECTING'
+  | 'CONNECTED'
+  | 'RECONNECTING'
+  | 'ERROR'
+  | 'MAX_RETRIES_EXCEEDED';
 
 // 会話状態インターフェース
 export interface ConversationState {
@@ -13,6 +23,10 @@ export interface ConversationState {
   // システムプロンプト情報を追加
   systemPrompt?: string | null;
   title: string;
+  // リアルタイム購読状態
+  connectionStatus?: ConnectionStatus;
+  connectionError?: string | null;
+  lastMessageAt?: string | null;
 }
 
 // チャットスライスの状態インターフェース
@@ -25,6 +39,10 @@ export interface ChatSliceState {
   input: string;
   // 現在アクティブな会話ID
   activeConversationId: string | null;
+  // リアルタイム購読状態
+  messageSubscription: (() => void) | null;
+  connectionStatus: ConnectionStatus;
+  connectionError: string | null;
 }
 
 // 初期メッセージの設定
@@ -61,7 +79,10 @@ export const initialChatState: ChatSliceState = {
       isSearching: false,
       input: "",
       systemPrompt: null,
-      title: "Trading Assistant"
+      title: "Trading Assistant",
+      connectionStatus: 'DISCONNECTED',
+      connectionError: null,
+      lastMessageAt: null
     }
   },
   // 後方互換性のための直接アクセス可能なメッセージリスト
@@ -70,4 +91,8 @@ export const initialChatState: ChatSliceState = {
   input: "",
   // 初期アクティブ会話IDはデフォルト
   activeConversationId: 'default',
+  // リアルタイム購読の初期状態
+  messageSubscription: null,
+  connectionStatus: 'DISCONNECTED',
+  connectionError: null,
 } 

@@ -3,6 +3,7 @@
 // 作成日: 2025/5/7
 // 更新日: 2025/5/27 - 会話関連の機能をsupabase-conversations.tsに移動
 // 更新日: 2025/5/28 - 会話関連の関数を完全に削除
+// 更新日: 2025/6/2 - リアルタイム購読機能の安定化と再接続機能を実装
 
 import { supabase } from './supabase';
 import { Tables, TablesInsert, TablesUpdate } from '@/types/network/supabase';
@@ -267,33 +268,192 @@ export const getChatImage = async (imageId: string): Promise<ChatImage | null> =
 };
 
 /**
- * チャットメッセージをリアルタイム購読
+ * チャットメッセージをリアルタイム購読（エラーハンドリングと再接続機能強化版）
  * @param callback メッセージ受信時のコールバック
  * @param isPublicOnly 公開メッセージのみ購読するかどうか
+ * @param onError エラー発生時のコールバック
+ * @param onStatusChange ステータス変更時のコールバック
  * @returns 購読解除関数
  */
 export const subscribeToChatMessages = (
   callback: (message: ChatMessage) => void,
-  isPublicOnly = false
+  isPublicOnly = false,
+  onError?: (error: Error) => void,
+  onStatusChange?: (status: string) => void
 ) => {
-  const query = supabase
-    .channel('chat_messages')
-    .on(
-      'postgres_changes',
-      {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'chat_messages',
-        ...(isPublicOnly ? { filter: 'is_public=eq.true' } : {}),
-      },
-      (payload) => {
-        callback(payload.new as ChatMessage);
-      }
-    )
-    .subscribe();
-
+  let isSubscribed = true;
+  let retryCount = 0;
+  const maxRetries = 5;
+  const retryDelay = 2000; // ミリ秒
+  let channel: any;
+  
+  // 購読処理
+  const subscribe = () => {
+    try {
+      if (onStatusChange) onStatusChange('CONNECTING');
+      
+      channel = supabase
+        .channel('chat_messages')
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'chat_messages',
+            ...(isPublicOnly ? { filter: 'is_public=eq.true' } : {}),
+          },
+          (payload) => {
+            if (isSubscribed) {
+              callback(payload.new as ChatMessage);
+            }
+          }
+        )
+        .subscribe((status, err) => {
+          if (status === 'SUBSCRIBED') {
+            console.log('チャットメッセージの購読開始');
+            if (onStatusChange) onStatusChange('SUBSCRIBED');
+            // 接続成功時に再試行カウントをリセット
+            retryCount = 0;
+          } else if (status === 'CHANNEL_ERROR') {
+            console.error('チャット購読エラー:', err);
+            if (onStatusChange) onStatusChange('ERROR');
+            if (onError) onError(new Error(`購読エラー: ${err?.message || '不明なエラー'}`));
+            
+            // 再接続ロジック
+            if (isSubscribed && retryCount < maxRetries) {
+              retryCount++;
+              console.log(`再接続試行 ${retryCount}/${maxRetries}...`);
+              if (onStatusChange) onStatusChange('RECONNECTING');
+              
+              setTimeout(() => {
+                if (isSubscribed) {
+                  if (channel) {
+                    supabase.removeChannel(channel);
+                  }
+                  subscribe();
+                }
+              }, retryDelay * retryCount); // 指数バックオフ
+            } else if (retryCount >= maxRetries) {
+              if (onStatusChange) onStatusChange('MAX_RETRIES_EXCEEDED');
+              if (onError) onError(new Error('最大再接続試行回数を超えました'));
+            }
+          }
+        });
+      
+      return channel;
+    } catch (error) {
+      console.error('チャット購読設定エラー:', error);
+      if (onStatusChange) onStatusChange('ERROR');
+      if (onError) onError(error instanceof Error ? error : new Error('不明なエラー'));
+      return null;
+    }
+  };
+  
+  // 購読開始
+  channel = subscribe();
+  
+  // 購読解除関数を返す
   return () => {
-    supabase.removeChannel(query);
+    console.log('チャットメッセージの購読解除');
+    isSubscribed = false;
+    if (channel) {
+      supabase.removeChannel(channel);
+    }
+  };
+};
+
+/**
+ * 会話特化のチャットメッセージをリアルタイム購読
+ * @param conversationId 会話ID
+ * @param callback メッセージ受信時のコールバック
+ * @param onError エラー発生時のコールバック
+ * @param onStatusChange ステータス変更時のコールバック
+ * @returns 購読解除関数
+ */
+export const subscribeToConversationMessages = (
+  conversationId: string,
+  callback: (message: ChatMessage) => void,
+  onError?: (error: Error) => void,
+  onStatusChange?: (status: string) => void
+) => {
+  let isSubscribed = true;
+  let retryCount = 0;
+  const maxRetries = 5;
+  const retryDelay = 2000; // ミリ秒
+  let channel: any;
+  
+  // 購読処理
+  const subscribe = () => {
+    try {
+      if (onStatusChange) onStatusChange('CONNECTING');
+      
+      channel = supabase
+        .channel(`messages-${conversationId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*', // INSERT, UPDATE, DELETE全て対象
+            schema: 'public',
+            table: 'chat_messages',
+            filter: `conversation_id=eq.${conversationId}`,
+          },
+          (payload) => {
+            if (isSubscribed) {
+              callback(payload.new as ChatMessage);
+            }
+          }
+        )
+        .subscribe((status, err) => {
+          if (status === 'SUBSCRIBED') {
+            console.log(`会話 ${conversationId} のメッセージ購読開始`);
+            if (onStatusChange) onStatusChange('SUBSCRIBED');
+            // 接続成功時に再試行カウントをリセット
+            retryCount = 0;
+          } else if (status === 'CHANNEL_ERROR') {
+            console.error(`会話 ${conversationId} の購読エラー:`, err);
+            if (onStatusChange) onStatusChange('ERROR');
+            if (onError) onError(new Error(`購読エラー: ${err?.message || '不明なエラー'}`));
+            
+            // 再接続ロジック
+            if (isSubscribed && retryCount < maxRetries) {
+              retryCount++;
+              console.log(`再接続試行 ${retryCount}/${maxRetries}...`);
+              if (onStatusChange) onStatusChange('RECONNECTING');
+              
+              setTimeout(() => {
+                if (isSubscribed) {
+                  if (channel) {
+                    supabase.removeChannel(channel);
+                  }
+                  subscribe();
+                }
+              }, retryDelay * retryCount); // 指数バックオフ
+            } else if (retryCount >= maxRetries) {
+              if (onStatusChange) onStatusChange('MAX_RETRIES_EXCEEDED');
+              if (onError) onError(new Error('最大再接続試行回数を超えました'));
+            }
+          }
+        });
+      
+      return channel;
+    } catch (error) {
+      console.error(`会話 ${conversationId} の購読設定エラー:`, error);
+      if (onStatusChange) onStatusChange('ERROR');
+      if (onError) onError(error instanceof Error ? error : new Error('不明なエラー'));
+      return null;
+    }
+  };
+  
+  // 購読開始
+  channel = subscribe();
+  
+  // 購読解除関数を返す
+  return () => {
+    console.log(`会話 ${conversationId} のメッセージ購読解除`);
+    isSubscribed = false;
+    if (channel) {
+      supabase.removeChannel(channel);
+    }
   };
 };
 

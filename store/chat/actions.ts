@@ -2,12 +2,16 @@
 // チャットスライスのアクション
 // 更新: 2025/5/20 - 会話IDごとのネームスペースをサポート
 // 更新: 2025/5/28 - システムプロンプト情報をサポート
+// 更新: 2025/6/2 - リアルタイム購読の接続管理とエラーハンドリング機能を追加
+// 更新: 2025/6/2 - 型エラーを修正
 
 // 循環参照を避けるため、直接インポートせずに動的にインポートする
 // import { useRootStore } from '../rootStore'
 import type { ExtendedMessage, ProposalType } from '@/types/chat'
-import type { ChatSliceState, ConversationState } from './state'
+import type { ChatSliceState, ConversationState, ConnectionStatus } from './state'
 import { logger } from '@/utils/common'
+import { subscribeToConversationMessages } from '@/lib/supabase/supabase-chat'
+import { useToast } from '@/components/ui/use-toast'
 
 // チャットスライスのアクション定義
 export interface ChatSliceActions {
@@ -36,6 +40,12 @@ export interface ChatSliceActions {
   
   // 会話設定の更新アクション
   updateConversationSettings: (conversationId: string, title: string, systemPrompt?: string | null) => Promise<void>
+  
+  // リアルタイム購読アクション
+  startMessageSubscription: (conversationId: string) => void
+  stopMessageSubscription: () => void
+  setConnectionStatus: (status: ConnectionStatus, error?: string | null) => void
+  setConversationConnectionStatus: (conversationId: string, status: ConnectionStatus, error?: string | null) => void
 }
 
 // チャートとエントリーストアからのデータ参照のためのヘルパー関数
@@ -395,6 +405,13 @@ export const createChatActions = (
   
   // 会話管理アクション
   setActiveConversation: (conversationId) => {
+    const { messageSubscription, activeConversationId } = get();
+    
+    // 既存の購読を解除
+    if (messageSubscription) {
+      messageSubscription();
+    }
+    
     set((state) => {
       // 会話が存在しない場合は作成
       if (!state.byConversation[conversationId]) {
@@ -404,6 +421,9 @@ export const createChatActions = (
           input: "",
           systemPrompt: null,
           title: `会話 ${new Date().toLocaleDateString()}`,
+          connectionStatus: 'DISCONNECTED',
+          connectionError: null,
+          lastMessageAt: null
         }
       }
       
@@ -415,6 +435,10 @@ export const createChatActions = (
       state.isSearching = state.byConversation[conversationId].isSearching
       state.input = state.byConversation[conversationId].input
     })
+    
+    // 会話が切り替わったら、自動的に新しい会話のメッセージ購読を開始
+    const { startMessageSubscription } = get();
+    startMessageSubscription(conversationId);
   },
   
   createConversation: async (title, systemPrompt, initialMessages = []) => {
@@ -663,5 +687,222 @@ export const createChatActions = (
       console.error('Failed to update conversation settings:', error)
       throw error
     }
-  }
+  },
+  
+  // リアルタイム購読アクション
+  startMessageSubscription: (conversationId) => {
+    const { messageSubscription } = get();
+    
+    // 既存の購読を解除
+    if (messageSubscription) {
+      messageSubscription();
+    }
+    
+    // 購読状態を更新
+    set((state) => {
+      state.connectionStatus = 'CONNECTING';
+      state.connectionError = null;
+      
+      // 会話の接続状態も更新
+      if (state.byConversation[conversationId]) {
+        state.byConversation[conversationId].connectionStatus = 'CONNECTING';
+        state.byConversation[conversationId].connectionError = null;
+      }
+    });
+    
+    // トースト通知準備
+    const toast = () => {
+      try {
+        return useToast();
+      } catch (e) {
+        return {
+          toast: () => console.log('Toast unavailable')
+        };
+      }
+    };
+    
+    // 新しい購読を開始
+    const unsubscribe = subscribeToConversationMessages(
+      conversationId,
+      // メッセージ受信コールバック
+      (newMessage) => {
+        set((state) => {
+          // メッセージが存在するかチェック
+          const conversationState = state.byConversation[conversationId];
+          if (!conversationState) return;
+          
+          // メッセージがすでに存在するか確認
+          const existingIndex = conversationState.messages.findIndex(
+            msg => msg.id === newMessage.id
+          );
+          
+          if (existingIndex >= 0) {
+            // 既存メッセージを更新
+            conversationState.messages[existingIndex] = {
+              ...conversationState.messages[existingIndex],
+              ...newMessage,
+            } as ExtendedMessage;
+          } else {
+            // 新しいメッセージを追加
+            const extendedMessage: ExtendedMessage = {
+              id: newMessage.id,
+              role: newMessage.role as 'user' | 'assistant' | 'system',
+              content: newMessage.content,
+              // オプショナルプロパティを型安全に変換
+              isProposal: newMessage.is_proposal || false,
+              proposalType: newMessage.proposal_type as ProposalType | undefined,
+              price: newMessage.price as number | undefined,
+              takeProfit: newMessage.take_profit as number | undefined,
+              stopLoss: newMessage.stop_loss as number | undefined,
+            };
+            
+            conversationState.messages.push(extendedMessage);
+          }
+          
+          // 最後のメッセージ時間を更新
+          conversationState.lastMessageAt = new Date().toISOString();
+          
+          // アクティブな会話であれば、メインメッセージも更新
+          if (state.activeConversationId === conversationId) {
+            state.messages = conversationState.messages;
+          }
+        });
+      },
+      // エラーコールバック
+      (error) => {
+        console.error('メッセージ購読エラー:', error);
+        set((state) => {
+          state.connectionStatus = 'ERROR';
+          state.connectionError = error.message;
+          
+          // 会話の接続状態も更新
+          if (state.byConversation[conversationId]) {
+            state.byConversation[conversationId].connectionStatus = 'ERROR';
+            state.byConversation[conversationId].connectionError = error.message;
+          }
+        });
+        
+        // エラー通知
+        try {
+          const { toast: showToast } = toast();
+          showToast({
+            title: "接続エラー",
+            description: "メッセージの更新を受信できません。再接続を試みています。",
+            variant: "destructive",
+          });
+        } catch (e) {
+          console.error('トースト表示に失敗しました:', e);
+        }
+      },
+      // 状態変更コールバック
+      (status) => {
+        let connectionStatus: ConnectionStatus;
+        
+        // ステータスをマッピング
+        switch (status) {
+          case 'SUBSCRIBED':
+            connectionStatus = 'CONNECTED';
+            break;
+          case 'CONNECTING':
+            connectionStatus = 'CONNECTING';
+            break;
+          case 'RECONNECTING':
+            connectionStatus = 'RECONNECTING';
+            break;
+          case 'ERROR':
+            connectionStatus = 'ERROR';
+            break;
+          case 'MAX_RETRIES_EXCEEDED':
+            connectionStatus = 'MAX_RETRIES_EXCEEDED';
+            break;
+          default:
+            connectionStatus = 'DISCONNECTED';
+        }
+        
+        // 接続状態を更新
+        set((state) => {
+          state.connectionStatus = connectionStatus;
+          
+          // 会話の接続状態も更新
+          const conversation = state.byConversation[conversationId];
+          if (conversation) {
+            conversation.connectionStatus = connectionStatus;
+          }
+          
+          // 再接続が必要な状態で通知
+          if (status === 'RECONNECTING') {
+            try {
+              const { toast: showToast } = toast();
+              showToast({
+                title: "再接続中",
+                description: "メッセージの更新に一時的な問題が発生しました。再接続を試みています。",
+                variant: "default",
+              });
+            } catch (e) {
+              console.error('トースト表示に失敗しました:', e);
+            }
+          } else if (status === 'MAX_RETRIES_EXCEEDED') {
+            // 再接続失敗時に通知
+            try {
+              const { toast: showToast } = toast();
+              showToast({
+                title: "接続エラー",
+                description: "メッセージの更新に失敗しました。ページを再読み込みしてください。",
+                variant: "destructive",
+              });
+            } catch (e) {
+              console.error('トースト表示に失敗しました:', e);
+            }
+          } else if (status === 'SUBSCRIBED') {
+            // 接続成功時に通知（オプション）
+            state.connectionError = null;
+            
+            // 会話の接続エラーもクリア
+            const conversation = state.byConversation[conversationId];
+            if (conversation) {
+              conversation.connectionError = null;
+            }
+          }
+        });
+      }
+    );
+    
+    // 購読解除関数を保存
+    set((state) => {
+      state.messageSubscription = unsubscribe;
+    });
+  },
+  
+  stopMessageSubscription: () => {
+    const { messageSubscription } = get();
+    
+    // 既存の購読があれば解除
+    if (messageSubscription) {
+      messageSubscription();
+      
+      // 購読状態をリセット
+      set((state) => {
+        state.messageSubscription = null;
+        state.connectionStatus = 'DISCONNECTED';
+        state.connectionError = null;
+      });
+    }
+  },
+  
+  setConnectionStatus: (status, error = null) => {
+    set((state) => {
+      state.connectionStatus = status;
+      state.connectionError = error;
+    });
+  },
+  
+  setConversationConnectionStatus: (conversationId, status, error = null) => {
+    set((state) => {
+      // 会話が存在する場合のみ更新
+      if (state.byConversation[conversationId]) {
+        state.byConversation[conversationId].connectionStatus = status;
+        state.byConversation[conversationId].connectionError = error;
+      }
+    });
+  },
 })
