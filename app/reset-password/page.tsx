@@ -8,7 +8,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { supabase } from '@/lib/supabase/supabase';
+import { createClient } from '@/utils/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -63,6 +63,9 @@ export default function ResetPasswordPage() {
       if (!token) {
         throw new Error('無効なリセットトークンです');
       }
+      
+      // Supabaseクライアントの初期化
+      const supabase = createClient();
       
       // パスワードを更新
       const { error } = await supabase.auth.updateUser({

@@ -6,6 +6,10 @@ import { cn } from "@/lib/utils"
 import { Toaster } from "@/components/ui/toaster"
 import { ThemeProvider } from "@/components/theme-provider"
 import { ToastListener } from "@/components/common/toast"
+import { SocketProvider } from '@/components/providers/socket-provider'
+import { SupabaseProvider } from '@/components/providers/SupabaseProvider'
+import { ReactQueryProvider } from '@/components/providers/ReactQueryProvider'
+import { ModalProvider } from '@/components/providers/ModalProvider'
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" })
 
@@ -32,9 +36,17 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <ClientLayout>{children}</ClientLayout>
-          <Toaster />
-          <ToastListener />
+          <SocketProvider>
+            <SupabaseProvider>
+              <ReactQueryProvider>
+                <ModalProvider>
+                  <Toaster />
+                  <ClientLayout>{children}</ClientLayout>
+                  <ToastListener />
+                </ModalProvider>
+              </ReactQueryProvider>
+            </SupabaseProvider>
+          </SocketProvider>
         </ThemeProvider>
       </body>
     </html>

@@ -3,6 +3,7 @@
 // 作成日: 2025/6/X - 設定ストアのリファクタリング
 // 更新日: 2025/6/X - useToast依存を削除し、カスタムイベントを使用するように修正
 // 更新日: 2025/6/15 - APIエンドポイント経由からSupabase関数を直接呼び出すように修正
+// 更新日: 2025/6/20 - 新しいSupabaseクライアントを使用するように更新
 
 import { SettingsActions, SettingsState, UserSettings, ChartSettings, SymbolSettings } from './types';
 import { 
@@ -14,7 +15,7 @@ import {
   getSymbolSettings,
   upsertSymbolSettings
 } from '@/lib/supabase/supabase-settings';
-import { supabase } from '@/lib/supabase/supabase';
+import { createClient } from '@/utils/supabase/client';
 
 // トースト表示用イベントの型定義
 interface ToastEvent {
@@ -22,6 +23,16 @@ interface ToastEvent {
   description: string;
   variant: 'default' | 'destructive';
 }
+
+// null値を処理するヘルパー関数群
+const nullsafeBoolean = (value: boolean | null): boolean | undefined => 
+  value === null ? undefined : value;
+
+const nullsafeNumber = (value: number | null): number | undefined => 
+  value === null ? undefined : value;
+
+const nullsafeString = (value: string | null): string | undefined => 
+  value === null ? undefined : value;
 
 // 設定ストアのアクション作成関数
 export const createSettingsActions = (
@@ -46,6 +57,9 @@ export const createSettingsActions = (
       });
       
       try {
+        // Supabaseクライアントの初期化
+        const supabase = createClient();
+        
         // 現在のユーザーIDを取得
         const { data } = await supabase.auth.getUser();
         
@@ -86,6 +100,9 @@ export const createSettingsActions = (
       });
       
       try {
+        // Supabaseクライアントの初期化
+        const supabase = createClient();
+        
         // 現在のユーザーIDを取得
         const { data } = await supabase.auth.getUser();
         
@@ -126,6 +143,9 @@ export const createSettingsActions = (
       });
       
       try {
+        // Supabaseクライアントの初期化
+        const supabase = createClient();
+        
         // 現在のユーザーIDを取得
         const { data } = await supabase.auth.getUser();
         
@@ -166,6 +186,9 @@ export const createSettingsActions = (
       });
       
       try {
+        // Supabaseクライアントの初期化
+        const supabase = createClient();
+        
         // 現在のユーザーIDを取得
         const { data } = await supabase.auth.getUser();
         
@@ -207,6 +230,9 @@ export const createSettingsActions = (
       });
       
       try {
+        // Supabaseクライアントの初期化
+        const supabase = createClient();
+        
         // 現在のユーザーIDを取得
         const { data } = await supabase.auth.getUser();
         
@@ -253,6 +279,9 @@ export const createSettingsActions = (
       });
       
       try {
+        // Supabaseクライアントの初期化
+        const supabase = createClient();
+        
         // 現在のユーザーIDを取得
         const { data } = await supabase.auth.getUser();
         
@@ -266,8 +295,8 @@ export const createSettingsActions = (
         const updatedSettings = await upsertSymbolSettings(
           userId,
           settings.symbol,
-          settings.is_favorite,
-          settings.display_order
+          nullsafeBoolean(settings.is_favorite),
+          nullsafeNumber(settings.display_order)
         );
         
         set((state) => {
@@ -311,6 +340,9 @@ export const createSettingsActions = (
       });
       
       try {
+        // Supabaseクライアントの初期化
+        const supabase = createClient();
+        
         // 現在のユーザーIDを取得
         const { data } = await supabase.auth.getUser();
         
@@ -325,10 +357,10 @@ export const createSettingsActions = (
           userId,
           settings.timeframe,
           settings.chart_type,
-          settings.show_volume,
-          settings.show_grid,
-          settings.show_legend,
-          settings.theme
+          nullsafeBoolean(settings.show_volume),
+          nullsafeBoolean(settings.show_grid),
+          nullsafeBoolean(settings.show_legend),
+          nullsafeString(settings.theme)
         );
         
         set((state) => {
@@ -364,6 +396,9 @@ export const createSettingsActions = (
       });
       
       try {
+        // Supabaseクライアントの初期化
+        const supabase = createClient();
+        
         // 現在のユーザーIDを取得
         const { data } = await supabase.auth.getUser();
         
@@ -377,8 +412,8 @@ export const createSettingsActions = (
         const newSettings = await upsertSymbolSettings(
           userId,
           settings.symbol,
-          settings.is_favorite,
-          settings.display_order
+          nullsafeBoolean(settings.is_favorite),
+          nullsafeNumber(settings.display_order)
         );
         
         set((state) => {

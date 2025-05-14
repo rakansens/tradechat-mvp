@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils'
 import NewThreadModal from './NewThreadModal'
 import { Input } from '@/components/ui/input'
 import { SettingsModal } from './ui/SettingsModal'
-import { supabase } from '@/lib/supabase/supabase'
+import { useAuth } from '@/hooks/auth/useAuth'
 
 type Conversation = {
   id: string
@@ -39,17 +39,15 @@ export function Sidebar() {
   const queryId = searchParams?.get('conversationId')
   const activeId = queryId || (pathId && pathId !== 'chat' ? pathId : null)
 
-  // ユーザーIDを取得
+  // ユーザー情報の取得
+  const { user } = useAuth();
+  
+  // ユーザーIDを設定
   useEffect(() => {
-    const checkUser = async () => {
-      const { data } = await supabase.auth.getUser();
-      if (data.user) {
-        setUserId(data.user.id);
-      }
-    };
-
-    checkUser();
-  }, []);
+    if (user) {
+      setUserId(user.id);
+    }
+  }, [user]);
 
   // 会話一覧を取得
   const fetchConversations = async () => {
