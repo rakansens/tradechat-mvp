@@ -291,3 +291,40 @@ export const calculateBacktestStats = (
     netProfit: totalProfit - totalLoss,
   };
 };
+
+/**
+ * NOTE: この機能は現在の開発フェーズでは実装優先度が低いため保留中
+ * 
+ * 今後の実装予定:
+ * - バックテスト履歴の保存、取得、削除機能
+ * - チャートデータとの連携
+ * - 結果表示ダッシュボード
+ * - パフォーマンス統計の計算
+ * - CSVエクスポート機能
+ * 
+ * 実装時期: 未定（コアユーザー要望に応じて検討）
+ */
+
+// バックテストを実行（プレースホルダー）
+export const runBacktest = async (userId: string, params: any): Promise<any> => {
+  console.warn('バックテスト機能は現在実装されていません');
+  return { message: 'この機能は現在開発中です' };
+};
+
+// バックテスト結果を保存（プレースホルダー）
+export const saveBacktestResult = async (userId: string, result: any): Promise<any> => {
+  console.warn('バックテスト保存機能は現在実装されていません');
+  return { message: 'この機能は現在開発中です' };
+};
+
+// バックテスト履歴を取得（プレースホルダー）
+export const getBacktestHistory = async (userId: string): Promise<any[]> => {
+  console.warn('バックテスト履歴取得機能は現在実装されていません');
+  return [];
+};
+
+// バックテスト結果を削除（プレースホルダー）
+export const deleteBacktestResult = async (resultId: string): Promise<boolean> => {
+  console.warn('バックテスト削除機能は現在実装されていません');
+  return true;
+};

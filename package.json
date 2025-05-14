@@ -98,6 +98,9 @@
     "zustand": "latest"
   },
   "devDependencies": {
+    "@babel/preset-env": "^7.27.2",
+    "@babel/preset-react": "^7.27.1",
+    "@babel/preset-typescript": "^7.27.1",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",
@@ -109,6 +112,7 @@
     "@types/react-dom": "^19",
     "@types/ws": "^8.18.1",
     "axios-mock-adapter": "^2.1.0",
+    "babel-jest": "^29.7.0",
     "concurrently": "^9.1.2",
     "dotenv": "^16.5.0",
     "esbuild-plugin-tsconfig-paths": "^1.0.1",

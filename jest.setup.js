@@ -40,6 +40,10 @@ global.document = global.document || {
   querySelector: jest.fn()
 };
 
+// Supabase認証テスト用の環境変数
+process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://example.supabase.co';
+process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key';
+
 // OpenAI API Keyの環境変数設定
 process.env.OPENAI_API_KEY = 'test-api-key';
 

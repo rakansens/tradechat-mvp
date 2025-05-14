@@ -11,13 +11,14 @@ module.exports = {
     '^lightweight-charts$': '<rootDir>/__tests__/lightweight-charts.js'
   },
   transform: {
-    '^.+\\.tsx?$': ['ts-jest', {
-      tsconfig: 'tsconfig.json',
-      jsx: 'react-jsx',
-      diagnostics: {
-        ignoreCodes: [151001]
-      }
+    '^.+\\.(ts|tsx)$': ['babel-jest', {
+      presets: [
+        ['@babel/preset-env', { targets: { node: 'current' } }],
+        '@babel/preset-typescript',
+        ['@babel/preset-react', { runtime: 'automatic' }],
+      ],
     }],
+    '^.+\\.(js|jsx)$': ['babel-jest']
   },
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],

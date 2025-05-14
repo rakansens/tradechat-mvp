@@ -224,7 +224,6 @@ export function Sidebar() {
       <SettingsModal
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
-        userId={userId}
       />
     </div>
   )

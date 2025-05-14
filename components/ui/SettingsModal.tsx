@@ -8,16 +8,18 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from '@/components/ui/use-toast';
+import { getUserSettings, updateUserSettings } from '@/lib/supabase/supabase-settings';
+import { useAuth } from '@/hooks/auth/useAuth';
 
 interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  userId?: string;
 }
 
-export function SettingsModal({ isOpen, onClose, userId }: SettingsModalProps) {
+export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const { user } = useAuth();
   const [settings, setSettings] = useState<any>({
     theme: 'dark',
     notifications: {
@@ -38,24 +40,21 @@ export function SettingsModal({ isOpen, onClose, userId }: SettingsModalProps) {
   });
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && user) {
       fetchSettings();
     }
-  }, [isOpen]);
+  }, [isOpen, user]);
 
   const fetchSettings = async () => {
+    if (!user) return;
+    
     setIsLoading(true);
     try {
-      const response = await fetch('/api/settings');
+      // Supabaseから直接設定を取得
+      const userSettings = await getUserSettings(user.id);
       
-      if (!response.ok) {
-        throw new Error('設定の取得に失敗しました');
-      }
-      
-      const data = await response.json();
-      
-      if (data && Object.keys(data).length > 0) {
-        setSettings(data);
+      if (userSettings && Object.keys(userSettings).length > 0) {
+        setSettings(userSettings);
       }
     } catch (error) {
       console.error('設定の取得に失敗しました:', error);
@@ -70,19 +69,12 @@ export function SettingsModal({ isOpen, onClose, userId }: SettingsModalProps) {
   };
 
   const saveSettings = async () => {
+    if (!user) return;
+    
     setIsSaving(true);
     try {
-      const response = await fetch('/api/settings', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(settings),
-      });
-      
-      if (!response.ok) {
-        throw new Error('設定の保存に失敗しました');
-      }
+      // Supabaseに直接設定を保存
+      await updateUserSettings(user.id, settings);
       
       toast({
         title: '設定を保存しました',
@@ -304,7 +296,7 @@ export function SettingsModal({ isOpen, onClose, userId }: SettingsModalProps) {
               <Button variant="outline" onClick={onClose}>
                 キャンセル
               </Button>
-              <Button onClick={saveSettings} disabled={isSaving}>
+              <Button onClick={saveSettings} disabled={isSaving || !user}>
                 {isSaving ? '保存中...' : '設定を保存'}
               </Button>
             </div>

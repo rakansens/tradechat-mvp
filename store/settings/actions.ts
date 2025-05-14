@@ -2,8 +2,19 @@
 // 設定ストアのアクション
 // 作成日: 2025/6/X - 設定ストアのリファクタリング
 // 更新日: 2025/6/X - useToast依存を削除し、カスタムイベントを使用するように修正
+// 更新日: 2025/6/15 - APIエンドポイント経由からSupabase関数を直接呼び出すように修正
 
 import { SettingsActions, SettingsState, UserSettings, ChartSettings, SymbolSettings } from './types';
+import { 
+  getUserSettings, 
+  updateUserSettings,
+  getChartSettings,
+  createChartSettings,
+  updateChartSettings as updateChartSettingsDB,
+  getSymbolSettings,
+  upsertSymbolSettings
+} from '@/lib/supabase/supabase-settings';
+import { supabase } from '@/lib/supabase/supabase';
 
 // トースト表示用イベントの型定義
 interface ToastEvent {
@@ -35,16 +46,20 @@ export const createSettingsActions = (
       });
       
       try {
-        const response = await fetch('/api/settings?type=user');
+        // 現在のユーザーIDを取得
+        const { data } = await supabase.auth.getUser();
         
-        if (!response.ok) {
-          throw new Error(`設定の取得に失敗しました: ${response.statusText}`);
+        if (!data.user) {
+          throw new Error('認証が必要です');
         }
         
-        const settings = await response.json();
+        const userId = data.user.id;
+        
+        // Supabaseから直接設定を取得
+        const settings = await getUserSettings(userId);
         
         set((state) => {
-          state.userSettings = settings;
+          state.userSettings = settings || {};
           state.isLoading = false;
         });
         
@@ -71,13 +86,17 @@ export const createSettingsActions = (
       });
       
       try {
-        const response = await fetch('/api/settings?type=chart');
+        // 現在のユーザーIDを取得
+        const { data } = await supabase.auth.getUser();
         
-        if (!response.ok) {
-          throw new Error(`チャート設定の取得に失敗しました: ${response.statusText}`);
+        if (!data.user) {
+          throw new Error('認証が必要です');
         }
         
-        const settings = await response.json();
+        const userId = data.user.id;
+        
+        // Supabaseから直接チャート設定を取得
+        const settings = await getChartSettings(userId);
         
         set((state) => {
           state.chartSettings = settings;
@@ -107,13 +126,17 @@ export const createSettingsActions = (
       });
       
       try {
-        const response = await fetch('/api/settings?type=symbol');
+        // 現在のユーザーIDを取得
+        const { data } = await supabase.auth.getUser();
         
-        if (!response.ok) {
-          throw new Error(`シンボル設定の取得に失敗しました: ${response.statusText}`);
+        if (!data.user) {
+          throw new Error('認証が必要です');
         }
         
-        const settings = await response.json();
+        const userId = data.user.id;
+        
+        // Supabaseから直接シンボル設定を取得
+        const settings = await getSymbolSettings(userId);
         
         set((state) => {
           state.symbolSettings = settings;
@@ -143,30 +166,25 @@ export const createSettingsActions = (
       });
       
       try {
-        const response = await fetch('/api/settings', {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            type: 'user',
-            settings,
-          }),
-        });
+        // 現在のユーザーIDを取得
+        const { data } = await supabase.auth.getUser();
         
-        if (!response.ok) {
-          throw new Error(`設定の更新に失敗しました: ${response.statusText}`);
+        if (!data.user) {
+          throw new Error('認証が必要です');
         }
         
-        const updatedSettings = await response.json();
+        const userId = data.user.id;
+        
+        // Supabaseを使用して直接設定を更新
+        await updateUserSettings(userId, settings);
         
         set((state) => {
-          state.userSettings = updatedSettings;
+          state.userSettings = settings;
           state.isLoading = false;
         });
         
         showToast('更新完了', '設定が保存されました');
-        return updatedSettings;
+        return settings;
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : '不明なエラー';
         console.error('設定更新エラー:', error);
@@ -189,22 +207,15 @@ export const createSettingsActions = (
       });
       
       try {
-        const response = await fetch('/api/settings', {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            type: 'chart',
-            settings,
-          }),
-        });
+        // 現在のユーザーIDを取得
+        const { data } = await supabase.auth.getUser();
         
-        if (!response.ok) {
-          throw new Error(`チャート設定の更新に失敗しました: ${response.statusText}`);
+        if (!data.user) {
+          throw new Error('認証が必要です');
         }
         
-        const updatedSettings = await response.json();
+        // Supabaseを使用して直接チャート設定を更新
+        const updatedSettings = await updateChartSettingsDB(settings.id, settings);
         
         set((state) => {
           // チャート設定配列を更新
@@ -242,49 +253,36 @@ export const createSettingsActions = (
       });
       
       try {
-        const response = await fetch('/api/settings', {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            type: 'symbol',
-            settings,
-          }),
-        });
+        // 現在のユーザーIDを取得
+        const { data } = await supabase.auth.getUser();
         
-        if (!response.ok) {
-          throw new Error(`シンボル設定の更新に失敗しました: ${response.statusText}`);
+        if (!data.user) {
+          throw new Error('認証が必要です');
         }
         
-        const updatedSettings = await response.json();
+        const userId = data.user.id;
+        
+        // 単一のシンボル設定更新
+        const updatedSettings = await upsertSymbolSettings(
+          userId,
+          settings.symbol,
+          settings.is_favorite,
+          settings.display_order
+        );
         
         set((state) => {
-          // 更新が単一か複数かで処理を分ける
-          if (Array.isArray(updatedSettings)) {
-            // 複数のシンボル設定を更新
-            const updatedSymbols = updatedSettings.map((s) => s.symbol);
-            if (state.symbolSettings) {
-              state.symbolSettings = state.symbolSettings.filter(
-                (s) => !updatedSymbols.includes(s.symbol)
-              ).concat(updatedSettings);
-            } else {
-              state.symbolSettings = updatedSettings;
+          // 単一のシンボル設定を更新
+          if (state.symbolSettings) {
+            state.symbolSettings = state.symbolSettings.map((s) => 
+              s.symbol === updatedSettings.symbol ? updatedSettings : s
+            );
+            
+            // 存在しない場合は追加
+            if (!state.symbolSettings.some((s) => s.symbol === updatedSettings.symbol)) {
+              state.symbolSettings.push(updatedSettings);
             }
           } else {
-            // 単一のシンボル設定を更新
-            if (state.symbolSettings) {
-              state.symbolSettings = state.symbolSettings.map((s) => 
-                s.symbol === updatedSettings.symbol ? updatedSettings : s
-              );
-              
-              // 存在しない場合は追加
-              if (!state.symbolSettings.some((s) => s.symbol === updatedSettings.symbol)) {
-                state.symbolSettings.push(updatedSettings);
-              }
-            } else {
-              state.symbolSettings = [updatedSettings];
-            }
+            state.symbolSettings = [updatedSettings];
           }
           state.isLoading = false;
         });
@@ -313,22 +311,25 @@ export const createSettingsActions = (
       });
       
       try {
-        const response = await fetch('/api/settings', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            type: 'chart',
-            settings,
-          }),
-        });
+        // 現在のユーザーIDを取得
+        const { data } = await supabase.auth.getUser();
         
-        if (!response.ok) {
-          throw new Error(`チャート設定の作成に失敗しました: ${response.statusText}`);
+        if (!data.user) {
+          throw new Error('認証が必要です');
         }
         
-        const newSettings = await response.json();
+        const userId = data.user.id;
+        
+        // Supabaseを使用して直接チャート設定を作成
+        const newSettings = await createChartSettings(
+          userId,
+          settings.timeframe,
+          settings.chart_type,
+          settings.show_volume,
+          settings.show_grid,
+          settings.show_legend,
+          settings.theme
+        );
         
         set((state) => {
           if (state.chartSettings) {
@@ -363,22 +364,22 @@ export const createSettingsActions = (
       });
       
       try {
-        const response = await fetch('/api/settings', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            type: 'symbol',
-            settings,
-          }),
-        });
+        // 現在のユーザーIDを取得
+        const { data } = await supabase.auth.getUser();
         
-        if (!response.ok) {
-          throw new Error(`シンボル設定の作成に失敗しました: ${response.statusText}`);
+        if (!data.user) {
+          throw new Error('認証が必要です');
         }
         
-        const newSettings = await response.json();
+        const userId = data.user.id;
+        
+        // Supabaseを使用して直接シンボル設定を作成
+        const newSettings = await upsertSymbolSettings(
+          userId,
+          settings.symbol,
+          settings.is_favorite,
+          settings.display_order
+        );
         
         set((state) => {
           if (state.symbolSettings) {
