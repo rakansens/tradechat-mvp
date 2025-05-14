@@ -1,11 +1,12 @@
 // store/chat/actions.ts
 // チャットスライスのアクション
 // 更新: 2025/5/20 - 会話IDごとのネームスペースをサポート
+// 更新: 2025/5/28 - システムプロンプト情報をサポート
 
 // 循環参照を避けるため、直接インポートせずに動的にインポートする
 // import { useRootStore } from '../rootStore'
 import type { ExtendedMessage, ProposalType } from '@/types/chat'
-import type { ChatSliceState } from './state'
+import type { ChatSliceState, ConversationState } from './state'
 import { logger } from '@/utils/common'
 
 // チャットスライスのアクション定義
@@ -29,9 +30,12 @@ export interface ChatSliceActions {
   
   // 会話管理アクション
   setActiveConversation: (conversationId: string) => void
-  createConversation: (title: string, initialMessages?: ExtendedMessage[]) => string
+  createConversation: (title: string, systemPrompt?: string, initialMessages?: ExtendedMessage[]) => Promise<string>
   setConversationMessages: (conversationId: string, messages: ExtendedMessage[]) => void
   updateConversationMessage: (conversationId: string, messageId: string, updatedMessage: Partial<ExtendedMessage>) => void
+  
+  // 会話設定の更新アクション
+  updateConversationSettings: (conversationId: string, title: string, systemPrompt?: string | null) => Promise<void>
 }
 
 // チャートとエントリーストアからのデータ参照のためのヘルパー関数
@@ -135,21 +139,25 @@ export const createChatActions = (
     const targetConversationId = conversationId || activeConversationId || 'default'
     
     // 会話の状態を取得
-    const conversationState = get().byConversation[targetConversationId]
+    let conversationState = get().byConversation[targetConversationId]
     
     // 会話がない場合は作成
     if (!conversationState) {
+      conversationState = {
+        messages: [],
+        isSearching: false,
+        input: "",
+        systemPrompt: null,
+        title: `会話 ${new Date().toLocaleDateString()}`,
+      }
+      
       set((state) => {
-        state.byConversation[targetConversationId] = {
-          messages: [],
-          isSearching: false,
-          input: "",
-        }
+        state.byConversation[targetConversationId] = conversationState
       })
     }
     
     // 会話のメッセージを取得
-    const conversationMessages = conversationState?.messages || []
+    const conversationMessages = conversationState.messages || []
     
     // ユーザーメッセージを追加
     const userMessage: ExtendedMessage = {
@@ -394,6 +402,8 @@ export const createChatActions = (
           messages: [],
           isSearching: false,
           input: "",
+          systemPrompt: null,
+          title: `会話 ${new Date().toLocaleDateString()}`,
         }
       }
       
@@ -407,28 +417,57 @@ export const createChatActions = (
     })
   },
   
-  createConversation: (title, initialMessages = []) => {
-    const conversationId = `conversation-${Date.now()}`
-    
-    set((state) => {
-      // 新しい会話を作成
-      state.byConversation[conversationId] = {
-        messages: initialMessages,
-        isSearching: false,
-        input: "",
+  createConversation: async (title, systemPrompt, initialMessages = []) => {
+    try {
+      // APIを使用して会話を作成
+      const response = await fetch('/api/conversations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          title, 
+          system_prompt: systemPrompt || null 
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('会話の作成に失敗しました')
       }
+
+      const newConversation = await response.json()
+      const conversationId = newConversation.id
       
-      // アクティブな会話IDを更新
-      state.activeConversationId = conversationId
+      set((state) => {
+        // 新しい会話を作成
+        state.byConversation[conversationId] = {
+          messages: initialMessages,
+          isSearching: false,
+          input: "",
+          systemPrompt: systemPrompt || null,
+          title
+        }
+        
+        // アクティブな会話IDを更新
+        state.activeConversationId = conversationId
+        
+        // メインの状態を更新
+        state.messages = initialMessages
+        state.isSearching = false
+        state.input = ""
+      })
       
-      // メインの状態を更新
-      state.messages = initialMessages
-      state.isSearching = false
-      state.input = ""
-    })
-    
-    // 会話IDを返す
-    return conversationId
+      // 会話作成イベントを発行
+      window.dispatchEvent(new CustomEvent('conversationCreated', { 
+        detail: { conversationId } 
+      }))
+      
+      // 会話IDを返す
+      return conversationId
+    } catch (error) {
+      console.error('Failed to create conversation:', error)
+      throw error
+    }
   },
   
   setConversationMessages: (conversationId, messages) => {
@@ -439,6 +478,8 @@ export const createChatActions = (
           messages: [],
           isSearching: false,
           input: "",
+          systemPrompt: null,
+          title: `会話 ${new Date().toLocaleDateString()}`,
         }
       }
       
@@ -579,5 +620,48 @@ export const createChatActions = (
     // アクティブな会話IDを取得して処理する
     const { activeConversationId = 'default' } = get()
     // 以下、実装は同様...
+  },
+  
+  // 会話設定の更新アクション
+  updateConversationSettings: async (conversationId, title, systemPrompt) => {
+    try {
+      // APIを使用して会話を更新
+      const response = await fetch(`/api/conversations/${conversationId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          title, 
+          system_prompt: systemPrompt || null 
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('会話の更新に失敗しました')
+      }
+
+      const updatedConversation = await response.json()
+      
+      set((state) => {
+        // 会話が存在しない場合はスキップ
+        if (!state.byConversation[conversationId]) return
+        
+        // 会話の設定を更新
+        state.byConversation[conversationId] = {
+          ...state.byConversation[conversationId],
+          title,
+          systemPrompt: systemPrompt || null
+        }
+      })
+      
+      // 会話更新イベントを発行
+      window.dispatchEvent(new CustomEvent('conversationUpdated', { 
+        detail: { conversationId } 
+      }))
+    } catch (error) {
+      console.error('Failed to update conversation settings:', error)
+      throw error
+    }
   }
 })

@@ -7,6 +7,7 @@ import { getCurrentUser } from '@/lib/supabase/supabase-auth';
 import { supabase } from '@/lib/supabase';
 import { askAgent } from '@/lib/agent';
 import { revalidatePath } from 'next/cache';
+import { MessageRole } from '@/types/chat/message';
 
 // 指定された会話のメッセージを取得
 export async function GET(
@@ -158,12 +159,12 @@ export async function POST(
     // Mastraエージェントに問い合わせ
     const aiResponse = await askAgent(
       recentMessages.map((msg) => ({
-        role: msg.role,
+        role: msg.role as MessageRole,
         content: msg.content,
       })),
       {
         threadId: conversationId,
-        instructions: conversation.system_prompt || undefined,
+        instructions: conversation.system_prompt === null ? undefined : conversation.system_prompt,
       }
     );
 

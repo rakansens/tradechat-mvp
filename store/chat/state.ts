@@ -1,23 +1,30 @@
 // store/chat/state.ts
 // チャットスライスの状態と初期値を定義
 // 更新: 2025/5/20 - 会話IDごとのネームスペースをサポート
+// 更新: 2025/5/28 - システムプロンプト情報をサポート
 
 import type { ExtendedMessage } from '@/types/chat'
+
+// 会話状態インターフェース
+export interface ConversationState {
+  messages: ExtendedMessage[];
+  isSearching: boolean;
+  input: string;
+  // システムプロンプト情報を追加
+  systemPrompt?: string | null;
+  title: string;
+}
 
 // チャットスライスの状態インターフェース
 export interface ChatSliceState {
   // 会話IDごとのメッセージを管理
-  byConversation: Record<string, {
-    messages: ExtendedMessage[]
-    isSearching: boolean
-    input: string
-  }>
+  byConversation: Record<string, ConversationState>;
   // 後方互換性のためのフラットなメッセージリスト
-  messages: ExtendedMessage[]
-  isSearching: boolean
-  input: string
+  messages: ExtendedMessage[];
+  isSearching: boolean;
+  input: string;
   // 現在アクティブな会話ID
-  activeConversationId: string | null
+  activeConversationId: string | null;
 }
 
 // 初期メッセージの設定
@@ -53,6 +60,8 @@ export const initialChatState: ChatSliceState = {
       messages: initialMessages,
       isSearching: false,
       input: "",
+      systemPrompt: null,
+      title: "Trading Assistant"
     }
   },
   // 後方互換性のための直接アクセス可能なメッセージリスト

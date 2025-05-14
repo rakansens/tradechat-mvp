@@ -8,6 +8,8 @@
 // チャット関連の型定義をすべてエクスポート
 export * from './base';
 
+// メッセージ型定義
+export * from './message';
+
 // T-4で実装予定
-// export * from './message';
 // export * from './proposal'; 
