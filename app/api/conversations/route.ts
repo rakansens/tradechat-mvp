@@ -1,10 +1,11 @@
 // app/api/conversations/route.ts
 // 会話一覧と作成のためのAPIエンドポイント
 // 作成日: 2025/5/20
+// 更新日: 2025/5/27 - データアクセスレイヤーを使用するように変更
 
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/supabase/supabase-auth';
-import { supabase } from '@/lib/supabase';
+import { getConversations, createConversation } from '@/lib/supabase/supabase-conversations';
 import { revalidatePath } from 'next/cache';
 
 // 会話一覧を取得
@@ -16,19 +17,9 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // ユーザーの会話一覧を取得（更新日時の降順）
-    const { data, error } = await supabase
-      .from('conversations')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('updated_at', { ascending: false });
-
-    if (error) {
-      console.error('Failed to fetch conversations:', error);
-      return NextResponse.json({ error: 'Failed to fetch conversations' }, { status: 500 });
-    }
-
-    return NextResponse.json(data);
+    // データアクセスレイヤーを使用して会話一覧を取得
+    const conversations = await getConversations(user.id);
+    return NextResponse.json(conversations);
   } catch (error) {
     console.error('Error in GET /api/conversations:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -52,28 +43,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // 新しい会話を作成
-    const { data, error } = await supabase
-      .from('conversations')
-      .insert([
-        {
-          user_id: user.id,
-          title,
-          system_prompt: system_prompt || null,
-        },
-      ])
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Failed to create conversation:', error);
-      return NextResponse.json({ error: 'Failed to create conversation' }, { status: 500 });
-    }
+    // データアクセスレイヤーを使用して会話を作成
+    const newConversation = await createConversation(
+      user.id,
+      title,
+      system_prompt
+    );
 
     // キャッシュを再検証
     revalidatePath('/chat');
 
-    return NextResponse.json(data);
+    return NextResponse.json(newConversation);
   } catch (error) {
     console.error('Error in POST /api/conversations:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

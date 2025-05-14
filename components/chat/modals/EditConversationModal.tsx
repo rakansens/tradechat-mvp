@@ -1,9 +1,8 @@
 'use client'
 
-// components/chat/modals/NewThreadModal.tsx
-// 新規会話作成モーダル
-// 作成日: 2025/5/21
-// 更新日: 2025/5/27 - システムプロンプト入力欄を追加
+// components/chat/modals/EditConversationModal.tsx
+// 会話設定編集モーダル
+// 作成日: 2025/5/27 - システムプロンプト編集機能を実装
 // 更新日: 2025/5/28 - 型定義を@/types/network/supabaseからインポートするように変更
 
 import { useState, useRef, useEffect } from 'react'
@@ -20,56 +19,60 @@ import { Textarea } from '@/components/ui/textarea'
 import { Loader2 } from 'lucide-react'
 import { Tables } from '@/types/network/supabase'
 
-interface NewThreadModalProps {
+interface EditConversationModalProps {
   isOpen: boolean
   onClose: () => void
-  onThreadCreated: (newThread: Tables<'conversations'>) => void
+  onSave: (updatedConversation: Tables<'conversations'>) => void
+  conversation: Tables<'conversations'>
 }
 
-export default function NewThreadModal({
+export default function EditConversationModal({
   isOpen,
   onClose,
-  onThreadCreated,
-}: NewThreadModalProps) {
+  onSave,
+  conversation,
+}: EditConversationModalProps) {
   const [title, setTitle] = useState('')
   const [systemPrompt, setSystemPrompt] = useState('')
-  const [isCreating, setIsCreating] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  // モーダルが開いたときにタイトル入力欄にフォーカス
+  // 会話データをフォームにセット
   useEffect(() => {
-    if (isOpen && inputRef.current) {
+    if (isOpen && conversation) {
+      setTitle(conversation.title || '')
+      setSystemPrompt(conversation.system_prompt || '')
+      
+      // タイトル入力欄にフォーカス
       setTimeout(() => {
         inputRef.current?.focus()
       }, 100)
     }
-  }, [isOpen])
+  }, [isOpen, conversation])
 
   // モーダルが閉じるときにフォームをリセット
   useEffect(() => {
     if (!isOpen) {
-      setTitle('')
-      setSystemPrompt('')
       setError(null)
-      setIsCreating(false)
+      setIsSaving(false)
     }
   }, [isOpen])
 
-  // 新規会話作成処理
-  const handleCreateThread = async () => {
+  // 会話設定の保存処理
+  const handleSaveSettings = async () => {
     // バリデーション
     if (!title.trim()) {
       setError('タイトルを入力してください')
       return
     }
 
-    setIsCreating(true)
+    setIsSaving(true)
     setError(null)
 
     try {
-      const res = await fetch('/api/conversations', {
-        method: 'POST',
+      const res = await fetch(`/api/conversations/${conversation.id}`, {
+        method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -80,15 +83,15 @@ export default function NewThreadModal({
       })
 
       if (!res.ok) {
-        throw new Error('会話の作成に失敗しました')
+        throw new Error('会話の更新に失敗しました')
       }
 
-      const newThread = await res.json()
-      onThreadCreated(newThread)
+      const updatedConversation = await res.json()
+      onSave(updatedConversation)
     } catch (error) {
-      console.error('Error creating thread:', error)
-      setError(error instanceof Error ? error.message : '会話の作成に失敗しました')
-      setIsCreating(false)
+      console.error('Error updating conversation:', error)
+      setError(error instanceof Error ? error.message : '会話の更新に失敗しました')
+      setIsSaving(false)
     }
   }
 
@@ -96,7 +99,7 @@ export default function NewThreadModal({
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-[425px] bg-[#1e2130] border-gray-700 text-white">
         <DialogHeader>
-          <DialogTitle>新しい会話を作成</DialogTitle>
+          <DialogTitle>会話設定の編集</DialogTitle>
         </DialogHeader>
 
         <div className="grid gap-4 py-4">
@@ -111,14 +114,6 @@ export default function NewThreadModal({
               onChange={(e) => setTitle(e.target.value)}
               placeholder="例: Bitcoin価格分析"
               className="col-span-3 bg-[#262a37] border-gray-700"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey && !isCreating) {
-                  e.preventDefault()
-                  if (document.activeElement === inputRef.current) {
-                    handleCreateThread()
-                  }
-                }
-              }}
             />
           </div>
           
@@ -133,6 +128,9 @@ export default function NewThreadModal({
               placeholder="AIの振る舞いを設定するシステムプロンプトを入力（例：あなたはビットコイン分析の専門家です）"
               className="col-span-3 min-h-[100px] bg-[#262a37] border-gray-700"
             />
+            <p className="text-xs text-gray-400">
+              システムプロンプトは会話全体のAIの振る舞いを決定します。AIの役割や専門知識、返答スタイルなどを指定できます。
+            </p>
           </div>
           
           {error && <p className="text-sm text-red-400">{error}</p>}
@@ -142,23 +140,23 @@ export default function NewThreadModal({
           <Button 
             variant="outline" 
             onClick={onClose} 
-            disabled={isCreating}
+            disabled={isSaving}
             className="border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white"
           >
             キャンセル
           </Button>
           <Button 
-            onClick={handleCreateThread} 
-            disabled={isCreating || !title.trim()}
+            onClick={handleSaveSettings} 
+            disabled={isSaving || !title.trim()}
             className="bg-purple-600 hover:bg-purple-700"
           >
-            {isCreating ? (
+            {isSaving ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                作成中...
+                保存中...
               </>
             ) : (
-              '作成'
+              '保存'
             )}
           </Button>
         </DialogFooter>
