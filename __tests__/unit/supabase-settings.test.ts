@@ -13,6 +13,7 @@ jest.mock('@/lib/supabase/supabase', () => {
         insert: jest.fn().mockReturnThis(),
         update: jest.fn().mockReturnThis(),
         delete: jest.fn().mockReturnThis(),
+        upsert: jest.fn().mockReturnThis(),
         eq: jest.fn().mockReturnThis(),
         single: jest.fn().mockReturnThis(),
         order: jest.fn().mockReturnThis(),
@@ -23,14 +24,9 @@ jest.mock('@/lib/supabase/supabase', () => {
 
 // テスト用データ
 const testUserSettings = {
-  id: 'test-user-id',
-  settings: {
-    theme: 'dark',
-    language: 'ja',
-    notifications: true
-  },
-  created_at: new Date().toISOString(),
-  updated_at: new Date().toISOString()
+  theme: 'dark',
+  language: 'ja',
+  notifications: true
 };
 
 const testChartSetting = {
@@ -47,6 +43,7 @@ const testChartSetting = {
 };
 
 const testSymbolSetting = {
+  id: 'test-symbol-id',
   symbol: 'BTC/USD',
   user_id: 'test-user-id',
   is_favorite: true,
@@ -63,21 +60,22 @@ describe('設定管理機能のテスト', () => {
     
     // 関数をモック
     jest.spyOn(settingsModule, 'getUserSettings').mockResolvedValue(testUserSettings);
-    jest.spyOn(settingsModule, 'updateUserSettings').mockResolvedValue(testUserSettings);
+    jest.spyOn(settingsModule, 'updateUserSettings').mockResolvedValue(true);
     jest.spyOn(settingsModule, 'getChartSettings').mockResolvedValue([testChartSetting]);
-    jest.spyOn(settingsModule, 'createChartSettings').mockResolvedValue(testChartSetting);
-    jest.spyOn(settingsModule, 'updateChartSettings').mockResolvedValue(testChartSetting);
-    jest.spyOn(settingsModule, 'deleteChartSettings').mockResolvedValue(true);
     jest.spyOn(settingsModule, 'getSymbolSettings').mockResolvedValue([testSymbolSetting]);
-    jest.spyOn(settingsModule, 'getSymbolSettings').mockImplementation(async (userId, symbol) => {
-      if (symbol) {
-        return testSymbolSetting;
-      }
-      return [testSymbolSetting];
-    });
-    jest.spyOn(settingsModule, 'createSymbolSettings').mockResolvedValue(testSymbolSetting);
+    jest.spyOn(settingsModule, 'getFavoriteSymbols').mockResolvedValue([testSymbolSetting]);
     jest.spyOn(settingsModule, 'upsertSymbolSettings').mockResolvedValue(testSymbolSetting);
     jest.spyOn(settingsModule, 'deleteSymbolSettings').mockResolvedValue(true);
+    
+    // これらはパラメータ型を変更する必要があります
+    const createChartSettings = jest.spyOn(settingsModule, 'createChartSettings');
+    createChartSettings.mockImplementation(async () => testChartSetting);
+    
+    const updateChartSettings = jest.spyOn(settingsModule, 'updateChartSettings');
+    updateChartSettings.mockImplementation(async () => testChartSetting);
+    
+    const deleteChartSettings = jest.spyOn(settingsModule, 'deleteChartSettings');
+    deleteChartSettings.mockImplementation(async () => true);
   });
 
   describe('ユーザー設定テスト', () => {
@@ -98,7 +96,7 @@ describe('設定管理機能のテスト', () => {
         
         const result = await settingsModule.updateUserSettings('test-user-id', newSettings);
         
-        expect(result).toEqual(testUserSettings);
+        expect(result).toBe(true);
         expect(settingsModule.updateUserSettings).toHaveBeenCalledWith('test-user-id', newSettings);
       });
     });
@@ -115,20 +113,26 @@ describe('設定管理機能のテスト', () => {
 
     describe('createChartSettings', () => {
       it('チャート設定を正常に作成できること', async () => {
-        const settingData = {
-          user_id: 'test-user-id',
-          timeframe: '1h',
-          chart_type: 'candle',
-          show_volume: true,
-          show_grid: true,
-          show_legend: true,
-          theme: 'dark'
-        };
-        
-        const result = await settingsModule.createChartSettings(settingData);
+        const result = await settingsModule.createChartSettings(
+          'test-user-id',
+          '1h',
+          'candle',
+          true,
+          true,
+          true,
+          'dark'
+        );
         
         expect(result).toEqual(testChartSetting);
-        expect(settingsModule.createChartSettings).toHaveBeenCalledWith(settingData);
+        expect(settingsModule.createChartSettings).toHaveBeenCalledWith(
+          'test-user-id',
+          '1h',
+          'candle',
+          true,
+          true,
+          true,
+          'dark'
+        );
       });
     });
 
@@ -165,41 +169,30 @@ describe('設定管理機能のテスト', () => {
       });
     });
 
-    describe('getSymbolSettings with symbol', () => {
-      it('シンボルによる設定を正常に取得できること', async () => {
-        const result = await settingsModule.getSymbolSettings('test-user-id', 'BTC/USD');
-        expect(result).toEqual(testSymbolSetting);
-        expect(settingsModule.getSymbolSettings).toHaveBeenCalledWith('test-user-id', 'BTC/USD');
-      });
-    });
-
-    describe('createSymbolSettings', () => {
-      it('シンボル設定を正常に作成できること', async () => {
-        const settingData = {
-          user_id: 'test-user-id',
-          symbol: 'ETH/USD',
-          is_favorite: true,
-          display_order: 2
-        };
-        
-        const result = await settingsModule.createSymbolSettings(settingData);
-        
-        expect(result).toEqual(testSymbolSetting);
-        expect(settingsModule.createSymbolSettings).toHaveBeenCalledWith(settingData);
+    describe('getFavoriteSymbols', () => {
+      it('お気に入りシンボル設定を正常に取得できること', async () => {
+        const result = await settingsModule.getFavoriteSymbols('test-user-id');
+        expect(result).toEqual([testSymbolSetting]);
+        expect(settingsModule.getFavoriteSymbols).toHaveBeenCalledWith('test-user-id');
       });
     });
 
     describe('upsertSymbolSettings', () => {
-      it('シンボル設定を正常に更新できること', async () => {
-        const settingsData = {
-          is_favorite: false,
-          display_order: 3
-        };
-        
-        const result = await settingsModule.upsertSymbolSettings('test-user-id', 'BTC/USD', settingsData);
+      it('シンボル設定を正常に作成/更新できること', async () => {
+        const result = await settingsModule.upsertSymbolSettings(
+          'test-user-id', 
+          'BTC/USD', 
+          true, 
+          1
+        );
         
         expect(result).toEqual(testSymbolSetting);
-        expect(settingsModule.upsertSymbolSettings).toHaveBeenCalledWith('test-user-id', 'BTC/USD', settingsData);
+        expect(settingsModule.upsertSymbolSettings).toHaveBeenCalledWith(
+          'test-user-id', 
+          'BTC/USD', 
+          true, 
+          1
+        );
       });
     });
 
