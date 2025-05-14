@@ -11,6 +11,7 @@
 // 更新: 2025-05-15 - DebugSliceを統合
 // 更新: 2025-05-15 - アクション名重複を解決
 // 更新: 2025-05-30 - DataFetchSliceを統合
+// 更新: 2025-06-X - SettingsSliceを統合
 
 import { create } from 'zustand'
 import { devtools, persist } from 'zustand/middleware'
@@ -46,6 +47,8 @@ import type { DebugSlice } from './debug'
 import type { DebugSliceState } from './debug/state'
 import { createDataFetchSlice, type DataFetchSlice } from './dataFetch'
 import type { DataFetchSliceState } from './dataFetch/state'
+import { createSettingsSlice, type SettingsSlice } from './settings'
+import type { SettingsState } from './settings/types'
 
 // RootStore型定義 - 各スライスの状態を統合
 export interface RootState extends 
@@ -62,7 +65,8 @@ export interface RootState extends
   SymbolSliceState,
   SocketSliceState,
   DebugSliceState,
-  DataFetchSliceState
+  DataFetchSliceState,
+  SettingsState
 {}
 
 // 各スライスで追加されるアクションを型で事前定義
@@ -167,6 +171,16 @@ export interface RootActions {
   cancelAllFetches: DataFetchSlice['cancelAllFetches']
   addFetch: DataFetchSlice['addFetch']
   removeFetch: DataFetchSlice['removeFetch']
+  
+  // SettingsSliceActions
+  fetchUserSettings: SettingsSlice['fetchUserSettings']
+  fetchChartSettings: SettingsSlice['fetchChartSettings']
+  fetchSymbolSettings: SettingsSlice['fetchSymbolSettings']
+  updateUserSettings: SettingsSlice['updateUserSettings']
+  updateChartSettings: SettingsSlice['updateChartSettings']
+  updateSymbolSettings: SettingsSlice['updateSymbolSettings']
+  createSymbolSettings: SettingsSlice['createSymbolSettings']
+  createChartSettings: SettingsSlice['createChartSettings']
 }
 
 // 完全なストア型
@@ -322,6 +336,18 @@ export const useRootStore = create<RootStore>()(
             () => ({
               isDebugMode: get().isDebugMode
             } as DebugSliceState)
+          ),
+          
+          // 設定スライスを統合
+          ...createSettingsSlice(
+            (fn) => set(fn),
+            () => ({
+              userSettings: get().userSettings,
+              chartSettings: get().chartSettings,
+              symbolSettings: get().symbolSettings,
+              isLoading: get().isLoading,
+              error: get().error
+            } as SettingsState)
           )
         })),
         {

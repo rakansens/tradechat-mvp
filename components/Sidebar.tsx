@@ -4,14 +4,17 @@
 // チャットサイドバーコンポーネント
 // 作成日: 2025/5/20
 // 更新日: 2025/5/21 - UIUXを既存デザインに合わせて更新
+// 更新日: 2025/6/5 - 設定モーダル機能を追加
 
 import { useState, useEffect } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { Plus, MessageSquare, Loader2, Search } from 'lucide-react'
+import { Plus, MessageSquare, Loader2, Search, Settings } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import NewThreadModal from './NewThreadModal'
 import { Input } from '@/components/ui/input'
+import { SettingsModal } from './ui/SettingsModal'
+import { supabase } from '@/lib/supabase/supabase'
 
 type Conversation = {
   id: string
@@ -26,6 +29,8 @@ export function Sidebar() {
   const [isLoading, setIsLoading] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  const [userId, setUserId] = useState<string | undefined>(undefined)
 
   // 現在のアクティブな会話IDを取得
   // パスが /chat/[id] 形式の場合と /?conversationId=[id] 形式の両方をサポート
@@ -33,6 +38,18 @@ export function Sidebar() {
   const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null
   const queryId = searchParams?.get('conversationId')
   const activeId = queryId || (pathId && pathId !== 'chat' ? pathId : null)
+
+  // ユーザーIDを取得
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data } = await supabase.auth.getUser();
+      if (data.user) {
+        setUserId(data.user.id);
+      }
+    };
+
+    checkUser();
+  }, []);
 
   // 会話一覧を取得
   const fetchConversations = async () => {
@@ -114,9 +131,22 @@ export function Sidebar() {
   return (
     <div className="flex h-full w-full flex-col bg-[#1e2130]">
       {/* ヘッダー */}
-      <div className="flex h-14 items-center p-4 border-b border-gray-800">
-        <MessageSquare className="h-5 w-5 mr-2" />
-        <h2 className="font-medium">会話履歴</h2>
+      <div className="flex h-14 items-center p-4 justify-between border-b border-gray-800">
+        <div className="flex items-center">
+          <MessageSquare className="h-5 w-5 mr-2" />
+          <h2 className="font-medium">会話履歴</h2>
+        </div>
+        
+        {/* 設定ボタン */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setIsSettingsOpen(true)}
+          className="h-8 w-8 rounded-full hover:bg-gray-800"
+          title="設定"
+        >
+          <Settings className="h-4 w-4" />
+        </Button>
       </div>
 
       {/* 検索フォーム */}
@@ -188,6 +218,13 @@ export function Sidebar() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onThreadCreated={onNewThreadCreated}
+      />
+
+      {/* 設定モーダル */}
+      <SettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        userId={userId}
       />
     </div>
   )

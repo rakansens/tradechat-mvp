@@ -2,12 +2,16 @@ import "@/app/globals.css"
 import { Inter } from "next/font/google"
 import ClientLayout from "@/components/ClientLayout"
 import type { Metadata } from "next"
+import { cn } from "@/lib/utils"
+import { Toaster } from "@/components/ui/toaster"
+import { ThemeProvider } from "@/components/theme-provider"
+import { ToastListener } from "@/components/common/toast"
 
-const inter = Inter({ subsets: ["latin"] })
+const inter = Inter({ subsets: ["latin"], variable: "--font-sans" })
 
 export const metadata: Metadata = {
-  title: "TradeChat MVP",
-  description: "チャットベースで自然言語によりチャート分析・エントリー提案・モック注文実行ができる最小限のUIモック",
+  title: "TradeChatAI",
+  description: "AIトレーディングアシスタント",
   generator: 'v0.dev'
 }
 
@@ -18,8 +22,20 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ja" className="dark" suppressHydrationWarning>
-      <body className={inter.className} suppressHydrationWarning>
-        <ClientLayout>{children}</ClientLayout>
+      <body className={cn(
+        "min-h-screen bg-background font-sans antialiased",
+        inter.variable
+      )} suppressHydrationWarning>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="dark"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <ClientLayout>{children}</ClientLayout>
+          <Toaster />
+          <ToastListener />
+        </ThemeProvider>
       </body>
     </html>
   )
