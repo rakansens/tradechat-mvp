@@ -8,11 +8,9 @@ import {
   getEntryById,
   updateEntry,
   deleteEntry,
-  closeEntry
+  closeEntry,
+  EntryUpdateParams
 } from '@/lib/supabase/supabase-entry';
-
-// 型情報のインポート（必要に応じて）
-import type { EntryUpdateParams } from '@/types/network/supabase';
 
 /**
  * 特定のエントリーを取得するGETハンドラ

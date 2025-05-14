@@ -7,6 +7,9 @@ import { Database } from '@/types/supabase';
 
 type Entry = Database['public']['Tables']['entries']['Row'];
 
+// この型を追加
+export type EntryUpdateParams = Partial<Omit<Entry, 'id' | 'user_id' | 'created_at' | 'updated_at'>>;
+
 /**
  * エントリー一覧を取得
  * @param limit 取得件数
@@ -325,4 +328,27 @@ export const subscribeToEntries = (
   return () => {
     supabase.removeChannel(query);
   };
+};
+
+/**
+ * エントリーIDでエントリーを取得
+ * @param entryId エントリーID
+ * @returns エントリーまたはnull
+ */
+export const getEntryById = async (entryId: string): Promise<Entry | null> => {
+  const { data, error } = await supabase
+    .from('entries')
+    .select('*')
+    .eq('id', entryId)
+    .single();
+
+  if (error) {
+    if (error.code === 'PGRST116') {
+      // レコードが見つからない場合
+      return null;
+    }
+    throw error;
+  }
+
+  return data;
 };
