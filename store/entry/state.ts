@@ -1,5 +1,6 @@
 // store/entry/state.ts
-// 初期実装: エントリースライスの状態と初期値を定義
+// エントリースライスの状態と初期値を定義
+// 更新: 2025/6/1 - ローディングとエラー状態を追加
 
 import type { Entry, OpenEntry } from '@/types/entry'
 
@@ -7,6 +8,8 @@ import type { Entry, OpenEntry } from '@/types/entry'
 export interface EntrySliceState {
   entries: Entry[]
   pendingEntry: OpenEntry | null
+  isLoading: boolean
+  error: string | null
 }
 
 // エントリースライスの初期状態
@@ -44,5 +47,7 @@ export const initialEntryState: EntrySliceState = {
       status: "open",
     },
   ],
-  pendingEntry: null
+  pendingEntry: null,
+  isLoading: false,
+  error: null
 } 

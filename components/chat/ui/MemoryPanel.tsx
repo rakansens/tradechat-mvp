@@ -6,6 +6,7 @@
 // 更新日: 2025/5/31 - ヘッダー下部に表示されるスタイルに変更
 // 更新日: 2025/5/31 - TabsContentエラーを修正し、正しいコンポーネント階層にする
 // 更新日: 2025/5/31 - 既存アプリのトーンマナーに合わせたスタイル調整
+// 更新日: 2025/6/1 - OpenAI API連携のembedding生成機能を追加
 
 import { useState, useEffect } from "react";
 import { Search, Trash2, RefreshCw, Brain, X } from "lucide-react";
@@ -43,12 +44,18 @@ interface MemoryPanelProps {
   isOpen: boolean;
   onClose: () => void;
   onInsertMemory?: (content: string) => void;
+  currentChatContext?: string; // 追加: 現在のチャットコンテキスト
 }
 
 /**
  * チャットUI統合用メモリパネルコンポーネント
  */
-export function MemoryPanel({ isOpen, onClose, onInsertMemory }: MemoryPanelProps) {
+export function MemoryPanel({ 
+  isOpen, 
+  onClose, 
+  onInsertMemory,
+  currentChatContext // 追加: 現在のチャットコンテキスト
+}: MemoryPanelProps) {
   // 状態管理
   const [memories, setMemories] = useState<Memory[]>([]);
   const [filteredMemories, setFilteredMemories] = useState<Memory[]>([]);
@@ -88,6 +95,13 @@ export function MemoryPanel({ isOpen, onClose, onInsertMemory }: MemoryPanelProp
     }
   }, [isOpen]);
 
+  // 現在のチャットコンテキストで類似メモリを自動検索
+  useEffect(() => {
+    if (isOpen && currentChatContext && currentChatContext.trim().length > 0) {
+      searchMemoriesBySimilarity(currentChatContext);
+    }
+  }, [isOpen, currentChatContext]);
+
   // 検索とフィルターを適用
   const applyFilters = (memories: Memory[], search: string, tab: string) => {
     let filtered = [...memories];
@@ -110,9 +124,65 @@ export function MemoryPanel({ isOpen, onClose, onInsertMemory }: MemoryPanelProp
     setFilteredMemories(filtered);
   };
 
+  // ベクトル類似度による検索
+  const searchMemoriesBySimilarity = async (query: string) => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(`/api/memories/similarity?q=${encodeURIComponent(query)}`);
+      
+      if (!response.ok) {
+        throw new Error("メモリの類似度検索に失敗しました");
+      }
+      
+      const data = await response.json();
+      setMemories(data);
+      applyFilters(data, searchTerm, activeTab);
+    } catch (error) {
+      console.error("メモリ類似度検索エラー:", error);
+      // 失敗時は通常検索にフォールバック
+      searchMemoriesByText(query);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // テキストベース検索
+  const searchMemoriesByText = async (query: string) => {
+    if (!query.trim()) {
+      fetchMemories();
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await fetch(`/api/memories?q=${encodeURIComponent(query)}`);
+      
+      if (!response.ok) {
+        throw new Error("メモリ検索に失敗しました");
+      }
+      
+      const data = await response.json();
+      setMemories(data);
+      applyFilters(data, searchTerm, activeTab);
+    } catch (error) {
+      toast({
+        title: "エラー",
+        description: "メモリの検索中にエラーが発生しました",
+        variant: "destructive",
+      });
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // 検索ハンドラー
   const handleSearch = () => {
-    applyFilters(memories, searchTerm, activeTab);
+    if (searchTerm.trim()) {
+      searchMemoriesByText(searchTerm);
+    } else {
+      fetchMemories();
+    }
   };
 
   // 検索実行（Enter押下時）
@@ -126,6 +196,53 @@ export function MemoryPanel({ isOpen, onClose, onInsertMemory }: MemoryPanelProp
   const handleTabChange = (value: string) => {
     setActiveTab(value);
     applyFilters(memories, searchTerm, value);
+  };
+
+  // 現在のチャットコンテキストをメモリとして保存
+  const saveCurrentContext = async () => {
+    if (!currentChatContext || !currentChatContext.trim()) {
+      toast({
+        title: "エラー",
+        description: "保存するチャットコンテキストがありません",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    try {
+      const response = await fetch("/api/memories", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          content: currentChatContext,
+          metadata: {
+            source: "chat_context",
+            timestamp: new Date().toISOString()
+          }
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error("メモリの保存に失敗しました");
+      }
+      
+      toast({
+        title: "保存完了",
+        description: "チャットコンテキストをメモリに保存しました",
+      });
+      
+      // 保存後にリストを更新
+      fetchMemories();
+    } catch (error) {
+      toast({
+        title: "エラー",
+        description: "メモリの保存中にエラーが発生しました",
+        variant: "destructive",
+      });
+      console.error(error);
+    }
   };
 
   // メモリ削除ハンドラー
@@ -201,14 +318,27 @@ export function MemoryPanel({ isOpen, onClose, onInsertMemory }: MemoryPanelProp
             <Brain className="h-4 w-4 mr-2" style={{ color: theme.accent.blue }} />
             <h2 className="text-sm font-medium" style={{ color: theme.text.primary }}>メモリ</h2>
           </div>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={onClose}
-            className="h-7 w-7 p-0 hover:bg-slate-700/50"
-          >
-            <X className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center space-x-2">
+            {currentChatContext && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={saveCurrentContext}
+                className="h-7 text-xs"
+                style={{ borderColor: theme.border.light }}
+              >
+                現在の会話を保存
+              </Button>
+            )}
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={onClose}
+              className="h-7 w-7 p-0 hover:bg-slate-700/50"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
 
         {/* 検索バー - 共通セクション */}

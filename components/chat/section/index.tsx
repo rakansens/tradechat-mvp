@@ -10,6 +10,7 @@
  * - 2025-05-21: ChatGPTライクなUIに調整、サイドバー表示を改善
  * - 2025-05-31: メモリパネル機能を統合
  * - 2025-05-31: メモリパネルの表示位置を調整し、ヘッダー下に表示するよう変更
+ * - 2025-06-01: メモリパネルに現在のチャットコンテキストを渡す機能を追加
  */
 
 "use client"
@@ -93,6 +94,9 @@ export default function ChatSection({
   // 新規会話モーダルの表示状態
   const [isModalOpen, setIsModalOpen] = useState(false);
   
+  // 現在のチャットコンテキスト
+  const [currentChatContext, setCurrentChatContext] = useState<string>("");
+  
   // トグルサイドバー
   const toggleSidebar = () => {
     setSidebarVisible(!sidebarVisible);
@@ -130,6 +134,24 @@ export default function ChatSection({
     chat.setInput(newInput);
     setIsMemoryPanelOpen(false);
   };
+  
+  // 現在のチャットコンテキストを更新する
+  useEffect(() => {
+    // チャットメッセージから現在のコンテキストを生成
+    if (chat.messages.length > 0) {
+      // 最新の数件のメッセージを使用してコンテキストを生成（最大1000文字）
+      const recentMessages = chat.messages.slice(-5); // 最新の5件
+      
+      const context = recentMessages.map(msg => {
+        const role = msg.role === 'user' ? 'あなた' : 'AI';
+        return `${role}: ${msg.content}`;
+      }).join('\n\n');
+      
+      setCurrentChatContext(context.slice(0, 1000)); // 長すぎるとembedding生成に問題が出る可能性があるため制限
+    } else {
+      setCurrentChatContext("");
+    }
+  }, [chat.messages]);
   
   useEffect(() => {
     setIsMounted(true);
@@ -208,6 +230,7 @@ export default function ChatSection({
                   isOpen={isMemoryPanelOpen}
                   onClose={() => setIsMemoryPanelOpen(false)}
                   onInsertMemory={handleInsertMemory}
+                  currentChatContext={currentChatContext}
                 />
               )}
             </div>

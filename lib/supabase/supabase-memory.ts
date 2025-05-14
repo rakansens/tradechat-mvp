@@ -1,30 +1,21 @@
 // lib/supabase/supabase-memory.ts
 // Supabaseメモリデータ関連ユーティリティ関数
 // 作成日: 2025/5/31
-// Mem0統合メモリシステムとSupabaseの連携を実装
+// 更新日: 2025/6/1 - OpenAI APIを使用したembedding生成機能を追加
 
 import { supabase } from './supabase';
 import { Tables, TablesInsert, TablesUpdate } from '@/types/network/supabase';
+import { generateEmbedding } from '@/lib/openai';
 
 // メモリ関連の型定義
 type Memory = Tables<'memories'>;
 type MemoryInsert = TablesInsert<'memories'>;
 type MemoryUpdate = TablesUpdate<'memories'>;
 
-// OpenAI API Clientを使用してemebddingを生成する
-// 実際の実装ではOpenAI SDKのインポートとAPIキーが必要
-const generateEmbedding = async (text: string): Promise<number[] | null> => {
-  try {
-    // この部分は実際のOpenAI API呼び出しを実装する必要があります
-    // 例: openai.embeddings.create({ input: text, model: "text-embedding-ada-002" })
-    // 現在はダミーの実装
-    console.log('テキストからembeddingを生成:', text.substring(0, 50) + '...');
-    return null; // 実装時は実際のembeddingを返す
-  } catch (error) {
-    console.error('Embedding生成エラー:', error);
-    return null;
-  }
-};
+// Supabaseのカスタム関数の戻り値型を定義
+interface MemoryWithSimilarity extends Memory {
+  similarity: number;
+}
 
 /**
  * メモリをSupabaseに保存
@@ -41,7 +32,13 @@ export const createMemory = async (
   metadata: Record<string, any> = {}
 ): Promise<Memory> => {
   // テキストからembeddingを生成
-  const embedding = await generateEmbedding(content);
+  let embedding = null;
+  try {
+    embedding = await generateEmbedding(content);
+  } catch (error) {
+    console.error('Embedding生成エラー:', error);
+    // embedding生成に失敗してもメモリ自体は保存する
+  }
   
   const memoryData: MemoryInsert = {
     user_id: userId,
@@ -77,9 +74,14 @@ export const updateMemory = async (
   // content更新の場合は新しいembeddingを生成
   let embedding = undefined;
   if (updates.content) {
-    embedding = await generateEmbedding(updates.content);
-    if (embedding) {
-      (updates as any).embedding = embedding;
+    try {
+      embedding = await generateEmbedding(updates.content);
+      if (embedding) {
+        (updates as any).embedding = embedding;
+      }
+    } catch (error) {
+      console.error('Embedding生成エラー:', error);
+      // embedding生成に失敗してもメモリ自体は更新する
     }
   }
 
@@ -182,28 +184,42 @@ export const searchMemoriesBySimilarity = async (
   limit = 5
 ): Promise<Memory[]> => {
   // クエリからembeddingを生成
-  const embedding = await generateEmbedding(queryText);
+  let embedding;
+  try {
+    embedding = await generateEmbedding(queryText);
+  } catch (error) {
+    console.error('Embedding生成エラー:', error);
+    // embeddingが生成できない場合はテキスト検索にフォールバック
+    return searchMemoriesByText(userId, queryText, limit);
+  }
+
   if (!embedding) {
     // embeddingが生成できない場合はテキスト検索にフォールバック
     return searchMemoriesByText(userId, queryText, limit);
   }
 
-  // Supabaseのpgvector拡張を使用した類似度検索
-  // embedding <-> query_embedding の距離が小さい順（類似度が高い順）に取得
-  const { data, error } = await supabase.rpc('match_memories', {
-    query_embedding: embedding,
-    match_threshold: 0.7, // 類似度閾値
-    match_count: limit,
-    user_id_input: userId
-  });
+  try {
+    // Supabaseのpgvector拡張を使用した類似度検索
+    // embedding <-> query_embedding の距離が小さい順（類似度が高い順）に取得
+    // 以下の行はSupabase拡張のrpcメソッドを使用
+    // @ts-ignore - 型エラーを無視（Supabaseの型定義が完全ではないため）
+    const { data, error } = await supabase.rpc('match_memories', {
+      query_embedding: embedding,
+      match_threshold: 0.7, // 類似度閾値
+      match_count: limit,
+      user_id_input: userId
+    });
 
-  if (error) {
+    if (error) {
+      throw error;
+    }
+
+    return data || [];
+  } catch (error) {
     console.error('ベクトル検索エラー:', error);
     // エラー時はテキスト検索にフォールバック
     return searchMemoriesByText(userId, queryText, limit);
   }
-
-  return data || [];
 };
 
 /**

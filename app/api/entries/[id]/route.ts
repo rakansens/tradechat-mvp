@@ -1,15 +1,15 @@
 // app/api/entries/[id]/route.ts
-// 特定のトレードエントリーを取得、更新、削除するためのAPIエンドポイント
-// 作成日: 2025/5/14
+// IDを指定したトレードエントリー操作のためのAPIエンドポイント
+// 作成日: 2025/6/1
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/supabase/supabase-auth';
-import {
-  getEntryById,
-  updateEntry,
-  deleteEntry,
-  closeEntry,
-  EntryUpdateParams
+import { 
+  updateEntry, 
+  deleteEntry, 
+  closeEntry, 
+  cancelEntry,
+  getEntryById 
 } from '@/lib/supabase/supabase-entry';
 
 /**
@@ -20,8 +20,8 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const { id } = params;
-
+    const entryId = params.id;
+    
     // 現在のユーザーを取得
     const user = await getCurrentUser();
     if (!user) {
@@ -29,61 +29,81 @@ export async function GET(
     }
 
     // エントリーを取得
-    const entry = await getEntryById(id);
-
-    // エントリーが見つからない場合
+    const entry = await getEntryById(entryId);
+    
+    // エントリーが存在しない場合
     if (!entry) {
       return NextResponse.json({ error: 'Entry not found' }, { status: 404 });
     }
-
-    // エントリーの所有者を確認（パブリックエントリーの場合は除く）
+    
+    // 自分のエントリーかどうかをチェック（公開エントリーは誰でも見られる）
     if (entry.user_id !== user.id && !entry.is_public) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
     return NextResponse.json(entry);
   } catch (error) {
-    console.error(`Error in GET /api/entries/${params.id}:`, error);
+    console.error('Error in GET /api/entries/[id]:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
 /**
- * エントリーを更新するPUTハンドラ
+ * エントリーを更新するPATCHハンドラ
  */
-export async function PUT(
+export async function PATCH(
   request: Request,
   { params }: { params: { id: string } }
 ) {
   try {
-    const { id } = params;
+    const entryId = params.id;
     
     // リクエストボディを取得
     const updates = await request.json();
-
+    
     // 現在のユーザーを取得
     const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-
-    // 更新前にエントリーを取得して所有者を確認
-    const entry = await getEntryById(id);
+    
+    // まずエントリーを取得して所有者チェック
+    const entry = await getEntryById(entryId);
     if (!entry) {
       return NextResponse.json({ error: 'Entry not found' }, { status: 404 });
     }
-
-    // エントリーの所有者を確認
+    
     if (entry.user_id !== user.id) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
-
-    // エントリーを更新
-    const updatedEntry = await updateEntry(id, updates);
-
+    
+    // 特殊なアクションの処理
+    if (updates.action) {
+      if (updates.action === 'close' && updates.exitPrice) {
+        const exitPrice = parseFloat(updates.exitPrice);
+        if (isNaN(exitPrice)) {
+          return NextResponse.json({ error: 'Invalid exit price' }, { status: 400 });
+        }
+        
+        const exitTime = updates.exitTime ? new Date(updates.exitTime) : new Date();
+        const updatedEntry = await closeEntry(entryId, exitPrice, exitTime);
+        return NextResponse.json(updatedEntry);
+      }
+      
+      if (updates.action === 'cancel') {
+        const updatedEntry = await cancelEntry(entryId);
+        return NextResponse.json(updatedEntry);
+      }
+    }
+    
+    // 通常の更新処理
+    // actionとexitPriceとexitTimeプロパティを削除
+    const { action, exitPrice, exitTime, ...validUpdates } = updates;
+    
+    const updatedEntry = await updateEntry(entryId, validUpdates);
     return NextResponse.json(updatedEntry);
   } catch (error) {
-    console.error(`Error in PUT /api/entries/${params.id}:`, error);
+    console.error('Error in PATCH /api/entries/[id]:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -92,86 +112,33 @@ export async function PUT(
  * エントリーを削除するDELETEハンドラ
  */
 export async function DELETE(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const { id } = params;
-
+    const entryId = params.id;
+    
     // 現在のユーザーを取得
     const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-
-    // 削除前にエントリーを取得して所有者を確認
-    const entry = await getEntryById(id);
+    
+    // まずエントリーを取得して所有者チェック
+    const entry = await getEntryById(entryId);
     if (!entry) {
       return NextResponse.json({ error: 'Entry not found' }, { status: 404 });
     }
-
-    // エントリーの所有者を確認
+    
     if (entry.user_id !== user.id) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
-
+    
     // エントリーを削除
-    await deleteEntry(id);
-
+    await deleteEntry(entryId);
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error(`Error in DELETE /api/entries/${params.id}:`, error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}
-
-/**
- * エントリーをクローズするPATCHハンドラ
- */
-export async function PATCH(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
-  try {
-    const { id } = params;
-    
-    // リクエストボディを取得
-    const { closePrice, closeTime } = await request.json();
-
-    // バリデーション
-    if (!closePrice) {
-      return NextResponse.json(
-        { error: 'Close price is required' },
-        { status: 400 }
-      );
-    }
-
-    // 現在のユーザーを取得
-    const user = await getCurrentUser();
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // クローズ前にエントリーを取得して所有者を確認
-    const entry = await getEntryById(id);
-    if (!entry) {
-      return NextResponse.json({ error: 'Entry not found' }, { status: 404 });
-    }
-
-    // エントリーの所有者を確認
-    if (entry.user_id !== user.id) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
-
-    // クローズ時間が提供されていない場合は現在時刻を使用
-    const closeAt = closeTime ? new Date(closeTime) : new Date();
-
-    // エントリーをクローズ
-    const closedEntry = await closeEntry(id, closePrice, closeAt);
-
-    return NextResponse.json(closedEntry);
-  } catch (error) {
-    console.error(`Error in PATCH /api/entries/${params.id}:`, error);
+    console.error('Error in DELETE /api/entries/[id]:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 } 

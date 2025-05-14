@@ -8,12 +8,12 @@
  * - 2025-05-31: レイアウト改善、AIアシスタントタイトルとメモリボタンを中央配置
  * - 2025-05-31: AIアシスタントテキストを左寄せに修正
  * - 2025-05-31: レイアウト構造を単純化し、AIアシスタントを左、メモリボタンを右に確実に配置
+ * - 2025-06-01: メモリパネルを最新のメモリトグルコンポーネントに更新
  */
 
 "use client"
 
 import { MessageSquare } from "lucide-react"
-import { CardHeader, CardTitle } from "@/components/ui/card"
 import { theme } from "@/styles/colors"
 import { MemoryToggle } from "@/components/chat/ui/MemoryToggle"
 
