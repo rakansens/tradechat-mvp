@@ -13,5 +13,7 @@ export * from './supabase-auth';
 export * from './supabase-backtest';
 export * from './supabase-cache';
 export * from './supabase-chat';
+export * from './supabase-conversations';
 export * from './supabase-entry';
+export * from './supabase-memory';
 export * from './supabase-relations'; 

@@ -556,6 +556,49 @@ export type Database = {
         }
         Relationships: []
       }
+      memories: {
+        Row: {
+          id: string;
+          user_id: string;
+          content: string;
+          embedding: number[] | null;
+          metadata: Json;
+          external_id: string | null;
+          is_synced: boolean;
+          created_at: string | null;
+          updated_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          content: string;
+          embedding?: number[] | null;
+          metadata?: Json;
+          external_id?: string | null;
+          is_synced?: boolean;
+          created_at?: string | null;
+          updated_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          content?: string;
+          embedding?: number[] | null;
+          metadata?: Json;
+          external_id?: string | null;
+          is_synced?: boolean;
+          created_at?: string | null;
+          updated_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "memories_user_id_fkey";
+            columns: ["user_id"];
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          }
+        ];
+      }
     }
     Views: {
       [_ in never]: never
