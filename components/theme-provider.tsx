@@ -50,7 +50,17 @@ const ThemeSynchronizer: React.FC<{ children: React.ReactNode }> = ({ children }
   // レイアウトクラスの適用
   React.useEffect(() => {
     const htmlElement = document.documentElement
+    
+    // darkクラスが存在するか確認し、保持する
+    const hasDarkClass = htmlElement.classList.contains('dark')
+    
+    // layoutClassを追加
     htmlElement.classList.add(layoutClass)
+    
+    // darkクラスが既に設定されていた場合は維持する
+    if (hasDarkClass && !htmlElement.classList.contains('dark')) {
+      htmlElement.classList.add('dark')
+    }
     
     return () => {
       htmlElement.classList.remove(layoutClass)

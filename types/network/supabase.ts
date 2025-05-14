@@ -1,12 +1,3 @@
-/**
- * Supabaseデータベース型定義ファイル
- * 
- * このファイルはSupabaseデータベーステーブルの型情報を提供します。
- * データベースの構造変更時はこのファイルを更新する必要があります。
- * 
- * T-3フェーズで types/supabase.ts から移動されました。
- */
-
 export type Json =
   | string
   | number
@@ -15,480 +6,555 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[]
 
-export interface Database {
+export type Database = {
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          operationName?: string
+          query?: string
+          variables?: Json
+          extensions?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
-      users: {
+      backtest_data: {
         Row: {
+          created_at: string | null
+          end_date: string
           id: string
-          email: string
-          is_admin: boolean
-          created_at: string
-          updated_at: string
-          settings: Json
+          name: string
+          results: Json
+          start_date: string
+          strategy: Json
+          symbol: string
+          timeframe: string
+          updated_at: string | null
+          user_id: string
         }
         Insert: {
-          id: string
-          email: string
-          is_admin?: boolean
-          created_at?: string
-          updated_at?: string
-          settings?: Json
+          created_at?: string | null
+          end_date: string
+          id?: string
+          name: string
+          results: Json
+          start_date: string
+          strategy: Json
+          symbol: string
+          timeframe: string
+          updated_at?: string | null
+          user_id: string
         }
         Update: {
+          created_at?: string | null
+          end_date?: string
           id?: string
-          email?: string
-          is_admin?: boolean
-          created_at?: string
-          updated_at?: string
-          settings?: Json
-        }
-        Relationships: [
-          {
-            foreignKeyName: "users_id_fkey"
-            columns: ["id"]
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
-      profiles: {
-        Row: {
-          id: string
-          user_id: string
-          display_name: string | null
-          avatar_url: string | null
-          bio: string | null
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          display_name?: string | null
-          avatar_url?: string | null
-          bio?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
+          name?: string
+          results?: Json
+          start_date?: string
+          strategy?: Json
+          symbol?: string
+          timeframe?: string
+          updated_at?: string | null
           user_id?: string
-          display_name?: string | null
-          avatar_url?: string | null
-          bio?: string | null
-          created_at?: string
-          updated_at?: string
         }
         Relationships: [
           {
-            foreignKeyName: "profiles_user_id_fkey"
+            foreignKeyName: "backtest_data_user_id_fkey"
             columns: ["user_id"]
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
-      chat_images: {
-        Row: {
-          id: string
-          user_id: string
-          image_data: string
-          image_caption: string | null
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          image_data: string
-          image_caption?: string | null
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          image_data?: string
-          image_caption?: string | null
-          created_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "chat_images_user_id_fkey"
-            columns: ["user_id"]
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
-      chat_messages: {
-        Row: {
-          id: string
-          user_id: string
-          role: string
-          content: string
-          is_proposal: boolean
-          is_public: boolean
-          proposal_type: string | null
-          price: number | null
-          take_profit: number | null
-          stop_loss: number | null
-          image_id: string | null
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          role: string
-          content: string
-          is_proposal?: boolean
-          is_public?: boolean
-          proposal_type?: string | null
-          price?: number | null
-          take_profit?: number | null
-          stop_loss?: number | null
-          image_id?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          role?: string
-          content?: string
-          is_proposal?: boolean
-          is_public?: boolean
-          proposal_type?: string | null
-          price?: number | null
-          take_profit?: number | null
-          stop_loss?: number | null
-          image_id?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "chat_messages_user_id_fkey"
-            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "chat_messages_image_id_fkey"
-            columns: ["image_id"]
-            referencedRelation: "chat_images"
-            referencedColumns: ["id"]
-          }
         ]
       }
-      entries: {
+      cached_data: {
         Row: {
+          created_at: string | null
+          data: Json
+          data_type: string
+          expires_at: string
           id: string
-          user_id: string
-          side: string
           symbol: string
-          price: number
-          time: string
-          take_profit: number | null
-          stop_loss: number | null
-          status: string
-          is_public: boolean
-          exit_price: number | null
-          exit_time: string | null
-          profit: number | null
-          created_at: string
-          updated_at: string
+          timeframe: string | null
+          updated_at: string | null
         }
         Insert: {
+          created_at?: string | null
+          data: Json
+          data_type: string
+          expires_at: string
           id?: string
-          user_id: string
-          side: string
           symbol: string
-          price: number
-          time: string
-          take_profit?: number | null
-          stop_loss?: number | null
-          status: string
-          is_public?: boolean
-          exit_price?: number | null
-          exit_time?: string | null
-          profit?: number | null
-          created_at?: string
-          updated_at?: string
+          timeframe?: string | null
+          updated_at?: string | null
         }
         Update: {
+          created_at?: string | null
+          data?: Json
+          data_type?: string
+          expires_at?: string
           id?: string
-          user_id?: string
-          side?: string
           symbol?: string
-          price?: number
-          time?: string
-          take_profit?: number | null
-          stop_loss?: number | null
-          status?: string
-          is_public?: boolean
-          exit_price?: number | null
-          exit_time?: string | null
-          profit?: number | null
-          created_at?: string
-          updated_at?: string
+          timeframe?: string | null
+          updated_at?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "entries_user_id_fkey"
-            columns: ["user_id"]
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
-      symbol_settings: {
-        Row: {
-          id: string
-          user_id: string
-          symbol: string
-          is_favorite: boolean
-          display_order: number
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          symbol: string
-          is_favorite?: boolean
-          display_order?: number
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          symbol?: string
-          is_favorite?: boolean
-          display_order?: number
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "symbol_settings_user_id_fkey"
-            columns: ["user_id"]
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          }
-        ]
+        Relationships: []
       }
       chart_settings: {
         Row: {
-          id: string
-          user_id: string
-          timeframe: string
           chart_type: string
-          show_volume: boolean
-          show_grid: boolean
-          show_legend: boolean
-          theme: string
-          created_at: string
-          updated_at: string
+          created_at: string | null
+          id: string
+          show_grid: boolean | null
+          show_legend: boolean | null
+          show_volume: boolean | null
+          theme: string | null
+          timeframe: string
+          updated_at: string | null
+          user_id: string
         }
         Insert: {
-          id?: string
-          user_id: string
-          timeframe: string
           chart_type: string
-          show_volume?: boolean
-          show_grid?: boolean
-          show_legend?: boolean
-          theme?: string
-          created_at?: string
-          updated_at?: string
+          created_at?: string | null
+          id?: string
+          show_grid?: boolean | null
+          show_legend?: boolean | null
+          show_volume?: boolean | null
+          theme?: string | null
+          timeframe: string
+          updated_at?: string | null
+          user_id: string
         }
         Update: {
-          id?: string
-          user_id?: string
-          timeframe?: string
           chart_type?: string
-          show_volume?: boolean
-          show_grid?: boolean
-          show_legend?: boolean
-          theme?: string
-          created_at?: string
-          updated_at?: string
+          created_at?: string | null
+          id?: string
+          show_grid?: boolean | null
+          show_legend?: boolean | null
+          show_volume?: boolean | null
+          theme?: string | null
+          timeframe?: string
+          updated_at?: string | null
+          user_id?: string
         }
         Relationships: [
           {
             foreignKeyName: "chart_settings_user_id_fkey"
             columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
-          }
+          },
+        ]
+      }
+      chat_images: {
+        Row: {
+          created_at: string | null
+          id: string
+          image_caption: string | null
+          image_data: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          image_caption?: string | null
+          image_data: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          image_caption?: string | null
+          image_data?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_images_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_messages: {
+        Row: {
+          content: string
+          conversation_id: string | null
+          created_at: string | null
+          id: string
+          image_id: string | null
+          is_proposal: boolean | null
+          is_public: boolean | null
+          price: number | null
+          proposal_type: string | null
+          role: string
+          stop_loss: number | null
+          take_profit: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          content: string
+          conversation_id?: string | null
+          created_at?: string | null
+          id?: string
+          image_id?: string | null
+          is_proposal?: boolean | null
+          is_public?: boolean | null
+          price?: number | null
+          proposal_type?: string | null
+          role: string
+          stop_loss?: number | null
+          take_profit?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          content?: string
+          conversation_id?: string | null
+          created_at?: string | null
+          id?: string
+          image_id?: string | null
+          is_proposal?: boolean | null
+          is_public?: boolean | null
+          price?: number | null
+          proposal_type?: string | null
+          role?: string
+          stop_loss?: number | null
+          take_profit?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_conversation_fk"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_messages_image_id_fkey"
+            columns: ["image_id"]
+            isOneToOne: false
+            referencedRelation: "chat_images"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_messages_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conversations: {
+        Row: {
+          created_at: string | null
+          id: string
+          system_prompt: string | null
+          title: string
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          system_prompt?: string | null
+          title: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          system_prompt?: string | null
+          title?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversations_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      entries: {
+        Row: {
+          created_at: string | null
+          exit_price: number | null
+          exit_time: string | null
+          id: string
+          is_public: boolean | null
+          price: number
+          profit: number | null
+          side: string
+          status: string
+          stop_loss: number | null
+          symbol: string
+          take_profit: number | null
+          time: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          exit_price?: number | null
+          exit_time?: string | null
+          id?: string
+          is_public?: boolean | null
+          price: number
+          profit?: number | null
+          side: string
+          status: string
+          stop_loss?: number | null
+          symbol: string
+          take_profit?: number | null
+          time: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          exit_price?: number | null
+          exit_time?: string | null
+          id?: string
+          is_public?: boolean | null
+          price?: number
+          profit?: number | null
+          side?: string
+          status?: string
+          stop_loss?: number | null
+          symbol?: string
+          take_profit?: number | null
+          time?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "entries_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
         ]
       }
       indicator_settings: {
         Row: {
-          id: string
-          user_id: string
           chart_settings_id: string
-          type: string
-          params: Json
           color: string | null
-          visible: boolean
-          created_at: string
-          updated_at: string
+          created_at: string | null
+          id: string
+          params: Json
+          type: string
+          updated_at: string | null
+          user_id: string
+          visible: boolean | null
         }
         Insert: {
-          id?: string
-          user_id: string
           chart_settings_id: string
-          type: string
-          params?: Json
           color?: string | null
-          visible?: boolean
-          created_at?: string
-          updated_at?: string
+          created_at?: string | null
+          id?: string
+          params?: Json
+          type: string
+          updated_at?: string | null
+          user_id: string
+          visible?: boolean | null
         }
         Update: {
-          id?: string
-          user_id?: string
           chart_settings_id?: string
-          type?: string
-          params?: Json
           color?: string | null
-          visible?: boolean
-          created_at?: string
-          updated_at?: string
+          created_at?: string | null
+          id?: string
+          params?: Json
+          type?: string
+          updated_at?: string | null
+          user_id?: string
+          visible?: boolean | null
         }
         Relationships: [
           {
-            foreignKeyName: "indicator_settings_user_id_fkey"
-            columns: ["user_id"]
-            referencedRelation: "users"
+            foreignKeyName: "indicator_settings_chart_settings_id_fkey"
+            columns: ["chart_settings_id"]
+            isOneToOne: false
+            referencedRelation: "chart_settings"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "indicator_settings_chart_settings_id_fkey"
-            columns: ["chart_settings_id"]
-            referencedRelation: "chart_settings"
+            foreignKeyName: "indicator_settings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
             referencedColumns: ["id"]
-          }
+          },
         ]
       }
-      cached_data: {
+      profiles: {
         Row: {
+          avatar_url: string | null
+          bio: string | null
+          created_at: string | null
+          display_name: string | null
           id: string
-          data_type: string
-          symbol: string
-          timeframe: string | null
-          data: Json
-          expires_at: string
-          created_at: string
-          updated_at: string
+          updated_at: string | null
+          user_id: string
         }
         Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string | null
+          display_name?: string | null
           id?: string
-          data_type: string
-          symbol: string
-          timeframe?: string | null
-          data: Json
-          expires_at: string
-          created_at?: string
-          updated_at?: string
+          updated_at?: string | null
+          user_id: string
         }
         Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string | null
+          display_name?: string | null
           id?: string
-          data_type?: string
-          symbol?: string
-          timeframe?: string | null
-          data?: Json
-          expires_at?: string
-          created_at?: string
-          updated_at?: string
+          updated_at?: string | null
+          user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      symbol_settings: {
+        Row: {
+          created_at: string | null
+          display_order: number | null
+          id: string
+          is_favorite: boolean | null
+          symbol: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          display_order?: number | null
+          id?: string
+          is_favorite?: boolean | null
+          symbol: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          display_order?: number | null
+          id?: string
+          is_favorite?: boolean | null
+          symbol?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "symbol_settings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_relations: {
         Row: {
-          id: string
+          created_at: string | null
           follower_id: string
           following_id: string
-          created_at: string
+          id: string
         }
         Insert: {
-          id?: string
+          created_at?: string | null
           follower_id: string
           following_id: string
-          created_at?: string
+          id?: string
         }
         Update: {
-          id?: string
+          created_at?: string | null
           follower_id?: string
           following_id?: string
-          created_at?: string
+          id?: string
         }
         Relationships: [
           {
             foreignKeyName: "user_relations_follower_id_fkey"
             columns: ["follower_id"]
+            isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "user_relations_following_id_fkey"
             columns: ["following_id"]
+            isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
-          }
+          },
         ]
       }
-      backtest_data: {
+      users: {
         Row: {
+          created_at: string | null
+          email: string
           id: string
-          user_id: string
-          name: string
-          symbol: string
-          timeframe: string
-          start_date: string
-          end_date: string
-          strategy: Json
-          results: Json
-          created_at: string
-          updated_at: string
+          is_admin: boolean | null
+          settings: Json | null
+          updated_at: string | null
         }
         Insert: {
-          id?: string
-          user_id: string
-          name: string
-          symbol: string
-          timeframe: string
-          start_date: string
-          end_date: string
-          strategy: Json
-          results: Json
-          created_at?: string
-          updated_at?: string
+          created_at?: string | null
+          email: string
+          id: string
+          is_admin?: boolean | null
+          settings?: Json | null
+          updated_at?: string | null
         }
         Update: {
+          created_at?: string | null
+          email?: string
           id?: string
-          user_id?: string
-          name?: string
-          symbol?: string
-          timeframe?: string
-          start_date?: string
-          end_date?: string
-          strategy?: Json
-          results?: Json
-          created_at?: string
-          updated_at?: string
+          is_admin?: boolean | null
+          settings?: Json | null
+          updated_at?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "backtest_data_user_id_fkey"
-            columns: ["user_id"]
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          }
-        ]
+        Relationships: []
       }
     }
     Views: {
@@ -504,4 +570,102 @@ export interface Database {
       [_ in never]: never
     }
   }
-} 
+}
+
+type PublicSchema = Database[Extract<keyof Database, "public">]
+
+export type Tables<
+  PublicTableNameOrOptions extends
+    | keyof (PublicSchema["Tables"] & PublicSchema["Views"])
+    | { schema: keyof Database },
+  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
+    ? keyof (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
+        Database[PublicTableNameOrOptions["schema"]]["Views"])
+    : never = never,
+> = PublicTableNameOrOptions extends { schema: keyof Database }
+  ? (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
+      Database[PublicTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : PublicTableNameOrOptions extends keyof (PublicSchema["Tables"] &
+        PublicSchema["Views"])
+    ? (PublicSchema["Tables"] &
+        PublicSchema["Views"])[PublicTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
+
+export type TablesInsert<
+  PublicTableNameOrOptions extends
+    | keyof PublicSchema["Tables"]
+    | { schema: keyof Database },
+  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
+    ? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = PublicTableNameOrOptions extends { schema: keyof Database }
+  ? Database[PublicTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : PublicTableNameOrOptions extends keyof PublicSchema["Tables"]
+    ? PublicSchema["Tables"][PublicTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
+
+export type TablesUpdate<
+  PublicTableNameOrOptions extends
+    | keyof PublicSchema["Tables"]
+    | { schema: keyof Database },
+  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
+    ? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = PublicTableNameOrOptions extends { schema: keyof Database }
+  ? Database[PublicTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : PublicTableNameOrOptions extends keyof PublicSchema["Tables"]
+    ? PublicSchema["Tables"][PublicTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
+
+export type Enums<
+  PublicEnumNameOrOptions extends
+    | keyof PublicSchema["Enums"]
+    | { schema: keyof Database },
+  EnumName extends PublicEnumNameOrOptions extends { schema: keyof Database }
+    ? keyof Database[PublicEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
+> = PublicEnumNameOrOptions extends { schema: keyof Database }
+  ? Database[PublicEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : PublicEnumNameOrOptions extends keyof PublicSchema["Enums"]
+    ? PublicSchema["Enums"][PublicEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof PublicSchema["CompositeTypes"]
+    | { schema: keyof Database },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends { schema: keyof Database }
+  ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof PublicSchema["CompositeTypes"]
+    ? PublicSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
