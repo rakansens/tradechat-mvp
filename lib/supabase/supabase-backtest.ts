@@ -1,9 +1,10 @@
 // lib/supabase-backtest.ts
 // Supabaseバックテストデータ関連ユーティリティ関数
 // 作成日: 2025/5/7
+// 更新日: 2025/5/28 - 型定義のインポート先を更新
 
 import { supabase } from './supabase';
-import { Database } from '@/types/supabase';
+import { Database } from '@/types/network/supabase';
 
 type BacktestData = Database['public']['Tables']['backtest_data']['Row'];
 
