@@ -8,6 +8,8 @@
  * - 2025-05-21: UIUXを既存デザインに合わせ、サイドバーのトグル表示を実装
  * - 2025-05-21: サイドバー閉時にコンパクトなアイコンバーを表示するよう変更
  * - 2025-05-21: ChatGPTライクなUIに調整、サイドバー表示を改善
+ * - 2025-05-31: メモリパネル機能を統合
+ * - 2025-05-31: メモリパネルの表示位置を調整し、ヘッダー下に表示するよう変更
  */
 
 "use client"
@@ -15,7 +17,7 @@
 import { FormEvent, useState, useEffect } from "react"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
-import ChatWindow from "@/components/chat/ChatWindow"
+import ChatWindow from "@/components/chat/window"
 import { theme } from "@/styles/colors"
 import { useChatSectionStores, useQuickCommands } from "@/hooks/chat"
 import { Sidebar } from "@/components/chat/sidebar"
@@ -27,6 +29,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet"
 import NewThreadModal from "@/components/chat/modals/NewThreadModal"
+import { MemoryPanel } from "@/components/chat/ui/MemoryPanel"
 
 // UIコンポーネント
 import Header from "./ui/Header"
@@ -84,6 +87,9 @@ export default function ChatSection({
   // サイドバーの表示状態
   const [sidebarVisible, setSidebarVisible] = useState(false);
   
+  // メモリパネルの表示状態
+  const [isMemoryPanelOpen, setIsMemoryPanelOpen] = useState(false);
+  
   // 新規会話モーダルの表示状態
   const [isModalOpen, setIsModalOpen] = useState(false);
   
@@ -95,6 +101,11 @@ export default function ChatSection({
   // サイドバーを閉じる
   const closeSidebar = () => {
     setSidebarVisible(false);
+  };
+  
+  // メモリパネルの表示/非表示を切り替える
+  const toggleMemoryPanel = () => {
+    setIsMemoryPanelOpen(!isMemoryPanelOpen);
   };
   
   // 新規会話作成モーダルを開く
@@ -110,6 +121,14 @@ export default function ChatSection({
     }));
     
     setIsModalOpen(false);
+  };
+  
+  // メモリをチャット入力に挿入する
+  const handleInsertMemory = (content: string) => {
+    const currentInput = chat.input || '';
+    const newInput = currentInput ? `${currentInput}\n\n${content}` : content;
+    chat.setInput(newInput);
+    setIsMemoryPanelOpen(false);
   };
   
   useEffect(() => {
@@ -176,8 +195,22 @@ export default function ChatSection({
 
           {/* チャットメイン */}
           <div className="flex-1 flex flex-col overflow-hidden">
-            {/* ヘッダー部分 */}
-            <Header />
+            <div className="relative">
+              {/* ヘッダー部分 */}
+              <Header 
+                onToggleMemory={toggleMemoryPanel} 
+                isMemoryOpen={isMemoryPanelOpen} 
+              />
+              
+              {/* メモリパネル - ヘッダー直下に配置 */}
+              {isMemoryPanelOpen && (
+                <MemoryPanel
+                  isOpen={isMemoryPanelOpen}
+                  onClose={() => setIsMemoryPanelOpen(false)}
+                  onInsertMemory={handleInsertMemory}
+                />
+              )}
+            </div>
 
             {/* チャットウィンドウ */}
             <CardContent className="p-0 flex-1 overflow-hidden">

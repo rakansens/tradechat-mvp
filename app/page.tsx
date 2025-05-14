@@ -7,7 +7,7 @@
 import { useEffect, useRef, useCallback } from "react"
 import { MainLayout } from "@/components/layout/MainLayout"
 import ChartSection from "@/components/chart/ChartSection"
-import ChatSection from "@/components/chat/ChatSection"
+import ChatSection from "@/components/chat/section"
 import PositionHistory from "@/components/position/PositionHistory"
 import ChartToolbarComponent from "@/components/chart/ChartToolbar"
 import {
