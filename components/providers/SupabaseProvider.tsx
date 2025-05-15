@@ -6,6 +6,7 @@
  * 作成日: 2025/6/15
  * 更新日: 2025/6/23 - named exportに変更
  * 更新日: 2025/6/25 - signInとsignUp関数を追加
+ * 更新日: 2025/8/27 - getSession()からgetUser()に移行し、セキュリティ警告を解消
  */
 
 import { createContext, useContext, useEffect, useState } from 'react'
@@ -147,8 +148,9 @@ export function SupabaseProvider({
         setSession(newSession)
         
         if (newSession) {
-          const { data: { user: newUser } } = await supabase.auth.getUser()
-          setUser(newUser as AuthUser)
+          // getUser()を使用してユーザー情報を取得（セキュリティ向上）
+          const { data } = await supabase.auth.getUser()
+          setUser(data.user as AuthUser)
         } else {
           setUser(null)
         }

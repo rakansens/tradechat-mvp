@@ -2,6 +2,7 @@
 // トップページ - ダッシュボード
 // 更新日: 2023/6/25 - 型変換関数を使用して型エラーを修正
 // 更新日: 2025/6/26 - ユーザーIDをDashboardClientに渡すよう追加
+// 更新日: 2025/8/27 - getSession()からgetUser()に切り替え
 
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
@@ -21,13 +22,16 @@ export default async function Dashboard() {
   // サーバーサイドでSupabaseクライアントを初期化（非同期に変更）
   const supabase = await createClient();
   
-  // 現在のユーザーセッションを取得
-  const { data: { session } } = await supabase.auth.getSession();
+  // 現在のユーザー情報を取得
+  const { data: { user } } = await supabase.auth.getUser();
   
-  // セッションがない場合はログインページにリダイレクト
-  if (!session) {
+  // ユーザーがない場合はログインページにリダイレクト
+  if (!user) {
     redirect('/signin');
   }
+  
+  // セッション情報も取得（クライアントコンポーネントにユーザー情報を渡すため）
+  const { data: { session } } = await supabase.auth.getSession();
   
   // 公開エントリーを取得
   const entries = await getOpenEntries(true);
@@ -44,7 +48,7 @@ export default async function Dashboard() {
       initialEntries={convertedEntries as any} // 型互換性のために一時的にanyを使用
       initialCurrentSymbol={defaultSymbol}
       initialCurrentTimeFrame={defaultTimeFrame}
-      userId={session.user.id}
+      userId={user.id}
     />
   );
 }

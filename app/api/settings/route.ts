@@ -4,20 +4,21 @@ import { getUserSettings, updateUserSettings } from '@/lib/supabase/features/set
 
 /**
  * GET /api/settings - ユーザー設定を取得
+ * 更新日: 2025/8/27 - getSession()からgetUser()に切り替え
  */
 export async function GET(req: NextRequest) {
   try {
     // サーバーサイドでのSupabaseクライアント作成 (非同期に変更)
     const supabaseServer = await createServerClient();
     
-    // 認証チェック
-    const { data: { session }, error: authError } = await supabaseServer.auth.getSession();
+    // 認証チェック - getUser()を使用
+    const { data: { user }, error: authError } = await supabaseServer.auth.getUser();
     
-    if (authError || !session?.user) {
+    if (authError || !user) {
       return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
     }
     
-    const userId = session.user.id;
+    const userId = user.id;
     
     // ユーザー設定を取得
     const settings = await getUserSettings(userId);
@@ -34,6 +35,7 @@ export async function GET(req: NextRequest) {
 
 /**
  * POST /api/settings - ユーザー設定を更新
+ * 更新日: 2025/8/27 - getSession()からgetUser()に切り替え
  */
 export async function POST(req: NextRequest) {
   try {
@@ -50,14 +52,14 @@ export async function POST(req: NextRequest) {
     // サーバーサイドでのSupabaseクライアント作成（非同期に変更）
     const supabaseServer = await createServerClient();
     
-    // 認証チェック
-    const { data: { session }, error: authError } = await supabaseServer.auth.getSession();
+    // 認証チェック - getUser()を使用
+    const { data: { user }, error: authError } = await supabaseServer.auth.getUser();
     
-    if (authError || !session?.user) {
+    if (authError || !user) {
       return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
     }
     
-    const userId = session.user.id;
+    const userId = user.id;
     
     // ユーザー設定を更新
     await updateUserSettings(userId, body);
