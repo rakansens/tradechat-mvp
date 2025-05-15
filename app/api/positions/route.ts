@@ -59,8 +59,8 @@ export async function GET(request: NextRequest) {
       }
     });
     
-    // キャッシュヘッダーを設定 (5秒間CDNキャッシュ、古いデータを表示しながら再検証)
-    response.headers.set('Cache-Control', 's-maxage=5, stale-while-revalidate');
+    // キャッシュヘッダーを設定 (5秒間CDNキャッシュ、30秒間は古いデータを表示しながら再検証)
+    response.headers.set('Cache-Control', 's-maxage=5, stale-while-revalidate=30');
     
     return response;
   } catch (error) {

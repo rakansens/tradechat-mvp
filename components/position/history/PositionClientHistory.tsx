@@ -4,23 +4,27 @@
  * components/position/history/PositionClientHistory.tsx
  *
  * Client-side renderer for position history.
- * - Receives paginated entry data from the server component
- * - Uses local hooks (useHistoryTabs / usePriceSimulator / usePositionActions)
- *   to handle UI state, price simulation, and action callbacks
- * - Renders the entry list and handles client-side pagination controls
- * - Fetches new data from API when page changes
+ * - Uses React Query's useInfiniteQuery for efficient data fetching and pagination
+ * - Handles UI state with local hooks (useHistoryTabs / usePriceSimulator / usePositionActions)
+ * - Renders the entry list with pagination controls
+ * 
+ * 作成日: 2025/6/26
+ * 更新日: 2025/6/28 - useSWRInfinite→useInfiniteQueryに移行
  */
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect } from "react"
+import { useInfiniteQuery } from "@tanstack/react-query"
 import { Card } from "@/components/ui/card"
 import { theme } from "@/styles/colors"
 import type { Entry } from "@/types/entry"
-import { useHistoryTabs, HistoryTab, usePriceSimulator, usePositionActions } from "./hooks"
+import { useHistoryTabs, usePriceSimulator, usePositionActions } from "./hooks"
+import { fetchJSON } from "@/utils/fetcher"
 import { HeaderTabs } from "./ui/HeaderTabs"
 import { EntryList } from "./ui/EntryList"
 import { Button } from "@/components/ui/button"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
+import { HistoryTab } from "./hooks/useHistoryTabs"
 
 // ページネーション情報の型
 interface PaginationInfo {
@@ -36,6 +40,9 @@ interface PositionsResponse {
   pagination: PaginationInfo
 }
 
+// 1ページあたりの表示件数
+const PAGE_SIZE = 10;
+
 interface PositionClientHistoryProps {
   entries: Entry[]          // 初期データ（SSR）
   pagination: PaginationInfo // 初期ページネーション情報（SSR）
@@ -44,122 +51,113 @@ interface PositionClientHistoryProps {
 /**
  * ポジション履歴のクライアントコンポーネント
  * サーバーコンポーネントから受け取ったデータを元にUIを構築
- * ページ変更時にAPIからデータを取得
+ * React Queryを使用してページネーションとキャッシュを管理
  */
 export function PositionClientHistory({
   entries: initialEntries,
   pagination: initialPagination,
 }: PositionClientHistoryProps) {
-  // データ状態
-  const [entries, setEntries] = useState<Entry[]>(initialEntries)
-  const [pagination, setPagination] = useState<PaginationInfo>(initialPagination)
-  const [isFetching, setIsFetching] = useState(false)
-  const [fetchError, setFetchError] = useState<string | null>(null)
+  // タブの状態
+  const [selectedTab, setSelectedTab] = useState<HistoryTab>("open");
+
+  // React Query: 無限スクロールクエリの設定
+  const {
+    data,
+    fetchNextPage,
+    fetchPreviousPage,
+    hasNextPage,
+    hasPreviousPage,
+    isFetchingNextPage,
+    isFetchingPreviousPage,
+    isLoading,
+    isError,
+    error
+  } = useInfiniteQuery({
+    queryKey: ['positions', selectedTab],
+    queryFn: async ({ pageParam = 1 }) => {
+      // クエリパラメータを構築
+      const params = new URLSearchParams({
+        page: String(pageParam),
+        pageSize: String(PAGE_SIZE)
+      });
+      
+      // ステータスがある場合は追加
+      if (selectedTab && selectedTab !== 'all') {
+        params.append('status', selectedTab);
+      }
+      
+      // APIからデータを取得
+      return fetchJSON<PositionsResponse>(`/api/positions?${params.toString()}`);
+    },
+    initialPageParam: 1,
+    initialData: {
+      pages: [{ data: initialEntries, pagination: initialPagination }],
+      pageParams: [1]
+    },
+    getNextPageParam: (lastPage) => {
+      return lastPage.pagination.hasMore ? lastPage.pagination.page + 1 : undefined;
+    },
+    getPreviousPageParam: (firstPage) => {
+      return firstPage.pagination.page > 1 ? firstPage.pagination.page - 1 : undefined;
+    },
+    staleTime: 10000, // 10秒間はキャッシュデータを使用
+  });
+
+  // データの展開と整形
+  const allEntries = data?.pages.flatMap(page => page.data) || [];
+  const currentPage = data?.pages[data.pages.length - 1].pagination.page || 1;
+  const totalPages = data?.pages[data.pages.length - 1].pagination.totalCount
+    ? Math.ceil(data.pages[data.pages.length - 1].pagination.totalCount / PAGE_SIZE)
+    : 1;
+  const totalCount = data?.pages[data.pages.length - 1].pagination.totalCount || 0;
   
   // タブの状態とフィルタリング
-  const { selectedTab, setSelectedTab, filteredEntries } = useHistoryTabs(entries)
+  const { filteredEntries, counts } = useHistoryTabs(allEntries);
+  
+  // タブ選択変更時の処理
+  const handleTabChange = (tab: HistoryTab) => {
+    setSelectedTab(tab);
+  };
   
   // 価格シミュレーション
-  const getCurrentPrice = usePriceSimulator()
+  const getCurrentPrice = usePriceSimulator();
   
   // APIアクション用コールバック定義
   const handleClose = (entryId: string, exitPrice: number) => {
-    console.log(`Close position: ${entryId} at price: ${exitPrice}`)
+    console.log(`Close position: ${entryId} at price: ${exitPrice}`);
     // 実際の実装ではAPIを呼び出す
-  }
+  };
   
   const handleCancel = (entryId: string) => {
-    console.log(`Cancel position: ${entryId}`)
+    console.log(`Cancel position: ${entryId}`);
     // 実際の実装ではAPIを呼び出す
-  }
+  };
   
   // ポジションアクション - EntryListコンポーネントの期待する形式に合わせる
   const { handleClosePosition, handleCancelPosition } = usePositionActions(
     handleClose,
     handleCancel,
     getCurrentPrice
-  )
-
-  // APIからデータを取得する関数
-  const fetchPositions = useCallback(async (page: number, status?: string) => {
-    setIsFetching(true)
-    setFetchError(null)
-    
-    try {
-      // クエリパラメータを構築
-      const params = new URLSearchParams({
-        page: page.toString(),
-        pageSize: pagination.pageSize.toString()
-      })
-      
-      // ステータスがある場合は追加
-      if (status && status !== 'all') {
-        params.append('status', status)
-      }
-      
-      // APIリクエスト
-      const response = await fetch(`/api/positions?${params.toString()}`)
-      
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`)
-      }
-      
-      // レスポンスデータを取得
-      const data: PositionsResponse = await response.json()
-      
-      // 状態を更新
-      setEntries(data.data)
-      setPagination(data.pagination)
-    } catch (error) {
-      console.error('Failed to fetch positions:', error)
-      setFetchError('データの取得に失敗しました。もう一度お試しください。')
-    } finally {
-      setIsFetching(false)
-    }
-  }, [pagination.pageSize])
-
-  // ページ変更処理
-  const handlePageChange = (newPage: number) => {
-    if (isFetching) return
-    
-    const { totalCount, pageSize } = pagination
-    const totalPages = Math.ceil(totalCount / pageSize)
-    
-    if (newPage >= 1 && newPage <= totalPages) {
-      // APIからデータ取得
-      fetchPositions(newPage, selectedTab !== 'all' ? selectedTab : undefined)
-    }
-  }
-
-  // タブ変更時にページをリセットしてデータ取得
-  useEffect(() => {
-    // 初期ロード時は無視（すでにデータがあるため）
-    if (entries === initialEntries) return
-    
-    fetchPositions(1, selectedTab !== 'all' ? selectedTab : undefined)
-  }, [selectedTab, fetchPositions, entries, initialEntries])
-
-  // ページネーション計算
-  const { page, pageSize, totalCount, hasMore } = pagination
-  const totalPages = Math.ceil(totalCount / pageSize)
+  );
 
   return (
     <Card className="border" style={{ borderColor: theme.border.light }}>
       {/* ヘッダーとタブ */}
       <HeaderTabs 
         selectedTab={selectedTab}
-        onTabChange={setSelectedTab}
+        onTabChange={handleTabChange}
+        counts={counts}
       />
       
       {/* エラー表示 */}
-      {fetchError && (
+      {isError && (
         <div className="p-4 text-center text-red-500 text-sm">
-          {fetchError}
+          {error instanceof Error ? error.message : 'データの取得に失敗しました。もう一度お試しください。'}
         </div>
       )}
       
       {/* エントリーリスト */}
-      {isFetching ? (
+      {isLoading ? (
         <div className="p-4 space-y-3">
           <Skeleton className="h-24 w-full" />
           <Skeleton className="h-24 w-full" />
@@ -180,23 +178,23 @@ export function PositionClientHistory({
           <Button
             variant="outline"
             size="sm"
-            onClick={() => handlePageChange(page - 1)}
-            disabled={page === 1 || isFetching}
+            onClick={() => fetchPreviousPage()}
+            disabled={!hasPreviousPage || isFetchingPreviousPage}
           >
             <ChevronLeft className="h-4 w-4 mr-1" />
             前へ
           </Button>
           
           <div className="text-sm text-gray-600">
-            {page} / {totalPages} ページ
+            {currentPage} / {totalPages} ページ
             （全{totalCount}件）
           </div>
           
           <Button
             variant="outline"
             size="sm"
-            onClick={() => handlePageChange(page + 1)}
-            disabled={!hasMore || isFetching}
+            onClick={() => fetchNextPage()}
+            disabled={!hasNextPage || isFetchingNextPage}
           >
             次へ
             <ChevronRight className="h-4 w-4 ml-1" />

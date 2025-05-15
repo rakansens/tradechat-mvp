@@ -6,11 +6,24 @@
  * - エラーレスポンスを適切に処理
  * - TypeScriptのジェネリック型対応
  * - AbortController対応（モバイルスクロール中のリクエスト破棄用）
+ * - React Queryの`queryFn`として直接使用可能
  * 
  * 作成日: 2025/6/28
+ * 更新日: 2025/6/28 - React Query最適化：fetchJSONへ名称変更
  */
 
-export async function fetcher<T = unknown>(
+/**
+ * JSON APIからデータを取得する汎用関数
+ * React QueryのqueryFnとして使用することを想定
+ * 
+ * @example
+ * // React Queryでの使用例
+ * const { data } = useQuery({
+ *   queryKey: ['positions', tabId],
+ *   queryFn: () => fetchJSON('/api/positions')
+ * });
+ */
+export async function fetchJSON<T = unknown>(
   input: RequestInfo,
   init?: RequestInit
 ): Promise<T> {
@@ -35,6 +48,9 @@ export async function fetcher<T = unknown>(
   return data as T;
 }
 
+// 後方互換性のため旧名でもエクスポート
+export const fetcher = fetchJSON;
+
 /**
  * AbortControllerを使用したfetcherのラッパー
  * モバイルでのスクロール中などにリクエストを破棄するために使用
@@ -54,7 +70,7 @@ export function createAbortableFetcher() {
     input: RequestInfo,
     init?: RequestInit
   ): Promise<T> => {
-    return fetcher<T>(input, {
+    return fetchJSON<T>(input, {
       ...init,
       signal, // AbortControllerのsignalを渡す
     });
