@@ -159,3 +159,105 @@ import { truncateString } from '@/utils/common/format';
 2. ✅ **完了** - 既存コードの参照変更（直接パス）
 3. ✅ **完了** - 互換性のためのリダイレクトファイル追加
 4. ✅ **完了** - Supabase連携コードの移行（`utils/supabase` → `lib/supabase`
+
+## API リファレンス
+
+アプリケーションで使用できるAPIエンドポイントの一覧です。
+
+### ポジション履歴 API
+
+#### GET /api/positions
+
+ユーザーのポジション履歴を取得します。ページネーションとフィルタリングに対応しています。
+
+**リクエストパラメータ:**
+
+| パラメータ | 型     | 必須 | 説明                                    |
+|------------|--------|------|----------------------------------------|
+| page       | number | いいえ | ページ番号 (デフォルト: 1)              |
+| pageSize   | number | いいえ | 1ページあたりの件数 (デフォルト: 10)     |
+| status     | string | いいえ | ステータスでフィルタ ("open"/"closed"/"canceled") |
+| symbol     | string | いいえ | 特定の銘柄でフィルタ (例: "BTCUSDT")     |
+
+**レスポンス:**
+
+```json
+{
+  "data": [
+    {
+      "id": "uuid-string",
+      "userId": "user-uuid",
+      "side": "buy",
+      "symbol": "BTCUSDT",
+      "price": 60000,
+      "time": "2025-06-25T12:34:56Z",
+      "status": "open",
+      "takeProfit": 65000,
+      "stopLoss": 58000,
+      "createdAt": "2025-06-25T12:34:56Z"
+    },
+    // ... 他のエントリー
+  ],
+  "pagination": {
+    "totalCount": 42,
+    "page": 1,
+    "pageSize": 10,
+    "hasMore": true
+  }
+}
+```
+
+**ステータスコード:**
+
+- 200: 成功
+- 401: 未認証
+- 500: サーバーエラー
+
+**キャッシュ:**
+
+5秒間のCDNキャッシュがあり、stale-while-revalidateパターンを使用しています。
+
+**使用例:**
+
+```typescript
+// 基本的な使用法
+const response = await fetch('/api/positions?page=1&pageSize=10');
+
+// ステータスでフィルタリング（例: 完了したポジションのみ）
+const closedPositions = await fetch('/api/positions?status=closed');
+
+// シンボルとステータスの組み合わせ
+const openBitcoinPositions = await fetch('/api/positions?symbol=BTCUSDT&status=open');
+```
+
+### 移行ヘルパーツール
+```bash
+# ヘルプを表示
+./scripts/migration-helpers.sh
+
+# 古いパスへの参照を検索
+./scripts/migration-helpers.sh check-imports
+
+# インポートパスを新しい構造に更新
+./scripts/migration-helpers.sh update-imports
+
+# 循環参照をチェック
+./scripts/migration-helpers.sh check-circular
+
+# 古いファイルを削除（移行完了後）
+./scripts/migration-helpers.sh clean-old-files
+```
+
+### 🔄 Supabase連携コードの移行 (2025-06-19)
+
+* `utils/supabase` は **削除済み**  
+* 旧 import はすべて `lib/supabase` 経由に置換済み  
+* tsconfig / Jest / ESLint の paths も 1 本化  
+* ESLint ルール `no-restricted-imports` で再発防止
+
+### 移行タイムライン
+
+1. ✅ **完了** - 新しい構造を準備、バレルファイルの追加
+2. ✅ **完了** - 既存コードの参照変更（直接パス）
+3. ✅ **完了** - 互換性のためのリダイレクトファイル追加
+4. ✅ **完了** - Supabase連携コードの移行（`utils/supabase` → `lib/supabase`

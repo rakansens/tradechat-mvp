@@ -48,8 +48,8 @@ export async function GET(request: NextRequest) {
     // Supabase型からクライアント型に変換
     const convertedEntries = paginatedEntries.data.map(entry => fromSupabaseEntry(entry));
     
-    // レスポンスを返す
-    return NextResponse.json({
+    // レスポンスを作成
+    const response = NextResponse.json({
       data: convertedEntries,
       pagination: {
         totalCount: paginatedEntries.totalCount,
@@ -58,6 +58,11 @@ export async function GET(request: NextRequest) {
         hasMore: paginatedEntries.hasMore
       }
     });
+    
+    // キャッシュヘッダーを設定 (5秒間CDNキャッシュ、古いデータを表示しながら再検証)
+    response.headers.set('Cache-Control', 's-maxage=5, stale-while-revalidate');
+    
+    return response;
   } catch (error) {
     console.error('Error fetching position data:', error);
     return NextResponse.json(
