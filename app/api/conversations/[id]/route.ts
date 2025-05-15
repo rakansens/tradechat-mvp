@@ -3,9 +3,11 @@
 // 作成日: 2025/5/27
 // 更新日: 2025/5/27 - データアクセスレイヤーを使用するように変更
 // 更新日: 2025/6/22 - Supabase SSRクライアント対応（インポートパス更新）
+// 更新日: 2025/9/17 - DIパターンを適用（createRouteHandlerClientを使用）
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/supabase/features/auth';
+import { createRouteHandlerClient } from '@/lib/supabase/routeHandlerClient';
 import { 
   getConversation, 
   updateConversation, 
@@ -19,17 +21,20 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
+    // RouteHandler用のSupabaseクライアントを生成
+    const supabase = await createRouteHandlerClient();
+    
     const conversationId = params.id;
     
-    // 現在のユーザーを取得
-    const user = await getCurrentUser();
+    // 現在のユーザーを取得（DIパターンでクライアントを渡す）
+    const user = await getCurrentUser(supabase);
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     try {
-      // データアクセスレイヤーを使用して会話を取得
-      const conversation = await getConversation(conversationId, user.id);
+      // データアクセスレイヤーを使用して会話を取得（DIパターンでクライアントを渡す）
+      const conversation = await getConversation(conversationId, user.id, supabase);
       return NextResponse.json(conversation);
     } catch (error: any) {
       // エラーに応じて適切なレスポンスを返す
@@ -50,6 +55,9 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
+    // RouteHandler用のSupabaseクライアントを生成
+    const supabase = await createRouteHandlerClient();
+    
     const conversationId = params.id;
     const { title, system_prompt } = await request.json();
 
@@ -58,21 +66,22 @@ export async function PATCH(
       return NextResponse.json({ error: 'Title is required' }, { status: 400 });
     }
 
-    // 現在のユーザーを取得
-    const user = await getCurrentUser();
+    // 現在のユーザーを取得（DIパターンでクライアントを渡す）
+    const user = await getCurrentUser(supabase);
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     try {
-      // データアクセスレイヤーを使用して会話を更新
+      // データアクセスレイヤーを使用して会話を更新（DIパターンでクライアントを渡す）
       const updatedConversation = await updateConversation(
         conversationId,
         user.id,
         {
           title,
           system_prompt: system_prompt || null
-        }
+        },
+        supabase
       );
 
       // キャッシュを再検証
@@ -103,17 +112,20 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
+    // RouteHandler用のSupabaseクライアントを生成
+    const supabase = await createRouteHandlerClient();
+    
     const conversationId = params.id;
     
-    // 現在のユーザーを取得
-    const user = await getCurrentUser();
+    // 現在のユーザーを取得（DIパターンでクライアントを渡す）
+    const user = await getCurrentUser(supabase);
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     try {
-      // データアクセスレイヤーを使用して会話を削除
-      await deleteConversation(conversationId, user.id);
+      // データアクセスレイヤーを使用して会話を削除（DIパターンでクライアントを渡す）
+      await deleteConversation(conversationId, user.id, supabase);
 
       // キャッシュを再検証
       revalidatePath('/chat');
