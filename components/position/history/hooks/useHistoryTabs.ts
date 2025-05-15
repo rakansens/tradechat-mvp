@@ -5,7 +5,7 @@
  * 
  * 変更履歴:
  * - 2023-05-13: PositionHistory.tsxからロジックを抽出
- * - 2025-6-26: "all"タブを追加し、"canceled"も対応
+ * - 2025-6-26: "all"と"canceled"タブを追加
  */
 
 import { useState, useMemo } from "react"
@@ -20,7 +20,7 @@ export type HistoryTab = "all" | "open" | "closed" | "canceled"
  * @returns タブ状態と、フィルタリングされたエントリー配列
  */
 export function useHistoryTabs(entries: Entry[]) {
-  // タブの状態管理
+  // タブの状態管理 - 初期値はopen
   const [selectedTab, setSelectedTab] = useState<HistoryTab>("open")
 
   // 選択されたタブに基づいてエントリーをフィルタリング
@@ -32,10 +32,30 @@ export function useHistoryTabs(entries: Entry[]) {
     return entries.filter((entry) => entry.status === selectedTab)
   }, [entries, selectedTab])
 
+  // タブごとのエントリー数をカウント（バッジ表示用）
+  const counts = useMemo(() => {
+    const result = {
+      all: entries.length,
+      open: 0,
+      closed: 0,
+      canceled: 0
+    };
+    
+    // 各ステータスのエントリー数をカウント
+    entries.forEach(entry => {
+      if (entry.status in result) {
+        result[entry.status as keyof typeof result]++;
+      }
+    });
+    
+    return result;
+  }, [entries]);
+
   return {
     selectedTab,
     setSelectedTab,
     filteredEntries,
+    counts
   }
 }
 
