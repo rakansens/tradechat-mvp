@@ -4,6 +4,7 @@
 // 更新日: 2025/5/14 - 型参照とプロフィール操作メソッドを最新の型定義に更新
 // 更新日: 2025/6/20 - SSRクライアント対応
 // 更新日: 2025/8/27 - SupabaseClientを外部から受け取れるよう改修
+// 更新日: 2023/7/5 - すべての関数をDependency Injectionパターンに統一
 
 import { createClient } from '@/lib/supabase/client';
 import { User, Session } from '@supabase/supabase-js';
@@ -20,10 +21,15 @@ type ProfileUpdate = TablesUpdate<'profiles'>;
  * ユーザーサインアップ
  * @param email メールアドレス
  * @param password パスワード
+ * @param supabaseClient Supabaseクライアントインスタンス（オプション）
  * @returns サインアップ結果
  */
-export const signUp = async (email: string, password: string) => {
-  const supabase = createClient();
+export const signUp = async (
+  email: string, 
+  password: string,
+  supabaseClient?: SupabaseClient
+) => {
+  const supabase = supabaseClient ?? createClient();
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
@@ -40,10 +46,15 @@ export const signUp = async (email: string, password: string) => {
  * メールアドレスとパスワードでサインイン
  * @param email メールアドレス
  * @param password パスワード
+ * @param supabaseClient Supabaseクライアントインスタンス（オプション）
  * @returns サインイン結果
  */
-export const signInWithPassword = async (email: string, password: string) => {
-  const supabase = createClient();
+export const signInWithPassword = async (
+  email: string, 
+  password: string,
+  supabaseClient?: SupabaseClient
+) => {
+  const supabase = supabaseClient ?? createClient();
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
@@ -58,10 +69,13 @@ export const signInWithPassword = async (email: string, password: string) => {
 
 /**
  * サインアウト
+ * @param supabaseClient Supabaseクライアントインスタンス（オプション）
  * @returns サインアウト結果
  */
-export const signOut = async () => {
-  const supabase = createClient();
+export const signOut = async (
+  supabaseClient?: SupabaseClient
+) => {
+  const supabase = supabaseClient ?? createClient();
   const { error } = await supabase.auth.signOut();
   
   if (error) {
@@ -73,10 +87,13 @@ export const signOut = async () => {
 
 /**
  * 現在のセッションを取得
+ * @param supabaseClient Supabaseクライアントインスタンス（オプション）
  * @returns 現在のセッション
  */
-export const getCurrentSession = async (): Promise<Session | null> => {
-  const supabase = createClient();
+export const getCurrentSession = async (
+  supabaseClient?: SupabaseClient
+): Promise<Session | null> => {
+  const supabase = supabaseClient ?? createClient();
   const { data, error } = await supabase.auth.getSession();
   
   if (error) {
@@ -107,10 +124,14 @@ export const getCurrentUser = async (
 /**
  * パスワードリセットメールを送信
  * @param email メールアドレス
+ * @param supabaseClient Supabaseクライアントインスタンス（オプション）
  * @returns 送信結果
  */
-export const resetPassword = async (email: string) => {
-  const supabase = createClient();
+export const resetPassword = async (
+  email: string,
+  supabaseClient?: SupabaseClient
+) => {
+  const supabase = supabaseClient ?? createClient();
   const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/reset-password`,
   });
@@ -125,10 +146,14 @@ export const resetPassword = async (email: string) => {
 /**
  * パスワード更新
  * @param password 新しいパスワード
+ * @param supabaseClient Supabaseクライアントインスタンス（オプション）
  * @returns 更新結果
  */
-export const updatePassword = async (password: string) => {
-  const supabase = createClient();
+export const updatePassword = async (
+  password: string,
+  supabaseClient?: SupabaseClient
+) => {
+  const supabase = supabaseClient ?? createClient();
   const { data, error } = await supabase.auth.updateUser({
     password,
   });
@@ -146,15 +171,17 @@ export const updatePassword = async (password: string) => {
  * @param displayName 表示名
  * @param avatarUrl アバターURL
  * @param bio 自己紹介
+ * @param supabaseClient Supabaseクライアントインスタンス（オプション）
  * @returns 作成結果
  */
 export const createProfile = async (
   userId: string,
   displayName?: string,
   avatarUrl?: string,
-  bio?: string
+  bio?: string,
+  supabaseClient?: SupabaseClient
 ): Promise<Profile | null> => {
-  const supabase = createClient();
+  const supabase = supabaseClient ?? createClient();
   const profileData: ProfileInsert = {
     user_id: userId,
     display_name: displayName || null,
@@ -177,10 +204,14 @@ export const createProfile = async (
 /**
  * ユーザープロフィールを取得
  * @param userId ユーザーID
+ * @param supabaseClient Supabaseクライアントインスタンス（オプション）
  * @returns ユーザープロフィール
  */
-export const getProfile = async (userId: string): Promise<Profile | null> => {
-  const supabase = createClient();
+export const getProfile = async (
+  userId: string,
+  supabaseClient?: SupabaseClient
+): Promise<Profile | null> => {
+  const supabase = supabaseClient ?? createClient();
   const { data, error } = await supabase
     .from('profiles')
     .select('*')
@@ -202,13 +233,15 @@ export const getProfile = async (userId: string): Promise<Profile | null> => {
  * ユーザープロフィールを更新
  * @param userId ユーザーID
  * @param updates 更新内容
+ * @param supabaseClient Supabaseクライアントインスタンス（オプション）
  * @returns 更新結果
  */
 export const updateProfile = async (
   userId: string,
-  updates: ProfileUpdate
+  updates: ProfileUpdate,
+  supabaseClient?: SupabaseClient
 ): Promise<Profile | null> => {
-  const supabase = createClient();
+  const supabase = supabaseClient ?? createClient();
   const { data, error } = await supabase
     .from('profiles')
     .update(updates)

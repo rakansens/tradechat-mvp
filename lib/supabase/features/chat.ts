@@ -7,6 +7,7 @@
 // 更新日: 2025/6/5 - subscribeToConversationMessages関数は非推奨となりsupabase-conversations.tsに移行
 // 更新日: 2025/6/20 - SSRクライアント対応
 // 更新日: 2023/7/5 - Dependency Injection パターンに更新 (supabaseClient ?? createClient())
+// 更新日: 2025/9/17 - uploadChatImage関数をサーバー環境でも動作するように修正
 
 import { createClient } from '@/lib/supabase/client';
 import { Tables, TablesInsert, TablesUpdate } from '@/types/network/supabase';
@@ -205,7 +206,17 @@ export const deleteChatMessage = async (
 };
 
 /**
+ * 環境がブラウザかどうかを判定
+ * @returns ブラウザ環境かどうか
+ */
+const isBrowser = () => typeof window !== 'undefined';
+
+/**
  * チャット画像をアップロード
+ * 
+ * ブラウザとサーバー（Node.js/Edge）の両環境で動作します。
+ * ブラウザでは Blob/File API を使用し、サーバーでは Buffer を使用します。
+ * 
  * @param userId ユーザーID
  * @param imageData 画像データ（Base64）
  * @param imageCaption 画像キャプション
@@ -219,29 +230,69 @@ export const uploadChatImage = async (
   supabaseClient?: SupabaseClient
 ): Promise<ChatImage> => {
   const supabase = supabaseClient ?? createClient();
-  // Base64データをBlobに変換
-  const base64Data = imageData.split(',')[1];
+  
+  // Base64データからMIMEタイプを抽出
   const mimeType = imageData.match(/^data:(.*?);/)?.[1] || 'image/png';
-  const byteCharacters = atob(base64Data);
-  const byteArrays = [];
-
-  for (let i = 0; i < byteCharacters.length; i++) {
-    byteArrays.push(byteCharacters.charCodeAt(i));
+  const base64Data = imageData.split(',')[1];
+  const extension = mimeType.split('/')[1];
+  const filename = `chat-image-${Date.now()}.${extension}`;
+  const path = `${userId}/${filename}`;
+  
+  // 環境に応じた方法でデータをアップロード
+  let uploadData;
+  let uploadError;
+  
+  if (isBrowser()) {
+    // ブラウザ環境 - Blob/File APIを使用
+    try {
+      const byteCharacters = atob(base64Data);
+      const byteArrays = [];
+  
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteArrays.push(byteCharacters.charCodeAt(i));
+      }
+  
+      const blob = new Blob([new Uint8Array(byteArrays)], { type: mimeType });
+      const file = new File([blob], filename, { type: mimeType });
+      
+      const result = await supabase.storage
+        .from('chat-images')
+        .upload(path, file);
+        
+      uploadData = result.data;
+      uploadError = result.error;
+    } catch (err) {
+      console.error('Browser upload failed:', err);
+      throw new Error(`Browser image upload failed: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  } else {
+    // サーバー環境 - Bufferを使用
+    try {
+      // Base64をBufferに変換
+      const buffer = Buffer.from(base64Data, 'base64');
+      
+      const result = await supabase.storage
+        .from('chat-images')
+        .upload(path, buffer, {
+          contentType: mimeType,
+          cacheControl: '3600'
+        });
+        
+      uploadData = result.data;
+      uploadError = result.error;
+    } catch (err) {
+      console.error('Server upload failed:', err);
+      throw new Error(`Server image upload failed: ${err instanceof Error ? err.message : String(err)}`);
+    }
   }
-
-  const blob = new Blob([new Uint8Array(byteArrays)], { type: mimeType });
-  const file = new File([blob], `chat-image-${Date.now()}.${mimeType.split('/')[1]}`, {
-    type: mimeType,
-  });
-
-  // 画像データをStorageにアップロード
-  const { data: uploadData, error: uploadError } = await supabase.storage
-    .from('chat-images')
-    .upload(`${userId}/${file.name}`, file);
 
   if (uploadError) {
     console.error('Failed to upload chat image:', uploadError);
     throw uploadError;
+  }
+
+  if (!uploadData) {
+    throw new Error('No upload data returned from storage, but no error was thrown.');
   }
 
   const imageUrl = supabase.storage.from('chat-images').getPublicUrl(uploadData.path).data.publicUrl;
@@ -318,13 +369,13 @@ export const subscribeToChatMessages = (
   const maxRetries = 5;
   const retryDelay = 1000; // 1秒
   let channel: any;
-
+  
   const subscribe = () => {
     try {
       if (channel) {
         supabase.removeChannel(channel);
       }
-
+      
       channel = supabase
         .channel('chat-messages-changes')
         .on(
@@ -378,10 +429,10 @@ export const subscribeToChatMessages = (
       console.error('Max retries reached. Giving up on subscription.');
     }
   };
-
+  
   // 初回購読開始
   subscribe();
-
+  
   // 購読解除関数を返す
   return () => {
     if (channel) {

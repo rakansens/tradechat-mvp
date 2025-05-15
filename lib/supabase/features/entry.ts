@@ -407,11 +407,11 @@ export const closeEntry = async (
     .select('*')
     .eq('id', entryId)
     .single();
-    
+
   if (fetchError) {
     throw fetchError;
   }
-  
+
   // 利益計算
   let profit: number | null = null;
   if (entry) {
@@ -421,7 +421,7 @@ export const closeEntry = async (
       profit = entry.price - exitPrice;
     }
   }
-  
+
   // エントリー更新
   const updates = {
     exit_price: exitPrice,
@@ -429,7 +429,7 @@ export const closeEntry = async (
     profit,
     status: 'closed' as const,
   };
-  
+
   return updateEntry(entryId, updates, supabase);
 };
 

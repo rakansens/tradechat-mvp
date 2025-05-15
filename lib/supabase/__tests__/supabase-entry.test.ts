@@ -1,6 +1,7 @@
 // lib/supabase/__tests__/supabase-entry.test.ts
 // エントリー管理機能のユニットテスト
 // 作成日: 2025/6/10
+// 更新日: 2025/9/17 - DI対応に更新
 
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { 
@@ -15,34 +16,39 @@ import {
   subscribeToEntries
 } from '../features/entry';
 
+// モックサポート関数：Supabaseレスポンスを模倣
+const mockSupabaseResponse = (data: any = null, error: any = null) => ({
+  data,
+  error,
+  select: () => mockSupabaseResponse(data, error),
+  eq: () => mockSupabaseResponse(data, error),
+  in: () => mockSupabaseResponse(data, error),
+  match: () => mockSupabaseResponse(data, error),
+  order: () => mockSupabaseResponse(data, error),
+  limit: () => mockSupabaseResponse(data, error),
+  range: () => mockSupabaseResponse(data, error),
+  single: () => mockSupabaseResponse(data, error),
+  insert: () => mockSupabaseResponse(data, error),
+  update: () => mockSupabaseResponse(data, error),
+  delete: () => mockSupabaseResponse(data, error),
+});
+
+// モックのSupabaseクライアント
+const mockClient = {
+  from: vi.fn().mockReturnValue(mockSupabaseResponse()),
+  channel: vi.fn().mockReturnValue({
+    on: vi.fn().mockReturnThis(),
+    subscribe: vi.fn(() => ({
+      unsubscribe: vi.fn()
+    })),
+  }),
+  removeChannel: vi.fn(),
+};
+
 // Supabaseクライアントのモック
-vi.mock('../supabase', () => {
+vi.mock('@/lib/supabase/client', () => {
   return {
-    supabase: {
-      from: vi.fn(() => ({
-        insert: vi.fn().mockReturnThis(),
-        update: vi.fn().mockReturnThis(),
-        delete: vi.fn().mockReturnThis(),
-        select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-        in: vi.fn().mockReturnThis(),
-        match: vi.fn().mockReturnThis(),
-        order: vi.fn().mockReturnThis(),
-        limit: vi.fn().mockReturnThis(),
-        range: vi.fn().mockReturnThis(),
-        single: vi.fn().mockReturnThis(),
-        data: null,
-        error: null,
-      })),
-      channel: vi.fn(() => ({
-        on: vi.fn().mockReturnThis(),
-        subscribe: vi.fn((callback) => {
-          callback('SUBSCRIBED');
-          return { unsubscribe: vi.fn() };
-        }),
-      })),
-      removeChannel: vi.fn(),
-    }
+    createClient: vi.fn(() => mockClient)
   };
 });
 
@@ -64,50 +70,14 @@ const testEntry = {
 
 // テスト実行
 describe('エントリー管理機能のテスト', () => {
-  let mockResponse: { data: any; error: any };
-
   beforeEach(() => {
     // 各テスト前に実行
-    mockResponse = { data: null, error: null };
+    vi.clearAllMocks();
     
-    // Supabaseモックのリセット
-    const { supabase } = require('../supabase');
-    
-    // 成功レスポンスをデフォルトに設定
-    supabase.from().insert.mockImplementation(() => {
-      mockResponse.data = [testEntry];
-      return { ...mockResponse, data: mockResponse.data, error: mockResponse.error };
-    });
-    
-    supabase.from().update.mockImplementation(() => {
-      mockResponse.data = [testEntry];
-      return { ...mockResponse, data: mockResponse.data, error: mockResponse.error };
-    });
-    
-    supabase.from().delete.mockImplementation(() => {
-      mockResponse.data = [];
-      return { ...mockResponse, data: mockResponse.data, error: mockResponse.error };
-    });
-    
-    supabase.from().select().eq.mockImplementation(() => {
-      mockResponse.data = [testEntry];
-      return { ...mockResponse, data: mockResponse.data, error: mockResponse.error };
-    });
-    
-    supabase.from().select().in.mockImplementation(() => {
-      mockResponse.data = [testEntry];
-      return { ...mockResponse, data: mockResponse.data, error: mockResponse.error };
-    });
-    
-    supabase.from().select().order.mockImplementation(() => {
-      mockResponse.data = [testEntry];
-      return { ...mockResponse, data: mockResponse.data, error: mockResponse.error };
-    });
-    
-    supabase.from().select().order.range.mockImplementation(() => {
-      mockResponse.data = [testEntry];
-      return { ...mockResponse, data: mockResponse.data, error: mockResponse.error };
-    });
+    // デフォルトで成功レスポンスを設定
+    mockClient.from.mockImplementation(() => 
+      mockSupabaseResponse([testEntry], null)
+    );
   });
 
   afterEach(() => {
@@ -117,54 +87,57 @@ describe('エントリー管理機能のテスト', () => {
 
   describe('getEntries', () => {
     it('エントリーリストを正常に取得できること', async () => {
-      const result = await getEntries();
+      // DI対応でクライアントを直接渡す
+      const result = await getEntries(50, 0, false, mockClient as any);
       expect(result).toEqual([testEntry]);
     });
 
-    it('エラー時には空配列を返すこと', async () => {
-      const { supabase } = require('../supabase');
+    it('エラー時には例外をスローすること', async () => {
+      const testError = { message: 'テストエラー' };
+      mockClient.from.mockImplementation(() => 
+        mockSupabaseResponse(null, testError)
+      );
       
-      supabase.from().select.mockImplementation(() => {
-        mockResponse.error = { message: 'テストエラー' };
-        return { ...mockResponse, data: null, error: mockResponse.error };
-      });
-      
-      const result = await getEntries();
-      expect(result).toEqual([]);
+      await expect(getEntries(50, 0, false, mockClient as any))
+        .rejects.toEqual(testError);
     });
   });
 
   describe('getUserEntries', () => {
     it('ユーザーのエントリーを正常に取得できること', async () => {
-      const result = await getUserEntries('test-user-id');
+      const result = await getUserEntries('test-user-id', 50, 0, mockClient as any);
       expect(result).toEqual([testEntry]);
     });
   });
 
   describe('getEntriesBySymbol', () => {
     it('シンボルによるエントリーを正常に取得できること', async () => {
-      const result = await getEntriesBySymbol('BTC/USD');
+      const result = await getEntriesBySymbol('BTC/USD', 50, 0, false, mockClient as any);
       expect(result).toEqual([testEntry]);
     });
   });
 
   describe('getEntriesByStatus', () => {
     it('ステータスによるエントリーを正常に取得できること', async () => {
-      const result = await getEntriesByStatus('open');
+      const result = await getEntriesByStatus('open', 50, 0, false, mockClient as any);
       expect(result).toEqual([testEntry]);
     });
   });
 
   describe('createEntry', () => {
     it('エントリーを正常に作成できること', async () => {
-      const result = await createEntry({
-        user_id: 'test-user-id',
-        side: 'buy',
-        symbol: 'BTC/USD',
-        price: 50000,
-        take_profit: 55000,
-        stop_loss: 48000,
-      });
+      const now = new Date();
+      const result = await createEntry(
+        'test-user-id',
+        'buy',
+        'BTC/USD',
+        50000,
+        now,
+        55000,
+        48000,
+        false,
+        mockClient as any
+      );
       
       expect(result).toEqual(testEntry);
     });
@@ -175,7 +148,7 @@ describe('エントリー管理機能のテスト', () => {
       const result = await updateEntry('test-entry-id', {
         take_profit: 56000,
         stop_loss: 47000,
-      });
+      }, mockClient as any);
       
       expect(result).toEqual(testEntry);
     });
@@ -183,14 +156,19 @@ describe('エントリー管理機能のテスト', () => {
 
   describe('deleteEntry', () => {
     it('エントリーを正常に削除できること', async () => {
-      const result = await deleteEntry('test-entry-id');
+      mockClient.from.mockImplementation(() => 
+        mockSupabaseResponse([], null)
+      );
+      
+      const result = await deleteEntry('test-entry-id', mockClient as any);
       expect(result).toBe(true);
     });
   });
 
   describe('closeEntry', () => {
     it('エントリーを正常にクローズできること', async () => {
-      const result = await closeEntry('test-entry-id', 52000);
+      const now = new Date();
+      const result = await closeEntry('test-entry-id', 52000, now, mockClient as any);
       expect(result).toEqual(testEntry);
     });
   });
@@ -198,15 +176,14 @@ describe('エントリー管理機能のテスト', () => {
   describe('subscribeToEntries', () => {
     it('エントリーのリアルタイム購読が正常に機能すること', () => {
       const callback = vi.fn();
-      const unsubscribe = subscribeToEntries('test-user-id', callback);
+      const unsubscribe = subscribeToEntries(callback, false, mockClient as any);
       
       expect(unsubscribe).toBeInstanceOf(Function);
       
       // 実際のチャンネル作成と購読が行われたか確認
-      const { supabase } = require('../supabase');
-      expect(supabase.channel).toHaveBeenCalled();
-      expect(supabase.channel().on).toHaveBeenCalled();
-      expect(supabase.channel().subscribe).toHaveBeenCalled();
+      expect(mockClient.channel).toHaveBeenCalled();
+      expect(mockClient.channel().on).toHaveBeenCalled();
+      expect(mockClient.channel().subscribe).toHaveBeenCalled();
     });
   });
 }); 
