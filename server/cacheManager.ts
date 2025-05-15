@@ -1,7 +1,11 @@
 /**
  * server/cacheManager.ts
  * LRUキャッシュ管理を実装したキャッシュマネージャー
+ * - 改善点: evictOldest()メソッドをMapの挿入順序を活用してO(1)化
+ * - 改善点: JSONサイズ計測を安全なユーティリティ関数に置き換え
  */
+
+import { calculateSize } from '../utils/json';
 
 // キャッシュエントリの型定義
 interface CacheEntry<T> {
@@ -40,6 +44,9 @@ export class LRUCache<T> {
   private missCount: number = 0;
   private evictionCount: number = 0;
   private sequence: number = 0; // アクセス順を追跡するためのシーケンスカウンタ
+  
+  // シーケンスカウンタの安全なインクリメント用の最大値
+  private static readonly MAX_SEQUENCE = Number.MAX_SAFE_INTEGER - 1000; // 安全マージンを取る
 
   /**
    * LRUキャッシュを初期化
@@ -51,6 +58,33 @@ export class LRUCache<T> {
     this.cache = new Map<string, CacheEntry<T>>();
     this.maxSize = maxSize;
     this.ttl = ttl;
+  }
+
+  /**
+   * シーケンスカウンタを安全にインクリメント
+   * オーバーフロー防止のためにカウンタをリセットする
+   * 
+   * @returns 更新されたシーケンス値
+   */
+  private incrementSequence(): number {
+    // シーケンスが最大値に近づいた場合、リセットする
+    if (this.sequence >= LRUCache.MAX_SEQUENCE) {
+      // キャッシュ内の全エントリのlastAccessedを相対位置を保持しながらリセット
+      const entries = Array.from(this.cache.entries())
+        .sort((a, b) => a[1].lastAccessed - b[1].lastAccessed);
+      
+      // 現在の相対的なアクセス順序を維持しながらシーケンス値をリセット
+      this.sequence = 0;
+      for (let i = 0; i < entries.length; i++) {
+        const [key, entry] = entries[i];
+        entry.lastAccessed = i + 1; // 1から始まる新しいシーケンス
+        this.cache.set(key, entry);
+      }
+      
+      return ++this.sequence;
+    }
+    
+    return ++this.sequence;
   }
 
   /**
@@ -72,7 +106,7 @@ export class LRUCache<T> {
     this.cache.set(key, {
       value,
       timestamp: now,
-      lastAccessed: ++this.sequence // シーケンスカウンタを使用
+      lastAccessed: this.incrementSequence() // 安全なシーケンスカウンタ更新を使用
     });
     
     return value;
@@ -89,7 +123,7 @@ export class LRUCache<T> {
    * シーケンスカウンタを使用して一意のアクセス順序を保証する
    */
   private touch(entry: CacheEntry<T>): void {
-    entry.lastAccessed = ++this.sequence;
+    entry.lastAccessed = this.incrementSequence();
   }
 
   get(key: string): T | null {
@@ -110,7 +144,7 @@ export class LRUCache<T> {
     }
     
     // アクセス順序を更新
-    entry.lastAccessed = ++this.sequence;
+    entry.lastAccessed = this.incrementSequence();
     this.hitCount++;
     
     // キーを一度削除してから再設定することで、LRU順序を更新
@@ -142,7 +176,7 @@ export class LRUCache<T> {
     }
     
     // アクセス順序を更新
-    entry.lastAccessed = ++this.sequence;
+    entry.lastAccessed = this.incrementSequence();
     
     // キーを一度削除してから再設定することで、Mapの挿入順序を更新
     // これによりこのエントリが最新のエントリとしてMapの最後に移動する
@@ -180,25 +214,13 @@ export class LRUCache<T> {
       return null;
     }
     
-    let oldestKey: string | null = null;
-    let minSequence = Infinity;
+    // Mapの先頭（最初に挿入されたエントリ）が最も古いエントリになるため、
+    // これをO(1)で削除する
+    const oldestKey = this.cache.keys().next().value as string;
+    this.cache.delete(oldestKey);
+    this.evictionCount++;
     
-    // すべてのエントリをループして、最も小さいシーケンス番号を持つエントリを見つける
-    for (const [key, entry] of this.cache.entries()) {
-      if (entry.lastAccessed < minSequence) {
-        minSequence = entry.lastAccessed;
-        oldestKey = key;
-      }
-    }
-    
-    // 最も古いエントリを削除
-    if (oldestKey) {
-      this.cache.delete(oldestKey);
-      this.evictionCount++;
-      return oldestKey;
-    }
-    
-    return null;
+    return oldestKey;
   }
 
   /**
@@ -253,7 +275,7 @@ export class LRUCache<T> {
         key,
         age,
         lastAccessed: now - entry.lastAccessed,
-        size: JSON.stringify(entry.value).length
+        size: calculateSize(entry.value)
       });
     }
     

@@ -1,6 +1,12 @@
 /**
  * server/bitgetWebSocketManager.ts
  * Bitget WebSocketとの単一接続を管理するマネージャークラス
+ * 
+ * 改善点:
+ * - サブスクリプションキーの重複防止(一貫した文字列形式使用)
+ * - 再接続前にws.terminate()を確実に実行
+ * - Ping/Pong処理の最適化
+ * - タイムフレーム変換をユーティリティに移動
  */
 
 import WebSocket from 'ws';
@@ -8,6 +14,7 @@ import { EventEmitter } from 'events';
 import { ExchangeType } from '../types/api';
 import { logger } from '@/utils/common';
 import { getApiConfig } from '../services/api/common/environment';
+import { toBitget, fromBitget } from '../utils/timeframe';
 
 // 接続状態の定義
 enum ConnectionState {
@@ -90,6 +97,13 @@ export class BitgetWebSocketManager extends EventEmitter {
       this.ws.on('message', this.handleMessage.bind(this));
       this.ws.on('error', this.handleError.bind(this));
       this.ws.on('close', this.handleClose.bind(this));
+      
+      // Bitgetの公式仕様に従ってpingハンドラを追加
+      this.ws.on('ping', (data) => {
+        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+          this.ws.pong(data);
+        }
+      });
     } catch (error) {
       logger.error('Failed to connect to WebSocket', error, {
         component: 'BitgetWebSocketManager',
@@ -155,7 +169,7 @@ export class BitgetWebSocketManager extends EventEmitter {
           if (!timeframe) {
             throw new Error('Timeframe is required for kline subscription');
           }
-          channel = `candle${this.convertTimeframe(timeframe)}`;
+          channel = `candle${toBitget(timeframe)}`;
           break;
         case 'trade':
           channel = 'trade';
@@ -180,7 +194,7 @@ export class BitgetWebSocketManager extends EventEmitter {
       }
       
       // サブスクリプションIDの生成と保存
-      const subId = JSON.stringify(subscription);
+      const subId = this.generateSubscriptionId(subscription);
       this.subscriptions.get(subKey)?.add(subId);
       
       // WebSocketが接続されている場合は購読メッセージを送信
@@ -241,7 +255,7 @@ export class BitgetWebSocketManager extends EventEmitter {
           if (!timeframe) {
             throw new Error('Timeframe is required for kline subscription');
           }
-          channel = `candle${this.convertTimeframe(timeframe)}`;
+          channel = `candle${toBitget(timeframe)}`;
           break;
         case 'trade':
           channel = 'trade';
@@ -262,7 +276,7 @@ export class BitgetWebSocketManager extends EventEmitter {
       
       // サブスクリプションの削除
       if (this.subscriptions.has(subKey)) {
-        const subId = JSON.stringify(subscription);
+        const subId = this.generateSubscriptionId(subscription);
         const subs = this.subscriptions.get(subKey);
         
         if (subs) {
@@ -303,10 +317,19 @@ export class BitgetWebSocketManager extends EventEmitter {
    */
   public getSubscriptions(): Subscription[] {
     const result: Subscription[] = [];
+    const processedKeys = new Set<string>();
     
     for (const subs of this.subscriptions.values()) {
       for (const subId of subs) {
-        result.push(JSON.parse(subId));
+        // subIdから基本情報を抽出
+        const [instType, channel, instId] = subId.split(':');
+        const key = `${instType}:${channel}:${instId}`;
+        
+        // 重複を避けるために既に処理したキーをスキップ
+        if (!processedKeys.has(key)) {
+          processedKeys.add(key);
+          result.push({ instType, channel, instId });
+        }
       }
     }
     
@@ -343,8 +366,7 @@ export class BitgetWebSocketManager extends EventEmitter {
     this.connectionState = ConnectionState.CONNECTED;
     this.reconnectAttempts = 0;
     
-    // Ping間隔の設定
-    this.setupPingInterval();
+    // Ping間隔の設定は不要 - Bitget側から20秒ごとにpingが送信される
     
     // 保存されているすべてのサブスクリプションを再購読
     this.resubscribeAll();
@@ -370,7 +392,7 @@ export class BitgetWebSocketManager extends EventEmitter {
         return;
       }
       
-      // pingメッセージの処理
+      // pingメッセージの処理（ただしpingイベントは別途ws.on('ping')で処理）
       if (data === 'ping') {
         this.sendPong();
         return;
@@ -500,7 +522,7 @@ export class BitgetWebSocketManager extends EventEmitter {
       type = 'trade';
     } else if (channel.startsWith('candle')) {
       type = 'kline';
-      timeframe = this.reverseTimeframe(channel.replace('candle', ''));
+      timeframe = fromBitget(channel.replace('candle', ''));
     } else {
       logger.warn(`Unknown channel: ${channel}`, {
         component: 'BitgetWebSocketManager',
@@ -577,6 +599,7 @@ export class BitgetWebSocketManager extends EventEmitter {
     });
     
     this.clearTimers();
+    this.ws = null; // 明示的にnullに設定
     
     // 正常終了（コード1000）でない場合は再接続
     if (code !== 1000) {
@@ -674,8 +697,27 @@ export class BitgetWebSocketManager extends EventEmitter {
   private resubscribeAll(): void {
     for (const subs of this.subscriptions.values()) {
       for (const subId of subs) {
-        const subscription = JSON.parse(subId);
-        this.sendSubscription(subscription);
+        try {
+          // subIdはコロン区切り文字列なのでsplitして再構築
+          const [instType, channel, instId] = subId.split(':');
+          
+          // 各コンポーネントが存在することを確認
+          if (!instType || !channel || !instId) {
+            logger.warn(`Invalid subscription ID format: ${subId}`, {
+              component: 'BitgetWebSocketManager',
+              action: 'resubscribeAll'
+            });
+            continue;
+          }
+          
+          const subscription: Subscription = { instType, channel, instId };
+          this.sendSubscription(subscription);
+        } catch (error) {
+          logger.error(`Failed to resubscribe: ${subId}`, error, {
+            component: 'BitgetWebSocketManager',
+            action: 'resubscribeAll'
+          });
+        }
       }
     }
   }
@@ -684,6 +726,20 @@ export class BitgetWebSocketManager extends EventEmitter {
    * 再接続をスケジュール
    */
   private scheduleReconnect(): void {
+    // 既存の接続を確実にクローズ
+    if (this.ws) {
+      try {
+        this.ws.terminate();
+      } catch (error) {
+        // エラーオブジェクトをそのまま渡さず、文字列化してloggerに渡す
+        logger.warn(`Error terminating WebSocket connection: ${error}`, {
+          component: 'BitgetWebSocketManager',
+          action: 'scheduleReconnect'
+        });
+      }
+      this.ws = null;
+    }
+    
     // 既に再接続がスケジュールされている場合は何もしない
     if (this.reconnectTimer || this.connectionState === ConnectionState.RECONNECTING) {
       return;
@@ -774,30 +830,25 @@ export class BitgetWebSocketManager extends EventEmitter {
   }
 
   /**
+   * サブスクリプションIDの生成
+   * プロパティの順序を一定にして一意のIDを生成
+   * 
+   * @param subscription サブスクリプション情報
+   * @returns サブスクリプションID
+   */
+  private generateSubscriptionId(subscription: Subscription): string {
+    // 固定形式の文字列を生成
+    return `${subscription.instType}:${subscription.channel}:${subscription.instId}`;
+  }
+
+  /**
    * タイムフレームをBitget形式に変換
    * 
    * @param timeframe タイムフレーム（例: '1m', '1h', '1d'）
    * @returns Bitget形式のタイムフレーム
    */
   private convertTimeframe(timeframe: string): string {
-    const mapping: Record<string, string> = {
-      '1m': '1min',
-      '3m': '3min',
-      '5m': '5min',
-      '15m': '15min',
-      '30m': '30min',
-      '1h': '1h',
-      '2h': '2h',
-      '4h': '4h',
-      '6h': '6h',
-      '12h': '12h',
-      '1d': '1day',
-      '3d': '3day',
-      '1w': '1week',
-      '1M': '1month'
-    };
-    
-    return mapping[timeframe] || '1day';
+    return toBitget(timeframe);
   }
 
   /**
@@ -807,24 +858,7 @@ export class BitgetWebSocketManager extends EventEmitter {
    * @returns 標準形式のタイムフレーム
    */
   private reverseTimeframe(bitgetTimeframe: string): string {
-    const mapping: Record<string, string> = {
-      '1min': '1m',
-      '3min': '3m',
-      '5min': '5m',
-      '15min': '15m',
-      '30min': '30m',
-      '1h': '1h',
-      '2h': '2h',
-      '4h': '4h',
-      '6h': '6h',
-      '12h': '12h',
-      '1day': '1d',
-      '3day': '3d',
-      '1week': '1w',
-      '1month': '1M'
-    };
-    
-    return mapping[bitgetTimeframe] || '1d';
+    return fromBitget(bitgetTimeframe);
   }
 }
 
