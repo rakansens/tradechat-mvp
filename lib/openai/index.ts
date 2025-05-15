@@ -1,8 +1,20 @@
 // lib/openai/index.ts
 // OpenAI APIクライアントユーティリティ
 // 作成日: 2025/6/1
+// 更新日: 2025/9/17 - セキュリティ強化（サーバーサイド専用チェック追加）
 
 import OpenAI from 'openai';
+
+// クライアント環境での実行をブロックするガード関数
+const blockClientSideExecution = () => {
+  if (typeof window !== 'undefined') {
+    throw new Error(
+      'Security Error: OpenAI API関数はサーバーサイドでのみ使用可能です。' +
+      'クライアントからAPIキーを保護するため、クライアントからの直接呼び出しは許可されていません。' +
+      'サーバーサイドAPI（Route Handler）経由で使用してください。'
+    );
+  }
+};
 
 // シングルトンパターンでOpenAIクライアントを提供
 let openaiInstance: OpenAI | null = null;
@@ -12,6 +24,9 @@ let openaiInstance: OpenAI | null = null;
  * @returns OpenAIインスタンス
  */
 export function getOpenAI(): OpenAI {
+  // クライアントサイド実行をブロック
+  blockClientSideExecution();
+
   if (!openaiInstance) {
     const apiKey = process.env.OPENAI_API_KEY;
     
@@ -37,6 +52,9 @@ export async function generateEmbedding(
   text: string,
   model: string = 'text-embedding-3-small'
 ): Promise<number[]> {
+  // クライアントサイド実行をブロック
+  blockClientSideExecution();
+
   const openai = getOpenAI();
   
   try {
@@ -59,6 +77,8 @@ export async function generateEmbedding(
  * @returns コサイン類似度 (-1 から 1 の範囲)
  */
 export function calculateCosineSimilarity(a: number[], b: number[]): number {
+  // 純粋な数学関数なのでクライアントでも実行可能
+  
   if (a.length !== b.length) {
     throw new Error('ベクトルの次元数が一致しません');
   }
