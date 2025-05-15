@@ -10,18 +10,10 @@
  * - 204 No Content応答を適切に処理
  * 
  * 作成日: 2025/6/28
- * 更新日: 2025/6/29 - SPAリダイレクトの実装
+ * 更新日: 2025/6/30 - 401時のリダイレクトをSPA対応（window.location→next/navigation）
  */
 
-import { useRouter } from 'next/navigation';
-
-// Routerをグローバルに設定するための変数
-let globalRouter: ReturnType<typeof useRouter> | null = null;
-
-// アプリ内で一度だけルーターをセットするためのヘルパー関数
-export function setGlobalRouter(router: ReturnType<typeof useRouter>) {
-  globalRouter = router;
-}
+import { redirect } from 'next/navigation';
 
 /**
  * JSON APIからデータを取得する汎用関数
@@ -49,13 +41,8 @@ export async function fetchJSON<T = unknown>(
 
   if (res.status === 401) {
     if (typeof window !== 'undefined') {
-      // 可能であればSPA遷移を使用
-      if (globalRouter) {
-        globalRouter.push('/signin');
-      } else {
-        // フォールバックとしてwindow.locationを使用
-        window.location.href = '/signin';
-      }
+      // SPA内でのリダイレクトに変更（フルリロードを避ける）
+      redirect('/signin');
     }
     throw new Error('Unauthorized');
   }

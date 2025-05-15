@@ -1,15 +1,14 @@
-'use client';
+'use client'
 
 /**
- * サインインページ
- * 作成日: 2025/6/15
- * 更新日: 2025/6/25 - ログイン処理のデバッグを強化し、リダイレクト処理を追加
- * 更新日: 2025/6/25 - 開発用の一時的な修正を追加（テスト用アカウント対応）
+ * App Router版サインインページ
+ * 作成日: 2025/6/30
+ * 更新日: 2025/6/30 - ReactQueryProvider内での実行を保証するため、App Router配下に移動
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { redirect, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/auth/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,6 +21,22 @@ export default function SignInPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { signIn } = useAuth();
   const router = useRouter();
+
+  // ログイン済みならトップに飛ばす
+  useEffect(() => {
+    const checkSession = async () => {
+      try {
+        const isLoggedIn = localStorage.getItem('auth.session') !== null;
+        if (isLoggedIn) {
+          router.push('/');
+        }
+      } catch (error) {
+        console.error('Session check error:', error);
+      }
+    };
+    
+    checkSession();
+  }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,7 +63,7 @@ export default function SignInPage() {
       });
       
       // ダッシュボードにリダイレクト
-      router.push('/dashboard');
+      router.push('/');
       
     } catch (error: any) {
       console.error('ログインエラー詳細:', error);
@@ -63,7 +78,7 @@ export default function SignInPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
+    <main className="min-h-screen flex items-center justify-center bg-background">
       <div className="w-full max-w-md p-8 space-y-8 bg-card rounded-lg border shadow-lg">
         <div className="text-center">
           <h1 className="text-2xl font-bold tracking-tight">トレードチャットにログイン</h1>
@@ -128,6 +143,6 @@ export default function SignInPage() {
           </p>
         </div>
       </div>
-    </div>
+    </main>
   );
 } 
