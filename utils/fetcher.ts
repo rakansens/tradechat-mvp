@@ -10,8 +10,18 @@
  * - 204 No Content応答を適切に処理
  * 
  * 作成日: 2025/6/28
- * 更新日: 2025/6/29 - 204 No Content応答の処理を追加
+ * 更新日: 2025/6/29 - SPAリダイレクトの実装
  */
+
+import { useRouter } from 'next/navigation';
+
+// Routerをグローバルに設定するための変数
+let globalRouter: ReturnType<typeof useRouter> | null = null;
+
+// アプリ内で一度だけルーターをセットするためのヘルパー関数
+export function setGlobalRouter(router: ReturnType<typeof useRouter>) {
+  globalRouter = router;
+}
 
 /**
  * JSON APIからデータを取得する汎用関数
@@ -39,7 +49,13 @@ export async function fetchJSON<T = unknown>(
 
   if (res.status === 401) {
     if (typeof window !== 'undefined') {
-      window.location.href = '/signin';
+      // 可能であればSPA遷移を使用
+      if (globalRouter) {
+        globalRouter.push('/signin');
+      } else {
+        // フォールバックとしてwindow.locationを使用
+        window.location.href = '/signin';
+      }
     }
     throw new Error('Unauthorized');
   }

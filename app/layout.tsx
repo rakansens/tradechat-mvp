@@ -10,6 +10,7 @@ import { SocketProvider } from '@/components/providers/socket-provider'
 import { SupabaseProvider } from '@/components/providers/SupabaseProvider'
 import { ReactQueryProvider } from '@/components/providers/ReactQueryProvider'
 import { ModalProvider } from '@/components/providers/ModalProvider'
+import { RouterProvider } from '@/components/providers/RouterProvider'
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" })
 
@@ -40,11 +41,13 @@ export default function RootLayout({
           <SocketProvider>
             <SupabaseProvider>
               <ReactQueryProvider>
-                <ModalProvider>
-                  <Toaster />
-                  <ClientLayout>{children}</ClientLayout>
-                  <ToastListener />
-                </ModalProvider>
+                <RouterProvider>
+                  <ModalProvider>
+                    <Toaster />
+                    <ClientLayout>{children}</ClientLayout>
+                    <ToastListener />
+                  </ModalProvider>
+                </RouterProvider>
               </ReactQueryProvider>
             </SupabaseProvider>
           </SocketProvider>
