@@ -36,18 +36,58 @@
   * `client.ts` - クライアントサイド用クライアント
   * `server.ts` - サーバーサイド用クライアント
   * `middlewareClient.ts` - ミドルウェア用クライアント
-  * `routeHandlerClient.ts` - APIルートハンドラー用クライアント
-  * `features/` - 機能別のSupabase連携コード
+  * `routeHandlerClient.ts` - ルートハンドラ用クライアント
+  * `features/` - Supabase機能モジュール
+    * `profile.ts` - ユーザープロファイル操作
+    * `settings.ts` - 設定関連操作
 
-### types/ - 型定義
+* `lib/api/` - 外部APIとの接続
+  * `bitget.ts` - Bitget API連携
+  * `exchange.ts` - 汎用取引所API
+  * `market.ts` - 市場データAPI
 
-アプリケーション全体で使用される型定義を格納します。
+## 開発ステータス
 
-* `types/validations/` - Zodバリデーションスキーマ
-  * `market.ts` - 市場データ検証
-  * `chart.ts` - チャートデータ検証
-  * `price.ts` - 価格データ検証
-  * `symbol.ts` - シンボル情報検証
+1. ✅ **完了** - 基本的なチャート描画
+2. ✅ **完了** - ユーザー認証(Supabase Auth)
+3. ✅ **完了** - リアルタイム市場データ(WebSocket)
+4. ✅ **完了** - Supabase連携コードの移行（`utils/supabase` → `lib/supabase`）
+5. 🚧 **進行中** - ユーザー設定の永続化
+6. 🚧 **進行中** - チャット機能の実装
+7. 📅 **予定** - ポジションエントリー管理
+8. 📅 **予定** - モバイル対応UI
+
+### 🔄 旧 utils/supabase の完全撤廃 (2025-06-XX)
+
+* utils/supabase は **削除済み**  
+* 旧 import はすべて lib/supabase 経由に置換済み  
+* tsconfig / Jest / ESLint の paths も 1 本化  
+* ESLint ルール `no-restricted-imports` で再発防止  
+
+## セットアップと開発
+
+```bash
+# 依存関係のインストール
+pnpm install
+
+# 開発サーバーの起動
+pnpm dev
+
+# ビルド
+pnpm build
+
+# テスト実行
+pnpm test
+```
+
+## 技術スタック
+
+- **フレームワーク**: Next.js 14 (App Router)
+- **状態管理**: Zustand
+- **UI**: TailwindCSS, shadcn/ui
+- **チャート**: Lightweight Charts
+- **バックエンド**: Supabase (Auth, Database, Edge Functions)
+- **WebSocket**: Socket.io
 
 ## コーディングガイドライン
 
@@ -118,10 +158,4 @@ import { truncateString } from '@/utils/common/format';
 1. ✅ **完了** - 新しい構造を準備、バレルファイルの追加
 2. ✅ **完了** - 既存コードの参照変更（直接パス）
 3. ✅ **完了** - 互換性のためのリダイレクトファイル追加
-4. ✅ **完了** - Supabase連携コードの移行（`utils/supabase` → `lib/supabase`）
-5. **フェーズ2** - インデックス経由のインポートに変更
-6. **フェーズ3** - 古いファイルとリダイレクトの削除（参照更新完了後）
-
-### 現在のリンターエラーについて
-
-現在、一部のファイルで重複するエクスポートに関するリンターエラーが発生しています。これは移行期間中の一時的なもので、フェーズ3で解消されます。 
+4. ✅ **完了** - Supabase連携コードの移行（`utils/supabase` → `lib/supabase`
