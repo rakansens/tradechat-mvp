@@ -3,22 +3,20 @@
 // components/providers/ReactQueryProvider.tsx
 // React Queryプロバイダーコンポーネント
 // 作成日: 2025/6/15
-// 更新日: 2025/6/29 - DevToolsの安全なロードとHydrationサポート
+// 更新日: 2025/6/30 - Devtoolsを別コンポーネントに分離して安全に読み込む
 
 import { QueryClient, QueryClientProvider, HydrationBoundary } from '@tanstack/react-query'
 import { useState } from 'react'
+import dynamic from 'next/dynamic'
 
-// 開発環境でのみDevtoolsをロード - try-catchでラップして安全に
-let ReactQueryDevtools = () => null
-if (process.env.NODE_ENV === 'development') {
-  try {
-    // 開発環境でのみDynamic importを使用
-    ReactQueryDevtools = require('@tanstack/react-query-devtools').ReactQueryDevtools
-  } catch (e) {
-    console.warn('React Query DevTools could not be loaded', e)
-    ReactQueryDevtools = () => null
-  }
-}
+// Devtoolsを遅延ロード（クライアントサイドでのみ実行）
+const ReactQueryDevtoolsProduction = dynamic(
+  () => 
+    import('@tanstack/react-query-devtools').then(d => ({
+      default: d.ReactQueryDevtools,
+    })),
+  { ssr: false }
+)
 
 // デフォルトのQueryClientインスタンスを作成（サーバーコンポーネントでprefetchに使用）
 export const getQueryClient = () => new QueryClient({
@@ -45,8 +43,10 @@ export function ReactQueryProvider({
     <QueryClientProvider client={queryClient}>
       <HydrationBoundary state={dehydratedState}>
         {children}
-        {process.env.NODE_ENV === 'development' && <ReactQueryDevtools initialIsOpen={false} />}
       </HydrationBoundary>
+      
+      {/* 開発環境でのみDevtoolsを表示 */}
+      {process.env.NODE_ENV === 'development' && <ReactQueryDevtoolsProduction />}
     </QueryClientProvider>
   )
 } 
