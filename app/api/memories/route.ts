@@ -2,6 +2,7 @@
 // メモリ管理API
 // 作成日: 2025/5/31
 // 更新日: 2025/6/22 - Supabase SSRクライアント対応（インポートパス更新）
+// 更新日: 2025/8/22 - エラーログの詳細表示を追加
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/supabase/features/auth';
@@ -42,17 +43,27 @@ export async function GET(request: NextRequest) {
         console.error('ベクトル検索エラー:', error);
         
         // ベクトル検索に失敗した場合はテキスト検索にフォールバック
-        const memories = await searchMemoriesByText(user.id, searchQuery, limit);
-        return NextResponse.json(memories);
+        try {
+          const memories = await searchMemoriesByText(user.id, searchQuery, limit);
+          return NextResponse.json(memories);
+        } catch (textError) {
+          console.error('テキスト検索エラー:', textError);
+          return NextResponse.json({ error: `検索エラー: ${textError}` }, { status: 500 });
+        }
       }
     } else {
       // 全件取得
-      const memories = await getUserMemories(user.id, limit, offset);
-      return NextResponse.json(memories);
+      try {
+        const memories = await getUserMemories(user.id, limit, offset);
+        return NextResponse.json(memories);
+      } catch (fetchError) {
+        console.error('メモリ取得エラー:', fetchError);
+        return NextResponse.json({ error: `メモリ取得エラー: ${fetchError}` }, { status: 500 });
+      }
     }
   } catch (error) {
     console.error('Error in GET /api/memories:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ error: `Internal server error: ${error}` }, { status: 500 });
   }
 }
 

@@ -1,6 +1,7 @@
 -- 02_rls.sql
 -- RLSポリシー設定ファイル
 -- 作成日: 2025/5/7
+-- 更新日: 2025/8/22 - usersテーブルのRLSポリシーを簡素化して無限再帰を防止
 
 -- RLSを有効化し、デフォルトで拒否設定にする
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
@@ -15,18 +16,25 @@ ALTER TABLE cached_data ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_relations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE backtest_data ENABLE ROW LEVEL SECURITY;
 
--- usersテーブルのRLSポリシー
--- 自分自身のデータのみ読み取り可能
-CREATE POLICY "ユーザーは自分のデータのみ閲覧可能" ON users
-  FOR SELECT USING (auth.uid() = id);
+-- usersテーブルのRLSポリシー (シンプル化)
+-- 読み取り: 自分の行だけ
+CREATE POLICY "users_select_own"
+ON users
+FOR SELECT
+USING (id = auth.uid());
 
--- 自分自身のデータのみ更新可能
-CREATE POLICY "ユーザーは自分のデータのみ更新可能" ON users
-  FOR UPDATE USING (auth.uid() = id);
+-- 追加: 自分の行だけ
+CREATE POLICY "users_insert_self"
+ON users
+FOR INSERT
+WITH CHECK (id = auth.uid());
 
--- 管理者はすべてのユーザーデータにアクセス可能
-CREATE POLICY "管理者はすべてのユーザーデータにアクセス可能" ON users
-  FOR ALL USING (auth.uid() IN (SELECT id FROM users WHERE is_admin = true));
+-- 更新: 自分の行だけ
+CREATE POLICY "users_update_self"
+ON users
+FOR UPDATE
+USING (id = auth.uid())
+WITH CHECK (id = auth.uid());
 
 -- profilesテーブルのRLSポリシー
 -- 自分のプロフィールは読み書き可能
