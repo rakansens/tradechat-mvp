@@ -1,15 +1,20 @@
 // app/api/mastra/chat/route.ts
 // システムプロンプトをサポートするMASTRAチャットエンドポイント
 // 作成日: 2025/5/28
+// 更新日: 2025/9/17 - DIパターンを適用（createRouteHandlerClientを使用）
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/supabase/features/auth';
+import { createRouteHandlerClient } from '@/lib/supabase/routeHandlerClient';
 import { askAgent } from '@/lib/agent';
 import { MessageRole, ChatMessage } from '@/types/chat/message';
 
 // チャットメッセージを処理するPOSTハンドラー
 export async function POST(request: NextRequest) {
   try {
+    // RouteHandler用のSupabaseクライアントを生成
+    const supabase = await createRouteHandlerClient();
+    
     // リクエストボディを取得
     const { message, messages, instructions } = await request.json();
 
@@ -18,8 +23,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid message format' }, { status: 400 });
     }
 
-    // 現在のユーザーを取得
-    const user = await getCurrentUser();
+    // 現在のユーザーを取得（DIパターンでクライアントを渡す）
+    const user = await getCurrentUser(supabase);
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -32,7 +37,8 @@ export async function POST(request: NextRequest) {
     // エージェントに問い合わせ
     const aiResponse = await askAgent(processedMessages, {
       // 指定がない場合や空文字列の場合はundefinedを維持
-      instructions: instructions === '' ? undefined : instructions
+      instructions: instructions === '' ? undefined : instructions,
+      supabaseClient: supabase
     });
 
     // 成功レスポンス
