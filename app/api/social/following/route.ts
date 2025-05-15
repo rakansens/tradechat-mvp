@@ -2,9 +2,11 @@
 // フォロー一覧の取得と管理のためのAPIエンドポイント
 // 作成日: 2025/5/14
 // 更新日: 2025/6/23 - SSRクライアント対応でインポート更新と関数シグネチャ修正
+// 更新日: 2025/9/17 - DIパターンを適用（createRouteHandlerClientを使用）
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/supabase/features/auth';
+import { createRouteHandlerClient } from '@/lib/supabase/routeHandlerClient';
 import {
   getUserFollowing,
   followUser,
@@ -17,6 +19,9 @@ import {
  */
 export async function GET(request: NextRequest) {
   try {
+    // RouteHandler用のSupabaseクライアントを生成
+    const supabase = await createRouteHandlerClient();
+    
     // クエリパラメータの取得
     const searchParams = request.nextUrl.searchParams;
     const limit = parseInt(searchParams.get('limit') || '50');
@@ -24,14 +29,14 @@ export async function GET(request: NextRequest) {
     const getCount = searchParams.get('count') === 'true';
     const checkUserId = searchParams.get('checkUserId');
     
-    // 現在のユーザーを取得
-    const user = await getCurrentUser();
+    // 現在のユーザーを取得（DIパターンでクライアントを渡す）
+    const user = await getCurrentUser(supabase);
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // フォロー一覧を取得
-    const following = await getUserFollowing(user.id);
+    // フォロー一覧を取得（DIパターンでクライアントを渡す）
+    const following = await getUserFollowing(user.id, supabase);
 
     // 特定のユーザーをフォローしているか確認
     if (checkUserId) {
@@ -62,6 +67,9 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: Request) {
   try {
+    // RouteHandler用のSupabaseクライアントを生成
+    const supabase = await createRouteHandlerClient();
+    
     // リクエストボディからフォロー対象のユーザーIDを取得
     const { userId } = await request.json();
 
@@ -73,8 +81,8 @@ export async function POST(request: Request) {
       );
     }
 
-    // 現在のユーザーを取得
-    const user = await getCurrentUser();
+    // 現在のユーザーを取得（DIパターンでクライアントを渡す）
+    const user = await getCurrentUser(supabase);
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -87,8 +95,8 @@ export async function POST(request: Request) {
       );
     }
 
-    // ユーザーをフォロー
-    const result = await followUser(user.id, userId);
+    // ユーザーをフォロー（DIパターンでクライアントを渡す）
+    const result = await followUser(user.id, userId, supabase);
 
     return NextResponse.json(result);
   } catch (error) {
@@ -109,6 +117,9 @@ export async function POST(request: Request) {
  */
 export async function DELETE(request: Request) {
   try {
+    // RouteHandler用のSupabaseクライアントを生成
+    const supabase = await createRouteHandlerClient();
+    
     // URL からパラメータを取得
     const url = new URL(request.url);
     const userId = url.searchParams.get('userId');
@@ -120,14 +131,14 @@ export async function DELETE(request: Request) {
       );
     }
 
-    // 現在のユーザーを取得
-    const user = await getCurrentUser();
+    // 現在のユーザーを取得（DIパターンでクライアントを渡す）
+    const user = await getCurrentUser(supabase);
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // フォローを解除
-    await unfollowUser(user.id, userId);
+    // フォローを解除（DIパターンでクライアントを渡す）
+    await unfollowUser(user.id, userId, supabase);
 
     return NextResponse.json({ success: true });
   } catch (error) {
