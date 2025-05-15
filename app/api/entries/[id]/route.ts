@@ -2,9 +2,11 @@
 // IDを指定したトレードエントリー操作のためのAPIエンドポイント
 // 作成日: 2025/6/1
 // 更新日: 2025/6/22 - Supabase SSRクライアント対応（インポートパス更新）
+// 更新日: 2025/9/17 - DIパターンを適用（createRouteHandlerClientを使用）
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/supabase/features/auth';
+import { createRouteHandlerClient } from '@/lib/supabase/routeHandlerClient';
 import { 
   updateEntry, 
   deleteEntry, 
@@ -21,16 +23,19 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
+    // RouteHandler用のSupabaseクライアントを生成
+    const supabase = await createRouteHandlerClient();
+    
     const entryId = params.id;
     
-    // 現在のユーザーを取得
-    const user = await getCurrentUser();
+    // 現在のユーザーを取得（DIパターンでクライアントを渡す）
+    const user = await getCurrentUser(supabase);
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // エントリーを取得
-    const entry = await getEntryById(entryId);
+    // エントリーを取得（DIパターンでクライアントを渡す）
+    const entry = await getEntryById(entryId, supabase);
     
     // エントリーが存在しない場合
     if (!entry) {
@@ -57,19 +62,22 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
+    // RouteHandler用のSupabaseクライアントを生成
+    const supabase = await createRouteHandlerClient();
+    
     const entryId = params.id;
     
     // リクエストボディを取得
     const updates = await request.json();
     
-    // 現在のユーザーを取得
-    const user = await getCurrentUser();
+    // 現在のユーザーを取得（DIパターンでクライアントを渡す）
+    const user = await getCurrentUser(supabase);
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
-    // まずエントリーを取得して所有者チェック
-    const entry = await getEntryById(entryId);
+    // まずエントリーを取得して所有者チェック（DIパターンでクライアントを渡す）
+    const entry = await getEntryById(entryId, supabase);
     if (!entry) {
       return NextResponse.json({ error: 'Entry not found' }, { status: 404 });
     }
@@ -87,12 +95,12 @@ export async function PATCH(
         }
         
         const exitTime = updates.exitTime ? new Date(updates.exitTime) : new Date();
-        const updatedEntry = await closeEntry(entryId, exitPrice, exitTime);
+        const updatedEntry = await closeEntry(entryId, exitPrice, exitTime, supabase);
         return NextResponse.json(updatedEntry);
       }
       
       if (updates.action === 'cancel') {
-        const updatedEntry = await cancelEntry(entryId);
+        const updatedEntry = await cancelEntry(entryId, supabase);
         return NextResponse.json(updatedEntry);
       }
     }
@@ -101,7 +109,7 @@ export async function PATCH(
     // actionとexitPriceとexitTimeプロパティを削除
     const { action, exitPrice, exitTime, ...validUpdates } = updates;
     
-    const updatedEntry = await updateEntry(entryId, validUpdates);
+    const updatedEntry = await updateEntry(entryId, validUpdates, supabase);
     return NextResponse.json(updatedEntry);
   } catch (error) {
     console.error('Error in PATCH /api/entries/[id]:', error);
@@ -117,16 +125,19 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
+    // RouteHandler用のSupabaseクライアントを生成
+    const supabase = await createRouteHandlerClient();
+    
     const entryId = params.id;
     
-    // 現在のユーザーを取得
-    const user = await getCurrentUser();
+    // 現在のユーザーを取得（DIパターンでクライアントを渡す）
+    const user = await getCurrentUser(supabase);
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
-    // まずエントリーを取得して所有者チェック
-    const entry = await getEntryById(entryId);
+    // まずエントリーを取得して所有者チェック（DIパターンでクライアントを渡す）
+    const entry = await getEntryById(entryId, supabase);
     if (!entry) {
       return NextResponse.json({ error: 'Entry not found' }, { status: 404 });
     }
@@ -135,8 +146,8 @@ export async function DELETE(
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
     
-    // エントリーを削除
-    await deleteEntry(entryId);
+    // エントリーを削除（DIパターンでクライアントを渡す）
+    await deleteEntry(entryId, supabase);
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error in DELETE /api/entries/[id]:', error);

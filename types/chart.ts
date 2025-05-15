@@ -2,6 +2,9 @@
 // 作成: チャート関連の型定義
 // 更新: lightweight-charts v5 互換の型定義を追加
 // 更新: Zodスキーマから生成した型定義と一致するように修正
+// 更新: オーダーブック関連の型を共通モジュールから参照するように変更
+
+import { OrderBookEntry, OrderBookData } from './common/orderbook';
 
 /**
  * Nominal 型（lightweight-charts の型定義から）
@@ -175,25 +178,10 @@ export const TIMEFRAME_MAP_FUTURES: Record<string, string> = {
 };
 
 /**
- * オーダーブックエントリーの型
+ * オーダーブック関連の型定義を再エクスポート
+ * @deprecated 代わりに common/orderbook から直接インポートしてください
  */
-export interface OrderBookEntry {
-  price: number;
-  amount: number;
-  total?: number; // UI表示用の累積数量
-}
-
-/**
- * オーダーブックデータの型
- * 
- * @deprecated 互換性のため、配列形式もサポートします
- */
-export interface OrderBookData {
-  asks: OrderBookEntry[] | [string, string][];
-  bids: OrderBookEntry[] | [string, string][];
-  timestamp: number;
-  symbol?: string;
-}
+export type { OrderBookEntry, OrderBookData };
 
 export interface ChartState {
   // 状態

@@ -2,29 +2,34 @@
 // トレードエントリー一覧取得と作成のためのAPIエンドポイント
 // 作成日: 2025/5/14
 // 更新日: 2025/6/22 - Supabase SSRクライアント対応（インポートパス更新）
+// 更新日: 2025/9/17 - DIパターンを適用（createRouteHandlerClientを使用）
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/supabase/features/auth';
 import { getUserEntries, createEntry } from '@/lib/supabase/features/entry';
+import { createRouteHandlerClient } from '@/lib/supabase/routeHandlerClient';
 
 /**
  * ユーザーのエントリー一覧を取得するGETハンドラ
  */
 export async function GET(request: NextRequest) {
   try {
+    // RouteHandler用のSupabaseクライアントを生成
+    const supabase = await createRouteHandlerClient();
+    
     // クエリパラメータの取得
     const searchParams = request.nextUrl.searchParams;
     const limit = parseInt(searchParams.get('limit') || '50');
     const offset = parseInt(searchParams.get('offset') || '0');
     
-    // 現在のユーザーを取得
-    const user = await getCurrentUser();
+    // 現在のユーザーを取得（DIパターンでクライアントを渡す）
+    const user = await getCurrentUser(supabase);
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // ユーザーのエントリー一覧を取得
-    const entries = await getUserEntries(user.id, limit, offset);
+    // ユーザーのエントリー一覧を取得（DIパターンでクライアントを渡す）
+    const entries = await getUserEntries(user.id, limit, offset, supabase);
 
     return NextResponse.json(entries);
   } catch (error) {
@@ -38,6 +43,9 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: Request) {
   try {
+    // RouteHandler用のSupabaseクライアントを生成
+    const supabase = await createRouteHandlerClient();
+    
     // リクエストボディを取得
     const { side, symbol, price, time, takeProfit, stopLoss, isPublic } = await request.json();
 
@@ -49,8 +57,8 @@ export async function POST(request: Request) {
       );
     }
 
-    // 現在のユーザーを取得
-    const user = await getCurrentUser();
+    // 現在のユーザーを取得（DIパターンでクライアントを渡す）
+    const user = await getCurrentUser(supabase);
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -58,7 +66,7 @@ export async function POST(request: Request) {
     // タイムスタンプが提供されていない場合は現在時刻を使用
     const entryTime = time ? new Date(time) : new Date();
 
-    // 新しいエントリーを作成
+    // 新しいエントリーを作成（DIパターンでクライアントを渡す）
     const entry = await createEntry(
       user.id,
       side,
@@ -67,7 +75,8 @@ export async function POST(request: Request) {
       entryTime,
       takeProfit,
       stopLoss,
-      isPublic || false
+      isPublic || false,
+      supabase
     );
 
     return NextResponse.json(entry);

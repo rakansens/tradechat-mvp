@@ -11,6 +11,12 @@ export * from './base';
 // コンポーネント間で共有されるインターフェースをエクスポート
 export * from './interfaces';
 
+// オーダーブック関連の共通型をエクスポート
+export * from './orderbook';
+
+// シンボル関連の共通型をエクスポート
+export * from './symbol';
+
 // 将来的な拡張のための予約
 // export * from './date';
 // export * from './validation';

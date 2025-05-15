@@ -1,5 +1,6 @@
 // types/index.ts
 // 更新: T-5フェーズ - 共通型の整理完了
+// 更新: T-6フェーズ - 循環依存解消、共通型の参照先を統一
 
 // ファイル間での型定義の重複があるため、選択的にエクスポートします
 // 以下は最小限の互換性を維持するためのエクスポートです
@@ -10,25 +11,41 @@
 // T-5: common.ts, common-interfaces.tsはcommonドメインに移動
 export * from './indicators';
 
-// ドメイン別の型定義
-export * from './chart';   // T-1フェーズで実装
-export * from './store';   // T-2フェーズで実装
-export * from './network'; // T-3フェーズで実装
-export * from './ui';      // T-4フェーズで実装
-export * from './chat';    // T-4フェーズで実装
-export * from './entry';   // T-4フェーズで実装
-export * from './symbol';  // T-4フェーズで実装
-export * from './common';  // T-5フェーズで実装
+// ドメイン別の型定義（FilterOptions型の衝突を回避するため、store以外を先にエクスポート）
+export * from './common';  // 共通型を最初にエクスポート
+export * from './chart';
+export * from './network';
+export * from './ui';
+export * from './chat';
+export * from './entry';
+export * from './symbol';
+
+// storeドメインは明示的な型エクスポートを使用
+export type {
+  AppState,
+  UIState,
+  ChartDataState,
+  ChartConfigState,
+  IndicatorState,
+  DrawingToolState,
+  RealTimeState,
+  MarketState,
+  FilterOptions as StoreFilterOptions,  // 名前衝突を回避するために別名を使用
+  IndicatorType,
+  ActiveIndicator,
+  DrawingToolType,
+  TabType
+} from './store';
 
 // 後方互換性のための非推奨ファイルからのエクスポート
 // T-4〜T-5フェーズで非推奨となったファイル
 // これらは段階的に削除される予定です
 // 注: 後方互換性のため、ファイル自体も維持されています
-export * from './chat';    // @deprecated
-export * from './entry';   // @deprecated
-export * from './ui';      // @deprecated
-export * from './symbol';  // @deprecated
-export * from './common';  // @deprecated
+// export * from './chat';    // @deprecated - 循環依存のため削除
+// export * from './entry';   // @deprecated - 循環依存のため削除
+// export * from './ui';      // @deprecated - 循環依存のため削除
+// export * from './symbol';  // @deprecated - 循環依存のため削除
+// export * from './common';  // @deprecated - 上ですでにエクスポート済み
 export * from './common-interfaces'; // @deprecated
 
 // 型の重複があるファイルは個別にエクスポート
@@ -41,22 +58,21 @@ export type {
   ChartState
 } from './chart';
 
-// 明示的にOrderBookEntryとOrderBookDataをエクスポート
-export type { OrderBookEntry, OrderBookData } from './chart';
+// 明示的にOrderBookEntryとOrderBookDataをcommon/orderbookからエクスポート
+export type { OrderBookEntry, OrderBookData, OrderBookProps } from './common/orderbook';
 
-// store.tsのエクスポート
-export * from './store';
+// 明示的にSymbolInfoとSymbolFilterOptionsをcommon/symbolからエクスポート
+export type { SymbolInfo, SymbolFilterOptions, SymbolListProps } from './common/symbol';
 
-// symbol.tsのエクスポート（FilterOptionsとSymbolInfoの重複を解決）
+// symbol.tsのエクスポート
 export type {
-  SymbolInfo, SymbolFilterOptions, FilterOptions, 
   SymbolChangeHistoryEntry, SymbolSliceState
 } from './symbol';
 
-// market.tsのエクスポート（OrderBookEntryとOrderBookData、SymbolInfoの重複を解決）
+// market.tsのエクスポート
 export type {
   TradeDirection, TradeData, TradeListProps,
-  MarketStatsData, MarketStatsProps, OrderBookProps,
+  MarketStatsData, MarketStatsProps,
   BitgetOrderBookResponse, BitgetTradesResponse,
   BitgetTickerResponse, BitgetSymbolsResponse
 } from './market';
