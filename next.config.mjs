@@ -9,6 +9,10 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  // SWCコンパイラを強制的に有効化
+  experimental: {
+    forceSwcTransforms: true, // SWCを強制的に有効化
+  },
   // LibSQLとの互換性を持たせるため、バンドリングから除外
   serverExternalPackages: ['@libsql/client', '@libsql/core', '@libsql/hrana-client'],
   // Add custom Webpack configuration to handle Markdown files

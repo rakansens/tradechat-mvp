@@ -4,7 +4,7 @@
  * SupabaseProvider
  * アプリケーション全体で使用するSupabase認証状態の管理
  * 作成日: 2025/6/15
- * 更新日: 2025/6/20 - 型定義を更新
+ * 更新日: 2025/6/23 - named exportに変更
  */
 
 import { createContext, useContext, useEffect, useState } from 'react'
@@ -39,7 +39,7 @@ export const useAuth = () => {
 }
 
 // Supabaseプロバイダーコンポーネント
-export default function SupabaseProvider({
+export function SupabaseProvider({
   children,
 }: {
   children: React.ReactNode
@@ -147,3 +147,6 @@ export default function SupabaseProvider({
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
+
+// 後方互換性のためのデフォルトエクスポート
+export default SupabaseProvider;

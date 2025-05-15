@@ -72,26 +72,26 @@
 }
 
 .dark {
-  --background: 222 47% 11%; 
-  --foreground: 210 40% 96%; 
-  --card: 222 47% 15%; 
-  --card-foreground: 210 40% 96%;
-  --popover: 222 47% 15%;
-  --popover-foreground: 210 40% 96%;
+  --background: 222 47% 8%; /* より暗く */
+  --foreground: 210 40% 98%; /* より明るく */
+  --card: 222 47% 11%; /* より暗いカード背景 */
+  --card-foreground: 210 40% 98%;
+  --popover: 222 47% 11%;
+  --popover-foreground: 210 40% 98%;
   --primary: 217 91% 60%; 
   --primary-foreground: 210 40% 98%;
   --secondary: 217 33% 17%; 
   --secondary-foreground: 210 40% 98%;
   --muted: 217 33% 17%;
-  --muted-foreground: 215 20% 65%; 
+  --muted-foreground: 215 20% 75%; /* より明るく */
   --accent: 260 60% 55%; 
   --accent-foreground: 210 40% 98%;
   --destructive: 0 72% 51%; 
   --destructive-foreground: 210 40% 98%;
   --success: 148 66% 44%; 
   --success-foreground: 210 40% 98%;
-  --border: 217 33% 25%; 
-  --input: 217 33% 20%; 
+  --border: 217 33% 20%; /* より暗く */
+  --input: 217 33% 15%; /* より暗く */
   --ring: 217 91% 70%;
   
   /* チャート色変数 - ダークモード */
@@ -102,14 +102,18 @@
   --chart-5: 340 75% 55%;
   
   /* サイドバー変数 - ダークモード */
-  --sidebar-background: 240 5.9% 10%;
-  --sidebar-foreground: 240 4.8% 95.9%;
-  --sidebar-primary: 224.3 76.3% 48%;
+  --sidebar-background: 222 47% 10%;
+  --sidebar-foreground: 210 40% 98%;
+  --sidebar-primary: 217 91% 60%;
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 240 3.7% 15.9%;
-  --sidebar-accent-foreground: 240 4.8% 95.9%;
-  --sidebar-border: 240 3.7% 15.9%;
-  --sidebar-ring: 217.2 91.2% 59.8%;
+  --sidebar-accent: 222 47% 15%;
+  --sidebar-accent-foreground: 210 40% 98%;
+  --sidebar-border: 222 47% 15%;
+  --sidebar-ring: 217 91% 60%;
+}
+
+html {
+  color-scheme: dark;
 }
 
 @layer base {
@@ -129,22 +133,22 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: #1f2937;
+  background: hsl(var(--card));
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #4b5563;
+  background: hsl(var(--muted));
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #6b7280;
+  background: hsl(var(--muted-foreground));
 }
 
 /* Additional custom styles */
 .bg-gray-750 {
-  background-color: #2a3441;
+  background-color: hsl(var(--card));
 }
 
 /* Animations */

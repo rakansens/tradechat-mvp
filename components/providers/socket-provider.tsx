@@ -3,6 +3,7 @@
 // components/providers/socket-provider.tsx
 // ソケット接続プロバイダーコンポーネント
 // 作成日: 2025/6/15
+// 更新日: 2025/6/23 - 動的URL検出を実装
 
 import { createContext, useContext, useEffect, useState } from 'react'
 import { io, Socket } from 'socket.io-client'
@@ -26,7 +27,15 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
   const [isConnected, setIsConnected] = useState(false)
 
   useEffect(() => {
-    const socketInstance = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001', {
+    // 動的に現在のウィンドウのオリジンを取得
+    // ブラウザ環境ではwindowオブジェクトが利用可能
+    const socketUrl = typeof window !== 'undefined' 
+      ? window.location.origin 
+      : (process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3000');
+
+    console.log('Connecting to socket server at:', socketUrl);
+    
+    const socketInstance = io(socketUrl, {
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
       autoConnect: true,

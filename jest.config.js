@@ -12,13 +12,16 @@ module.exports = {
   },
   transform: {
     '^.+\\.(ts|tsx)$': ['babel-jest', {
+      configFile: './__tests__/config/babel.config.js',
       presets: [
         ['@babel/preset-env', { targets: { node: 'current' } }],
         '@babel/preset-typescript',
         ['@babel/preset-react', { runtime: 'automatic' }],
       ],
     }],
-    '^.+\\.(js|jsx)$': ['babel-jest']
+    '^.+\\.(js|jsx)$': ['babel-jest', {
+      configFile: './__tests__/config/babel.config.js',
+    }]
   },
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],

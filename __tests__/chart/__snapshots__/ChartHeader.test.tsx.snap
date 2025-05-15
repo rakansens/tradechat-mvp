@@ -1,0 +1,100 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ChartHeader マウント前（SSR時）には値を表示しない 1`] = `
+<div>
+  <div
+    class="px-4 py-2 bg-[#131722] border-b border-[#2A2E39]"
+  >
+    <div
+      class="flex items-center justify-between"
+    >
+      <div
+        class="flex items-center"
+      >
+        <h2
+          class="text-lg font-semibold text-white"
+        />
+      </div>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`ChartHeader マウント後（クライアントサイド）に正しく値を表示する 1`] = `
+<div>
+  <div
+    class="px-4 py-2 bg-[#131722] border-b border-[#2A2E39]"
+  >
+    <div
+      class="flex items-center justify-between"
+    >
+      <div
+        class="flex items-center"
+      >
+        <h2
+          class="text-lg font-semibold text-white"
+        >
+          BTCUSDT
+        </h2>
+        <span
+          class="ml-2 text-lg font-mono"
+        >
+          $
+          50,000.25
+        </span>
+        <div
+          class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-green-500 text-white hover:bg-green-500/80 ml-2"
+        >
+          +
+          5.50
+          %
+        </div>
+      </div>
+      <div
+        class="text-xs text-[#9CA3AF]"
+      >
+        2023-06-01 - 2023-06-04
+      </div>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`ChartHeader 価格変化率がマイナスの場合に正しく表示する 1`] = `
+<div>
+  <div
+    class="px-4 py-2 bg-[#131722] border-b border-[#2A2E39]"
+  >
+    <div
+      class="flex items-center justify-between"
+    >
+      <div
+        class="flex items-center"
+      >
+        <h2
+          class="text-lg font-semibold text-white"
+        >
+          BTCUSDT
+        </h2>
+        <span
+          class="ml-2 text-lg font-mono"
+        >
+          $
+          48,000.75
+        </span>
+        <div
+          class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80 ml-2"
+        >
+          -2.50
+          %
+        </div>
+      </div>
+      <div
+        class="text-xs text-[#9CA3AF]"
+      >
+        2023-06-01 - 2023-06-04
+      </div>
+    </div>
+  </div>
+</div>
+`;

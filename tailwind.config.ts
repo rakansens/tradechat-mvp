@@ -52,7 +52,14 @@ const config: Config = {
       },
     },
   },
+  future: {
+    hoverOnlyWhenSupported: true,
+  },
   plugins: [],
+}
+
+if (typeof document !== 'undefined') {
+  document.documentElement.classList.add('dark');
 }
 
 export default config
