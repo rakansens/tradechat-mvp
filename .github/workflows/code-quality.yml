@@ -56,3 +56,6 @@ jobs:
             echo "::error ::Deprecated utils/supabase import found"
             exit 1
           fi 
+          
+      - name: Validate Supabase imports with script
+        run: node scripts/replace-supabase-imports.js --check-only
