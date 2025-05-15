@@ -7,8 +7,8 @@ import { getUserSettings, updateUserSettings } from '@/lib/supabase/features/set
  */
 export async function GET(req: NextRequest) {
   try {
-    // サーバーサイドでのSupabaseクライアント作成
-    const supabaseServer = createServerClient();
+    // サーバーサイドでのSupabaseクライアント作成 (非同期に変更)
+    const supabaseServer = await createServerClient();
     
     // 認証チェック
     const { data: { session }, error: authError } = await supabaseServer.auth.getSession();

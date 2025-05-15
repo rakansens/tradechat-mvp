@@ -1,6 +1,10 @@
 -- 10_memories.sql
 -- Mem0メモリ保存用テーブル作成ファイル
 -- 作成日: 2025/5/31
+-- 更新日: 2025/8/22 - vector拡張機能の自動インストールを追加
+
+-- vector拡張機能のインストール
+CREATE EXTENSION IF NOT EXISTS vector;
 
 -- memoriesテーブル作成
 CREATE TABLE IF NOT EXISTS memories (

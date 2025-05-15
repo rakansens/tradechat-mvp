@@ -1,263 +1,183 @@
-# TradeChat MVP Exchange
+# Supabase CLI
 
-## ユーティリティマップ
+[![Coverage Status](https://coveralls.io/repos/github/supabase/cli/badge.svg?branch=main)](https://coveralls.io/github/supabase/cli?branch=main) [![Bitbucket Pipelines](https://img.shields.io/bitbucket/pipelines/supabase-cli/setup-cli/master?style=flat-square&label=Bitbucket%20Canary)](https://bitbucket.org/supabase-cli/setup-cli/pipelines) [![Gitlab Pipeline Status](https://img.shields.io/gitlab/pipeline-status/sweatybridge%2Fsetup-cli?label=Gitlab%20Canary)
+](https://gitlab.com/sweatybridge/setup-cli/-/pipelines)
 
-このプロジェクトのユーティリティは以下のように整理されています。コードを追加する際は適切な場所に配置してください。
+[Supabase](https://supabase.io) is an open source Firebase alternative. We're building the features of Firebase using enterprise-grade open source tools.
 
-### utils/ - 純粋な関数とユーティリティ
+This repository contains all the functionality for Supabase CLI.
 
-純粋関数や副作用のないユーティリティを格納します。外部APIやDBへの依存は含みません。
+- [x] Running Supabase locally
+- [x] Managing database migrations
+- [x] Creating and deploying Supabase Functions
+- [x] Generating types directly from your database schema
+- [x] Making authenticated HTTP requests to [Management API](https://supabase.com/docs/reference/api/introduction)
 
-* `utils/common/` - 共通ユーティリティ関数
-  * `date.ts` - 日付フォーマットと計算
-  * `format.ts` - 文字列、数値フォーマット
-  * `logger.ts` - ロギングユーティリティ
+## Getting started
 
-* `utils/chart/` - チャート関連の計算と整形
-  * `chart.ts` - 基本的なチャート機能
-  * `chartUtils.ts` - チャート描画と操作
-  * `indicators.ts` - チャート指標計算
-  * `indicatorFactory.ts` - 指標生成
+### Install the CLI
 
-* `utils/market/` - 市場データ処理
-  * `price.ts` - 価格計算と比較
-  * `orderbook-utils.ts` - オーダーブック操作
-  * `tradeUtils.ts` - 取引関連ユーティリティ
-
-* `utils/position/` - ポジション管理
-  * `position.ts` - ポジション基本計算
-  * `positionUtils.ts` - ポジション管理ユーティリティ
-
-### lib/ - 外部依存とラッパー
-
-外部サービス、API、データベースとの連携のためのモジュールです。
-
-* `lib/supabase/` - Supabase関連の連携
-  * `client.ts` - クライアントサイド用クライアント
-  * `server.ts` - サーバーサイド用クライアント
-  * `middlewareClient.ts` - ミドルウェア用クライアント
-  * `routeHandlerClient.ts` - ルートハンドラ用クライアント
-  * `features/` - Supabase機能モジュール
-    * `profile.ts` - ユーザープロファイル操作
-    * `settings.ts` - 設定関連操作
-
-* `lib/api/` - 外部APIとの接続
-  * `bitget.ts` - Bitget API連携
-  * `exchange.ts` - 汎用取引所API
-  * `market.ts` - 市場データAPI
-
-## 開発ステータス
-
-1. ✅ **完了** - 基本的なチャート描画
-2. ✅ **完了** - ユーザー認証(Supabase Auth)
-3. ✅ **完了** - リアルタイム市場データ(WebSocket)
-4. ✅ **完了** - Supabase連携コードの移行（`utils/supabase` → `lib/supabase`）
-5. 🚧 **進行中** - ユーザー設定の永続化
-6. 🚧 **進行中** - チャット機能の実装
-7. 📅 **予定** - ポジションエントリー管理
-8. 📅 **予定** - モバイル対応UI
-
-### 🔄 旧 utils/supabase の完全撤廃 (2025-06-XX)
-
-* utils/supabase は **削除済み**  
-* 旧 import はすべて lib/supabase 経由に置換済み  
-* tsconfig / Jest / ESLint の paths も 1 本化  
-* ESLint ルール `no-restricted-imports` で再発防止  
-
-## セットアップと開発
+Available via [NPM](https://www.npmjs.com) as dev dependency. To install:
 
 ```bash
-# 依存関係のインストール
-pnpm install
-
-# 開発サーバーの起動
-pnpm dev
-
-# ビルド
-pnpm build
-
-# テスト実行
-pnpm test
+npm i supabase --save-dev
 ```
 
-## 技術スタック
-
-- **フレームワーク**: Next.js 14 (App Router)
-- **状態管理**: Zustand
-- **UI**: TailwindCSS, shadcn/ui
-- **チャート**: Lightweight Charts
-- **バックエンド**: Supabase (Auth, Database, Edge Functions)
-- **WebSocket**: Socket.io
-
-## コーディングガイドライン
-
-### インポート規則
-
-- 直接のファイルインポートではなく、インデックスファイル経由でインポートしてください:
-
-```ts
-// 良い例
-import { formatDate, truncateString } from '@/utils/common';
-import { calculateEMA } from '@/utils/chart';
-
-// 悪い例
-import { formatDate } from '@/utils/common/date';
-import { truncateString } from '@/utils/common/format';
-```
-
-### 適切な配置
-
-- **utils/** には副作用のない純粋なユーティリティ関数のみを配置
-- **lib/** には外部サービスとの連携コードを配置
-- **services/** にはドメイン固有のビジネスロジックと外部連携を配置
-
-## リファクタリング移行ガイド
-
-現在、ユーティリティ関数の整理を行っています。移行期間中は以下の点に注意してください。
-
-### 移行状況
-
-- [x] ディレクトリ構造の整理
-- [x] バレルファイル（index.ts）の追加
-- [x] ESLintルールの設定
-- [x] 既存コードの参照更新
-- [x] 互換性のために古いファイルへのリダイレクトを追加
-- [x] Supabase連携コードを `utils/supabase` から `lib/supabase` に移行
-- [ ] すべての参照が新しいパスに移行した後に古いリダイレクトファイルを削除
-
-### 移行ヘルパーツール
-
-移行作業をサポートするためのスクリプトがあります：
+To install the beta release channel:
 
 ```bash
-# ヘルプを表示
-./scripts/migration-helpers.sh
-
-# 古いパスへの参照を検索
-./scripts/migration-helpers.sh check-imports
-
-# インポートパスを新しい構造に更新
-./scripts/migration-helpers.sh update-imports
-
-# 循環参照をチェック
-./scripts/migration-helpers.sh check-circular
-
-# 古いファイルを削除（移行完了後）
-./scripts/migration-helpers.sh clean-old-files
+npm i supabase@beta --save-dev
 ```
 
-### 🔄 Supabase連携コードの移行 (2025-06-19)
+When installing with yarn 4, you need to disable experimental fetch with the following nodejs config.
 
-* `utils/supabase` は **削除済み**  
-* 旧 import はすべて `lib/supabase` 経由に置換済み  
-* tsconfig / Jest / ESLint の paths も 1 本化  
-* ESLint ルール `no-restricted-imports` で再発防止
-
-### 移行タイムライン
-
-1. ✅ **完了** - 新しい構造を準備、バレルファイルの追加
-2. ✅ **完了** - 既存コードの参照変更（直接パス）
-3. ✅ **完了** - 互換性のためのリダイレクトファイル追加
-4. ✅ **完了** - Supabase連携コードの移行（`utils/supabase` → `lib/supabase`
-
-## API リファレンス
-
-アプリケーションで使用できるAPIエンドポイントの一覧です。
-
-### ポジション履歴 API
-
-#### GET /api/positions
-
-ユーザーのポジション履歴を取得します。ページネーションとフィルタリングに対応しています。
-
-**リクエストパラメータ:**
-
-| パラメータ | 型     | 必須 | 説明                                    |
-|------------|--------|------|----------------------------------------|
-| page       | number | いいえ | ページ番号 (デフォルト: 1)              |
-| pageSize   | number | いいえ | 1ページあたりの件数 (デフォルト: 10)     |
-| status     | string | いいえ | ステータスでフィルタ ("open"/"closed"/"canceled") |
-| symbol     | string | いいえ | 特定の銘柄でフィルタ (例: "BTCUSDT")     |
-
-**レスポンス:**
-
-```json
-{
-  "data": [
-    {
-      "id": "uuid-string",
-      "userId": "user-uuid",
-      "side": "buy",
-      "symbol": "BTCUSDT",
-      "price": 60000,
-      "time": "2025-06-25T12:34:56Z",
-      "status": "open",
-      "takeProfit": 65000,
-      "stopLoss": 58000,
-      "createdAt": "2025-06-25T12:34:56Z"
-    },
-    // ... 他のエントリー
-  ],
-  "pagination": {
-    "totalCount": 42,
-    "page": 1,
-    "pageSize": 10,
-    "hasMore": true
-  }
-}
+```
+NODE_OPTIONS=--no-experimental-fetch yarn add supabase
 ```
 
-**ステータスコード:**
+> **Note**
+For Bun versions below v1.0.17, you must add `supabase` as a [trusted dependency](https://bun.sh/guides/install/trusted) before running `bun add -D supabase`.
 
-- 200: 成功
-- 401: 未認証
-- 500: サーバーエラー
+<details>
+  <summary><b>macOS</b></summary>
 
-**キャッシュ:**
+  Available via [Homebrew](https://brew.sh). To install:
 
-5秒間のCDNキャッシュがあり、stale-while-revalidateパターンを使用しています。
+  ```sh
+  brew install supabase/tap/supabase
+  ```
 
-**使用例:**
+  To install the beta release channel:
+  
+  ```sh
+  brew install supabase/tap/supabase-beta
+  brew link --overwrite supabase-beta
+  ```
+  
+  To upgrade:
 
-```typescript
-// 基本的な使用法
-const response = await fetch('/api/positions?page=1&pageSize=10');
+  ```sh
+  brew upgrade supabase
+  ```
+</details>
 
-// ステータスでフィルタリング（例: 完了したポジションのみ）
-const closedPositions = await fetch('/api/positions?status=closed');
+<details>
+  <summary><b>Windows</b></summary>
 
-// シンボルとステータスの組み合わせ
-const openBitcoinPositions = await fetch('/api/positions?symbol=BTCUSDT&status=open');
-```
+  Available via [Scoop](https://scoop.sh). To install:
 
-### 移行ヘルパーツール
+  ```powershell
+  scoop bucket add supabase https://github.com/supabase/scoop-bucket.git
+  scoop install supabase
+  ```
+
+  To upgrade:
+
+  ```powershell
+  scoop update supabase
+  ```
+</details>
+
+<details>
+  <summary><b>Linux</b></summary>
+
+  Available via [Homebrew](https://brew.sh) and Linux packages.
+
+  #### via Homebrew
+
+  To install:
+
+  ```sh
+  brew install supabase/tap/supabase
+  ```
+
+  To upgrade:
+
+  ```sh
+  brew upgrade supabase
+  ```
+
+  #### via Linux packages
+
+  Linux packages are provided in [Releases](https://github.com/supabase/cli/releases). To install, download the `.apk`/`.deb`/`.rpm`/`.pkg.tar.zst` file depending on your package manager and run the respective commands.
+
+  ```sh
+  sudo apk add --allow-untrusted <...>.apk
+  ```
+
+  ```sh
+  sudo dpkg -i <...>.deb
+  ```
+
+  ```sh
+  sudo rpm -i <...>.rpm
+  ```
+
+  ```sh
+  sudo pacman -U <...>.pkg.tar.zst
+  ```
+</details>
+
+<details>
+  <summary><b>Other Platforms</b></summary>
+
+  You can also install the CLI via [go modules](https://go.dev/ref/mod#go-install) without the help of package managers.
+
+  ```sh
+  go install github.com/supabase/cli@latest
+  ```
+
+  Add a symlink to the binary in `$PATH` for easier access:
+
+  ```sh
+  ln -s "$(go env GOPATH)/bin/cli" /usr/bin/supabase
+  ```
+
+  This works on other non-standard Linux distros.
+</details>
+
+<details>
+  <summary><b>Community Maintained Packages</b></summary>
+
+  Available via [pkgx](https://pkgx.sh/). Package script [here](https://github.com/pkgxdev/pantry/blob/main/projects/supabase.com/cli/package.yml).
+  To install in your working directory:
+
+  ```bash
+  pkgx install supabase
+  ```
+
+  Available via [Nixpkgs](https://nixos.org/). Package script [here](https://github.com/NixOS/nixpkgs/blob/master/pkgs/development/tools/supabase-cli/default.nix).
+</details>
+
+### Run the CLI
+
 ```bash
-# ヘルプを表示
-./scripts/migration-helpers.sh
-
-# 古いパスへの参照を検索
-./scripts/migration-helpers.sh check-imports
-
-# インポートパスを新しい構造に更新
-./scripts/migration-helpers.sh update-imports
-
-# 循環参照をチェック
-./scripts/migration-helpers.sh check-circular
-
-# 古いファイルを削除（移行完了後）
-./scripts/migration-helpers.sh clean-old-files
+supabase bootstrap
 ```
 
-### 🔄 Supabase連携コードの移行 (2025-06-19)
+Or using npx:
 
-* `utils/supabase` は **削除済み**  
-* 旧 import はすべて `lib/supabase` 経由に置換済み  
-* tsconfig / Jest / ESLint の paths も 1 本化  
-* ESLint ルール `no-restricted-imports` で再発防止
+```bash
+npx supabase bootstrap
+```
 
-### 移行タイムライン
+The bootstrap command will guide you through the process of setting up a Supabase project using one of the [starter](https://github.com/supabase-community/supabase-samples/blob/main/samples.json) templates.
 
-1. ✅ **完了** - 新しい構造を準備、バレルファイルの追加
-2. ✅ **完了** - 既存コードの参照変更（直接パス）
-3. ✅ **完了** - 互換性のためのリダイレクトファイル追加
-4. ✅ **完了** - Supabase連携コードの移行（`utils/supabase` → `lib/supabase`
+## Docs
+
+Command & config reference can be found [here](https://supabase.com/docs/reference/cli/about).
+
+## Breaking changes
+
+We follow semantic versioning for changes that directly impact CLI commands, flags, and configurations.
+
+However, due to dependencies on other service images, we cannot guarantee that schema migrations, seed.sql, and generated types will always work for the same CLI major version. If you need such guarantees, we encourage you to pin a specific version of CLI in package.json.
+
+## Developing
+
+To run from source:
+
+```sh
+# Go >= 1.22
+go run . help
+```

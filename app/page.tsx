@@ -18,8 +18,8 @@ export const metadata: Metadata = {
 };
 
 export default async function Dashboard() {
-  // サーバーサイドでSupabaseクライアントを初期化
-  const supabase = createClient();
+  // サーバーサイドでSupabaseクライアントを初期化（非同期に変更）
+  const supabase = await createClient();
   
   // 現在のユーザーセッションを取得
   const { data: { session } } = await supabase.auth.getSession();

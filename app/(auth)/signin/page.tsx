@@ -44,12 +44,8 @@ export default function SignInPage() {
     console.log('ログイン処理を開始します:', email);
 
     try {
-      // 開発用の一時的な修正: テスト用アカウントでのログイン
-      // 注意: これは本番環境では削除すること
-      const testPassword = 'password123';
-      console.log(`開発用テスト: パスワードを "${testPassword}" に固定します`);
-      
-      const { data, error } = await signIn(email, testPassword);
+      // ユーザーが入力した認証情報を使用
+      const { data, error } = await signIn(email, password);
       
       console.log('ログイン結果:', { data, error });
       
@@ -80,15 +76,12 @@ export default function SignInPage() {
   return (
     <main className="min-h-screen flex items-center justify-center bg-background">
       <div className="w-full max-w-md p-8 space-y-8 bg-card rounded-lg border shadow-lg">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold tracking-tight">トレードチャットにログイン</h1>
-          <p className="text-sm text-muted-foreground mt-2">
-            アカウント情報を入力してログインしてください
-          </p>
-          <p className="text-xs text-amber-500 mt-1">
-            開発モード: テスト用アカウントでログインできます
-          </p>
-        </div>
+                  <div className="text-center">
+            <h1 className="text-2xl font-bold tracking-tight">トレードチャットにログイン</h1>
+            <p className="text-sm text-muted-foreground mt-2">
+              アカウント情報を入力してログインしてください
+            </p>
+          </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
@@ -118,9 +111,6 @@ export default function SignInPage() {
               onChange={(e) => setPassword(e.target.value)}
               required
             />
-            <p className="text-xs text-muted-foreground">
-              開発モード: どのようなパスワードを入力しても「password123」として処理されます
-            </p>
           </div>
 
           <Button
