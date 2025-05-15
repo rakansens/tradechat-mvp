@@ -33,11 +33,11 @@
 外部サービス、API、データベースとの連携のためのモジュールです。
 
 * `lib/supabase/` - Supabase関連の連携
-  * `supabase.ts` - 基本クライアント
-  * `supabase-auth.ts` - 認証
-  * `supabase-chat.ts` - チャット機能
-  * `supabase-entry.ts` - 取引エントリー
-  * `supabase-relations.ts` - リレーション操作
+  * `client.ts` - クライアントサイド用クライアント
+  * `server.ts` - サーバーサイド用クライアント
+  * `middlewareClient.ts` - ミドルウェア用クライアント
+  * `routeHandlerClient.ts` - APIルートハンドラー用クライアント
+  * `features/` - 機能別のSupabase連携コード
 
 ### types/ - 型定義
 
@@ -82,6 +82,7 @@ import { truncateString } from '@/utils/common/format';
 - [x] ESLintルールの設定
 - [x] 既存コードの参照更新
 - [x] 互換性のために古いファイルへのリダイレクトを追加
+- [x] Supabase連携コードを `utils/supabase` から `lib/supabase` に移行
 - [ ] すべての参照が新しいパスに移行した後に古いリダイレクトファイルを削除
 
 ### 移行ヘルパーツール
@@ -105,13 +106,21 @@ import { truncateString } from '@/utils/common/format';
 ./scripts/migration-helpers.sh clean-old-files
 ```
 
+### 🔄 Supabase連携コードの移行 (2025-06-19)
+
+* `utils/supabase` は **削除済み**  
+* 旧 import はすべて `lib/supabase` 経由に置換済み  
+* tsconfig / Jest / ESLint の paths も 1 本化  
+* ESLint ルール `no-restricted-imports` で再発防止
+
 ### 移行タイムライン
 
 1. ✅ **完了** - 新しい構造を準備、バレルファイルの追加
 2. ✅ **完了** - 既存コードの参照変更（直接パス）
-3. ✅ **現在** - 互換性のためのリダイレクトファイル追加
-4. **フェーズ2** - インデックス経由のインポートに変更
-5. **フェーズ3** - 古いファイルとリダイレクトの削除（参照更新完了後）
+3. ✅ **完了** - 互換性のためのリダイレクトファイル追加
+4. ✅ **完了** - Supabase連携コードの移行（`utils/supabase` → `lib/supabase`）
+5. **フェーズ2** - インデックス経由のインポートに変更
+6. **フェーズ3** - 古いファイルとリダイレクトの削除（参照更新完了後）
 
 ### 現在のリンターエラーについて
 

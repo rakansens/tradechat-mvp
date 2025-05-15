@@ -8,6 +8,7 @@ module.exports = {
   testMatch: ['**/__tests__/**/*.test.{ts,tsx}'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/$1',
+    '^@/supabase/(.*)$': '<rootDir>/lib/supabase/$1',
     '^lightweight-charts$': '<rootDir>/__tests__/lightweight-charts.js'
   },
   transform: {

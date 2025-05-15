@@ -16,7 +16,7 @@ import {
   getSymbolSettings,
   upsertSymbolSettings
 } from '@/lib/supabase/features/settings';
-import { createClient } from '@/utils/supabase/client';
+import { createClient } from '@/lib/supabase/client';
 // nullsafeヘルパー関数のインポート
 import { nullsafe } from '@/utils/type-helpers';
 

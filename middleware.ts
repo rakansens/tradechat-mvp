@@ -3,7 +3,7 @@
 // 作成日: 2025/6/15
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createMiddlewareClient } from '@/utils/supabase/middlewareClient'
+import { createMiddlewareClient } from '@/lib/supabase/middlewareClient'
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({
