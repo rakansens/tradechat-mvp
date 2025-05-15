@@ -1,0 +1,65 @@
+name: Supabase Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'supabase/**'
+      - 'lib/supabase/**'
+      - '**/*.test.ts'
+      - '.github/workflows/supabase-tests.yml'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'supabase/**'
+      - 'lib/supabase/**'
+      - '**/*.test.ts'
+      - '.github/workflows/supabase-tests.yml'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      
+      - name: Cache Supabase
+        uses: actions/cache@v4
+        with:
+          path: ~/.supabase
+          key: ${{ runner.os }}-supabase-${{ hashFiles('supabase/**') }}
+          restore-keys: |
+            ${{ runner.os }}-supabase-
+      
+      - name: Start Supabase
+        run: supabase start
+      
+      - name: Apply migrations
+        run: supabase db push
+      
+      - name: Generate TypeScript types
+        run: supabase gen types typescript --local > types/generated/supabase.ts
+      
+      - name: Run ESLint
+        run: npm run lint
+        continue-on-error: true  # エラーがあっても続行（レポートのみ）
+      
+      - name: Run tests
+        run: npm run test -- --runInBand  # シリアル実行でポート競合を防止
+      
+      - name: Run Schema Checks
+        run: supabase db lint --level=warning 

@@ -1,0 +1,23 @@
+{
+  "rules": {
+    "no-restricted-imports": [
+      "error",
+      {
+        "patterns": [
+          {
+            "group": ["@/lib/supabase"],
+            "message": "直接的なsupabaseインポートは禁止です。環境に応じて '@/lib/supabase/client' または '@/lib/supabase/server' を使ってください。"
+          },
+          {
+            "group": ["@/lib/supabase/supabase"],
+            "message": "非推奨: '@/lib/supabase/client' または '@/lib/supabase/server' を使ってください。"
+          },
+          {
+            "group": ["@/utils/supabase/*"],
+            "message": "非推奨: 新しいパスは '@/lib/supabase/features/*' です。"
+          }
+        ]
+      }
+    ]
+  }
+} 

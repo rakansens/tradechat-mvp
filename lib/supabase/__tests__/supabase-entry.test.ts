@@ -13,7 +13,7 @@ import {
   deleteEntry,
   closeEntry,
   subscribeToEntries
-} from '../supabase-entry';
+} from '../features/entry';
 
 // Supabaseクライアントのモック
 vi.mock('../supabase', () => {

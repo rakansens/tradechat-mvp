@@ -1,10 +1,11 @@
 // app/api/messages/[conversationId]/route.ts
 // 会話ごとのメッセージ取得と送信のためのAPIエンドポイント
 // 作成日: 2025/5/20
+// 更新日: 2025/8/28 - Route Handler用のSupabaseClientを使用するよう修正
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/supabase/features/auth';
-import { supabase } from '@/lib/supabase';
+import { createRouteHandlerClient } from '@/lib/supabase/routeHandlerClient';
 import { askAgent } from '@/lib/agent';
 import { revalidatePath } from 'next/cache';
 import { MessageRole } from '@/types/chat/message';
@@ -21,8 +22,11 @@ export async function GET(
       return NextResponse.json({ error: 'Invalid conversation ID' }, { status: 400 });
     }
 
+    // SSR対応Supabaseクライアントを生成
+    const supabase = await createRouteHandlerClient();
+
     // 現在のユーザーを取得
-    const user = await getCurrentUser();
+    const user = await getCurrentUser(supabase);
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -74,6 +78,9 @@ export async function POST(
       return NextResponse.json({ error: 'Invalid conversation ID' }, { status: 400 });
     }
 
+    // SSR対応Supabaseクライアントを生成
+    const supabase = await createRouteHandlerClient();
+
     // リクエストボディを取得
     const { message, image_data, image_caption } = await request.json();
 
@@ -83,7 +90,7 @@ export async function POST(
     }
 
     // 現在のユーザーを取得
-    const user = await getCurrentUser();
+    const user = await getCurrentUser(supabase);
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }

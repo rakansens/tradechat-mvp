@@ -1,4 +1,3 @@
-
 import type { NextRequest } from "next/server"
 
 // Allow responses up to 5 minutes
@@ -28,6 +27,12 @@ export async function POST(req: NextRequest) {
 チャートデータは仮想的なものであり、実際の市場データではありません。
 これはデモンストレーション目的のみのものであることを明示してください。
 `
+
+  // systemPromptを会話に追加
+  const fullMessages = [
+    { role: "system", content: systemPrompt },
+    ...messages
+  ]
 
   // ユーザーが「ビットコイン」だけを入力した場合のサンプル応答
   if (

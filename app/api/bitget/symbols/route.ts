@@ -1,9 +1,13 @@
 // app/api/bitget/symbols/route.ts
 // 作成: Bitget API シンボル情報取得エンドポイント
 // フロントエンドからのリクエストをBitget APIに中継し、CORSエラーを回避する
+// 更新: 2025/8/28 - maxDuration設定追加（Edge環境での長時間実行対応）
 
 import { NextRequest, NextResponse } from 'next/server';
 import axios from 'axios';
+
+// Edge環境での最大実行時間を60秒に設定
+export const maxDuration = 60;
 
 // Bitget APIのベースURL
 const BITGET_API_BASE_URL = 'https://api.bitget.com';

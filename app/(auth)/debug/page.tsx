@@ -3,6 +3,7 @@
 /**
  * Supabase認証のデバッグページ
  * 作成日: 2025/6/30
+ * 更新日: 2025/8/28 - セキュリティ強化: クライアント側での直接的なAnon Key参照を削除
  */
 
 import { useState, useEffect } from 'react';
@@ -33,32 +34,31 @@ export default function DebugPage() {
     }
   };
   
-  // ログインテスト
+  // ログインテスト - サーバーAPIを経由して安全に行う
   const testLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
     
     try {
-      // 通常のフェッチAPI使用
-      const fetchResponse = await fetch(`${diagnostics?.supabaseUrl}/auth/v1/token?grant_type=password`, {
+      // サーバーサイドAPIを使用してログインテストを実行
+      const response = await fetch('/api/auth/test-login', {
         method: 'POST',
         headers: {
-          'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ email, password })
       });
       
-      const fetchData = await fetchResponse.json();
+      const data = await response.json();
       
       // 診断情報に追加
       setDiagnostics({
         ...diagnostics,
         loginTest: {
-          success: fetchResponse.ok,
-          status: fetchResponse.status,
-          data: fetchData,
+          success: response.ok,
+          status: response.status,
+          data: data,
           timestamp: new Date().toISOString()
         }
       });

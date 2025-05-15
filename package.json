@@ -14,7 +14,12 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "circular": "madge --circular store"
+    "circular": "madge --circular store",
+    "supabase:reset": "supabase db reset --debug",
+    "supabase:push": "supabase db push",
+    "supabase:lint": "supabase db lint --level=warning",
+    "supabase:types": "supabase gen types typescript --local > types/generated/supabase.ts",
+    "test:db": "npm run test -- --runInBand"
   },
   "dependencies": {
     "@ai-sdk/google": "^1.2.14",
