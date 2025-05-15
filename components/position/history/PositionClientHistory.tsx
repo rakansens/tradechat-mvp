@@ -9,11 +9,11 @@
  * - Renders the entry list with pagination controls
  * 
  * 作成日: 2025/6/26
- * 更新日: 2025/6/28 - useSWRInfinite→useInfiniteQueryに移行
+ * 更新日: 2025/6/29 - HydrationBoundaryサポートを追加
  */
 
 import { useState, useEffect } from "react"
-import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query"
+import { useInfiniteQuery, useQueryClient, HydrationBoundary } from "@tanstack/react-query"
 import { Card } from "@/components/ui/card"
 import { theme } from "@/styles/colors"
 import type { Entry } from "@/types/entry"
@@ -25,6 +25,7 @@ import { Button } from "@/components/ui/button"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { HistoryTab } from "./hooks/useHistoryTabs"
+import type { DehydratedState } from "@tanstack/react-query"
 
 // ページネーション情報の型
 interface PaginationInfo {
@@ -46,17 +47,17 @@ const PAGE_SIZE = 10;
 interface PositionClientHistoryProps {
   entries: Entry[]          // 初期データ（SSR）
   pagination: PaginationInfo // 初期ページネーション情報（SSR）
+  dehydratedState?: DehydratedState // React Queryの状態（サーバーからdehydrate）
 }
 
 /**
- * ポジション履歴のクライアントコンポーネント
- * サーバーコンポーネントから受け取ったデータを元にUIを構築
- * React Queryを使用してページネーションとキャッシュを管理
+ * ポジション履歴のクライアントコンポーネント内部実装
+ * dehydratedStateを使わず、直接useInfiniteQueryを使用
  */
-export function PositionClientHistory({
+function PositionHistoryInner({
   entries: initialEntries,
   pagination: initialPagination,
-}: PositionClientHistoryProps) {
+}: Omit<PositionClientHistoryProps, 'dehydratedState'>) {
   // タブの状態
   const [selectedTab, setSelectedTab] = useState<HistoryTab>("open");
 
@@ -216,6 +217,28 @@ export function PositionClientHistory({
       )}
     </Card>
   )
+}
+
+/**
+ * ポジション履歴のクライアントコンポーネント（メインエクスポート）
+ * サーバーから受け取ったdehydratedStateでHydrationBoundaryをラップ
+ */
+export function PositionClientHistory({
+  entries,
+  pagination,
+  dehydratedState
+}: PositionClientHistoryProps) {
+  // サーバーからのdehydratedStateがある場合はHydrationBoundaryを使用
+  if (dehydratedState) {
+    return (
+      <HydrationBoundary state={dehydratedState}>
+        <PositionHistoryInner entries={entries} pagination={pagination} />
+      </HydrationBoundary>
+    );
+  }
+  
+  // dehydratedStateがない場合は直接内部コンポーネントを使用
+  return <PositionHistoryInner entries={entries} pagination={pagination} />;
 }
 
 // デフォルトエクスポート
