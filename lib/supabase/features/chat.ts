@@ -6,9 +6,11 @@
 // 更新日: 2025/6/2 - リアルタイム購読機能の安定化と再接続機能を実装
 // 更新日: 2025/6/5 - subscribeToConversationMessages関数は非推奨となりsupabase-conversations.tsに移行
 // 更新日: 2025/6/20 - SSRクライアント対応
+// 更新日: 2023/7/5 - Dependency Injection パターンに更新 (supabaseClient ?? createClient())
 
 import { createClient } from '@/lib/supabase/client';
 import { Tables, TablesInsert, TablesUpdate } from '@/types/network/supabase';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 // チャット関連の型定義
 type ChatMessage = Tables<'chat_messages'>;
@@ -26,15 +28,17 @@ type ChatImageInsert = TablesInsert<'chat_images'>;
  * @param offset オフセット
  * @param isPublicOnly 公開メッセージのみ取得するかどうか
  * @param conversationId 特定の会話のメッセージのみを取得する場合の会話ID
+ * @param supabaseClient Supabaseクライアントインスタンス（オプション）
  * @returns チャットメッセージ一覧
  */
 export const getChatMessages = async (
   limit = 50,
   offset = 0,
   isPublicOnly = false,
-  conversationId?: string
+  conversationId?: string,
+  supabaseClient?: SupabaseClient
 ): Promise<ChatMessage[]> => {
-  const supabase = createClient();
+  const supabase = supabaseClient ?? createClient();
   let query = supabase
     .from('chat_messages')
     .select('*, chat_images(*)')
@@ -64,14 +68,16 @@ export const getChatMessages = async (
  * @param userId ユーザーID
  * @param limit 取得件数
  * @param offset オフセット
+ * @param supabaseClient Supabaseクライアントインスタンス（オプション）
  * @returns チャットメッセージ一覧
  */
 export const getUserChatMessages = async (
   userId: string,
   limit = 50,
-  offset = 0
+  offset = 0,
+  supabaseClient?: SupabaseClient
 ): Promise<ChatMessage[]> => {
-  const supabase = createClient();
+  const supabase = supabaseClient ?? createClient();
   const { data, error } = await supabase
     .from('chat_messages')
     .select('*, chat_images(*)')
@@ -100,6 +106,7 @@ export const getUserChatMessages = async (
  * @param stopLoss 損切価格
  * @param imageId 画像ID
  * @param conversationId 会話ID
+ * @param supabaseClient Supabaseクライアントインスタンス（オプション）
  * @returns 作成されたチャットメッセージ
  */
 export const createChatMessage = async (
@@ -113,9 +120,10 @@ export const createChatMessage = async (
   takeProfit?: number,
   stopLoss?: number,
   imageId?: string,
-  conversationId?: string
+  conversationId?: string,
+  supabaseClient?: SupabaseClient
 ): Promise<ChatMessage> => {
-  const supabase = createClient();
+  const supabase = supabaseClient ?? createClient();
   const messageData: ChatMessageInsert = {
     user_id: userId,
     role,
@@ -148,13 +156,15 @@ export const createChatMessage = async (
  * チャットメッセージを更新
  * @param messageId メッセージID
  * @param updates 更新内容
+ * @param supabaseClient Supabaseクライアントインスタンス（オプション）
  * @returns 更新されたチャットメッセージ
  */
 export const updateChatMessage = async (
   messageId: string,
-  updates: ChatMessageUpdate
+  updates: ChatMessageUpdate,
+  supabaseClient?: SupabaseClient
 ): Promise<ChatMessage> => {
-  const supabase = createClient();
+  const supabase = supabaseClient ?? createClient();
   const { data, error } = await supabase
     .from('chat_messages')
     .update(updates)
@@ -173,10 +183,14 @@ export const updateChatMessage = async (
 /**
  * チャットメッセージを削除
  * @param messageId メッセージID
+ * @param supabaseClient Supabaseクライアントインスタンス（オプション）
  * @returns 削除結果
  */
-export const deleteChatMessage = async (messageId: string): Promise<boolean> => {
-  const supabase = createClient();
+export const deleteChatMessage = async (
+  messageId: string,
+  supabaseClient?: SupabaseClient
+): Promise<boolean> => {
+  const supabase = supabaseClient ?? createClient();
   const { error } = await supabase
     .from('chat_messages')
     .delete()
@@ -195,14 +209,16 @@ export const deleteChatMessage = async (messageId: string): Promise<boolean> => 
  * @param userId ユーザーID
  * @param imageData 画像データ（Base64）
  * @param imageCaption 画像キャプション
+ * @param supabaseClient Supabaseクライアントインスタンス（オプション）
  * @returns アップロードされた画像情報
  */
 export const uploadChatImage = async (
   userId: string,
   imageData: string,
-  imageCaption?: string
+  imageCaption?: string,
+  supabaseClient?: SupabaseClient
 ): Promise<ChatImage> => {
-  const supabase = createClient();
+  const supabase = supabaseClient ?? createClient();
   // Base64データをBlobに変換
   const base64Data = imageData.split(',')[1];
   const mimeType = imageData.match(/^data:(.*?);/)?.[1] || 'image/png';
@@ -254,10 +270,14 @@ export const uploadChatImage = async (
 /**
  * チャット画像を取得
  * @param imageId 画像ID
- * @returns 画像情報
+ * @param supabaseClient Supabaseクライアントインスタンス（オプション）
+ * @returns 画像情報またはnull
  */
-export const getChatImage = async (imageId: string): Promise<ChatImage | null> => {
-  const supabase = createClient();
+export const getChatImage = async (
+  imageId: string,
+  supabaseClient?: SupabaseClient
+): Promise<ChatImage | null> => {
+  const supabase = supabaseClient ?? createClient();
   const { data, error } = await supabase
     .from('chat_images')
     .select('*')
@@ -269,6 +289,7 @@ export const getChatImage = async (imageId: string): Promise<ChatImage | null> =
     if (error.code === 'PGRST116') {
       return null;
     }
+    
     console.error('Failed to fetch chat image:', error);
     throw error;
   }
@@ -277,95 +298,92 @@ export const getChatImage = async (imageId: string): Promise<ChatImage | null> =
 };
 
 /**
- * チャットメッセージをリアルタイム購読（エラーハンドリングと再接続機能強化版）
- * @param callback メッセージ受信時のコールバック
- * @param isPublicOnly 公開メッセージのみ購読するかどうか
- * @param onError エラー発生時のコールバック
- * @param onStatusChange ステータス変更時のコールバック
+ * チャットメッセージをリアルタイム購読
+ * @param callback コールバック関数
+ * @param isPublicOnly 公開メッセージのみ対象とするかどうか
+ * @param onError エラーハンドラ（オプション）
+ * @param onStatusChange ステータス変更ハンドラ（オプション）
+ * @param supabaseClient Supabaseクライアントインスタンス（オプション）
  * @returns 購読解除関数
  */
 export const subscribeToChatMessages = (
   callback: (message: ChatMessage) => void,
   isPublicOnly = false,
   onError?: (error: Error) => void,
-  onStatusChange?: (status: string) => void
+  onStatusChange?: (status: string) => void,
+  supabaseClient?: SupabaseClient
 ) => {
-  const supabase = createClient();
-  let isSubscribed = true;
+  const supabase = supabaseClient ?? createClient();
   let retryCount = 0;
   const maxRetries = 5;
-  const retryDelay = 2000; // ミリ秒
+  const retryDelay = 1000; // 1秒
   let channel: any;
-  
-  // 購読処理
+
   const subscribe = () => {
     try {
-      if (onStatusChange) onStatusChange('CONNECTING');
-      
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
+
       channel = supabase
-        .channel('chat_messages')
+        .channel('chat-messages-changes')
         .on(
           'postgres_changes',
           {
-            event: 'INSERT',
+            event: '*',
             schema: 'public',
             table: 'chat_messages',
-            ...(isPublicOnly ? { filter: 'is_public=eq.true' } : {}),
+            filter: isPublicOnly ? 'is_public=eq.true' : undefined,
           },
           (payload) => {
-            if (isSubscribed) {
-              callback(payload.new as ChatMessage);
-            }
+            retryCount = 0; // 成功したらリトライカウントをリセット
+            // 適切な型変換
+            const message = payload.new as ChatMessage;
+            callback(message);
           }
         )
-        .subscribe((status, err) => {
+        .subscribe((status: string) => {
+          if (onStatusChange) {
+            onStatusChange(status);
+          }
+
           if (status === 'SUBSCRIBED') {
-            console.log('チャットメッセージの購読開始');
-            if (onStatusChange) onStatusChange('SUBSCRIBED');
-            // 接続成功時に再試行カウントをリセット
-            retryCount = 0;
+            console.log('Subscribed to chat messages changes');
           } else if (status === 'CHANNEL_ERROR') {
-            console.error('チャット購読エラー:', err);
-            if (onStatusChange) onStatusChange('ERROR');
-            if (onError) onError(new Error(`購読エラー: ${err?.message || '不明なエラー'}`));
-            
-            // 再接続ロジック
-            if (isSubscribed && retryCount < maxRetries) {
-              retryCount++;
-              console.log(`再接続試行 ${retryCount}/${maxRetries}...`);
-              if (onStatusChange) onStatusChange('RECONNECTING');
-              
-              setTimeout(() => {
-                if (isSubscribed) {
-                  if (channel) {
-                    supabase.removeChannel(channel);
-                  }
-                  subscribe();
-                }
-              }, retryDelay * retryCount); // 指数バックオフ
-            } else if (retryCount >= maxRetries) {
-              if (onStatusChange) onStatusChange('MAX_RETRIES_EXCEEDED');
-              if (onError) onError(new Error('最大再接続試行回数を超えました'));
-            }
+            const err = new Error(`Subscription error: ${status}`);
+            handleError(err);
+          } else if (status === 'TIMED_OUT') {
+            const err = new Error('Subscription timed out');
+            handleError(err);
           }
         });
-      
-      return channel;
     } catch (error) {
-      console.error('チャット購読設定エラー:', error);
-      if (onStatusChange) onStatusChange('ERROR');
-      if (onError) onError(error instanceof Error ? error : new Error('不明なエラー'));
-      return null;
+      handleError(error as Error);
     }
   };
-  
-  // 購読開始
-  channel = subscribe();
-  
+
+  const handleError = (error: Error) => {
+    console.error('Chat subscription error:', error);
+
+    if (onError) {
+      onError(error);
+    }
+
+    // リトライロジック
+    if (retryCount < maxRetries) {
+      retryCount++;
+      console.log(`Retrying subscription (${retryCount}/${maxRetries}) in ${retryDelay}ms`);
+      setTimeout(subscribe, retryDelay * retryCount);
+    } else {
+      console.error('Max retries reached. Giving up on subscription.');
+    }
+  };
+
+  // 初回購読開始
+  subscribe();
+
   // 購読解除関数を返す
   return () => {
-    console.log('チャットメッセージの購読解除');
-    isSubscribed = false;
     if (channel) {
       supabase.removeChannel(channel);
     }

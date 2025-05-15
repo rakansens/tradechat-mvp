@@ -3,11 +3,13 @@
 // 作成日: 2025/6/21 - 初期実装、supabase-entry.tsからの移行
 // 更新日: 2025/6/25 - Supabase型定義に合わせてZodスキーマとマッピングを更新
 // 更新日: 2025/6/26 - ページネーション機能付きのgetEntriesPaginated関数を追加
+// 更新日: 2023/7/5 - Dependency Injection パターンに更新 (supabaseClient ?? createClient())
 
 import { createClient } from '@/lib/supabase/client';
 import { Tables, TablesInsert, TablesUpdate } from '@/types/network/supabase';
 import { unstable_cache } from 'next/cache';
 import { z } from 'zod';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 // エントリー関連の型定義
 export type Entry = Tables<'entries'>;
@@ -60,14 +62,16 @@ export interface PaginationParams {
  * @param limit 取得件数
  * @param offset オフセット
  * @param isPublicOnly 公開エントリーのみ取得するかどうか
+ * @param supabaseClient Supabaseクライアントインスタンス（オプション）
  * @returns エントリー一覧
  */
 export const getEntries = async (
   limit = 50,
   offset = 0,
-  isPublicOnly = false
+  isPublicOnly = false,
+  supabaseClient?: SupabaseClient
 ): Promise<Entry[]> => {
-  const supabase = createClient();
+  const supabase = supabaseClient ?? createClient();
   let query = supabase
     .from('entries')
     .select('*')
@@ -89,8 +93,8 @@ export const getEntries = async (
 
 // 60秒間キャッシュするオープンエントリー取得関数
 export const getOpenEntries = unstable_cache(
-  async (isPublicOnly = false): Promise<Entry[]> => {
-    return getEntriesByStatus('open', 50, 0, isPublicOnly);
+  async (isPublicOnly = false, supabaseClient?: SupabaseClient): Promise<Entry[]> => {
+    return getEntriesByStatus('open', 50, 0, isPublicOnly, supabaseClient);
   },
   ['open-entries'],
   { revalidate: 60 }
@@ -98,8 +102,8 @@ export const getOpenEntries = unstable_cache(
 
 // 60秒間キャッシュするクローズドエントリー取得関数
 export const getClosedEntries = unstable_cache(
-  async (isPublicOnly = false): Promise<Entry[]> => {
-    return getEntriesByStatus('closed', 50, 0, isPublicOnly);
+  async (isPublicOnly = false, supabaseClient?: SupabaseClient): Promise<Entry[]> => {
+    return getEntriesByStatus('closed', 50, 0, isPublicOnly, supabaseClient);
   },
   ['closed-entries'],
   { revalidate: 60 }
@@ -108,10 +112,12 @@ export const getClosedEntries = unstable_cache(
 /**
  * ページネーション付きでエントリーを取得
  * @param params ページネーションパラメータ
+ * @param supabaseClient Supabaseクライアントインスタンス（オプション）
  * @returns ページネーション結果
  */
 export const getEntriesPaginated = async (
-  params: PaginationParams
+  params: PaginationParams,
+  supabaseClient?: SupabaseClient
 ): Promise<PaginatedEntries> => {
   const { 
     page = 1, 
@@ -122,7 +128,7 @@ export const getEntriesPaginated = async (
     isPublicOnly = false 
   } = params;
   
-  const supabase = createClient();
+  const supabase = supabaseClient ?? createClient();
   const offset = (page - 1) * pageSize;
   
   // クエリ構築
@@ -169,8 +175,8 @@ export const getEntriesPaginated = async (
 
 // 30秒間キャッシュするページネーション付きエントリー取得関数
 export const getCachedEntriesPaginated = unstable_cache(
-  async (params: PaginationParams): Promise<PaginatedEntries> => {
-    return getEntriesPaginated(params);
+  async (params: PaginationParams, supabaseClient?: SupabaseClient): Promise<PaginatedEntries> => {
+    return getEntriesPaginated(params, supabaseClient);
   },
   ['paginated-entries'],
   { revalidate: 30 }
@@ -181,14 +187,16 @@ export const getCachedEntriesPaginated = unstable_cache(
  * @param userId ユーザーID
  * @param limit 取得件数
  * @param offset オフセット
+ * @param supabaseClient Supabaseクライアントインスタンス（オプション）
  * @returns エントリー一覧
  */
 export const getUserEntries = async (
   userId: string,
   limit = 50,
-  offset = 0
+  offset = 0,
+  supabaseClient?: SupabaseClient
 ): Promise<Entry[]> => {
-  const supabase = createClient();
+  const supabase = supabaseClient ?? createClient();
   const { data, error } = await supabase
     .from('entries')
     .select('*')
@@ -209,15 +217,17 @@ export const getUserEntries = async (
  * @param limit 取得件数
  * @param offset オフセット
  * @param isPublicOnly 公開エントリーのみ取得するかどうか
+ * @param supabaseClient Supabaseクライアントインスタンス（オプション）
  * @returns エントリー一覧
  */
 export const getEntriesBySymbol = async (
   symbol: string,
   limit = 50,
   offset = 0,
-  isPublicOnly = false
+  isPublicOnly = false,
+  supabaseClient?: SupabaseClient
 ): Promise<Entry[]> => {
-  const supabase = createClient();
+  const supabase = supabaseClient ?? createClient();
   let query = supabase
     .from('entries')
     .select('*')
@@ -244,15 +254,17 @@ export const getEntriesBySymbol = async (
  * @param limit 取得件数
  * @param offset オフセット
  * @param isPublicOnly 公開エントリーのみ取得するかどうか
+ * @param supabaseClient Supabaseクライアントインスタンス（オプション）
  * @returns エントリー一覧
  */
 export const getEntriesByStatus = async (
   status: 'open' | 'closed' | 'canceled',
   limit = 50,
   offset = 0,
-  isPublicOnly = false
+  isPublicOnly = false,
+  supabaseClient?: SupabaseClient
 ): Promise<Entry[]> => {
-  const supabase = createClient();
+  const supabase = supabaseClient ?? createClient();
   let query = supabase
     .from('entries')
     .select('*')
@@ -276,13 +288,14 @@ export const getEntriesByStatus = async (
 /**
  * エントリーを作成
  * @param userId ユーザーID
- * @param side 売買方向（buy/sell）
+ * @param side 方向（buy/sell）
  * @param symbol シンボル
  * @param price 価格
  * @param time 時間
- * @param takeProfit 利確価格
- * @param stopLoss 損切価格
+ * @param takeProfit 利益確定価格
+ * @param stopLoss 損切り価格
  * @param isPublic 公開するかどうか
+ * @param supabaseClient Supabaseクライアントインスタンス（オプション）
  * @returns 作成されたエントリー
  */
 export const createEntry = async (
@@ -293,9 +306,10 @@ export const createEntry = async (
   time: Date,
   takeProfit?: number,
   stopLoss?: number,
-  isPublic = false
+  isPublic = false,
+  supabaseClient?: SupabaseClient
 ): Promise<Entry> => {
-  const supabase = createClient();
+  const supabase = supabaseClient ?? createClient();
   const entryData: EntryInsert = {
     user_id: userId,
     side,
@@ -325,13 +339,15 @@ export const createEntry = async (
  * エントリーを更新
  * @param entryId エントリーID
  * @param updates 更新内容
+ * @param supabaseClient Supabaseクライアントインスタンス（オプション）
  * @returns 更新されたエントリー
  */
 export const updateEntry = async (
   entryId: string,
-  updates: EntryUpdateParams
+  updates: EntryUpdateParams,
+  supabaseClient?: SupabaseClient
 ): Promise<Entry> => {
-  const supabase = createClient();
+  const supabase = supabaseClient ?? createClient();
   const { data, error } = await supabase
     .from('entries')
     .update(updates)
@@ -349,10 +365,14 @@ export const updateEntry = async (
 /**
  * エントリーを削除
  * @param entryId エントリーID
+ * @param supabaseClient Supabaseクライアントインスタンス（オプション）
  * @returns 削除結果
  */
-export const deleteEntry = async (entryId: string): Promise<boolean> => {
-  const supabase = createClient();
+export const deleteEntry = async (
+  entryId: string,
+  supabaseClient?: SupabaseClient
+): Promise<boolean> => {
+  const supabase = supabaseClient ?? createClient();
   const { error } = await supabase
     .from('entries')
     .delete()
@@ -370,71 +390,76 @@ export const deleteEntry = async (entryId: string): Promise<boolean> => {
  * @param entryId エントリーID
  * @param exitPrice 決済価格
  * @param exitTime 決済時間
+ * @param supabaseClient Supabaseクライアントインスタンス（オプション）
  * @returns 更新されたエントリー
  */
 export const closeEntry = async (
   entryId: string,
   exitPrice: number,
-  exitTime: Date
+  exitTime: Date,
+  supabaseClient?: SupabaseClient
 ): Promise<Entry> => {
-  const supabase = createClient();
-  // まずエントリーを取得して利益を計算
+  const supabase = supabaseClient ?? createClient();
+  
+  // まずエントリーを取得
   const { data: entry, error: fetchError } = await supabase
     .from('entries')
     .select('*')
     .eq('id', entryId)
     .single();
-
+    
   if (fetchError) {
     throw fetchError;
   }
-
-  if (!entry) {
-    throw new Error(`Entry with ID ${entryId} not found`);
-  }
-
+  
   // 利益計算
-  const profitValue = entry.side === 'buy'
-    ? exitPrice - entry.price
-    : entry.price - exitPrice;
-
+  let profit: number | null = null;
+  if (entry) {
+    if (entry.side === 'buy') {
+      profit = exitPrice - entry.price;
+    } else {
+      profit = entry.price - exitPrice;
+    }
+  }
+  
   // エントリー更新
-  const updates: EntryUpdateParams = {
+  const updates = {
     exit_price: exitPrice,
     exit_time: exitTime.toISOString(),
-    profit: profitValue,
-    status: 'closed',
+    profit,
+    status: 'closed' as const,
   };
-
-  return updateEntry(entryId, updates);
+  
+  return updateEntry(entryId, updates, supabase);
 };
 
 /**
  * エントリーをキャンセル
  * @param entryId エントリーID
+ * @param supabaseClient Supabaseクライアントインスタンス（オプション）
  * @returns 更新されたエントリー
  */
-export const cancelEntry = async (entryId: string): Promise<Entry> => {
-  const updates: EntryUpdateParams = {
-    status: 'canceled',
-  };
-
-  return updateEntry(entryId, updates);
+export const cancelEntry = async (
+  entryId: string,
+  supabaseClient?: SupabaseClient
+): Promise<Entry> => {
+  return updateEntry(entryId, { status: 'canceled' }, supabaseClient);
 };
 
 /**
- * エントリーの更新をリアルタイムに購読
+ * エントリーをリアルタイム購読
  * @param callback コールバック関数
- * @param isPublicOnly 公開エントリーのみ対象とするかどうか
+ * @param isPublicOnly 公開エントリーのみを対象とするかどうか
+ * @param supabaseClient Supabaseクライアントインスタンス（オプション）
  * @returns 購読解除関数
  */
 export const subscribeToEntries = (
   callback: (entry: Entry) => void,
-  isPublicOnly = false
+  isPublicOnly = false,
+  supabaseClient?: SupabaseClient
 ) => {
-  const supabase = createClient();
-  
-  const subscription = supabase
+  const supabase = supabaseClient ?? createClient();
+  const channel = supabase
     .channel('entries-changes')
     .on(
       'postgres_changes',
@@ -442,27 +467,33 @@ export const subscribeToEntries = (
         event: '*',
         schema: 'public',
         table: 'entries',
-        ...(isPublicOnly ? { filter: 'is_public=eq.true' } : {})
+        filter: isPublicOnly ? 'is_public=eq.true' : undefined,
       },
       (payload) => {
-        callback(payload.new as Entry);
+        // 適切な型変換
+        const entry = payload.new as Entry;
+        callback(entry);
       }
     )
     .subscribe();
 
   // 購読解除関数を返す
   return () => {
-    subscription.unsubscribe();
+    supabase.removeChannel(channel);
   };
 };
 
 /**
  * エントリーをIDで取得
  * @param entryId エントリーID
- * @returns エントリー
+ * @param supabaseClient Supabaseクライアントインスタンス（オプション）
+ * @returns エントリーまたはnull
  */
-export const getEntryById = async (entryId: string): Promise<Entry | null> => {
-  const supabase = createClient();
+export const getEntryById = async (
+  entryId: string,
+  supabaseClient?: SupabaseClient
+): Promise<Entry | null> => {
+  const supabase = supabaseClient ?? createClient();
   const { data, error } = await supabase
     .from('entries')
     .select('*')
@@ -470,7 +501,8 @@ export const getEntryById = async (entryId: string): Promise<Entry | null> => {
     .single();
 
   if (error) {
-    if (error.code === 'PGRST116') { // Not found
+    if (error.code === 'PGRST116') {
+      // レコードが見つからない場合はnullを返す
       return null;
     }
     throw error;
