@@ -6,6 +6,7 @@
  * - ページネーション、フィルタリングをサポート
  * 
  * 作成日: 2025/6/26
+ * 更新日: 2025/9/17 - createRouteHandlerClient呼び出しを非同期に修正
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -22,7 +23,7 @@ export async function GET(request: NextRequest) {
   const symbol = searchParams.get('symbol') || undefined;
   
   // Supabaseクライアントを初期化（ルートハンドラー用）
-  const supabase = createRouteHandlerClient();
+  const supabase = await createRouteHandlerClient();
   
   // 認証セッションを取得
   const { data: { session } } = await supabase.auth.getSession();
