@@ -3,6 +3,7 @@
 // 作成日: 2025/5/31
 // 更新日: 2025/6/22 - Supabase SSRクライアント対応（インポートパス更新）
 // 更新日: 2025/8/22 - エラーログの詳細表示を追加
+// 更新日: 2025/8/27 - Route Handler用のSupabaseClientを使用するよう修正
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/supabase/features/auth';
@@ -13,6 +14,7 @@ import {
   searchMemoriesByText,
   deleteMemory 
 } from '@/lib/supabase/features/memory';
+import { createRouteHandlerClient } from '@/lib/supabase/routeHandlerClient';
 
 /**
  * メモリ一覧を取得するGETハンドラ
@@ -27,8 +29,11 @@ export async function GET(request: NextRequest) {
     const offset = parseInt(searchParams.get('offset') || '0');
     const searchQuery = searchParams.get('q');
     
+    // SSR対応Supabaseクライアントを生成
+    const supabase = await createRouteHandlerClient();
+    
     // 現在のユーザーを取得
-    const user = await getCurrentUser();
+    const user = await getCurrentUser(supabase);
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -37,14 +42,14 @@ export async function GET(request: NextRequest) {
     if (searchQuery) {
       // まずはベクトル検索で試す
       try {
-        const memories = await searchMemoriesBySimilarity(user.id, searchQuery, limit);
+        const memories = await searchMemoriesBySimilarity(user.id, searchQuery, limit, supabase);
         return NextResponse.json(memories);
       } catch (error) {
         console.error('ベクトル検索エラー:', error);
         
         // ベクトル検索に失敗した場合はテキスト検索にフォールバック
         try {
-          const memories = await searchMemoriesByText(user.id, searchQuery, limit);
+          const memories = await searchMemoriesByText(user.id, searchQuery, limit, supabase);
           return NextResponse.json(memories);
         } catch (textError) {
           console.error('テキスト検索エラー:', textError);
@@ -54,7 +59,7 @@ export async function GET(request: NextRequest) {
     } else {
       // 全件取得
       try {
-        const memories = await getUserMemories(user.id, limit, offset);
+        const memories = await getUserMemories(user.id, limit, offset, supabase);
         return NextResponse.json(memories);
       } catch (fetchError) {
         console.error('メモリ取得エラー:', fetchError);
@@ -85,8 +90,11 @@ export async function POST(request: Request) {
       );
     }
     
+    // SSR対応Supabaseクライアントを生成
+    const supabase = await createRouteHandlerClient();
+    
     // 現在のユーザーを取得
-    const user = await getCurrentUser();
+    const user = await getCurrentUser(supabase);
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -96,7 +104,8 @@ export async function POST(request: Request) {
       user.id,
       content,
       externalId,
-      metadata || {}
+      metadata || {},
+      supabase
     );
     
     return NextResponse.json(memory);
@@ -124,14 +133,17 @@ export async function DELETE(request: NextRequest) {
       );
     }
     
+    // SSR対応Supabaseクライアントを生成
+    const supabase = await createRouteHandlerClient();
+    
     // 現在のユーザーを取得
-    const user = await getCurrentUser();
+    const user = await getCurrentUser(supabase);
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
     // メモリを削除
-    await deleteMemory(memoryId);
+    await deleteMemory(memoryId, supabase);
     
     return NextResponse.json({ success: true });
   } catch (error) {

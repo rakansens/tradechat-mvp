@@ -2,10 +2,12 @@
 // メモリのベクトル類似度検索API
 // 作成日: 2025/6/1
 // 更新日: 2025/8/22 - エラーログの詳細表示を追加
+// 更新日: 2025/8/27 - Route Handler用のSupabaseClientを使用するよう修正
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/supabase/features/auth';
 import { searchMemoriesBySimilarity } from '@/lib/supabase/features/memory';
+import { createRouteHandlerClient } from '@/lib/supabase/routeHandlerClient';
 
 /**
  * ベクトル類似度に基づくメモリ検索APIハンドラ
@@ -24,8 +26,11 @@ export async function GET(request: NextRequest) {
       );
     }
     
+    // SSR対応Supabaseクライアントを生成
+    const supabase = await createRouteHandlerClient();
+    
     // 認証されたユーザーを取得
-    const user = await getCurrentUser();
+    const user = await getCurrentUser(supabase);
     if (!user) {
       return NextResponse.json(
         { error: '認証が必要です' },
@@ -38,7 +43,7 @@ export async function GET(request: NextRequest) {
     
     // ベクトル類似度検索を実行
     try {
-      const memories = await searchMemoriesBySimilarity(user.id, query, limit);
+      const memories = await searchMemoriesBySimilarity(user.id, query, limit, supabase);
       return NextResponse.json(memories);
     } catch (searchError) {
       console.error('類似度検索エラー詳細:', searchError);

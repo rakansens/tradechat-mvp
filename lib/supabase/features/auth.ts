@@ -3,9 +3,12 @@
 // 作成日: 2025/5/7 - 初期実装
 // 更新日: 2025/5/14 - 型参照とプロフィール操作メソッドを最新の型定義に更新
 // 更新日: 2025/6/20 - SSRクライアント対応
+// 更新日: 2025/8/27 - SupabaseClientを外部から受け取れるよう改修
 
 import { createClient } from '@/lib/supabase/client';
 import { User, Session } from '@supabase/supabase-js';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/types/network/supabase';
 import { Tables, TablesInsert, TablesUpdate } from '@/types/network/supabase';
 
 // プロフィール操作関連の型定義
@@ -85,10 +88,13 @@ export const getCurrentSession = async (): Promise<Session | null> => {
 
 /**
  * 現在のユーザーを取得
+ * @param supabaseClient Supabaseクライアントインスタンス（省略可）
  * @returns 現在のユーザー
  */
-export const getCurrentUser = async (): Promise<User | null> => {
-  const supabase = createClient();
+export const getCurrentUser = async (
+  supabaseClient?: SupabaseClient<Database>
+): Promise<User | null> => {
+  const supabase = supabaseClient ?? createClient();
   const { data, error } = await supabase.auth.getUser();
   
   if (error) {

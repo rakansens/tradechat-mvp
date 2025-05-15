@@ -1,8 +1,11 @@
 // lib/supabase/features/memory.ts
 // Supabaseメモリデータ関連ユーティリティ関数（SSR対応版）
 // 作成日: 2025/6/21 - 初期実装、supabase-memory.tsからの移行
+// 更新日: 2025/8/27 - SupabaseClientを外部から受け取れるよう改修
 
 import { createClient } from '@/lib/supabase/client';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/types/network/supabase';
 import { Tables, TablesInsert, TablesUpdate } from '@/types/network/supabase';
 import { generateEmbedding } from '@/lib/openai';
 
@@ -22,15 +25,17 @@ interface MemoryWithSimilarity extends Memory {
  * @param content メモリ内容
  * @param externalId 外部APIのメモリID (Mem0API)
  * @param metadata メタデータ
+ * @param supabaseClient Supabaseクライアントインスタンス（省略可）
  * @returns 保存されたメモリ
  */
 export const createMemory = async (
   userId: string,
   content: string,
   externalId?: string,
-  metadata: Record<string, any> = {}
+  metadata: Record<string, any> = {},
+  supabaseClient?: SupabaseClient<Database>,
 ): Promise<Memory> => {
-  const supabase = createClient();
+  const supabase = supabaseClient ?? createClient();
   // テキストからembeddingを生成
   let embedding = null;
   try {
@@ -65,13 +70,15 @@ export const createMemory = async (
  * メモリを更新
  * @param memoryId メモリID
  * @param updates 更新内容
+ * @param supabaseClient Supabaseクライアントインスタンス（省略可）
  * @returns 更新されたメモリ
  */
 export const updateMemory = async (
   memoryId: string,
-  updates: Partial<Omit<Memory, 'id' | 'user_id' | 'created_at' | 'updated_at'>>
+  updates: Partial<Omit<Memory, 'id' | 'user_id' | 'created_at' | 'updated_at'>>,
+  supabaseClient?: SupabaseClient<Database>,
 ): Promise<Memory> => {
-  const supabase = createClient();
+  const supabase = supabaseClient ?? createClient();
   // content更新の場合は新しいembeddingを生成
   let embedding = undefined;
   if (updates.content) {
@@ -103,10 +110,14 @@ export const updateMemory = async (
 /**
  * メモリを削除
  * @param memoryId メモリID
+ * @param supabaseClient Supabaseクライアントインスタンス（省略可）
  * @returns 削除結果
  */
-export const deleteMemory = async (memoryId: string): Promise<boolean> => {
-  const supabase = createClient();
+export const deleteMemory = async (
+  memoryId: string,
+  supabaseClient?: SupabaseClient<Database>,
+): Promise<boolean> => {
+  const supabase = supabaseClient ?? createClient();
   const { error } = await supabase
     .from('memories')
     .delete()
@@ -124,14 +135,16 @@ export const deleteMemory = async (memoryId: string): Promise<boolean> => {
  * @param userId ユーザーID
  * @param limit 取得件数
  * @param offset オフセット
+ * @param supabaseClient Supabaseクライアントインスタンス（省略可）
  * @returns メモリ一覧
  */
 export const getUserMemories = async (
   userId: string,
   limit = 50,
-  offset = 0
+  offset = 0,
+  supabaseClient?: SupabaseClient<Database>,
 ): Promise<Memory[]> => {
-  const supabase = createClient();
+  const supabase = supabaseClient ?? createClient();
   const { data, error } = await supabase
     .from('memories')
     .select('*')
@@ -151,14 +164,16 @@ export const getUserMemories = async (
  * @param userId ユーザーID
  * @param searchText 検索テキスト
  * @param limit 取得件数
+ * @param supabaseClient Supabaseクライアントインスタンス（省略可）
  * @returns 検索結果
  */
 export const searchMemoriesByText = async (
   userId: string,
   searchText: string,
-  limit = 10
+  limit = 10,
+  supabaseClient?: SupabaseClient<Database>,
 ): Promise<Memory[]> => {
-  const supabase = createClient();
+  const supabase = supabaseClient ?? createClient();
   // FTS（全文検索）を使用した基本的な検索
   // 注: 実際の実装ではより洗練された検索ロジックが必要かもしれません
   const { data, error } = await supabase
@@ -180,14 +195,16 @@ export const searchMemoriesByText = async (
  * @param userId ユーザーID
  * @param queryText 検索クエリ
  * @param limit 取得件数
+ * @param supabaseClient Supabaseクライアントインスタンス（省略可）
  * @returns 検索結果
  */
 export const searchMemoriesBySimilarity = async (
   userId: string,
   queryText: string,
-  limit = 5
+  limit = 5,
+  supabaseClient?: SupabaseClient<Database>,
 ): Promise<Memory[]> => {
-  const supabase = createClient();
+  const supabase = supabaseClient ?? createClient();
   // クエリからembeddingを生成
   let embedding;
   try {
@@ -195,12 +212,12 @@ export const searchMemoriesBySimilarity = async (
   } catch (error) {
     console.error('Embedding生成エラー:', error);
     // embeddingが生成できない場合はテキスト検索にフォールバック
-    return searchMemoriesByText(userId, queryText, limit);
+    return searchMemoriesByText(userId, queryText, limit, supabaseClient);
   }
 
   if (!embedding) {
     // embeddingが生成できない場合はテキスト検索にフォールバック
-    return searchMemoriesByText(userId, queryText, limit);
+    return searchMemoriesByText(userId, queryText, limit, supabaseClient);
   }
 
   try {
@@ -223,19 +240,21 @@ export const searchMemoriesBySimilarity = async (
   } catch (error) {
     console.error('ベクトル検索エラー:', error);
     // エラー時はテキスト検索にフォールバック
-    return searchMemoriesByText(userId, queryText, limit);
+    return searchMemoriesByText(userId, queryText, limit, supabaseClient);
   }
 };
 
 /**
  * 外部IDでメモリを取得
  * @param externalId 外部ID
+ * @param supabaseClient Supabaseクライアントインスタンス（省略可）
  * @returns メモリまたはnull
  */
 export const getMemoryByExternalId = async (
-  externalId: string
+  externalId: string,
+  supabaseClient?: SupabaseClient<Database>,
 ): Promise<Memory | null> => {
-  const supabase = createClient();
+  const supabase = supabaseClient ?? createClient();
   const { data, error } = await supabase
     .from('memories')
     .select('*')
@@ -250,16 +269,18 @@ export const getMemoryByExternalId = async (
 };
 
 /**
- * 同期フラグを更新
+ * メモリの同期状態を更新
  * @param memoryId メモリID
- * @param isSynced 同期済みかどうか
+ * @param isSynced 同期状態
+ * @param supabaseClient Supabaseクライアントインスタンス（省略可）
  * @returns 更新されたメモリ
  */
 export const updateSyncStatus = async (
   memoryId: string,
-  isSynced: boolean
+  isSynced: boolean,
+  supabaseClient?: SupabaseClient<Database>,
 ): Promise<Memory> => {
-  const supabase = createClient();
+  const supabase = supabaseClient ?? createClient();
   const { data, error } = await supabase
     .from('memories')
     .update({ is_synced: isSynced })
@@ -275,16 +296,18 @@ export const updateSyncStatus = async (
 };
 
 /**
- * 未同期のメモリを取得
+ * 未同期のメモリ一覧を取得
  * @param userId ユーザーID
  * @param limit 取得件数
- * @returns 未同期メモリ一覧
+ * @param supabaseClient Supabaseクライアントインスタンス（省略可）
+ * @returns 未同期のメモリ一覧
  */
 export const getUnsyncedMemories = async (
   userId: string,
-  limit = 50
+  limit = 50,
+  supabaseClient?: SupabaseClient<Database>,
 ): Promise<Memory[]> => {
-  const supabase = createClient();
+  const supabase = supabaseClient ?? createClient();
   const { data, error } = await supabase
     .from('memories')
     .select('*')
