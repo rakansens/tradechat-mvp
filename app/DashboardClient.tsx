@@ -1,12 +1,15 @@
 // app/DashboardClient.tsx
 // <!-- このファイルはダッシュボードページのクライアントサイドのロジックを扱います。 -->
+// 更新日: 2025/6/26 - PositionHistoryをSSR版に置き換え
+
 'use client';
 
 import { useEffect, useRef, useCallback } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import ChartSection from "@/components/chart/ChartSection";
 import ChatSection from "@/components/chat/section";
-import PositionHistory from "@/components/position/PositionHistory";
+// サーバーコンポーネントを履歴バレルからインポート
+import { PositionServerHistory } from "@/components/position/history";
 import ChartToolbarComponent from "@/components/chart/ChartToolbar";
 import {
   useRootStore,
@@ -17,7 +20,7 @@ import {
   selectActiveTab,
 } from "@/store";
 import { selectCurrentSymbol, selectCurrentTimeFrame } from "@/store/chart/data/selectors";
-import type { OpenEntry } from "@/types/entry";
+import type { Entry } from "@/types/entry";
 import { MastraClient } from '@mastra/client-js';
 import { useChat } from 'ai/react';
 
@@ -27,16 +30,18 @@ const mastraClient = new MastraClient({
 
 // Propsの型を定義 (Server Componentから渡される初期データ)
 interface DashboardClientProps {
-  initialEntries: OpenEntry[];
+  initialEntries: Entry[]; // OpenEntryからEntryに変更
   initialCurrentSymbol: string | null;
   initialCurrentTimeFrame: string;
+  userId?: string; // ログインユーザーのID（ポジション履歴取得用）
   // 必要に応じて他の初期データを追加
 }
 
 export default function DashboardClient({ 
   initialEntries,
   initialCurrentSymbol,
-  initialCurrentTimeFrame 
+  initialCurrentTimeFrame,
+  userId 
 }: DashboardClientProps) {
   const chatEndRef = useRef<HTMLDivElement>(null);
 
@@ -77,9 +82,9 @@ export default function DashboardClient({
     executeStoreEntry();
   }, [executeStoreEntry, pendingEntry]);
 
-  const handleEditSubmit = useCallback((updatedEntry: OpenEntry) => {
+  const handleEditSubmit = useCallback((updatedEntry: Entry) => { // OpenEntryからEntryに変更
     console.log('Updating pending entry:', updatedEntry);
-    setPendingEntry(updatedEntry);
+    setPendingEntry(updatedEntry as any); // 一時的にanyを使用
   }, [setPendingEntry]);
 
   const handleCancelPendingEntry = useCallback(() => {
@@ -113,11 +118,11 @@ export default function DashboardClient({
 
   const chartSectionComponent = <ChartSection />;
 
+  // SSR版のPositionServerHistoryを使用
   const positionsSectionComponent = (
-    <PositionHistory
-      entries={entries} // ストアから取得したentriesを使用。初期値はprops経由でストアに反映されている想定
-      onClosePosition={closePosition}
-      onCancelPosition={cancelPosition}
+    <PositionServerHistory
+      userId={userId}
+      params={{ page: 1, pageSize: 10 }}
     />
   );
 

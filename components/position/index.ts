@@ -8,4 +8,4 @@
  * - 2023-05-13: PositionHistoryコンポーネントのエクスポートを追加
  */
 
-export { default as PositionHistory } from "./history/PositionHistory" 
+export { default as PositionHistory } from "./history/PositionServerComponent";

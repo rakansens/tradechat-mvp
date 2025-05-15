@@ -5,6 +5,7 @@
  * 
  * 変更履歴:
  * - 2023-05-13: PositionHistory.tsxから抽出
+ * - 2025-6-26: "all"と"canceled"タブを追加
  */
 
 "use client"
@@ -30,7 +31,13 @@ export function HeaderTabs({ selectedTab, onTabChange }: HeaderTabsProps) {
     <CardHeader className="py-2 px-4 flex flex-row items-center justify-between border-b" style={{ borderColor: theme.border.light }}>
       <CardTitle className="text-base font-medium" style={{ color: theme.text.primary }}>Position History</CardTitle>
       <Tabs value={selectedTab} onValueChange={(v) => onTabChange(v as HistoryTab)}>
-        <TabsList className="grid grid-cols-2 h-7 border" style={{ backgroundColor: theme.background.tertiary, borderColor: theme.border.light }}>
+        <TabsList className="grid grid-cols-4 h-7 border" style={{ backgroundColor: theme.background.tertiary, borderColor: theme.border.light }}>
+          <TabsTrigger 
+            value="all" 
+            className="text-xs h-6 data-[state=active]:bg-[#2a2e3d] data-[state=active]:text-white"
+          >
+            All
+          </TabsTrigger>
           <TabsTrigger 
             value="open" 
             className="text-xs h-6 data-[state=active]:bg-[#2a2e3d] data-[state=active]:text-white"
@@ -42,6 +49,12 @@ export function HeaderTabs({ selectedTab, onTabChange }: HeaderTabsProps) {
             className="text-xs h-6 data-[state=active]:bg-[#2a2e3d] data-[state=active]:text-white"
           >
             Closed
+          </TabsTrigger>
+          <TabsTrigger 
+            value="canceled" 
+            className="text-xs h-6 data-[state=active]:bg-[#2a2e3d] data-[state=active]:text-white"
+          >
+            Canceled
           </TabsTrigger>
         </TabsList>
       </Tabs>

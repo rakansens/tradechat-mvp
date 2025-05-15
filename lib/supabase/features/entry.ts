@@ -2,6 +2,7 @@
 // Supabaseトレードエントリー関連ユーティリティ関数（SSR対応版）
 // 作成日: 2025/6/21 - 初期実装、supabase-entry.tsからの移行
 // 更新日: 2025/6/25 - Supabase型定義に合わせてZodスキーマとマッピングを更新
+// 更新日: 2025/6/26 - ページネーション機能付きのgetEntriesPaginated関数を追加
 
 import { createClient } from '@/lib/supabase/client';
 import { Tables, TablesInsert, TablesUpdate } from '@/types/network/supabase';
@@ -34,6 +35,25 @@ export const entrySchema = z.object({
 
 // 型エイリアス（簡潔な使用のため）
 export type EntrySchema = z.infer<typeof entrySchema>;
+
+// ページネーション結果の型
+export interface PaginatedEntries {
+  data: Entry[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+  hasMore: boolean;
+}
+
+// ページネーションパラメータの型
+export interface PaginationParams {
+  page: number;
+  pageSize: number;
+  status?: 'open' | 'closed' | 'canceled';
+  symbol?: string;
+  userId?: string;
+  isPublicOnly?: boolean;
+}
 
 /**
  * エントリー一覧を取得
@@ -74,6 +94,86 @@ export const getOpenEntries = unstable_cache(
   },
   ['open-entries'],
   { revalidate: 60 }
+);
+
+// 60秒間キャッシュするクローズドエントリー取得関数
+export const getClosedEntries = unstable_cache(
+  async (isPublicOnly = false): Promise<Entry[]> => {
+    return getEntriesByStatus('closed', 50, 0, isPublicOnly);
+  },
+  ['closed-entries'],
+  { revalidate: 60 }
+);
+
+/**
+ * ページネーション付きでエントリーを取得
+ * @param params ページネーションパラメータ
+ * @returns ページネーション結果
+ */
+export const getEntriesPaginated = async (
+  params: PaginationParams
+): Promise<PaginatedEntries> => {
+  const { 
+    page = 1, 
+    pageSize = 10, 
+    status, 
+    symbol, 
+    userId, 
+    isPublicOnly = false 
+  } = params;
+  
+  const supabase = createClient();
+  const offset = (page - 1) * pageSize;
+  
+  // クエリ構築
+  let query = supabase
+    .from('entries')
+    .select('*', { count: 'exact' })
+    .order('created_at', { ascending: false });
+  
+  // フィルタ適用
+  if (status) {
+    query = query.eq('status', status);
+  }
+  
+  if (symbol) {
+    query = query.eq('symbol', symbol);
+  }
+  
+  if (userId) {
+    query = query.eq('user_id', userId);
+  }
+  
+  if (isPublicOnly) {
+    query = query.eq('is_public', true);
+  }
+  
+  // レンジを適用
+  query = query.range(offset, offset + pageSize - 1);
+  
+  // データ取得
+  const { data, error, count } = await query;
+  
+  if (error) {
+    throw error;
+  }
+  
+  return {
+    data: data || [],
+    totalCount: count || 0,
+    page,
+    pageSize,
+    hasMore: (count || 0) > offset + pageSize
+  };
+};
+
+// 30秒間キャッシュするページネーション付きエントリー取得関数
+export const getCachedEntriesPaginated = unstable_cache(
+  async (params: PaginationParams): Promise<PaginatedEntries> => {
+    return getEntriesPaginated(params);
+  },
+  ['paginated-entries'],
+  { revalidate: 30 }
 );
 
 /**
