@@ -1,9 +1,11 @@
 // lib/supabase/features/cache.ts
 // Supabaseキャッシュデータ関連ユーティリティ関数（SSR対応版）
 // 作成日: 2025/6/21 - 初期実装、supabase-cache.tsからの移行
+// 更新日: 2025/7/5 - Dependency Injection パターンに更新 (supabaseClient ?? createClient())
 
 import { createClient } from '@/lib/supabase/client';
 import { Tables, TablesInsert, TablesUpdate, Json } from '@/types/network/supabase';
+import { SupabaseClient } from '@supabase/supabase-js';
 
 // キャッシュ関連の型定義
 type CachedData = Tables<'cached_data'>;
@@ -15,14 +17,16 @@ type CachedDataUpdate = TablesUpdate<'cached_data'>;
  * @param dataType データタイプ
  * @param symbol シンボル
  * @param timeframe タイムフレーム
+ * @param supabaseClient オプションの Supabase クライアントインスタンス
  * @returns キャッシュデータ
  */
 export const getCachedData = async (
   dataType: string,
   symbol: string,
-  timeframe?: string
+  timeframe?: string,
+  supabaseClient?: SupabaseClient
 ): Promise<CachedData | null> => {
-  const supabase = createClient();
+  const supabase = supabaseClient ?? createClient();
   let query = supabase
     .from('cached_data')
     .select('*')
@@ -52,6 +56,7 @@ export const getCachedData = async (
  * @param data データ
  * @param expiresIn 有効期限（秒）
  * @param timeframe タイムフレーム
+ * @param supabaseClient オプションの Supabase クライアントインスタンス
  * @returns 保存されたキャッシュデータ
  */
 export const setCachedData = async (
@@ -59,9 +64,10 @@ export const setCachedData = async (
   symbol: string,
   data: Json,
   expiresIn = 300, // デフォルト5分
-  timeframe?: string
+  timeframe?: string,
+  supabaseClient?: SupabaseClient
 ): Promise<CachedData> => {
-  const supabase = createClient();
+  const supabase = supabaseClient ?? createClient();
   const expiresAt = new Date();
   expiresAt.setSeconds(expiresAt.getSeconds() + expiresIn);
 
@@ -133,14 +139,16 @@ export const setCachedData = async (
  * @param dataType データタイプ
  * @param symbol シンボル
  * @param timeframe タイムフレーム
+ * @param supabaseClient オプションの Supabase クライアントインスタンス
  * @returns 削除結果
  */
 export const deleteCachedData = async (
   dataType: string,
   symbol: string,
-  timeframe?: string
+  timeframe?: string,
+  supabaseClient?: SupabaseClient
 ): Promise<boolean> => {
-  const supabase = createClient();
+  const supabase = supabaseClient ?? createClient();
   let query = supabase
     .from('cached_data')
     .delete()
@@ -164,10 +172,13 @@ export const deleteCachedData = async (
 
 /**
  * 期限切れのキャッシュデータを削除
+ * @param supabaseClient オプションの Supabase クライアントインスタンス
  * @returns 削除結果
  */
-export const cleanupExpiredCache = async (): Promise<boolean> => {
-  const supabase = createClient();
+export const cleanupExpiredCache = async (
+  supabaseClient?: SupabaseClient
+): Promise<boolean> => {
+  const supabase = supabaseClient ?? createClient();
   const { error } = await supabase
     .from('cached_data')
     .delete()
@@ -188,6 +199,7 @@ export const cleanupExpiredCache = async (): Promise<boolean> => {
  * @param fetchFn データ取得関数
  * @param expiresIn 有効期限（秒）
  * @param timeframe タイムフレーム
+ * @param supabaseClient オプションの Supabase クライアントインスタンス
  * @returns 取得したデータ
  */
 export const withCache = async <T extends Json>(
@@ -195,11 +207,12 @@ export const withCache = async <T extends Json>(
   symbol: string,
   fetchFn: () => Promise<T>,
   expiresIn = 300,
-  timeframe?: string
+  timeframe?: string,
+  supabaseClient?: SupabaseClient
 ): Promise<T> => {
   try {
     // キャッシュを確認
-    const cachedData = await getCachedData(dataType, symbol, timeframe);
+    const cachedData = await getCachedData(dataType, symbol, timeframe, supabaseClient);
     
     if (cachedData) {
       return cachedData.data as T;
@@ -214,7 +227,7 @@ export const withCache = async <T extends Json>(
   
   try {
     // 取得したデータをキャッシュ
-    await setCachedData(dataType, symbol, data, expiresIn, timeframe);
+    await setCachedData(dataType, symbol, data, expiresIn, timeframe, supabaseClient);
   } catch (error) {
     console.error('キャッシュ保存エラー:', error);
     // キャッシュエラーは無視して続行
@@ -228,18 +241,20 @@ export const withCache = async <T extends Json>(
  * @param dataType データタイプ
  * @param symbols シンボル配列
  * @param timeframe タイムフレーム
+ * @param supabaseClient オプションの Supabase クライアントインスタンス
  * @returns キャッシュデータ配列
  */
 export const getBulkCachedData = async (
   dataType: string,
   symbols: string[],
-  timeframe?: string
+  timeframe?: string,
+  supabaseClient?: SupabaseClient
 ): Promise<Record<string, CachedData | null>> => {
   if (symbols.length === 0) {
     return {};
   }
 
-  const supabase = createClient();
+  const supabase = supabaseClient ?? createClient();
   let query = supabase
     .from('cached_data')
     .select('*')
@@ -259,20 +274,18 @@ export const getBulkCachedData = async (
     throw error;
   }
 
-  // シンボルごとにマップを作成
+  // シンボルごとに結果をマップ
   const result: Record<string, CachedData | null> = {};
-  
-  // 初期化
   symbols.forEach(symbol => {
     result[symbol] = null;
   });
-  
-  // 取得したデータをマップに設定
+
+  // データがある場合、対応するシンボルに割り当て
   if (data) {
     data.forEach(item => {
       result[item.symbol] = item;
     });
   }
-  
+
   return result;
 }; 

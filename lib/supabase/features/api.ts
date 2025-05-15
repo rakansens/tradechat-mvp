@@ -1,16 +1,19 @@
 // lib/supabase/features/api.ts
 // Supabase API専用ユーティリティ関数（SSR対応版）
 // 作成日: 2025/6/21 - 初期実装、supabase-api.tsからの移行
+// 更新日: 2025/7/5 - Dependency Injection パターンに更新 (supabaseClient ?? createClient())
 
 import { createClient } from '@/lib/supabase/client';
+import { SupabaseClient } from '@supabase/supabase-js';
 
 /**
  * Supabase APIの接続状態を確認するためのヘルスチェック関数
+ * @param supabaseClient オプションの Supabase クライアントインスタンス
  * @returns 接続が正常な場合はtrue、それ以外はfalse
  */
-export const checkApiHealth = async (): Promise<boolean> => {
+export const checkApiHealth = async (supabaseClient?: SupabaseClient): Promise<boolean> => {
   try {
-    const supabase = createClient();
+    const supabase = supabaseClient ?? createClient();
     // シンプルなクエリを実行して接続状態を確認
     // データベース内の任意の既存テーブルでチェック
     const { data, error } = await supabase.from('profiles').select('id').limit(1);
@@ -73,10 +76,14 @@ export const getApiUsage = async (): Promise<Record<string, any>> => {
 /**
  * API使用制限をチェック
  * @param userId ユーザーID
+ * @param supabaseClient オプションの Supabase クライアントインスタンス
  * @returns 制限情報
  */
-export const checkApiLimits = async (userId: string): Promise<Record<string, any>> => {
-  const supabase = createClient();
+export const checkApiLimits = async (
+  userId: string,
+  supabaseClient?: SupabaseClient
+): Promise<Record<string, any>> => {
+  const supabase = supabaseClient ?? createClient();
   // このサンプル実装では固定値を返します
   return {
     remainingRequests: 9750,

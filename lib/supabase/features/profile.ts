@@ -2,17 +2,23 @@
 // Supabaseプロフィール拡張ユーティリティ（SSR対応版）
 // 作成日: 2025/6/15
 // 更新日: 2025/6/20 - SSRクライアント対応
+// 更新日: 2025/7/5 - Dependency Injection パターンに更新 (supabaseClient ?? createClient())
 
 import { createClient } from '@/lib/supabase/client';
 import { UserProfile, ProfileInsert, ProfileUpdate } from '@/types/supabase';
+import { SupabaseClient } from '@supabase/supabase-js';
 
 /**
  * ユーザープロフィールを取得（メタデータ対応）
  * @param userId ユーザーID
+ * @param supabaseClient オプションの Supabase クライアントインスタンス
  * @returns 拡張ユーザープロフィール
  */
-export const getExtendedProfile = async (userId: string): Promise<UserProfile | null> => {
-  const supabase = createClient();
+export const getExtendedProfile = async (
+  userId: string,
+  supabaseClient?: SupabaseClient
+): Promise<UserProfile | null> => {
+  const supabase = supabaseClient ?? createClient();
   const { data, error } = await supabase
     .from('profiles')
     .select('*')
@@ -35,6 +41,7 @@ export const getExtendedProfile = async (userId: string): Promise<UserProfile | 
  * ユーザープロフィールを作成（メタデータ対応）
  * @param userId ユーザーID
  * @param profile プロフィールデータ
+ * @param supabaseClient オプションの Supabase クライアントインスタンス
  * @returns 作成された拡張ユーザープロフィール
  */
 export const createExtendedProfile = async (
@@ -44,9 +51,10 @@ export const createExtendedProfile = async (
     avatar_url?: string;
     bio?: string;
     metadata?: Record<string, any>;
-  }
+  },
+  supabaseClient?: SupabaseClient
 ): Promise<UserProfile> => {
-  const supabase = createClient();
+  const supabase = supabaseClient ?? createClient();
   // プロフィールデータの準備
   const profileData: ProfileInsert = {
     user_id: userId,
@@ -73,6 +81,7 @@ export const createExtendedProfile = async (
  * メタデータを含むプロフィール更新
  * @param userId ユーザーID
  * @param profile 更新するプロフィールデータ
+ * @param supabaseClient オプションの Supabase クライアントインスタンス
  * @returns 更新された拡張ユーザープロフィール
  */
 export const updateExtendedProfile = async (
@@ -82,15 +91,16 @@ export const updateExtendedProfile = async (
     avatar_url?: string | null;
     bio?: string | null;
     metadata?: Record<string, any>;
-  }
+  },
+  supabaseClient?: SupabaseClient
 ): Promise<UserProfile> => {
   // 現在のプロフィールを取得
-  const currentProfile = await getExtendedProfile(userId);
+  const currentProfile = await getExtendedProfile(userId, supabaseClient);
   
   // 新しいメタデータの準備
   // 現在のメタデータと新しいメタデータをマージ
   const mergedMetadata = {
-    ...(currentProfile?.metadata || {}),
+    ...((currentProfile?.metadata || {}) as Record<string, any>),
     ...(profile.metadata || {})
   };
   
@@ -109,10 +119,10 @@ export const updateExtendedProfile = async (
       avatar_url: updates.avatar_url || undefined,
       bio: updates.bio || undefined,
       metadata: updates.metadata as Record<string, any> || undefined
-    });
+    }, supabaseClient);
   }
   
-  const supabase = createClient();
+  const supabase = supabaseClient ?? createClient();
   // プロフィールの更新
   const { data, error } = await supabase
     .from('profiles')
@@ -133,18 +143,20 @@ export const updateExtendedProfile = async (
  * @param userId ユーザーID
  * @param key メタデータのキー
  * @param value メタデータの値
+ * @param supabaseClient オプションの Supabase クライアントインスタンス
  * @returns 更新された拡張ユーザープロフィール
  */
 export const updateProfileMetadata = async (
   userId: string,
   key: string,
-  value: any
+  value: any,
+  supabaseClient?: SupabaseClient
 ): Promise<UserProfile> => {
   // 現在のプロフィールを取得
-  const currentProfile = await getExtendedProfile(userId);
+  const currentProfile = await getExtendedProfile(userId, supabaseClient);
   
   // 現在のメタデータを取得
-  const currentMetadata = currentProfile?.metadata || {};
+  const currentMetadata = currentProfile?.metadata as Record<string, any> || {};
   
   // 新しいメタデータを作成
   const newMetadata = {
@@ -155,5 +167,5 @@ export const updateProfileMetadata = async (
   // プロフィールの更新
   return await updateExtendedProfile(userId, {
     metadata: newMetadata
-  });
+  }, supabaseClient);
 }; 
