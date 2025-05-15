@@ -2,14 +2,15 @@
 // 特定の会話を操作するAPIエンドポイント
 // 作成日: 2025/5/27
 // 更新日: 2025/5/27 - データアクセスレイヤーを使用するように変更
+// 更新日: 2025/6/22 - Supabase SSRクライアント対応（インポートパス更新）
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUser } from '@/lib/supabase/supabase-auth';
+import { getCurrentUser } from '@/lib/supabase/features/auth';
 import { 
   getConversation, 
   updateConversation, 
   deleteConversation 
-} from '@/lib/supabase/supabase-conversations';
+} from '@/lib/supabase/features/conversations';
 import { revalidatePath } from 'next/cache';
 
 // 特定の会話を取得

@@ -1,128 +1,149 @@
 'use client'
 
-// components/providers/SupabaseProvider.tsx
-// Supabase認証プロバイダーコンポーネント
-// 作成日: 2025/6/15
+/**
+ * SupabaseProvider
+ * アプリケーション全体で使用するSupabase認証状態の管理
+ * 作成日: 2025/6/15
+ * 更新日: 2025/6/20 - 型定義を更新
+ */
 
 import { createContext, useContext, useEffect, useState } from 'react'
 import { createClient } from '@/utils/supabase/client'
-import { type Session, type User } from '@supabase/supabase-js'
+import { useRouter } from 'next/navigation'
+import { Session, User } from '@supabase/supabase-js'
+import { AuthUser } from '@/types/supabase'
 
 // 認証コンテキストの型定義
-type AuthContextType = {
-  user: User | null
+interface AuthContextType {
+  user: AuthUser | null
   session: Session | null
   isLoading: boolean
-  signIn: (email: string, password: string) => Promise<{
-    error: Error | null
-    data: { user: User | null; session: Session | null }
-  }>
-  signUp: (email: string, password: string) => Promise<{
-    error: Error | null
-    data: { user: User | null; session: Session | null }
-  }>
-  signOut: () => Promise<{ error: Error | null }>
-  resetPassword: (email: string) => Promise<{ error: Error | null }>
-  updatePassword: (newPassword: string) => Promise<{ error: Error | null }>
-}
-
-// デフォルト値の作成
-const defaultContext: AuthContextType = {
-  user: null,
-  session: null,
-  isLoading: true,
-  signIn: async () => ({ error: new Error('Not implemented'), data: { user: null, session: null } }),
-  signUp: async () => ({ error: new Error('Not implemented'), data: { user: null, session: null } }),
-  signOut: async () => ({ error: new Error('Not implemented') }),
-  resetPassword: async () => ({ error: new Error('Not implemented') }),
-  updatePassword: async () => ({ error: new Error('Not implemented') }),
+  isAuthenticated: boolean
+  signOut: () => Promise<void>
+  refreshSession: () => Promise<void>
 }
 
 // 認証コンテキストの作成
-const AuthContext = createContext<AuthContextType>(defaultContext)
+const AuthContext = createContext<AuthContextType>({
+  user: null,
+  session: null,
+  isLoading: true,
+  isAuthenticated: false,
+  signOut: async () => {},
+  refreshSession: async () => {},
+})
 
-// 認証プロバイダーコンポーネント
-export function SupabaseProvider({ children }: { children: React.ReactNode }) {
-  // Supabaseクライアントの作成
+// 認証コンテキストを使用するためのカスタムフック
+export const useAuth = () => {
+  return useContext(AuthContext)
+}
+
+// Supabaseプロバイダーコンポーネント
+export default function SupabaseProvider({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  // Supabaseクライアントの初期化
   const supabase = createClient()
+  const router = useRouter()
   
   // 状態管理
-  const [user, setUser] = useState<User | null>(null)
+  const [user, setUser] = useState<AuthUser | null>(null)
   const [session, setSession] = useState<Session | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState<boolean>(true)
+  
+  // 認証済みか判定するgetter
+  const isAuthenticated = !!session && !!user;
 
-  // セッション状態の監視
-  useEffect(() => {
-    const getSession = async () => {
-      const { data: { session: currentSession } } = await supabase.auth.getSession()
-      setSession(currentSession)
-      setUser(currentSession?.user ?? null)
-      setIsLoading(false)
+  // セッションを更新する関数
+  const refreshSession = async () => {
+    try {
+      const { data: { session: newSession } } = await supabase.auth.getSession()
+      if (newSession) {
+        setSession(newSession)
+        const { data: { user: newUser } } = await supabase.auth.getUser()
+        setUser(newUser as AuthUser)
+      }
+    } catch (error) {
+      console.error('セッション更新エラー:', error)
     }
+  }
 
-    // 初回セッション取得
-    getSession()
+  // サインアウト処理
+  const signOut = async () => {
+    try {
+      // サーバーサイドAPIを使用してサインアウト
+      await fetch('/auth/signout', { method: 'POST' })
+      
+      // ローカル状態もクリア
+      setUser(null)
+      setSession(null)
+      
+      // ホームページにリダイレクト
+      router.push('/')
+      router.refresh()
+    } catch (error) {
+      console.error('サインアウトエラー:', error)
+    }
+  }
 
-    // 認証状態変更リスナーの設定
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
-      setSession(newSession)
-      setUser(newSession?.user ?? null)
-      setIsLoading(false)
-    })
-
+  // 初期化時にセッションを取得
+  useEffect(() => {
+    const initializeAuth = async () => {
+      setIsLoading(true)
+      
+      try {
+        // 現在のセッションを取得
+        const { data: { session: currentSession } } = await supabase.auth.getSession()
+        setSession(currentSession)
+        
+        if (currentSession) {
+          // ユーザー情報を取得
+          const { data: { user: currentUser } } = await supabase.auth.getUser()
+          setUser(currentUser as AuthUser)
+        }
+      } catch (error) {
+        console.error('認証初期化エラー:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    
+    initializeAuth()
+    
+    // 認証状態の変更を監視
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, newSession) => {
+        setSession(newSession)
+        
+        if (newSession) {
+          const { data: { user: newUser } } = await supabase.auth.getUser()
+          setUser(newUser as AuthUser)
+        } else {
+          setUser(null)
+        }
+        
+        // URLの状態を更新（これによりミドルウェアが再実行される）
+        router.refresh()
+      }
+    )
+    
     // クリーンアップ関数
     return () => {
       subscription.unsubscribe()
     }
-  }, [supabase])
+  }, [router, supabase])
 
-  // サインイン関数
-  const signIn = async (email: string, password: string) => {
-    return await supabase.auth.signInWithPassword({ email, password })
-  }
-
-  // サインアップ関数
-  const signUp = async (email: string, password: string) => {
-    return await supabase.auth.signUp({ email, password })
-  }
-
-  // サインアウト関数
-  const signOut = async () => {
-    return await supabase.auth.signOut()
-  }
-
-  // パスワードリセット要求関数
-  const resetPassword = async (email: string) => {
-    return await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    })
-  }
-
-  // パスワード更新関数
-  const updatePassword = async (newPassword: string) => {
-    return await supabase.auth.updateUser({ password: newPassword })
-  }
-
-  // コンテキスト値
-  const value: AuthContextType = {
+  // 認証コンテキストの値
+  const value = {
     user,
     session,
     isLoading,
-    signIn,
-    signUp,
+    isAuthenticated,
     signOut,
-    resetPassword,
-    updatePassword,
+    refreshSession,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
-}
-
-// フックの作成
-export const useAuth = () => {
-  const context = useContext(AuthContext)
-  if (context === undefined) {
-    throw new Error('useAuth must be used within a SupabaseProvider')
-  }
-  return context
 }

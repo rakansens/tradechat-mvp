@@ -1,14 +1,14 @@
 // app/api/social/followers/route.ts
 // フォロワーの取得と管理のためのAPIエンドポイント
 // 作成日: 2025/5/14
+// 更新日: 2025/6/23 - SSRクライアント対応でインポート更新と関数シグネチャ修正
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUser } from '@/lib/supabase/supabase-auth';
+import { getCurrentUser } from '@/lib/supabase/features/auth';
 import {
-  getFollowers,
-  getFollowersCount,
+  getUserFollowers,
   unfollowUser
-} from '@/lib/supabase/supabase-relations';
+} from '@/lib/supabase/features/relations';
 
 /**
  * フォロワー一覧を取得するGETハンドラ
@@ -27,16 +27,20 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // フォロワー一覧を取得
+    const followers = await getUserFollowers(user.id);
+
     // 件数だけ取得する場合
     if (getCount) {
-      const count = await getFollowersCount(user.id);
-      return NextResponse.json({ count });
+      // 新しいAPIでは専用のカウント関数がないため、結果の長さを返す
+      return NextResponse.json({ count: followers.length });
     }
 
-    // フォロワー一覧を取得
-    const followers = await getFollowers(user.id, limit, offset);
+    // 追加された結果からリクエストされた範囲のみを返す
+    // 注意: APIがページング機能を持たないため、フロントエンドでページングする
+    const paginatedFollowers = followers.slice(offset, offset + limit);
 
-    return NextResponse.json(followers);
+    return NextResponse.json(paginatedFollowers);
   } catch (error) {
     console.error('Error in GET /api/social/followers:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

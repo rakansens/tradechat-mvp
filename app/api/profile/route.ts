@@ -1,9 +1,10 @@
 // app/api/profile/route.ts
 // ユーザープロフィール取得と更新のためのAPIエンドポイント
 // 作成日: 2025/5/14
+// 更新日: 2025/6/22 - Supabase SSRクライアント対応（インポートパス更新）
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUser, getProfile, updateProfile } from '@/lib/supabase/supabase-auth';
+import { getCurrentUser, getProfile, updateProfile } from '@/lib/supabase/features/auth';
 
 /**
  * 現在のユーザープロフィールを取得するGETハンドラ

@@ -1,9 +1,8 @@
-// lib/supabase-entry.ts
-// Supabaseトレードエントリー関連ユーティリティ関数
-// 作成日: 2025/5/7
-// 更新日: 2025/5/14 - 型参照を最新の型定義に更新し、戻り値の型を明確化
+// lib/supabase/features/entry.ts
+// Supabaseトレードエントリー関連ユーティリティ関数（SSR対応版）
+// 作成日: 2025/6/21 - 初期実装、supabase-entry.tsからの移行
 
-import { supabase } from './supabase';
+import { createClient } from '@/lib/supabase/client';
 import { Tables, TablesInsert, TablesUpdate } from '@/types/network/supabase';
 
 // エントリー関連の型定義
@@ -23,6 +22,7 @@ export const getEntries = async (
   offset = 0,
   isPublicOnly = false
 ): Promise<Entry[]> => {
+  const supabase = createClient();
   let query = supabase
     .from('entries')
     .select('*')
@@ -54,6 +54,7 @@ export const getUserEntries = async (
   limit = 50,
   offset = 0
 ): Promise<Entry[]> => {
+  const supabase = createClient();
   const { data, error } = await supabase
     .from('entries')
     .select('*')
@@ -82,6 +83,7 @@ export const getEntriesBySymbol = async (
   offset = 0,
   isPublicOnly = false
 ): Promise<Entry[]> => {
+  const supabase = createClient();
   let query = supabase
     .from('entries')
     .select('*')
@@ -116,6 +118,7 @@ export const getEntriesByStatus = async (
   offset = 0,
   isPublicOnly = false
 ): Promise<Entry[]> => {
+  const supabase = createClient();
   let query = supabase
     .from('entries')
     .select('*')
@@ -158,6 +161,7 @@ export const createEntry = async (
   stopLoss?: number,
   isPublic = false
 ): Promise<Entry> => {
+  const supabase = createClient();
   const entryData: EntryInsert = {
     user_id: userId,
     side,
@@ -193,6 +197,7 @@ export const updateEntry = async (
   entryId: string,
   updates: EntryUpdateParams
 ): Promise<Entry> => {
+  const supabase = createClient();
   const { data, error } = await supabase
     .from('entries')
     .update(updates)
@@ -213,6 +218,7 @@ export const updateEntry = async (
  * @returns 削除結果
  */
 export const deleteEntry = async (entryId: string): Promise<boolean> => {
+  const supabase = createClient();
   const { error } = await supabase
     .from('entries')
     .delete()
@@ -237,6 +243,7 @@ export const closeEntry = async (
   exitPrice: number,
   exitTime: Date
 ): Promise<Entry> => {
+  const supabase = createClient();
   // まずエントリーを取得して利益を計算
   const { data: entry, error: fetchError } = await supabase
     .from('entries')
@@ -286,6 +293,7 @@ export const closeEntry = async (
  * @returns 更新されたエントリー
  */
 export const cancelEntry = async (entryId: string): Promise<Entry> => {
+  const supabase = createClient();
   const { data, error } = await supabase
     .from('entries')
     .update({
@@ -312,7 +320,8 @@ export const subscribeToEntries = (
   callback: (entry: Entry) => void,
   isPublicOnly = false
 ) => {
-  let query = supabase
+  const supabase = createClient();
+  const channel = supabase
     .channel('entries')
     .on(
       'postgres_changes',
@@ -329,7 +338,7 @@ export const subscribeToEntries = (
     .subscribe();
 
   return () => {
-    supabase.removeChannel(query);
+    supabase.removeChannel(channel);
   };
 };
 
@@ -339,6 +348,7 @@ export const subscribeToEntries = (
  * @returns エントリーまたはnull
  */
 export const getEntryById = async (entryId: string): Promise<Entry | null> => {
+  const supabase = createClient();
   const { data, error } = await supabase
     .from('entries')
     .select('*')
@@ -354,4 +364,4 @@ export const getEntryById = async (entryId: string): Promise<Entry | null> => {
   }
 
   return data;
-};
+}; 

@@ -4,6 +4,7 @@
 // 更新日: 2025/6/X - useToast依存を削除し、カスタムイベントを使用するように修正
 // 更新日: 2025/6/15 - APIエンドポイント経由からSupabase関数を直接呼び出すように修正
 // 更新日: 2025/6/20 - 新しいSupabaseクライアントを使用するように更新
+// 更新日: 2025/6/20 - nullsafeヘルパーを統一
 
 import { SettingsActions, SettingsState, UserSettings, ChartSettings, SymbolSettings } from './types';
 import { 
@@ -14,8 +15,10 @@ import {
   updateChartSettings as updateChartSettingsDB,
   getSymbolSettings,
   upsertSymbolSettings
-} from '@/lib/supabase/supabase-settings';
+} from '@/lib/supabase/features/settings';
 import { createClient } from '@/utils/supabase/client';
+// nullsafeヘルパー関数のインポート
+import { nullsafe } from '@/utils/type-helpers';
 
 // トースト表示用イベントの型定義
 interface ToastEvent {
@@ -23,16 +26,6 @@ interface ToastEvent {
   description: string;
   variant: 'default' | 'destructive';
 }
-
-// null値を処理するヘルパー関数群
-const nullsafeBoolean = (value: boolean | null): boolean | undefined => 
-  value === null ? undefined : value;
-
-const nullsafeNumber = (value: number | null): number | undefined => 
-  value === null ? undefined : value;
-
-const nullsafeString = (value: string | null): string | undefined => 
-  value === null ? undefined : value;
 
 // 設定ストアのアクション作成関数
 export const createSettingsActions = (
@@ -295,8 +288,8 @@ export const createSettingsActions = (
         const updatedSettings = await upsertSymbolSettings(
           userId,
           settings.symbol,
-          nullsafeBoolean(settings.is_favorite),
-          nullsafeNumber(settings.display_order)
+          nullsafe.boolean(settings.is_favorite),
+          nullsafe.number(settings.display_order)
         );
         
         set((state) => {
@@ -357,10 +350,10 @@ export const createSettingsActions = (
           userId,
           settings.timeframe,
           settings.chart_type,
-          nullsafeBoolean(settings.show_volume),
-          nullsafeBoolean(settings.show_grid),
-          nullsafeBoolean(settings.show_legend),
-          nullsafeString(settings.theme)
+          nullsafe.boolean(settings.show_volume),
+          nullsafe.boolean(settings.show_grid),
+          nullsafe.boolean(settings.show_legend),
+          nullsafe.string(settings.theme)
         );
         
         set((state) => {
@@ -412,8 +405,8 @@ export const createSettingsActions = (
         const newSettings = await upsertSymbolSettings(
           userId,
           settings.symbol,
-          nullsafeBoolean(settings.is_favorite),
-          nullsafeNumber(settings.display_order)
+          nullsafe.boolean(settings.is_favorite),
+          nullsafe.number(settings.display_order)
         );
         
         set((state) => {

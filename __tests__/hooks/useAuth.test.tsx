@@ -1,12 +1,13 @@
 /**
  * useAuthフックのテスト
  * 作成日: 2025/6/15
+ * 更新日: 2025/6/22 - Supabase SSRクライアント対応（インポートパス更新）
  */
 
 import { renderHook, act } from '@testing-library/react';
 import { useAuth } from '@/hooks/auth/useAuth';
 import { supabase } from '@/lib/supabase/supabase';
-import { getProfile, updateProfile } from '@/lib/supabase/supabase-auth';
+import { getProfile, updateProfile } from '@/lib/supabase/features/auth';
 
 // モック
 jest.mock('@/lib/supabase/supabase', () => ({
@@ -34,7 +35,7 @@ jest.mock('next/navigation', () => ({
   })
 }));
 
-jest.mock('@/lib/supabase/supabase-auth', () => ({
+jest.mock('@/lib/supabase/features/auth', () => ({
   getProfile: jest.fn(),
   updateProfile: jest.fn()
 }));

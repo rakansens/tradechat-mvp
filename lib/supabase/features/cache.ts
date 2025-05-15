@@ -1,9 +1,8 @@
-// lib/supabase-cache.ts
-// Supabaseキャッシュデータ関連ユーティリティ関数
-// 作成日: 2025/5/7
-// 更新日: 2025/5/14 - 型参照を最新の型定義に更新し、型安全性を強化
+// lib/supabase/features/cache.ts
+// Supabaseキャッシュデータ関連ユーティリティ関数（SSR対応版）
+// 作成日: 2025/6/21 - 初期実装、supabase-cache.tsからの移行
 
-import { supabase } from './supabase';
+import { createClient } from '@/lib/supabase/client';
 import { Tables, TablesInsert, TablesUpdate, Json } from '@/types/network/supabase';
 
 // キャッシュ関連の型定義
@@ -23,6 +22,7 @@ export const getCachedData = async (
   symbol: string,
   timeframe?: string
 ): Promise<CachedData | null> => {
+  const supabase = createClient();
   let query = supabase
     .from('cached_data')
     .select('*')
@@ -61,6 +61,7 @@ export const setCachedData = async (
   expiresIn = 300, // デフォルト5分
   timeframe?: string
 ): Promise<CachedData> => {
+  const supabase = createClient();
   const expiresAt = new Date();
   expiresAt.setSeconds(expiresAt.getSeconds() + expiresIn);
 
@@ -139,6 +140,7 @@ export const deleteCachedData = async (
   symbol: string,
   timeframe?: string
 ): Promise<boolean> => {
+  const supabase = createClient();
   let query = supabase
     .from('cached_data')
     .delete()
@@ -165,6 +167,7 @@ export const deleteCachedData = async (
  * @returns 削除結果
  */
 export const cleanupExpiredCache = async (): Promise<boolean> => {
+  const supabase = createClient();
   const { error } = await supabase
     .from('cached_data')
     .delete()
@@ -236,6 +239,7 @@ export const getBulkCachedData = async (
     return {};
   }
 
+  const supabase = createClient();
   let query = supabase
     .from('cached_data')
     .select('*')
@@ -271,4 +275,4 @@ export const getBulkCachedData = async (
   }
   
   return result;
-};
+}; 

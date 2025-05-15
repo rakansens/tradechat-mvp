@@ -1,10 +1,11 @@
 // src/mastra/integrations/index.ts
 // 更新：Mem0統合のエクスポートファイル
 // SupabaseMem0Integrationを使用してSupabaseとMem0の統合機能を提供
+// 更新日: 2025/6/22 - Supabase SSRクライアント対応（インポートパス更新）
 
 import { Mem0Integration } from "@mastra/mem0";
 import { SupabaseMem0Integration } from "./mem0-supabase";
-import { getCurrentUser } from "@/lib/supabase/supabase-auth";
+import { getCurrentUser } from "@/lib/supabase/features/auth";
 
 // ユーザーIDを取得する非同期関数
 // このIDはリアルタイムに更新されるべきなので、

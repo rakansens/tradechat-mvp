@@ -1,8 +1,9 @@
 // __tests__/unit/supabase-memory.test.ts
 // メモリ管理機能のユニットテスト
 // 作成日: 2025/6/10
+// 更新日: 2025/6/23 - SSRクライアント対応で関数シグネチャに合わせてテスト修正
 
-import * as memoryModule from '@/lib/supabase/supabase-memory';
+import * as memoryModule from '@/lib/supabase/features/memory';
 
 // Supabaseのモジュールをモック
 jest.mock('@/lib/supabase/supabase', () => {
@@ -68,34 +69,32 @@ describe('メモリ管理機能のテスト', () => {
     jest.spyOn(memoryModule, 'searchMemoriesBySimilarity').mockResolvedValue([testMemory]);
     jest.spyOn(memoryModule, 'searchMemoriesByText').mockResolvedValue([testMemory]);
     jest.spyOn(memoryModule, 'getMemoryByExternalId').mockResolvedValue(testMemory);
-    jest.spyOn(memoryModule, 'updateSyncStatus').mockResolvedValue(true);
+    jest.spyOn(memoryModule, 'updateSyncStatus').mockResolvedValue(testMemory);
     jest.spyOn(memoryModule, 'getUnsyncedMemories').mockResolvedValue([testMemory]);
   });
 
   describe('createMemory', () => {
     it('メモリを正常に作成できること', async () => {
-      const memoryData = {
-        user_id: 'test-user-id',
-        content: 'テスト用メモリコンテンツ',
-        metadata: { source: 'test' },
-      };
+      // 新しいシグネチャに合わせたテストデータ
+      const userId = 'test-user-id';
+      const content = 'テスト用メモリコンテンツ';
+      const externalId = 'ext-id';
+      const metadata = { source: 'test' };
       
-      const result = await memoryModule.createMemory(memoryData);
+      const result = await memoryModule.createMemory(userId, content, externalId, metadata);
       
       expect(result).toEqual(testMemory);
-      expect(memoryModule.createMemory).toHaveBeenCalledWith(memoryData);
+      expect(memoryModule.createMemory).toHaveBeenCalledWith(userId, content, externalId, metadata);
     });
 
     it('エラー時に例外をスローすること', async () => {
       // エラーレスポンスをモック
       jest.spyOn(memoryModule, 'createMemory').mockRejectedValueOnce(new Error('テストエラー'));
       
-      const memoryData = {
-        user_id: 'test-user-id',
-        content: 'テスト用メモリコンテンツ',
-      };
+      const userId = 'test-user-id';
+      const content = 'テスト用メモリコンテンツ';
       
-      await expect(memoryModule.createMemory(memoryData)).rejects.toThrow();
+      await expect(memoryModule.createMemory(userId, content)).rejects.toThrow();
     });
   });
 
@@ -155,7 +154,7 @@ describe('メモリ管理機能のテスト', () => {
   describe('updateSyncStatus', () => {
     it('同期ステータスを正常に更新できること', async () => {
       const result = await memoryModule.updateSyncStatus('test-id', true);
-      expect(result).toBe(true);
+      expect(result).toEqual(testMemory); // booleanではなくオブジェクトを返すように修正
       expect(memoryModule.updateSyncStatus).toHaveBeenCalledWith('test-id', true);
     });
   });

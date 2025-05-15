@@ -1,10 +1,11 @@
 // app/api/entries/route.ts
 // トレードエントリー一覧取得と作成のためのAPIエンドポイント
 // 作成日: 2025/5/14
+// 更新日: 2025/6/22 - Supabase SSRクライアント対応（インポートパス更新）
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUser } from '@/lib/supabase/supabase-auth';
-import { getUserEntries, createEntry } from '@/lib/supabase/supabase-entry';
+import { getCurrentUser } from '@/lib/supabase/features/auth';
+import { getUserEntries, createEntry } from '@/lib/supabase/features/entry';
 
 /**
  * ユーザーのエントリー一覧を取得するGETハンドラ

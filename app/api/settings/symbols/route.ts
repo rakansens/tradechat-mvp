@@ -1,10 +1,11 @@
 // app/api/settings/symbols/route.ts
 // シンボル設定の取得と更新のためのAPIエンドポイント
 // 作成日: 2025/5/14
+// 更新日: 2025/6/22 - Supabase SSRクライアント対応（インポートパス更新）
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUser } from '@/lib/supabase/supabase-auth';
-import { getSymbolSettings, upsertSymbolSettings, deleteSymbolSettings } from '@/lib/supabase/supabase-settings';
+import { getCurrentUser } from '@/lib/supabase/features/auth';
+import { getSymbolSettings, upsertSymbolSettings, deleteSymbolSettings } from '@/lib/supabase/features/settings';
 
 /**
  * シンボル設定を取得するGETハンドラ

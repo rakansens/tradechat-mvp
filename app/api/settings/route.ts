@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/supabase';
-import { getUserSettings, updateUserSettings } from '@/lib/supabase/supabase-settings';
+import { createClient as createServerClient } from '@/lib/supabase/server';
+import { getUserSettings, updateUserSettings } from '@/lib/supabase/features/settings';
 
 /**
  * GET /api/settings - ユーザー設定を取得
  */
 export async function GET(req: NextRequest) {
   try {
-    // サーバーサイドでのサプライズクライアント作成
-    const supabaseServer = createServerSupabaseClient();
+    // サーバーサイドでのSupabaseクライアント作成
+    const supabaseServer = createServerClient();
     
     // 認証チェック
     const { data: { session }, error: authError } = await supabaseServer.auth.getSession();
@@ -47,8 +47,8 @@ export async function POST(req: NextRequest) {
       );
     }
     
-    // サーバーサイドでのサプライズクライアント作成
-    const supabaseServer = createServerSupabaseClient();
+    // サーバーサイドでのSupabaseクライアント作成
+    const supabaseServer = createServerClient();
     
     // 認証チェック
     const { data: { session }, error: authError } = await supabaseServer.auth.getSession();

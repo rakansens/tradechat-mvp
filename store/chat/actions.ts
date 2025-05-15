@@ -4,13 +4,14 @@
 // 更新: 2025/5/28 - システムプロンプト情報をサポート
 // 更新: 2025/6/2 - リアルタイム購読の接続管理とエラーハンドリング機能を追加
 // 更新: 2025/6/2 - 型エラーを修正
+// 更新: 2025/6/22 - Supabase SSRクライアント対応（インポートパス更新）
 
 // 循環参照を避けるため、直接インポートせずに動的にインポートする
 // import { useRootStore } from '../rootStore'
 import type { ExtendedMessage, ProposalType } from '@/types/chat'
 import type { ChatSliceState, ConversationState, ConnectionStatus } from './state'
 import { logger } from '@/utils/common'
-import { subscribeToConversationMessages } from '@/lib/supabase/supabase-chat'
+import { subscribeToConversationMessages } from '@/lib/supabase/features/conversations'
 import { useToast } from '@/components/ui/use-toast'
 
 // チャットスライスのアクション定義

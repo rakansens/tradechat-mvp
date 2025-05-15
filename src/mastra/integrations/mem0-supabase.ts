@@ -1,6 +1,7 @@
 // src/mastra/integrations/mem0-supabase.ts
 // Mem0統合クラス - SupabaseとMem0APIの連携を実装
 // 作成日: 2025/5/31
+// 更新日: 2025/6/23 - SSRクライアント対応で関数シグネチャ修正
 
 import { Mem0Integration } from "@mastra/mem0";
 import { 
@@ -8,7 +9,7 @@ import {
   getMemoryByExternalId,
   searchMemoriesBySimilarity,
   updateMemory
-} from "@/lib/supabase/supabase-memory";
+} from "@/lib/supabase/features/memory";
 
 /**
  * SupabaseMem0Integration - Mem0APIとSupabaseを連携するクラス
@@ -82,7 +83,7 @@ export class SupabaseMem0Integration {
         await createMemory(
           this.userId,
           content,
-          null, // 外部IDなし
+          "", // 外部IDなし - nullの代わりに空文字列を使用
           { source: "local-only", timestamp: new Date().toISOString() }
         );
         

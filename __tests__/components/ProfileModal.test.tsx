@@ -1,17 +1,18 @@
 /**
  * ProfileModalコンポーネントのテスト
  * 作成日: 2025/6/15
+ * 更新日: 2025/6/22 - Supabase SSRクライアント対応（インポートパス更新）
  */
 
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { ProfileModal } from '@/components/profile/ProfileModal';
-import { getProfile, updateProfile } from '@/lib/supabase/supabase-auth';
+import { getProfile, updateProfile } from '@/lib/supabase/features/auth';
 import { toast } from '@/components/ui/use-toast';
 
 // モック
-jest.mock('@/lib/supabase/supabase-auth', () => ({
+jest.mock('@/lib/supabase/features/auth', () => ({
   getProfile: jest.fn(),
   updateProfile: jest.fn()
 }));

@@ -1,9 +1,8 @@
-// lib/supabase/supabase-memory.ts
-// Supabaseメモリデータ関連ユーティリティ関数
-// 作成日: 2025/5/31
-// 更新日: 2025/6/1 - OpenAI APIを使用したembedding生成機能を追加
+// lib/supabase/features/memory.ts
+// Supabaseメモリデータ関連ユーティリティ関数（SSR対応版）
+// 作成日: 2025/6/21 - 初期実装、supabase-memory.tsからの移行
 
-import { supabase } from './supabase';
+import { createClient } from '@/lib/supabase/client';
 import { Tables, TablesInsert, TablesUpdate } from '@/types/network/supabase';
 import { generateEmbedding } from '@/lib/openai';
 
@@ -31,6 +30,7 @@ export const createMemory = async (
   externalId?: string,
   metadata: Record<string, any> = {}
 ): Promise<Memory> => {
+  const supabase = createClient();
   // テキストからembeddingを生成
   let embedding = null;
   try {
@@ -71,6 +71,7 @@ export const updateMemory = async (
   memoryId: string,
   updates: Partial<Omit<Memory, 'id' | 'user_id' | 'created_at' | 'updated_at'>>
 ): Promise<Memory> => {
+  const supabase = createClient();
   // content更新の場合は新しいembeddingを生成
   let embedding = undefined;
   if (updates.content) {
@@ -105,6 +106,7 @@ export const updateMemory = async (
  * @returns 削除結果
  */
 export const deleteMemory = async (memoryId: string): Promise<boolean> => {
+  const supabase = createClient();
   const { error } = await supabase
     .from('memories')
     .delete()
@@ -129,6 +131,7 @@ export const getUserMemories = async (
   limit = 50,
   offset = 0
 ): Promise<Memory[]> => {
+  const supabase = createClient();
   const { data, error } = await supabase
     .from('memories')
     .select('*')
@@ -155,6 +158,7 @@ export const searchMemoriesByText = async (
   searchText: string,
   limit = 10
 ): Promise<Memory[]> => {
+  const supabase = createClient();
   // FTS（全文検索）を使用した基本的な検索
   // 注: 実際の実装ではより洗練された検索ロジックが必要かもしれません
   const { data, error } = await supabase
@@ -183,6 +187,7 @@ export const searchMemoriesBySimilarity = async (
   queryText: string,
   limit = 5
 ): Promise<Memory[]> => {
+  const supabase = createClient();
   // クエリからembeddingを生成
   let embedding;
   try {
@@ -230,6 +235,7 @@ export const searchMemoriesBySimilarity = async (
 export const getMemoryByExternalId = async (
   externalId: string
 ): Promise<Memory | null> => {
+  const supabase = createClient();
   const { data, error } = await supabase
     .from('memories')
     .select('*')
@@ -253,6 +259,7 @@ export const updateSyncStatus = async (
   memoryId: string,
   isSynced: boolean
 ): Promise<Memory> => {
+  const supabase = createClient();
   const { data, error } = await supabase
     .from('memories')
     .update({ is_synced: isSynced })
@@ -277,6 +284,7 @@ export const getUnsyncedMemories = async (
   userId: string,
   limit = 50
 ): Promise<Memory[]> => {
+  const supabase = createClient();
   const { data, error } = await supabase
     .from('memories')
     .select('*')

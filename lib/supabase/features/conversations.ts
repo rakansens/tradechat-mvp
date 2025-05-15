@@ -1,9 +1,8 @@
-// lib/supabase/supabase-conversations.ts
-// Supabase会話（スレッド）関連ユーティリティ関数
-// 作成日: 2025/5/27
-// 更新日: 2025/5/28 - 会話メッセージ関連機能を追加
+// lib/supabase/features/conversations.ts
+// Supabase会話（スレッド）関連ユーティリティ関数（SSR対応版）
+// 作成日: 2025/6/21 - 初期実装、supabase-conversations.tsからの移行
 
-import { supabase } from './supabase';
+import { createClient } from '@/lib/supabase/client';
 import { Tables, TablesInsert, TablesUpdate } from '@/types/network/supabase';
 
 // 会話関連の型定義
@@ -21,6 +20,7 @@ type ChatMessageInsert = TablesInsert<'chat_messages'>;
  * @returns 会話一覧
  */
 export const getConversations = async (userId: string): Promise<Conversation[]> => {
+  const supabase = createClient();
   const { data, error } = await supabase
     .from('conversations')
     .select('*')
@@ -41,6 +41,7 @@ export const getConversation = async (
   conversationId: string,
   userId: string
 ): Promise<Conversation> => {
+  const supabase = createClient();
   const { data, error } = await supabase
     .from('conversations')
     .select('*')
@@ -64,6 +65,7 @@ export const createConversation = async (
   title: string,
   systemPrompt?: string
 ): Promise<Conversation> => {
+  const supabase = createClient();
   const { data, error } = await supabase
     .from('conversations')
     .insert([
@@ -92,6 +94,7 @@ export const updateConversation = async (
   userId: string,
   updates: Partial<ConversationUpdate>
 ): Promise<Conversation> => {
+  const supabase = createClient();
   // まず所有者確認
   await verifyConversationOwner(conversationId, userId);
   
@@ -122,6 +125,7 @@ export const deleteConversation = async (
   conversationId: string,
   userId: string
 ): Promise<void> => {
+  const supabase = createClient();
   // まず所有者確認
   await verifyConversationOwner(conversationId, userId);
   
@@ -153,6 +157,7 @@ const verifyConversationOwner = async (
   conversationId: string,
   userId: string
 ): Promise<void> => {
+  const supabase = createClient();
   const { data, error } = await supabase
     .from('conversations')
     .select('user_id')
@@ -177,6 +182,7 @@ export const getConversationMessages = async (
   limit = 50,
   offset = 0
 ): Promise<ChatMessage[]> => {
+  const supabase = createClient();
   const { data, error } = await supabase
     .from('chat_messages')
     .select('*, chat_images(*)')
@@ -219,6 +225,7 @@ export const createConversationMessage = async (
   stopLoss?: number,
   imageId?: string
 ): Promise<ChatMessage> => {
+  const supabase = createClient();
   const messageData: ChatMessageInsert = {
     user_id: userId,
     conversation_id: conversationId,
@@ -262,7 +269,8 @@ export const subscribeToConversationMessages = (
   conversationId: string,
   callback: (message: ChatMessage) => void
 ) => {
-  const query = supabase
+  const supabase = createClient();
+  const channel = supabase
     .channel(`conversation_${conversationId}`)
     .on(
       'postgres_changes',
@@ -279,6 +287,6 @@ export const subscribeToConversationMessages = (
     .subscribe();
 
   return () => {
-    supabase.removeChannel(query);
+    supabase.removeChannel(channel);
   };
 }; 

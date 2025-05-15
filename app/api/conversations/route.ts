@@ -2,10 +2,11 @@
 // 会話一覧と作成のためのAPIエンドポイント
 // 作成日: 2025/5/20
 // 更新日: 2025/5/27 - データアクセスレイヤーを使用するように変更
+// 更新日: 2025/6/22 - Supabase SSRクライアント対応（インポートパス更新）
 
 import { NextResponse } from 'next/server';
-import { getCurrentUser } from '@/lib/supabase/supabase-auth';
-import { getConversations, createConversation } from '@/lib/supabase/supabase-conversations';
+import { getCurrentUser } from '@/lib/supabase/features/auth';
+import { getConversations, createConversation } from '@/lib/supabase/features/conversations';
 import { revalidatePath } from 'next/cache';
 
 // 会話一覧を取得

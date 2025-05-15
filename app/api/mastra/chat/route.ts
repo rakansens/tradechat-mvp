@@ -3,7 +3,7 @@
 // 作成日: 2025/5/28
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUser } from '@/lib/supabase/supabase-auth';
+import { getCurrentUser } from '@/lib/supabase/features/auth';
 import { askAgent } from '@/lib/agent';
 import { MessageRole, ChatMessage } from '@/types/chat/message';
 

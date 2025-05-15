@@ -1,16 +1,17 @@
 // app/api/entries/[id]/route.ts
 // IDを指定したトレードエントリー操作のためのAPIエンドポイント
 // 作成日: 2025/6/1
+// 更新日: 2025/6/22 - Supabase SSRクライアント対応（インポートパス更新）
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUser } from '@/lib/supabase/supabase-auth';
+import { getCurrentUser } from '@/lib/supabase/features/auth';
 import { 
   updateEntry, 
   deleteEntry, 
   closeEntry, 
   cancelEntry,
   getEntryById 
-} from '@/lib/supabase/supabase-entry';
+} from '@/lib/supabase/features/entry';
 
 /**
  * 特定のエントリーを取得するGETハンドラ

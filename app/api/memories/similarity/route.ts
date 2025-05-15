@@ -3,8 +3,8 @@
 // 作成日: 2025/6/1
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUser } from '@/lib/supabase/supabase-auth';
-import { searchMemoriesBySimilarity } from '@/lib/supabase/supabase-memory';
+import { getCurrentUser } from '@/lib/supabase/features/auth';
+import { searchMemoriesBySimilarity } from '@/lib/supabase/features/memory';
 
 /**
  * ベクトル類似度に基づくメモリ検索APIハンドラ

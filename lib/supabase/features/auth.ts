@@ -1,9 +1,10 @@
-// lib/supabase-auth.ts
-// Supabase認証関連ユーティリティ関数
-// 作成日: 2025/5/7
+// lib/supabase/features/auth.ts
+// Supabase認証関連ユーティリティ関数（SSR対応版）
+// 作成日: 2025/5/7 - 初期実装
 // 更新日: 2025/5/14 - 型参照とプロフィール操作メソッドを最新の型定義に更新
+// 更新日: 2025/6/20 - SSRクライアント対応
 
-import { supabase } from './supabase';
+import { createClient } from '@/lib/supabase/client';
 import { User, Session } from '@supabase/supabase-js';
 import { Tables, TablesInsert, TablesUpdate } from '@/types/network/supabase';
 
@@ -19,6 +20,7 @@ type ProfileUpdate = TablesUpdate<'profiles'>;
  * @returns サインアップ結果
  */
 export const signUp = async (email: string, password: string) => {
+  const supabase = createClient();
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
@@ -38,6 +40,7 @@ export const signUp = async (email: string, password: string) => {
  * @returns サインイン結果
  */
 export const signInWithPassword = async (email: string, password: string) => {
+  const supabase = createClient();
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
@@ -55,6 +58,7 @@ export const signInWithPassword = async (email: string, password: string) => {
  * @returns サインアウト結果
  */
 export const signOut = async () => {
+  const supabase = createClient();
   const { error } = await supabase.auth.signOut();
   
   if (error) {
@@ -69,6 +73,7 @@ export const signOut = async () => {
  * @returns 現在のセッション
  */
 export const getCurrentSession = async (): Promise<Session | null> => {
+  const supabase = createClient();
   const { data, error } = await supabase.auth.getSession();
   
   if (error) {
@@ -83,6 +88,7 @@ export const getCurrentSession = async (): Promise<Session | null> => {
  * @returns 現在のユーザー
  */
 export const getCurrentUser = async (): Promise<User | null> => {
+  const supabase = createClient();
   const { data, error } = await supabase.auth.getUser();
   
   if (error) {
@@ -98,6 +104,7 @@ export const getCurrentUser = async (): Promise<User | null> => {
  * @returns 送信結果
  */
 export const resetPassword = async (email: string) => {
+  const supabase = createClient();
   const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/reset-password`,
   });
@@ -115,6 +122,7 @@ export const resetPassword = async (email: string) => {
  * @returns 更新結果
  */
 export const updatePassword = async (password: string) => {
+  const supabase = createClient();
   const { data, error } = await supabase.auth.updateUser({
     password,
   });
@@ -140,6 +148,7 @@ export const createProfile = async (
   avatarUrl?: string,
   bio?: string
 ): Promise<Profile | null> => {
+  const supabase = createClient();
   const profileData: ProfileInsert = {
     user_id: userId,
     display_name: displayName || null,
@@ -165,6 +174,7 @@ export const createProfile = async (
  * @returns ユーザープロフィール
  */
 export const getProfile = async (userId: string): Promise<Profile | null> => {
+  const supabase = createClient();
   const { data, error } = await supabase
     .from('profiles')
     .select('*')
@@ -192,6 +202,7 @@ export const updateProfile = async (
   userId: string,
   updates: ProfileUpdate
 ): Promise<Profile | null> => {
+  const supabase = createClient();
   const { data, error } = await supabase
     .from('profiles')
     .update(updates)
@@ -213,7 +224,8 @@ export const updateProfile = async (
 export const onAuthStateChange = (
   callback: (event: string, session: Session | null) => void
 ) => {
+  const supabase = createClient();
   return supabase.auth.onAuthStateChange((event, session) => {
     callback(event, session);
   });
-};
+}; 

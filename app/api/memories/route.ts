@@ -1,16 +1,17 @@
 // app/api/memories/route.ts
 // メモリ管理API
 // 作成日: 2025/5/31
+// 更新日: 2025/6/22 - Supabase SSRクライアント対応（インポートパス更新）
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUser } from '@/lib/supabase/supabase-auth';
+import { getCurrentUser } from '@/lib/supabase/features/auth';
 import { 
   getUserMemories, 
   createMemory, 
   searchMemoriesBySimilarity,
   searchMemoriesByText,
   deleteMemory 
-} from '@/lib/supabase/supabase-memory';
+} from '@/lib/supabase/features/memory';
 
 /**
  * メモリ一覧を取得するGETハンドラ

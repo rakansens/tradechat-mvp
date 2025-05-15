@@ -1,16 +1,16 @@
 // app/api/social/following/route.ts
 // フォロー一覧の取得と管理のためのAPIエンドポイント
 // 作成日: 2025/5/14
+// 更新日: 2025/6/23 - SSRクライアント対応でインポート更新と関数シグネチャ修正
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUser } from '@/lib/supabase/supabase-auth';
+import { getCurrentUser } from '@/lib/supabase/features/auth';
 import {
-  getFollowing,
-  getFollowingCount,
+  getUserFollowing,
   followUser,
   unfollowUser,
-  isFollowing
-} from '@/lib/supabase/supabase-relations';
+  searchUsers // ユーザー検索用
+} from '@/lib/supabase/features/relations';
 
 /**
  * フォロー一覧を取得するGETハンドラ
@@ -30,22 +30,27 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // フォロー一覧を取得
+    const following = await getUserFollowing(user.id);
+
     // 特定のユーザーをフォローしているか確認
     if (checkUserId) {
-      const following = await isFollowing(user.id, checkUserId);
-      return NextResponse.json({ following });
+      // 現在のフォロー一覧に対象ユーザーが含まれているか確認
+      const isFollowing = following.some(follow => follow.id === checkUserId);
+      return NextResponse.json({ following: isFollowing });
     }
 
     // 件数だけ取得する場合
     if (getCount) {
-      const count = await getFollowingCount(user.id);
-      return NextResponse.json({ count });
+      // 新しいAPIでは専用のカウント関数がないため、結果の長さを返す
+      return NextResponse.json({ count: following.length });
     }
 
-    // フォロー一覧を取得
-    const following = await getFollowing(user.id, limit, offset);
+    // 追加された結果からリクエストされた範囲のみを返す
+    // 注意: APIがページング機能を持たないため、フロントエンドでページングする
+    const paginatedFollowing = following.slice(offset, offset + limit);
 
-    return NextResponse.json(following);
+    return NextResponse.json(paginatedFollowing);
   } catch (error) {
     console.error('Error in GET /api/social/following:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

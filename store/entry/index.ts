@@ -6,7 +6,7 @@ import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
 import { createEntryActions } from './actions'
 import { EntrySliceState, initialEntryState } from './state'
-import { subscribeToEntries } from '@/lib/supabase/supabase-entry'
+import { subscribeToEntries } from '@/lib/supabase/features/entry'
 import { Tables } from '@/types/network/supabase'
 import { Entry as FrontendEntry, OpenEntry, ClosedEntry, CanceledEntry } from '@/types/entry'
 

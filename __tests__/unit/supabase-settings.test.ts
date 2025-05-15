@@ -2,7 +2,7 @@
 // 設定管理機能のユニットテスト
 // 作成日: 2025/6/10
 
-import * as settingsModule from '@/lib/supabase/supabase-settings';
+import * as settingsModule from '@/lib/supabase/features/settings';
 
 // Supabaseのモジュールをモック
 jest.mock('@/lib/supabase/supabase', () => {

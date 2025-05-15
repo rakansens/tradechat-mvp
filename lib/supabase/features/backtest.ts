@@ -1,9 +1,8 @@
-// lib/supabase-backtest.ts
-// Supabaseバックテストデータ関連ユーティリティ関数
-// 作成日: 2025/5/7
-// 更新日: 2025/5/28 - 型定義のインポート先を更新
+// lib/supabase/features/backtest.ts
+// Supabaseバックテストデータ関連ユーティリティ関数（SSR対応版）
+// 作成日: 2025/6/21 - 初期実装、supabase-backtest.tsからの移行
 
-import { supabase } from './supabase';
+import { createClient } from '@/lib/supabase/client';
 import { Database } from '@/types/network/supabase';
 
 type BacktestData = Database['public']['Tables']['backtest_data']['Row'];
@@ -20,6 +19,7 @@ export const getBacktestDataList = async (
   limit = 50,
   offset = 0
 ): Promise<BacktestData[]> => {
+  const supabase = createClient();
   const { data, error } = await supabase
     .from('backtest_data')
     .select('*')
@@ -48,6 +48,7 @@ export const getBacktestDataBySymbol = async (
   limit = 50,
   offset = 0
 ): Promise<BacktestData[]> => {
+  const supabase = createClient();
   const { data, error } = await supabase
     .from('backtest_data')
     .select('*')
@@ -71,6 +72,7 @@ export const getBacktestDataBySymbol = async (
 export const getBacktestData = async (
   backtestId: string
 ): Promise<BacktestData> => {
+  const supabase = createClient();
   const { data, error } = await supabase
     .from('backtest_data')
     .select('*')
@@ -106,6 +108,7 @@ export const createBacktestData = async (
   strategy: Record<string, any>,
   results: Record<string, any>
 ): Promise<BacktestData> => {
+  const supabase = createClient();
   const { data, error } = await supabase
     .from('backtest_data')
     .insert([
@@ -140,6 +143,7 @@ export const updateBacktestData = async (
   backtestId: string,
   updates: Partial<Omit<BacktestData, 'id' | 'user_id' | 'created_at' | 'updated_at'>>
 ): Promise<BacktestData> => {
+  const supabase = createClient();
   const { data, error } = await supabase
     .from('backtest_data')
     .update(updates)
@@ -162,6 +166,7 @@ export const updateBacktestData = async (
 export const deleteBacktestData = async (
   backtestId: string
 ): Promise<boolean> => {
+  const supabase = createClient();
   const { error } = await supabase
     .from('backtest_data')
     .delete()
@@ -186,6 +191,7 @@ export const compareBacktestResults = async (
     return [];
   }
 
+  const supabase = createClient();
   const { data, error } = await supabase
     .from('backtest_data')
     .select('*')
@@ -213,6 +219,7 @@ export const findSimilarBacktests = async (
   timeframe: string,
   limit = 5
 ): Promise<BacktestData[]> => {
+  const supabase = createClient();
   const { data, error } = await supabase
     .from('backtest_data')
     .select('*')
@@ -327,4 +334,4 @@ export const getBacktestHistory = async (userId: string): Promise<any[]> => {
 export const deleteBacktestResult = async (resultId: string): Promise<boolean> => {
   console.warn('バックテスト削除機能は現在実装されていません');
   return true;
-};
+}; 

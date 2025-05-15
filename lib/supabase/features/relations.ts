@@ -1,9 +1,8 @@
-// lib/supabase/supabase-relations.ts
-// ユーザー関係管理ユーティリティ関数
-// 作成日: 2025/5/14
-// 更新日: 2025/6/15 - 当面の開発フェーズでは優先度が低いためプレースホルダーとして保持
+// lib/supabase/features/relations.ts
+// ユーザー関係管理ユーティリティ関数（SSR対応版）
+// 作成日: 2025/6/21 - 初期実装、supabase-relations.tsからの移行
 
-import { supabase } from './supabase';
+import { createClient } from '@/lib/supabase/client';
 
 /**
  * NOTE: この機能は現在の開発フェーズでは実装優先度が低いため保留中
@@ -42,4 +41,4 @@ export const getUserFollowing = async (userId: string): Promise<any[]> => {
 export const searchUsers = async (query: string): Promise<any[]> => {
   console.warn('ユーザー検索機能は現在実装されていません');
   return [];
-};
+}; 

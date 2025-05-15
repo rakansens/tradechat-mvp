@@ -1,9 +1,8 @@
-// lib/supabase-api.ts
-// Supabase API専用ユーティリティ関数
-// 作成日: 2025/5/7
-// 更新日: 2025/6/5 - 再エクスポート構造を削除し、API特化の機能に変更
+// lib/supabase/features/api.ts
+// Supabase API専用ユーティリティ関数（SSR対応版）
+// 作成日: 2025/6/21 - 初期実装、supabase-api.tsからの移行
 
-import { supabase } from './supabase';
+import { createClient } from '@/lib/supabase/client';
 
 /**
  * Supabase APIの接続状態を確認するためのヘルスチェック関数
@@ -11,6 +10,7 @@ import { supabase } from './supabase';
  */
 export const checkApiHealth = async (): Promise<boolean> => {
   try {
+    const supabase = createClient();
     // シンプルなクエリを実行して接続状態を確認
     // データベース内の任意の既存テーブルでチェック
     const { data, error } = await supabase.from('profiles').select('id').limit(1);
@@ -36,7 +36,7 @@ export const getApiVersion = async (): Promise<Record<string, string>> => {
   // このサンプル実装では固定値を返します
   return {
     version: '1.0.0',
-    releaseDate: '2025/6/5',
+    releaseDate: '2025/6/21',
     environment: process.env.NODE_ENV || 'development'
   };
 };
@@ -76,6 +76,7 @@ export const getApiUsage = async (): Promise<Record<string, any>> => {
  * @returns 制限情報
  */
 export const checkApiLimits = async (userId: string): Promise<Record<string, any>> => {
+  const supabase = createClient();
   // このサンプル実装では固定値を返します
   return {
     remainingRequests: 9750,
@@ -83,8 +84,4 @@ export const checkApiLimits = async (userId: string): Promise<Record<string, any
     resetTime: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
     isLimited: false
   };
-};
-
-// 注: 以前の再エクスポート構造は削除しました。
-// 各機能は対応するモジュールから直接インポートしてください。
-// 例: import { signIn } from './supabase-auth';
+}; 

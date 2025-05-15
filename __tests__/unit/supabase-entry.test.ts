@@ -1,8 +1,10 @@
 // __tests__/unit/supabase-entry.test.ts
 // エントリー管理機能のユニットテスト
 // 作成日: 2025/6/10
+// 更新日: 2025/6/23 - SSRクライアント対応で関数シグネチャに合わせてテスト修正
 
-import * as entryModule from '@/lib/supabase/supabase-entry';
+import * as entryModule from '@/lib/supabase/features/entry';
+import { Tables } from '@/types/network/supabase';
 
 // Supabaseのモジュールをモック
 jest.mock('@/lib/supabase/supabase', () => {
@@ -53,8 +55,8 @@ jest.mock('@/lib/supabase/supabase', () => {
   };
 });
 
-// テスト用データ
-const testEntry = {
+// テスト用データを拡張モデルに合わせて更新
+const testEntry: Tables<'entries'> = {
   id: 'test-entry-id',
   user_id: 'test-user-id',
   side: 'buy',
@@ -67,6 +69,9 @@ const testEntry = {
   exit_price: null,
   exit_time: null,
   profit: null,
+  is_public: false,
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString()
 };
 
 // スパイを実装して関数を置き換える
@@ -75,15 +80,15 @@ describe('エントリー管理機能のテスト', () => {
     // 各テスト前に実行
     jest.clearAllMocks();
     
-    // 実装をスパイに置き換え
-    jest.spyOn(entryModule, 'getEntries').mockImplementation(async () => [testEntry]);
-    jest.spyOn(entryModule, 'getUserEntries').mockImplementation(async () => [testEntry]);
-    jest.spyOn(entryModule, 'getEntriesBySymbol').mockImplementation(async () => [testEntry]);
-    jest.spyOn(entryModule, 'getEntriesByStatus').mockImplementation(async () => [testEntry]);
-    jest.spyOn(entryModule, 'createEntry').mockImplementation(async () => testEntry);
-    jest.spyOn(entryModule, 'updateEntry').mockImplementation(async () => testEntry);
-    jest.spyOn(entryModule, 'deleteEntry').mockImplementation(async () => true);
-    jest.spyOn(entryModule, 'closeEntry').mockImplementation(async () => testEntry);
+    // 新しいモジュールに合わせてモック実装を修正
+    jest.spyOn(entryModule, 'getEntries').mockResolvedValue([testEntry]);
+    jest.spyOn(entryModule, 'getUserEntries').mockResolvedValue([testEntry]);
+    jest.spyOn(entryModule, 'getEntriesBySymbol').mockResolvedValue([testEntry]);
+    jest.spyOn(entryModule, 'getEntriesByStatus').mockResolvedValue([testEntry]);
+    jest.spyOn(entryModule, 'createEntry').mockResolvedValue(testEntry);
+    jest.spyOn(entryModule, 'updateEntry').mockResolvedValue(testEntry);
+    jest.spyOn(entryModule, 'deleteEntry').mockResolvedValue(true);
+    jest.spyOn(entryModule, 'closeEntry').mockResolvedValue(testEntry);
     jest.spyOn(entryModule, 'subscribeToEntries').mockImplementation(() => jest.fn());
   });
 
@@ -94,14 +99,10 @@ describe('エントリー管理機能のテスト', () => {
       expect(entryModule.getEntries).toHaveBeenCalled();
     });
 
-    it('エラー時には空配列を返すこと', async () => {
+    it('エラー時には例外をスローすること', async () => {
       jest.spyOn(entryModule, 'getEntries').mockRejectedValueOnce(new Error('テストエラー'));
       
-      try {
-        await entryModule.getEntries();
-      } catch (error) {
-        expect(error).toBeDefined();
-      }
+      await expect(entryModule.getEntries()).rejects.toThrow('テストエラー');
     });
   });
 
@@ -131,31 +132,34 @@ describe('エントリー管理機能のテスト', () => {
 
   describe('createEntry', () => {
     it('エントリーを正常に作成できること', async () => {
-      // 引数の問題を回避するためモック関数をリセット
-      jest.mocked(entryModule.createEntry).mockReset();
-      jest.mocked(entryModule.createEntry).mockResolvedValue(testEntry);
-      
-      const entryData = {
-        user_id: 'test-user-id',
-        side: 'buy',
-        symbol: 'BTC/USD',
-        price: 50000,
-        take_profit: 55000,
-        stop_loss: 48000,
-      };
+      const userId = 'test-user-id';
+      const side = 'buy' as const;
+      const symbol = 'BTC/USD';
+      const price = 50000;
+      const time = new Date();
+      const takeProfit = 55000;
+      const stopLoss = 48000;
       
       const result = await entryModule.createEntry(
-        'test-user-id',
-        'buy',
-        'BTC/USD',
-        50000,
-        new Date(),
-        55000,
-        48000
+        userId,
+        side,
+        symbol,
+        price,
+        time,
+        takeProfit,
+        stopLoss
       );
       
       expect(result).toEqual(testEntry);
-      expect(entryModule.createEntry).toHaveBeenCalled();
+      expect(entryModule.createEntry).toHaveBeenCalledWith(
+        userId,
+        side,
+        symbol,
+        price,
+        time,
+        takeProfit,
+        stopLoss
+      );
     });
   });
 
@@ -183,14 +187,14 @@ describe('エントリー管理機能のテスト', () => {
 
   describe('closeEntry', () => {
     it('エントリーを正常にクローズできること', async () => {
-      // 引数の問題を回避するためモック関数をリセット
-      jest.mocked(entryModule.closeEntry).mockReset();
-      jest.mocked(entryModule.closeEntry).mockResolvedValue(testEntry);
+      const entryId = 'test-entry-id';
+      const exitPrice = 52000;
+      const exitTime = new Date();
       
-      const result = await entryModule.closeEntry('test-entry-id', 52000, new Date());
+      const result = await entryModule.closeEntry(entryId, exitPrice, exitTime);
       
       expect(result).toEqual(testEntry);
-      expect(entryModule.closeEntry).toHaveBeenCalled();
+      expect(entryModule.closeEntry).toHaveBeenCalledWith(entryId, exitPrice, exitTime);
     });
   });
 

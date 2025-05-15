@@ -1,12 +1,13 @@
-// lib/supabase-chat.ts
-// Supabaseチャット関連ユーティリティ関数
-// 作成日: 2025/5/7
+// lib/supabase/features/chat.ts
+// Supabaseチャット関連ユーティリティ関数（SSR対応版）
+// 作成日: 2025/5/7 - 初期実装
 // 更新日: 2025/5/27 - 会話関連の機能をsupabase-conversations.tsに移動
 // 更新日: 2025/5/28 - 会話関連の関数を完全に削除
 // 更新日: 2025/6/2 - リアルタイム購読機能の安定化と再接続機能を実装
 // 更新日: 2025/6/5 - subscribeToConversationMessages関数は非推奨となりsupabase-conversations.tsに移行
+// 更新日: 2025/6/20 - SSRクライアント対応
 
-import { supabase } from './supabase';
+import { createClient } from '@/lib/supabase/client';
 import { Tables, TablesInsert, TablesUpdate } from '@/types/network/supabase';
 
 // チャット関連の型定義
@@ -33,6 +34,7 @@ export const getChatMessages = async (
   isPublicOnly = false,
   conversationId?: string
 ): Promise<ChatMessage[]> => {
+  const supabase = createClient();
   let query = supabase
     .from('chat_messages')
     .select('*, chat_images(*)')
@@ -69,6 +71,7 @@ export const getUserChatMessages = async (
   limit = 50,
   offset = 0
 ): Promise<ChatMessage[]> => {
+  const supabase = createClient();
   const { data, error } = await supabase
     .from('chat_messages')
     .select('*, chat_images(*)')
@@ -112,6 +115,7 @@ export const createChatMessage = async (
   imageId?: string,
   conversationId?: string
 ): Promise<ChatMessage> => {
+  const supabase = createClient();
   const messageData: ChatMessageInsert = {
     user_id: userId,
     role,
@@ -150,6 +154,7 @@ export const updateChatMessage = async (
   messageId: string,
   updates: ChatMessageUpdate
 ): Promise<ChatMessage> => {
+  const supabase = createClient();
   const { data, error } = await supabase
     .from('chat_messages')
     .update(updates)
@@ -171,6 +176,7 @@ export const updateChatMessage = async (
  * @returns 削除結果
  */
 export const deleteChatMessage = async (messageId: string): Promise<boolean> => {
+  const supabase = createClient();
   const { error } = await supabase
     .from('chat_messages')
     .delete()
@@ -196,6 +202,7 @@ export const uploadChatImage = async (
   imageData: string,
   imageCaption?: string
 ): Promise<ChatImage> => {
+  const supabase = createClient();
   // Base64データをBlobに変換
   const base64Data = imageData.split(',')[1];
   const mimeType = imageData.match(/^data:(.*?);/)?.[1] || 'image/png';
@@ -250,6 +257,7 @@ export const uploadChatImage = async (
  * @returns 画像情報
  */
 export const getChatImage = async (imageId: string): Promise<ChatImage | null> => {
+  const supabase = createClient();
   const { data, error } = await supabase
     .from('chat_images')
     .select('*')
@@ -282,6 +290,7 @@ export const subscribeToChatMessages = (
   onError?: (error: Error) => void,
   onStatusChange?: (status: string) => void
 ) => {
+  const supabase = createClient();
   let isSubscribed = true;
   let retryCount = 0;
   const maxRetries = 5;
@@ -364,7 +373,7 @@ export const subscribeToChatMessages = (
 };
 
 /**
- * @deprecated 会話関連の機能はsupabase-conversations.tsに移動しました。代わりに {@link import('@/lib/supabase/supabase-conversations').subscribeToConversationMessages} を使用してください。
+ * @deprecated 会話関連の機能はsupabase-conversations.tsに移動しました。代わりに {@link import('@/lib/supabase/features/conversations').subscribeToConversationMessages} を使用してください。
  */
 // 会話特化のチャットメッセージをリアルタイム購読機能は削除し、代わりに注釈を追加
 // この関数の実装はsupabase-conversations.tsに移動しました
@@ -372,4 +381,4 @@ export const subscribeToChatMessages = (
 // 注: 以下の会話関連機能はsupabase-conversations.tsに移動しました
 // - getConversationMessages
 // - createConversationMessage
-// - subscribeToConversationMessages
+// - subscribeToConversationMessages 

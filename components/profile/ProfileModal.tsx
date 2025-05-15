@@ -3,6 +3,8 @@
 /**
  * プロフィール管理モーダルコンポーネント
  * 作成日: 2025/6/15
+ * 更新日: 2025/6/20 - 型定義とプロフィールAPIを更新
+ * 更新日: 2025/6/20 - 新しいSSRクライアントベースのAPIを使用
  */
 
 import { useState, useEffect } from 'react';
@@ -12,7 +14,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Avatar } from '@/components/ui/avatar';
 import { toast } from '@/components/ui/use-toast';
-import { getProfile, updateProfile } from '@/lib/supabase/supabase-auth';
+import { getExtendedProfile, updateExtendedProfile } from '@/lib/supabase/features/profile';
+import { UserProfile } from '@/types/supabase';
 
 interface ProfileModalProps {
   isOpen: boolean;
@@ -20,25 +23,13 @@ interface ProfileModalProps {
   userId?: string;
 }
 
-// 拡張プロフィール型
+// 編集用プロフィール型
 interface ExtendedProfile {
   displayName: string;
   avatarUrl: string;
   bio: string;
   twitterHandle: string;
   tradingExperience: string;
-}
-
-// Supabaseプロフィールに拡張型を追加
-interface EnhancedUserProfile {
-  id: string;
-  user_id: string;
-  display_name: string | null;
-  avatar_url: string | null;
-  bio: string | null;
-  created_at: string | null;
-  updated_at: string | null;
-  metadata?: Record<string, any>;
 }
 
 export function ProfileModal({ isOpen, onClose, userId }: ProfileModalProps) {
@@ -63,7 +54,7 @@ export function ProfileModal({ isOpen, onClose, userId }: ProfileModalProps) {
     
     setIsLoading(true);
     try {
-      const userProfile = await getProfile(userId) as EnhancedUserProfile;
+      const userProfile = await getExtendedProfile(userId);
       
       if (userProfile) {
         // 標準フィールド
@@ -101,8 +92,8 @@ export function ProfileModal({ isOpen, onClose, userId }: ProfileModalProps) {
     
     setIsSaving(true);
     try {
-      // プロフィールとメタデータを分離して更新
-      await updateProfile(userId, {
+      // 拡張プロフィール更新APIを使用
+      await updateExtendedProfile(userId, {
         display_name: profile.displayName,
         avatar_url: profile.avatarUrl,
         bio: profile.bio,
@@ -110,7 +101,7 @@ export function ProfileModal({ isOpen, onClose, userId }: ProfileModalProps) {
           twitter_handle: profile.twitterHandle,
           trading_experience: profile.tradingExperience
         }
-      } as any); // 型の問題を一時的に回避するためにany型を使用
+      });
       
       toast({
         title: 'プロフィールを保存しました',

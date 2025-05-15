@@ -1,11 +1,13 @@
 // __tests__/unit/supabase-chat.test.ts
 // チャット機能のユニットテスト
 // 作成日: 2025/6/10
+// 更新日: 2025/6/22 - Supabase SSRクライアント対応のインポートパス更新
 
-import * as chatModule from '@/lib/supabase/supabase-chat';
+import * as chatModule from '@/lib/supabase/features/chat';
+import * as conversationsModule from '@/lib/supabase/features/conversations';
 
 // Supabaseのモジュールをモック
-jest.mock('@/lib/supabase/supabase', () => {
+jest.mock('@/lib/supabase/client', () => {
   const mockStorage = {
     from: jest.fn().mockReturnThis(),
     upload: jest.fn().mockResolvedValue({
@@ -18,7 +20,7 @@ jest.mock('@/lib/supabase/supabase', () => {
   };
 
   return {
-    supabase: {
+    createClient: jest.fn().mockReturnValue({
       from: jest.fn().mockImplementation(() => ({
         select: jest.fn().mockReturnThis(),
         insert: jest.fn().mockReturnThis(),
@@ -40,7 +42,7 @@ jest.mock('@/lib/supabase/supabase', () => {
         }),
       }),
       removeChannel: jest.fn(),
-    }
+    })
   };
 });
 
@@ -63,10 +65,16 @@ global.atob = jest.fn((str) => str);
 const testChatMessage = {
   id: 'test-message-id',
   user_id: 'test-user-id',
+  conversation_id: 'test-conversation-id',
   role: 'user',
   content: 'テスト用メッセージ',
   is_proposal: false,
   is_public: true,
+  proposal_type: null,
+  price: null,
+  take_profit: null,
+  stop_loss: null,
+  image_id: null,
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),
   chat_images: null
@@ -95,7 +103,7 @@ describe('チャット機能のテスト', () => {
     jest.spyOn(chatModule, 'uploadChatImage').mockResolvedValue(testChatImage);
     jest.spyOn(chatModule, 'getChatImage').mockResolvedValue(testChatImage);
     jest.spyOn(chatModule, 'subscribeToChatMessages').mockImplementation(() => jest.fn());
-    jest.spyOn(chatModule, 'subscribeToConversationMessages').mockImplementation(() => jest.fn());
+    jest.spyOn(conversationsModule, 'subscribeToConversationMessages').mockImplementation(() => jest.fn());
   });
 
   describe('getChatMessages', () => {
@@ -251,19 +259,15 @@ describe('チャット機能のテスト', () => {
       const onError = jest.fn();
       const onStatusChange = jest.fn();
       
-      const unsubscribe = chatModule.subscribeToConversationMessages(
+      const unsubscribe = conversationsModule.subscribeToConversationMessages(
         'test-conversation-id',
-        callback,
-        onError,
-        onStatusChange
+        callback
       );
       
       expect(typeof unsubscribe).toBe('function');
-      expect(chatModule.subscribeToConversationMessages).toHaveBeenCalledWith(
+      expect(conversationsModule.subscribeToConversationMessages).toHaveBeenCalledWith(
         'test-conversation-id',
-        callback,
-        onError,
-        onStatusChange
+        callback
       );
     });
   });
