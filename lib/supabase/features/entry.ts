@@ -1,14 +1,39 @@
 // lib/supabase/features/entry.ts
 // Supabaseトレードエントリー関連ユーティリティ関数（SSR対応版）
 // 作成日: 2025/6/21 - 初期実装、supabase-entry.tsからの移行
+// 更新日: 2025/6/25 - Supabase型定義に合わせてZodスキーマとマッピングを更新
 
 import { createClient } from '@/lib/supabase/client';
 import { Tables, TablesInsert, TablesUpdate } from '@/types/network/supabase';
+import { unstable_cache } from 'next/cache';
+import { z } from 'zod';
 
 // エントリー関連の型定義
-type Entry = Tables<'entries'>;
-type EntryInsert = TablesInsert<'entries'>;
+export type Entry = Tables<'entries'>;
+export type EntryInsert = TablesInsert<'entries'>;
 export type EntryUpdateParams = TablesUpdate<'entries'>;
+
+// エントリーのZodスキーマ
+export const entrySchema = z.object({
+  id: z.string().uuid().optional(),
+  user_id: z.string(),
+  symbol: z.string(),
+  side: z.enum(['buy', 'sell']),
+  price: z.number().positive(),
+  time: z.string().or(z.date()),
+  take_profit: z.number().positive().nullable().optional(),
+  stop_loss: z.number().positive().nullable().optional(),
+  exit_price: z.number().positive().nullable().optional(),
+  exit_time: z.string().or(z.date()).nullable().optional(),
+  profit: z.number().nullable().optional(),
+  status: z.enum(['open', 'closed', 'canceled']),
+  is_public: z.boolean().default(false).optional(),
+  created_at: z.string().nullable().optional(),
+  updated_at: z.string().nullable().optional(),
+});
+
+// 型エイリアス（簡潔な使用のため）
+export type EntrySchema = z.infer<typeof entrySchema>;
 
 /**
  * エントリー一覧を取得
@@ -41,6 +66,15 @@ export const getEntries = async (
 
   return data || [];
 };
+
+// 60秒間キャッシュするオープンエントリー取得関数
+export const getOpenEntries = unstable_cache(
+  async (isPublicOnly = false): Promise<Entry[]> => {
+    return getEntriesByStatus('open', 50, 0, isPublicOnly);
+  },
+  ['open-entries'],
+  { revalidate: 60 }
+);
 
 /**
  * ユーザーのエントリー一覧を取得
@@ -255,36 +289,24 @@ export const closeEntry = async (
     throw fetchError;
   }
 
-  // 利益を計算
-  let profit: number | null = null;
-  if (entry) {
-    if (entry.side === 'buy') {
-      profit = exitPrice - entry.price;
-    } else {
-      profit = entry.price - exitPrice;
-    }
+  if (!entry) {
+    throw new Error(`Entry with ID ${entryId} not found`);
   }
 
-  // エントリーを更新
+  // 利益計算
+  const profitValue = entry.side === 'buy'
+    ? exitPrice - entry.price
+    : entry.price - exitPrice;
+
+  // エントリー更新
   const updates: EntryUpdateParams = {
-    status: 'closed',
     exit_price: exitPrice,
     exit_time: exitTime.toISOString(),
-    profit,
+    profit: profitValue,
+    status: 'closed',
   };
 
-  const { data, error } = await supabase
-    .from('entries')
-    .update(updates)
-    .eq('id', entryId)
-    .select()
-    .single();
-
-  if (error) {
-    throw error;
-  }
-
-  return data;
+  return updateEntry(entryId, updates);
 };
 
 /**
@@ -293,27 +315,17 @@ export const closeEntry = async (
  * @returns 更新されたエントリー
  */
 export const cancelEntry = async (entryId: string): Promise<Entry> => {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from('entries')
-    .update({
-      status: 'canceled',
-    })
-    .eq('id', entryId)
-    .select()
-    .single();
+  const updates: EntryUpdateParams = {
+    status: 'canceled',
+  };
 
-  if (error) {
-    throw error;
-  }
-
-  return data;
+  return updateEntry(entryId, updates);
 };
 
 /**
- * エントリーのリアルタイム購読
+ * エントリーの更新をリアルタイムに購読
  * @param callback コールバック関数
- * @param isPublicOnly 公開エントリーのみ購読するかどうか
+ * @param isPublicOnly 公開エントリーのみ対象とするかどうか
  * @returns 購読解除関数
  */
 export const subscribeToEntries = (
@@ -321,15 +333,16 @@ export const subscribeToEntries = (
   isPublicOnly = false
 ) => {
   const supabase = createClient();
-  const channel = supabase
-    .channel('entries')
+  
+  let subscription = supabase
+    .channel('entries-changes')
     .on(
       'postgres_changes',
       {
         event: '*',
         schema: 'public',
         table: 'entries',
-        ...(isPublicOnly ? { filter: 'is_public=eq.true' } : {}),
+        ...(isPublicOnly ? { filter: 'is_public=eq.true' } : {})
       },
       (payload) => {
         callback(payload.new as Entry);
@@ -337,15 +350,16 @@ export const subscribeToEntries = (
     )
     .subscribe();
 
+  // 購読解除関数を返す
   return () => {
-    supabase.removeChannel(channel);
+    subscription.unsubscribe();
   };
 };
 
 /**
- * エントリーIDでエントリーを取得
+ * エントリーをIDで取得
  * @param entryId エントリーID
- * @returns エントリーまたはnull
+ * @returns エントリー
  */
 export const getEntryById = async (entryId: string): Promise<Entry | null> => {
   const supabase = createClient();
@@ -356,8 +370,7 @@ export const getEntryById = async (entryId: string): Promise<Entry | null> => {
     .single();
 
   if (error) {
-    if (error.code === 'PGRST116') {
-      // レコードが見つからない場合
+    if (error.code === 'PGRST116') { // Not found
       return null;
     }
     throw error;

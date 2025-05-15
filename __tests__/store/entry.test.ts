@@ -1,5 +1,6 @@
 // __tests__/store/entry.test.ts
 // エントリースライスのテスト
+// 更新日: 2023/6/25 - 型定義の更新に合わせてテストを修正
 
 import { useRootStore } from '@/store/rootStore'
 import { 
@@ -8,7 +9,7 @@ import {
   selectOpenEntries, 
   selectClosedEntries 
 } from '@/store/entry/selectors'
-import type { OpenEntry } from '@/types/entry'
+import { OpenEntry, ClosedEntry } from '@/types/entry'
 
 // モック用のヘルパー関数
 const setupStore = () => {
@@ -22,6 +23,7 @@ const setupStore = () => {
 // テスト用のモックエントリー
 const mockOpenEntry: OpenEntry = {
   id: 'test-entry-1',
+  userId: 'user-1',
   side: 'buy',
   symbol: 'BTC/USD',
   price: 50000,
@@ -67,7 +69,7 @@ describe('Entry Slice', () => {
       
       // 終了後の状態を確認
       const state = useRootStore.getState()
-      const closedEntry = state.entries[0]
+      const closedEntry = state.entries[0] as ClosedEntry
       
       expect(closedEntry.status).toBe('closed')
       expect(closedEntry.exitPrice).toBe(exitPrice)
@@ -97,14 +99,16 @@ describe('Entry Slice', () => {
       store.entries = [
         {
           id: '1',
+          userId: 'user-1',
           side: 'buy',
           symbol: 'BTC/USD',
           price: 50000,
           time: '2023-01-01T00:00:00Z',
           status: 'open'
-        },
+        } as OpenEntry,
         {
           id: '2',
+          userId: 'user-2',
           side: 'sell',
           symbol: 'ETH/USD',
           price: 3000,
@@ -113,7 +117,7 @@ describe('Entry Slice', () => {
           exitPrice: 2800,
           exitTime: '2023-01-03T00:00:00Z',
           profit: 200
-        }
+        } as ClosedEntry
       ]
     })
     

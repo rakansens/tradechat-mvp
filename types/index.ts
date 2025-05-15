@@ -76,3 +76,6 @@ export * from './entry';
 export * from './symbol';
 export * from './common';
 */
+
+// Supabase Database型のエクスポート
+export type { Database } from './supabase';
