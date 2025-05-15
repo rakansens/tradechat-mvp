@@ -3,9 +3,11 @@
 // 作成日: 2025/5/14 - 初期実装
 // 更新日: 2025/5/14 - 型参照を最新の型定義に更新し、型安全性を強化
 // 更新日: 2025/6/20 - SSRクライアント対応
+// 更新日: 2023/7/5 - Dependency Injection パターンに更新 (supabaseClient ?? createClient())
 
 import { createClient } from '@/lib/supabase/client';
 import { Tables, TablesInsert, TablesUpdate, Json } from '@/types/network/supabase';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 // 設定関連の型定義
 type SymbolSettings = Tables<'symbol_settings'>;
@@ -23,10 +25,14 @@ type IndicatorSettingsUpdate = TablesUpdate<'indicator_settings'>;
 /**
  * シンボル設定一覧を取得
  * @param userId ユーザーID
+ * @param supabaseClient Supabaseクライアントインスタンス（オプション）
  * @returns シンボル設定一覧
  */
-export const getSymbolSettings = async (userId: string): Promise<SymbolSettings[]> => {
-  const supabase = createClient();
+export const getSymbolSettings = async (
+  userId: string,
+  supabaseClient?: SupabaseClient
+): Promise<SymbolSettings[]> => {
+  const supabase = supabaseClient ?? createClient();
   const { data, error } = await supabase
     .from('symbol_settings')
     .select('*')
@@ -43,10 +49,14 @@ export const getSymbolSettings = async (userId: string): Promise<SymbolSettings[
 /**
  * お気に入りシンボル一覧を取得
  * @param userId ユーザーID
+ * @param supabaseClient Supabaseクライアントインスタンス（オプション）
  * @returns お気に入りシンボル一覧
  */
-export const getFavoriteSymbols = async (userId: string): Promise<SymbolSettings[]> => {
-  const supabase = createClient();
+export const getFavoriteSymbols = async (
+  userId: string,
+  supabaseClient?: SupabaseClient
+): Promise<SymbolSettings[]> => {
+  const supabase = supabaseClient ?? createClient();
   const { data, error } = await supabase
     .from('symbol_settings')
     .select('*')
@@ -67,15 +77,17 @@ export const getFavoriteSymbols = async (userId: string): Promise<SymbolSettings
  * @param symbol シンボル
  * @param isFavorite お気に入りかどうか
  * @param displayOrder 表示順序
+ * @param supabaseClient Supabaseクライアントインスタンス（オプション）
  * @returns 作成または更新されたシンボル設定
  */
 export const upsertSymbolSettings = async (
   userId: string,
   symbol: string,
   isFavorite: boolean | undefined = false,
-  displayOrder: number | undefined = 0
+  displayOrder: number | undefined = 0,
+  supabaseClient?: SupabaseClient
 ): Promise<SymbolSettings> => {
-  const supabase = createClient();
+  const supabase = supabaseClient ?? createClient();
   const { data, error } = await supabase
     .from('symbol_settings')
     .upsert(
@@ -103,13 +115,15 @@ export const upsertSymbolSettings = async (
  * シンボル設定を削除
  * @param userId ユーザーID
  * @param symbol シンボル
+ * @param supabaseClient Supabaseクライアントインスタンス（オプション）
  * @returns 削除結果
  */
 export const deleteSymbolSettings = async (
   userId: string,
-  symbol: string
+  symbol: string,
+  supabaseClient?: SupabaseClient
 ): Promise<boolean> => {
-  const supabase = createClient();
+  const supabase = supabaseClient ?? createClient();
   const { error } = await supabase
     .from('symbol_settings')
     .delete()
@@ -126,10 +140,14 @@ export const deleteSymbolSettings = async (
 /**
  * チャート設定一覧を取得
  * @param userId ユーザーID
+ * @param supabaseClient Supabaseクライアントインスタンス（オプション）
  * @returns チャート設定一覧
  */
-export const getChartSettings = async (userId: string): Promise<ChartSettings[]> => {
-  const supabase = createClient();
+export const getChartSettings = async (
+  userId: string,
+  supabaseClient?: SupabaseClient
+): Promise<ChartSettings[]> => {
+  const supabase = supabaseClient ?? createClient();
   const { data, error } = await supabase
     .from('chart_settings')
     .select('*')
@@ -151,6 +169,7 @@ export const getChartSettings = async (userId: string): Promise<ChartSettings[]>
  * @param showGrid グリッド表示
  * @param showLegend 凡例表示
  * @param theme テーマ
+ * @param supabaseClient Supabaseクライアントインスタンス（オプション）
  * @returns 作成されたチャート設定
  */
 export const createChartSettings = async (
@@ -160,9 +179,10 @@ export const createChartSettings = async (
   showVolume: boolean | undefined = true,
   showGrid: boolean | undefined = true,
   showLegend: boolean | undefined = true,
-  theme: string | undefined = 'dark'
+  theme: string | undefined = 'dark',
+  supabaseClient?: SupabaseClient
 ): Promise<ChartSettings> => {
-  const supabase = createClient();
+  const supabase = supabaseClient ?? createClient();
   const { data, error } = await supabase
     .from('chart_settings')
     .insert([
@@ -190,13 +210,15 @@ export const createChartSettings = async (
  * チャート設定を更新
  * @param chartSettingsId チャート設定ID
  * @param updates 更新内容
+ * @param supabaseClient Supabaseクライアントインスタンス（オプション）
  * @returns 更新されたチャート設定
  */
 export const updateChartSettings = async (
   chartSettingsId: string,
-  updates: Partial<Omit<ChartSettings, 'id' | 'user_id' | 'created_at' | 'updated_at'>>
+  updates: Partial<Omit<ChartSettings, 'id' | 'user_id' | 'created_at' | 'updated_at'>>,
+  supabaseClient?: SupabaseClient
 ): Promise<ChartSettings> => {
-  const supabase = createClient();
+  const supabase = supabaseClient ?? createClient();
   const { data, error } = await supabase
     .from('chart_settings')
     .update(updates)
@@ -214,10 +236,14 @@ export const updateChartSettings = async (
 /**
  * チャート設定を削除
  * @param chartSettingsId チャート設定ID
+ * @param supabaseClient Supabaseクライアントインスタンス（オプション）
  * @returns 削除結果
  */
-export const deleteChartSettings = async (chartSettingsId: string): Promise<boolean> => {
-  const supabase = createClient();
+export const deleteChartSettings = async (
+  chartSettingsId: string,
+  supabaseClient?: SupabaseClient
+): Promise<boolean> => {
+  const supabase = supabaseClient ?? createClient();
   const { error } = await supabase
     .from('chart_settings')
     .delete()
@@ -233,12 +259,14 @@ export const deleteChartSettings = async (chartSettingsId: string): Promise<bool
 /**
  * インジケーター設定一覧を取得
  * @param chartSettingsId チャート設定ID
+ * @param supabaseClient Supabaseクライアントインスタンス（オプション）
  * @returns インジケーター設定一覧
  */
 export const getIndicatorSettings = async (
-  chartSettingsId: string
+  chartSettingsId: string,
+  supabaseClient?: SupabaseClient
 ): Promise<IndicatorSettings[]> => {
-  const supabase = createClient();
+  const supabase = supabaseClient ?? createClient();
   const { data, error } = await supabase
     .from('indicator_settings')
     .select('*')
@@ -256,9 +284,10 @@ export const getIndicatorSettings = async (
  * @param userId ユーザーID
  * @param chartSettingsId チャート設定ID
  * @param type インジケータータイプ
- * @param params パラメーター
+ * @param params パラメータ
  * @param color 色
- * @param visible 表示するかどうか
+ * @param visible 表示フラグ
+ * @param supabaseClient Supabaseクライアントインスタンス（オプション）
  * @returns 作成されたインジケーター設定
  */
 export const createIndicatorSettings = async (
@@ -267,9 +296,10 @@ export const createIndicatorSettings = async (
   type: string,
   params: Record<string, any> = {},
   color?: string,
-  visible = true
+  visible = true,
+  supabaseClient?: SupabaseClient
 ): Promise<IndicatorSettings> => {
-  const supabase = createClient();
+  const supabase = supabaseClient ?? createClient();
   const { data, error } = await supabase
     .from('indicator_settings')
     .insert([
@@ -296,13 +326,15 @@ export const createIndicatorSettings = async (
  * インジケーター設定を更新
  * @param indicatorSettingsId インジケーター設定ID
  * @param updates 更新内容
+ * @param supabaseClient Supabaseクライアントインスタンス（オプション）
  * @returns 更新されたインジケーター設定
  */
 export const updateIndicatorSettings = async (
   indicatorSettingsId: string,
-  updates: Partial<Omit<IndicatorSettings, 'id' | 'user_id' | 'chart_settings_id' | 'created_at' | 'updated_at'>>
+  updates: Partial<Omit<IndicatorSettings, 'id' | 'user_id' | 'chart_settings_id' | 'created_at' | 'updated_at'>>,
+  supabaseClient?: SupabaseClient
 ): Promise<IndicatorSettings> => {
-  const supabase = createClient();
+  const supabase = supabaseClient ?? createClient();
   const { data, error } = await supabase
     .from('indicator_settings')
     .update(updates)
@@ -320,12 +352,14 @@ export const updateIndicatorSettings = async (
 /**
  * インジケーター設定を削除
  * @param indicatorSettingsId インジケーター設定ID
+ * @param supabaseClient Supabaseクライアントインスタンス（オプション）
  * @returns 削除結果
  */
 export const deleteIndicatorSettings = async (
-  indicatorSettingsId: string
+  indicatorSettingsId: string,
+  supabaseClient?: SupabaseClient
 ): Promise<boolean> => {
-  const supabase = createClient();
+  const supabase = supabaseClient ?? createClient();
   const { error } = await supabase
     .from('indicator_settings')
     .delete()
@@ -341,42 +375,55 @@ export const deleteIndicatorSettings = async (
 /**
  * ユーザー設定を取得
  * @param userId ユーザーID
+ * @param supabaseClient Supabaseクライアントインスタンス（オプション）
  * @returns ユーザー設定
  */
-export const getUserSettings = async (userId: string): Promise<Json | null> => {
-  const supabase = createClient();
+export const getUserSettings = async (
+  userId: string,
+  supabaseClient?: SupabaseClient
+): Promise<Json | null> => {
+  const supabase = supabaseClient ?? createClient();
   const { data, error } = await supabase
-    .from('users')
+    .from('user_settings')
     .select('settings')
-    .eq('id', userId)
+    .eq('user_id', userId)
     .single();
 
   if (error) {
     if (error.code === 'PGRST116') {
-      // レコードが見つからない場合
+      // レコードが見つからない場合は null を返す
       return null;
     }
     throw error;
   }
 
-  return data?.settings;
+  return data?.settings || null;
 };
 
 /**
  * ユーザー設定を更新
  * @param userId ユーザーID
- * @param settings 設定内容
+ * @param settings 設定
+ * @param supabaseClient Supabaseクライアントインスタンス（オプション）
  * @returns 更新結果
  */
 export const updateUserSettings = async (
   userId: string,
-  settings: Json
+  settings: Json,
+  supabaseClient?: SupabaseClient
 ): Promise<boolean> => {
-  const supabase = createClient();
+  const supabase = supabaseClient ?? createClient();
   const { error } = await supabase
-    .from('users')
-    .update({ settings })
-    .eq('id', userId);
+    .from('user_settings')
+    .upsert(
+      {
+        user_id: userId,
+        settings,
+      },
+      {
+        onConflict: 'user_id',
+      }
+    );
 
   if (error) {
     throw error;

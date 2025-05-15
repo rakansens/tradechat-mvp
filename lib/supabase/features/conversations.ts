@@ -1,9 +1,11 @@
 // lib/supabase/features/conversations.ts
 // Supabase会話（スレッド）関連ユーティリティ関数（SSR対応版）
 // 作成日: 2025/6/21 - 初期実装、supabase-conversations.tsからの移行
+// 更新日: 2023/7/5 - Dependency Injection パターンに更新 (supabaseClient ?? createClient())
 
 import { createClient } from '@/lib/supabase/client';
 import { Tables, TablesInsert, TablesUpdate } from '@/types/network/supabase';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 // 会話関連の型定義
 type Conversation = Tables<'conversations'>;
@@ -17,10 +19,14 @@ type ChatMessageInsert = TablesInsert<'chat_messages'>;
 /**
  * ユーザーの会話一覧を取得
  * @param userId ユーザーID
+ * @param supabaseClient Supabaseクライアントインスタンス（オプション）
  * @returns 会話一覧
  */
-export const getConversations = async (userId: string): Promise<Conversation[]> => {
-  const supabase = createClient();
+export const getConversations = async (
+  userId: string,
+  supabaseClient?: SupabaseClient
+): Promise<Conversation[]> => {
+  const supabase = supabaseClient ?? createClient();
   const { data, error } = await supabase
     .from('conversations')
     .select('*')
@@ -35,13 +41,15 @@ export const getConversations = async (userId: string): Promise<Conversation[]> 
  * 特定の会話を取得
  * @param conversationId 会話ID
  * @param userId ユーザーID（所有者確認用）
+ * @param supabaseClient Supabaseクライアントインスタンス（オプション）
  * @returns 会話情報
  */
 export const getConversation = async (
   conversationId: string,
-  userId: string
+  userId: string,
+  supabaseClient?: SupabaseClient
 ): Promise<Conversation> => {
-  const supabase = createClient();
+  const supabase = supabaseClient ?? createClient();
   const { data, error } = await supabase
     .from('conversations')
     .select('*')
@@ -58,14 +66,16 @@ export const getConversation = async (
  * @param userId ユーザーID
  * @param title 会話タイトル
  * @param systemPrompt システムプロンプト
+ * @param supabaseClient Supabaseクライアントインスタンス（オプション）
  * @returns 作成された会話
  */
 export const createConversation = async (
   userId: string,
   title: string,
-  systemPrompt?: string
+  systemPrompt?: string,
+  supabaseClient?: SupabaseClient
 ): Promise<Conversation> => {
-  const supabase = createClient();
+  const supabase = supabaseClient ?? createClient();
   const { data, error } = await supabase
     .from('conversations')
     .insert([
@@ -87,16 +97,18 @@ export const createConversation = async (
  * @param conversationId 会話ID
  * @param userId ユーザーID（所有者確認用）
  * @param updates 更新内容
+ * @param supabaseClient Supabaseクライアントインスタンス（オプション）
  * @returns 更新された会話
  */
 export const updateConversation = async (
   conversationId: string,
   userId: string,
-  updates: Partial<ConversationUpdate>
+  updates: Partial<ConversationUpdate>,
+  supabaseClient?: SupabaseClient
 ): Promise<Conversation> => {
-  const supabase = createClient();
+  const supabase = supabaseClient ?? createClient();
   // まず所有者確認
-  await verifyConversationOwner(conversationId, userId);
+  await verifyConversationOwner(conversationId, userId, supabase);
   
   // 更新日時を自動設定
   const updatesWithTimestamp = {
@@ -120,14 +132,16 @@ export const updateConversation = async (
  * 会話を削除
  * @param conversationId 会話ID
  * @param userId ユーザーID（所有者確認用）
+ * @param supabaseClient Supabaseクライアントインスタンス（オプション）
  */
 export const deleteConversation = async (
   conversationId: string,
-  userId: string
+  userId: string,
+  supabaseClient?: SupabaseClient
 ): Promise<void> => {
-  const supabase = createClient();
+  const supabase = supabaseClient ?? createClient();
   // まず所有者確認
-  await verifyConversationOwner(conversationId, userId);
+  await verifyConversationOwner(conversationId, userId, supabase);
   
   // 関連するメッセージを削除
   const { error: messagesError } = await supabase
@@ -151,13 +165,15 @@ export const deleteConversation = async (
  * 会話の所有者確認（内部ヘルパー関数）
  * @param conversationId 会話ID
  * @param userId ユーザーID
+ * @param supabaseClient Supabaseクライアントインスタンス（オプション）
  * @throws 所有者でない場合はエラー
  */
 const verifyConversationOwner = async (
   conversationId: string,
-  userId: string
+  userId: string,
+  supabaseClient?: SupabaseClient
 ): Promise<void> => {
-  const supabase = createClient();
+  const supabase = supabaseClient ?? createClient();
   const { data, error } = await supabase
     .from('conversations')
     .select('user_id')
@@ -175,14 +191,16 @@ const verifyConversationOwner = async (
  * @param conversationId 会話ID
  * @param limit 取得件数
  * @param offset オフセット
+ * @param supabaseClient Supabaseクライアントインスタンス（オプション）
  * @returns チャットメッセージ一覧
  */
 export const getConversationMessages = async (
   conversationId: string,
   limit = 50,
-  offset = 0
+  offset = 0,
+  supabaseClient?: SupabaseClient
 ): Promise<ChatMessage[]> => {
-  const supabase = createClient();
+  const supabase = supabaseClient ?? createClient();
   const { data, error } = await supabase
     .from('chat_messages')
     .select('*, chat_images(*)')
@@ -210,6 +228,7 @@ export const getConversationMessages = async (
  * @param takeProfit 利確価格
  * @param stopLoss 損切価格
  * @param imageId 画像ID
+ * @param supabaseClient Supabaseクライアントインスタンス（オプション）
  * @returns 作成されたチャットメッセージ
  */
 export const createConversationMessage = async (
@@ -223,9 +242,10 @@ export const createConversationMessage = async (
   price?: number,
   takeProfit?: number,
   stopLoss?: number,
-  imageId?: string
+  imageId?: string,
+  supabaseClient?: SupabaseClient
 ): Promise<ChatMessage> => {
-  const supabase = createClient();
+  const supabase = supabaseClient ?? createClient();
   const messageData: ChatMessageInsert = {
     user_id: userId,
     conversation_id: conversationId,
@@ -250,26 +270,22 @@ export const createConversationMessage = async (
     throw error;
   }
 
-  // 会話の更新日時も更新
-  await supabase
-    .from('conversations')
-    .update({ updated_at: new Date().toISOString() })
-    .eq('id', conversationId);
-
   return data;
 };
 
 /**
- * 特定の会話のメッセージをリアルタイム購読
+ * 会話のメッセージ購読
  * @param conversationId 会話ID
- * @param callback メッセージ受信時のコールバック
+ * @param callback コールバック関数
+ * @param supabaseClient Supabaseクライアントインスタンス（オプション）
  * @returns 購読解除関数
  */
 export const subscribeToConversationMessages = (
   conversationId: string,
-  callback: (message: ChatMessage) => void
+  callback: (message: ChatMessage) => void,
+  supabaseClient?: SupabaseClient
 ) => {
-  const supabase = createClient();
+  const supabase = supabaseClient ?? createClient();
   const channel = supabase
     .channel(`conversation_${conversationId}`)
     .on(

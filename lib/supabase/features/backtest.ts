@@ -1,9 +1,11 @@
 // lib/supabase/features/backtest.ts
 // Supabaseバックテストデータ関連ユーティリティ関数（SSR対応版）
 // 作成日: 2025/6/21 - 初期実装、supabase-backtest.tsからの移行
+// 更新日: 2023/7/5 - Dependency Injection パターンに更新 (supabaseClient ?? createClient())
 
 import { createClient } from '@/lib/supabase/client';
 import { Database } from '@/types/network/supabase';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 type BacktestData = Database['public']['Tables']['backtest_data']['Row'];
 
@@ -12,14 +14,16 @@ type BacktestData = Database['public']['Tables']['backtest_data']['Row'];
  * @param userId ユーザーID
  * @param limit 取得件数
  * @param offset オフセット
+ * @param supabaseClient Supabaseクライアントインスタンス（オプション）
  * @returns バックテストデータ一覧
  */
 export const getBacktestDataList = async (
   userId: string,
   limit = 50,
-  offset = 0
+  offset = 0,
+  supabaseClient?: SupabaseClient
 ): Promise<BacktestData[]> => {
-  const supabase = createClient();
+  const supabase = supabaseClient ?? createClient();
   const { data, error } = await supabase
     .from('backtest_data')
     .select('*')
@@ -40,15 +44,17 @@ export const getBacktestDataList = async (
  * @param symbol シンボル
  * @param limit 取得件数
  * @param offset オフセット
+ * @param supabaseClient Supabaseクライアントインスタンス（オプション）
  * @returns バックテストデータ一覧
  */
 export const getBacktestDataBySymbol = async (
   userId: string,
   symbol: string,
   limit = 50,
-  offset = 0
+  offset = 0,
+  supabaseClient?: SupabaseClient
 ): Promise<BacktestData[]> => {
-  const supabase = createClient();
+  const supabase = supabaseClient ?? createClient();
   const { data, error } = await supabase
     .from('backtest_data')
     .select('*')
@@ -67,12 +73,14 @@ export const getBacktestDataBySymbol = async (
 /**
  * バックテストデータを取得
  * @param backtestId バックテストID
+ * @param supabaseClient Supabaseクライアントインスタンス（オプション）
  * @returns バックテストデータ
  */
 export const getBacktestData = async (
-  backtestId: string
+  backtestId: string,
+  supabaseClient?: SupabaseClient
 ): Promise<BacktestData> => {
-  const supabase = createClient();
+  const supabase = supabaseClient ?? createClient();
   const { data, error } = await supabase
     .from('backtest_data')
     .select('*')
@@ -96,6 +104,7 @@ export const getBacktestData = async (
  * @param endDate 終了日時
  * @param strategy 戦略
  * @param results 結果
+ * @param supabaseClient Supabaseクライアントインスタンス（オプション）
  * @returns 作成されたバックテストデータ
  */
 export const createBacktestData = async (
@@ -106,9 +115,10 @@ export const createBacktestData = async (
   startDate: Date,
   endDate: Date,
   strategy: Record<string, any>,
-  results: Record<string, any>
+  results: Record<string, any>,
+  supabaseClient?: SupabaseClient
 ): Promise<BacktestData> => {
-  const supabase = createClient();
+  const supabase = supabaseClient ?? createClient();
   const { data, error } = await supabase
     .from('backtest_data')
     .insert([
@@ -137,13 +147,15 @@ export const createBacktestData = async (
  * バックテストデータを更新
  * @param backtestId バックテストID
  * @param updates 更新内容
+ * @param supabaseClient Supabaseクライアントインスタンス（オプション）
  * @returns 更新されたバックテストデータ
  */
 export const updateBacktestData = async (
   backtestId: string,
-  updates: Partial<Omit<BacktestData, 'id' | 'user_id' | 'created_at' | 'updated_at'>>
+  updates: Partial<Omit<BacktestData, 'id' | 'user_id' | 'created_at' | 'updated_at'>>,
+  supabaseClient?: SupabaseClient
 ): Promise<BacktestData> => {
-  const supabase = createClient();
+  const supabase = supabaseClient ?? createClient();
   const { data, error } = await supabase
     .from('backtest_data')
     .update(updates)
@@ -161,12 +173,14 @@ export const updateBacktestData = async (
 /**
  * バックテストデータを削除
  * @param backtestId バックテストID
+ * @param supabaseClient Supabaseクライアントインスタンス（オプション）
  * @returns 削除結果
  */
 export const deleteBacktestData = async (
-  backtestId: string
+  backtestId: string,
+  supabaseClient?: SupabaseClient
 ): Promise<boolean> => {
-  const supabase = createClient();
+  const supabase = supabaseClient ?? createClient();
   const { error } = await supabase
     .from('backtest_data')
     .delete()
@@ -182,16 +196,18 @@ export const deleteBacktestData = async (
 /**
  * バックテスト結果を比較
  * @param backtestIds バックテストID配列
+ * @param supabaseClient Supabaseクライアントインスタンス（オプション）
  * @returns バックテストデータ配列
  */
 export const compareBacktestResults = async (
-  backtestIds: string[]
+  backtestIds: string[],
+  supabaseClient?: SupabaseClient
 ): Promise<BacktestData[]> => {
   if (backtestIds.length === 0) {
     return [];
   }
 
-  const supabase = createClient();
+  const supabase = supabaseClient ?? createClient();
   const { data, error } = await supabase
     .from('backtest_data')
     .select('*')
@@ -211,15 +227,17 @@ export const compareBacktestResults = async (
  * @param symbol シンボル
  * @param timeframe タイムフレーム
  * @param limit 取得件数
+ * @param supabaseClient Supabaseクライアントインスタンス（オプション）
  * @returns バックテストデータ一覧
  */
 export const findSimilarBacktests = async (
   userId: string,
   symbol: string,
   timeframe: string,
-  limit = 5
+  limit = 5,
+  supabaseClient?: SupabaseClient
 ): Promise<BacktestData[]> => {
-  const supabase = createClient();
+  const supabase = supabaseClient ?? createClient();
   const { data, error } = await supabase
     .from('backtest_data')
     .select('*')
@@ -312,26 +330,66 @@ export const calculateBacktestStats = (
  * 実装時期: 未定（コアユーザー要望に応じて検討）
  */
 
-// バックテストを実行（プレースホルダー）
-export const runBacktest = async (userId: string, params: any): Promise<any> => {
+/**
+ * バックテストを実行
+ * @param userId ユーザーID 
+ * @param params バックテストパラメータ
+ * @param supabaseClient Supabaseクライアントインスタンス（オプション）
+ * @returns バックテスト結果
+ */
+export const runBacktest = async (
+  userId: string, 
+  params: any,
+  supabaseClient?: SupabaseClient
+): Promise<any> => {
+  const supabase = supabaseClient ?? createClient();
   console.warn('バックテスト機能は現在実装されていません');
   return { message: 'この機能は現在開発中です' };
 };
 
-// バックテスト結果を保存（プレースホルダー）
-export const saveBacktestResult = async (userId: string, result: any): Promise<any> => {
+/**
+ * バックテスト結果を保存
+ * @param userId ユーザーID
+ * @param result バックテスト結果
+ * @param supabaseClient Supabaseクライアントインスタンス（オプション）
+ * @returns 保存結果
+ */
+export const saveBacktestResult = async (
+  userId: string, 
+  result: any,
+  supabaseClient?: SupabaseClient
+): Promise<any> => {
+  const supabase = supabaseClient ?? createClient();
   console.warn('バックテスト保存機能は現在実装されていません');
   return { message: 'この機能は現在開発中です' };
 };
 
-// バックテスト履歴を取得（プレースホルダー）
-export const getBacktestHistory = async (userId: string): Promise<any[]> => {
+/**
+ * バックテスト履歴を取得
+ * @param userId ユーザーID
+ * @param supabaseClient Supabaseクライアントインスタンス（オプション）
+ * @returns バックテスト履歴
+ */
+export const getBacktestHistory = async (
+  userId: string,
+  supabaseClient?: SupabaseClient
+): Promise<any[]> => {
+  const supabase = supabaseClient ?? createClient();
   console.warn('バックテスト履歴取得機能は現在実装されていません');
   return [];
 };
 
-// バックテスト結果を削除（プレースホルダー）
-export const deleteBacktestResult = async (resultId: string): Promise<boolean> => {
+/**
+ * バックテスト結果を削除
+ * @param resultId 結果ID
+ * @param supabaseClient Supabaseクライアントインスタンス（オプション）
+ * @returns 削除結果
+ */
+export const deleteBacktestResult = async (
+  resultId: string,
+  supabaseClient?: SupabaseClient
+): Promise<boolean> => {
+  const supabase = supabaseClient ?? createClient();
   console.warn('バックテスト削除機能は現在実装されていません');
   return true;
 }; 
