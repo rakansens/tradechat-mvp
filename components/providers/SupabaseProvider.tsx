@@ -5,6 +5,7 @@
  * アプリケーション全体で使用するSupabase認証状態の管理
  * 作成日: 2025/6/15
  * 更新日: 2025/6/23 - named exportに変更
+ * 更新日: 2025/6/25 - signInとsignUp関数を追加
  */
 
 import { createContext, useContext, useEffect, useState } from 'react'
@@ -12,6 +13,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { Session, User } from '@supabase/supabase-js'
 import { AuthUser } from '@/types/supabase'
+import { signInWithPassword, signUp as supabaseSignUp } from '@/lib/supabase/features/auth'
 
 // 認証コンテキストの型定義
 interface AuthContextType {
@@ -19,6 +21,8 @@ interface AuthContextType {
   session: Session | null
   isLoading: boolean
   isAuthenticated: boolean
+  signIn: (email: string, password: string) => Promise<any>
+  signUp: (email: string, password: string) => Promise<any>
   signOut: () => Promise<void>
   refreshSession: () => Promise<void>
 }
@@ -29,6 +33,8 @@ const AuthContext = createContext<AuthContextType>({
   session: null,
   isLoading: true,
   isAuthenticated: false,
+  signIn: async () => ({}),
+  signUp: async () => ({}),
   signOut: async () => {},
   refreshSession: async () => {},
 })
@@ -55,6 +61,29 @@ export function SupabaseProvider({
   
   // 認証済みか判定するgetter
   const isAuthenticated = !!session && !!user;
+
+  // ログイン処理
+  const signIn = async (email: string, password: string) => {
+    try {
+      const data = await signInWithPassword(email, password);
+      await refreshSession();
+      return { data, error: null };
+    } catch (error) {
+      console.error('ログインエラー:', error);
+      return { data: null, error };
+    }
+  }
+
+  // サインアップ処理
+  const signUp = async (email: string, password: string) => {
+    try {
+      const data = await supabaseSignUp(email, password);
+      return { data, error: null };
+    } catch (error) {
+      console.error('サインアップエラー:', error);
+      return { data: null, error };
+    }
+  }
 
   // セッションを更新する関数
   const refreshSession = async () => {
@@ -141,6 +170,8 @@ export function SupabaseProvider({
     session,
     isLoading,
     isAuthenticated,
+    signIn,
+    signUp,
     signOut,
     refreshSession,
   }

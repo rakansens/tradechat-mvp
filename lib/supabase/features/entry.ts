@@ -434,7 +434,7 @@ export const subscribeToEntries = (
 ) => {
   const supabase = createClient();
   
-  let subscription = supabase
+  const subscription = supabase
     .channel('entries-changes')
     .on(
       'postgres_changes',

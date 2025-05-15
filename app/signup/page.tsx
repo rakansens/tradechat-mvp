@@ -3,6 +3,7 @@
 /**
  * サインアップページ
  * 作成日: 2025/6/15
+ * 更新日: 2025/6/25 - サインアップ処理のデバッグを強化
  */
 
 import { useState } from 'react';
@@ -24,6 +25,7 @@ export default function SignUpPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('サインアップフォームが送信されました', { email });
     
     // パスワード確認チェック
     if (password !== confirmPassword) {
@@ -48,7 +50,9 @@ export default function SignUpPage() {
     setIsSubmitting(true);
 
     try {
+      console.log('サインアップAPI呼び出し前', { email, passwordLength: password.length });
       const { data, error } = await signUp(email, password);
+      console.log('サインアップ結果', { data, error });
       
       if (error) {
         throw error;
@@ -63,6 +67,7 @@ export default function SignUpPage() {
       router.push('/signin');
       
     } catch (error: any) {
+      console.error('サインアップエラー詳細:', error);
       toast({
         title: 'アカウント作成エラー',
         description: error.message || '登録に失敗しました。入力内容を確認してください。',
@@ -127,6 +132,7 @@ export default function SignUpPage() {
             type="submit"
             className="w-full"
             disabled={isSubmitting}
+            onClick={() => console.log('アカウント作成ボタンがクリックされました')}
           >
             {isSubmitting ? '登録中...' : 'アカウント作成'}
           </Button>

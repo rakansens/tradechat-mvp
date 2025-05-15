@@ -6,6 +6,7 @@
  * 変更履歴:
  * - 2023-05-13: PositionHistory.tsxからロジックを抽出
  * - 2025-6-26: "all"と"canceled"タブを追加
+ * - 2025-6-29: カウント集計ロジックの修正
  */
 
 import { useState, useMemo } from "react"
@@ -34,16 +35,26 @@ export function useHistoryTabs(entries: Entry[]) {
 
   // タブごとのエントリー数をカウント（バッジ表示用）
   const counts = useMemo(() => {
+    // 初期値をすべて0にセット
     const result = {
-      all: entries.length,
+      all: 0,
       open: 0,
       closed: 0,
       canceled: 0
     };
     
+    // エントリーがない場合は早期リターン
+    if (!entries || entries.length === 0) {
+      return result;
+    }
+    
+    // 総数を設定
+    result.all = entries.length;
+    
     // 各ステータスのエントリー数をカウント
     entries.forEach(entry => {
-      if (entry.status in result) {
+      // エントリーのステータスが有効なタブタイプであることを確認
+      if (entry.status && (entry.status in result)) {
         result[entry.status as keyof typeof result]++;
       }
     });

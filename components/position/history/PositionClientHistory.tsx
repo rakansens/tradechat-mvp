@@ -13,7 +13,7 @@
  */
 
 import { useState, useEffect } from "react"
-import { useInfiniteQuery } from "@tanstack/react-query"
+import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query"
 import { Card } from "@/components/ui/card"
 import { theme } from "@/styles/colors"
 import type { Entry } from "@/types/entry"
@@ -90,10 +90,13 @@ export function PositionClientHistory({
       return fetchJSON<PositionsResponse>(`/api/positions?${params.toString()}`);
     },
     initialPageParam: 1,
-    initialData: {
-      pages: [{ data: initialEntries, pagination: initialPagination }],
-      pageParams: [1]
-    },
+    // タブがopenの場合のみ初期データを使用（他のタブではフェッチからスタート）
+    initialData: selectedTab === 'open' 
+      ? {
+          pages: [{ data: initialEntries, pagination: initialPagination }],
+          pageParams: [1]
+        }
+      : undefined,
     getNextPageParam: (lastPage) => {
       return lastPage.pagination.hasMore ? lastPage.pagination.page + 1 : undefined;
     },
@@ -114,9 +117,19 @@ export function PositionClientHistory({
   // タブの状態とフィルタリング
   const { filteredEntries, counts } = useHistoryTabs(allEntries);
   
+  // React Query クライアントへの参照を取得
+  const queryClient = useQueryClient();
+  
   // タブ選択変更時の処理
   const handleTabChange = (tab: HistoryTab) => {
-    setSelectedTab(tab);
+    // タブが変更されたら、現在のクエリを完全に無効化してリフェッチ
+    if (tab !== selectedTab) {
+      setSelectedTab(tab);
+      // 少し遅延させてタブ変更後にクエリを無効化
+      setTimeout(() => {
+        queryClient.resetQueries({ queryKey: ['positions', tab] });
+      }, 10);
+    }
   };
   
   // 価格シミュレーション

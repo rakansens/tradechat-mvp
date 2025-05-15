@@ -7,9 +7,10 @@
  * - TypeScriptのジェネリック型対応
  * - AbortController対応（モバイルスクロール中のリクエスト破棄用）
  * - React Queryの`queryFn`として直接使用可能
+ * - 204 No Content応答を適切に処理
  * 
  * 作成日: 2025/6/28
- * 更新日: 2025/6/28 - React Query最適化：fetchJSONへ名称変更
+ * 更新日: 2025/6/29 - 204 No Content応答の処理を追加
  */
 
 /**
@@ -41,6 +42,14 @@ export async function fetchJSON<T = unknown>(
       window.location.href = '/signin';
     }
     throw new Error('Unauthorized');
+  }
+
+  // 204 No Contentの場合は空のオブジェクトまたは配列を返す
+  if (res.status === 204) {
+    // 型に基づいて空の結果を返す
+    // Genericsで配列型かどうか判断できないため、
+    // 基本的に空のオブジェクトを返す
+    return {} as T;
   }
 
   const data = await res.json();
