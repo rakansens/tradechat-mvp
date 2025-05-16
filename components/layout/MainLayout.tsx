@@ -1,5 +1,6 @@
 // components/layout/MainLayout.tsx
 // 作成: メインレイアウトコンポーネント - モバイルとデスクトップ両方のレイアウトを管理
+// 更新: 2025/5/16 - 背景色の設定を修正
 
 "use client"
 
@@ -7,7 +8,7 @@ import React from "react"
 import { HeaderSection } from "@/components/layout/HeaderSection"
 import { ResizableLayout } from "@/components/layout/ResizableLayout"
 import { MobileLayout } from "@/components/layout/MobileLayout"
-import { theme } from "@/styles/colors"
+
 
 interface MainLayoutProps {
   // ヘッダー用データ
@@ -43,14 +44,14 @@ export function MainLayout({
   onTabChange
 }: MainLayoutProps) {
   return (
-    <main className="flex flex-col h-screen" style={{ backgroundColor: bg-background-primary }}>
+    <main className="flex flex-col h-screen bg-background">
       <HeaderSection 
         currentSymbol={currentSymbol}
         currentPrice={currentPrice}
         priceChangePercent={priceChangePercent}
       />
       
-      <div className="h-full" style={{ backgroundColor: bg-background-primary }}>
+      <div className="h-full bg-background">
         {/* モバイルレイアウト（md以下で表示） */}
         <MobileLayout
           chatSection={chatSection}

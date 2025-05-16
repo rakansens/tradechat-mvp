@@ -1,7 +1,7 @@
 // components/chat/ui/ProposalDetails.tsx
 // 作成: トレード提案の詳細とアクション
 // 移行: ChatWindow.tsxから分離、UI/UXを向上
-// 更新: 2025-06-28 - theme.accent参照をTailwindクラスに変更
+// 更新: 2025-06-28 - Tailwindクラスに変更
 
 import { useState } from "react"
 import { Check, ChevronDown, Loader2 } from "lucide-react"

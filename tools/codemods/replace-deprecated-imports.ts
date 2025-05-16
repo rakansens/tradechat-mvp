@@ -1,6 +1,7 @@
 /**
  * tools/codemods/replace-deprecated-imports.ts
  * 作成: T-7.4フェーズ - 非推奨インポートを自動置換するjscodemodeスクリプト
+ * 更新: T-7.5フェーズ - 型チェックを改善し、マッピングを拡張
  * 
  * このスクリプトは、jscodemodeを使用して非推奨のインポートパスを新しいパスに置換します。
  * 特にtypes/index.tsから循環参照を引き起こす可能性のあるインポートを修正します。
@@ -51,6 +52,7 @@ const PATH_TRANSFORM_MAP: Record<string, string> = {
   '@/types/common-interfaces': '@/types/common/interfaces',
   '@/types/common': '@/types/common/index',
   '@/utils/supabase': '@/lib/supabase',
+  '@/types/store': '@/types/store/index', // 循環参照解消のため
 };
 
 export default function transformer(file: FileInfo, api: API, options: Options) {
@@ -69,18 +71,22 @@ export default function transformer(file: FileInfo, api: API, options: Options) 
       const specifiers = path.node.specifiers || [];
       
       // 変換が必要な型を特定する
-      const toModify = specifiers.filter(spec => 
-        spec.type === 'ImportSpecifier' && 
-        spec.imported && 
-        TYPE_IMPORT_MAP[spec.imported.name]
-      );
+      const toModify = specifiers.filter(spec => {
+        return spec.type === 'ImportSpecifier' && 
+               spec.imported && 
+               'name' in spec.imported &&
+               typeof spec.imported.name === 'string' &&
+               spec.imported.name in TYPE_IMPORT_MAP;
+      });
       
       // 変換不要の型を特定する
-      const toKeep = specifiers.filter(spec => 
-        !(spec.type === 'ImportSpecifier' && 
-        spec.imported && 
-        TYPE_IMPORT_MAP[spec.imported.name])
-      );
+      const toKeep = specifiers.filter(spec => {
+        return !(spec.type === 'ImportSpecifier' && 
+                spec.imported && 
+                'name' in spec.imported &&
+                typeof spec.imported.name === 'string' &&
+                spec.imported.name in TYPE_IMPORT_MAP);
+      });
       
       if (toModify.length > 0) {
         hasModifications = true;
@@ -97,15 +103,21 @@ export default function transformer(file: FileInfo, api: API, options: Options) 
         const importByPath: Record<string, string[]> = {};
         
         toModify.forEach(spec => {
-          if (spec.type === 'ImportSpecifier' && spec.imported) {
+          if (spec.type === 'ImportSpecifier' && 
+              spec.imported && 
+              'name' in spec.imported && 
+              typeof spec.imported.name === 'string') {
+            
             const importName = spec.imported.name;
-            const newPath = TYPE_IMPORT_MAP[importName];
-            
-            if (!importByPath[newPath]) {
-              importByPath[newPath] = [];
+            if (importName in TYPE_IMPORT_MAP) {
+              const newPath = TYPE_IMPORT_MAP[importName];
+              
+              if (!importByPath[newPath]) {
+                importByPath[newPath] = [];
+              }
+              
+              importByPath[newPath].push(importName);
             }
-            
-            importByPath[newPath].push(importName);
           }
         });
         
@@ -123,6 +135,81 @@ export default function transformer(file: FileInfo, api: API, options: Options) 
       }
     });
     
+  // @/types/store からの特定インポートを修正（例：@/types/store → @/types/store/chart）
+  root
+    .find(j.ImportDeclaration)
+    .filter(path => {
+      const importPath = path.node.source.value as string;
+      return importPath === '@/types/store';
+    })
+    .forEach(path => {
+      const specifiers = path.node.specifiers || [];
+      
+      // 変換が必要な型を特定する
+      const toModify = specifiers.filter(spec => {
+        return spec.type === 'ImportSpecifier' && 
+               spec.imported && 
+               'name' in spec.imported &&
+               typeof spec.imported.name === 'string' &&
+               spec.imported.name in TYPE_IMPORT_MAP;
+      });
+      
+      // 変換不要の型を特定する
+      const toKeep = specifiers.filter(spec => {
+        return !(spec.type === 'ImportSpecifier' && 
+                spec.imported && 
+                'name' in spec.imported &&
+                typeof spec.imported.name === 'string' &&
+                spec.imported.name in TYPE_IMPORT_MAP);
+      });
+      
+      if (toModify.length > 0) {
+        hasModifications = true;
+        
+        // 元のインポート文から変換対象の型を除外
+        if (toKeep.length > 0) {
+          path.node.specifiers = toKeep;
+        } else {
+          // 全ての型が変換対象なら元のインポート文を削除
+          j(path).remove();
+        }
+        
+        // 新しいインポートパスでグループ化
+        const importByPath: Record<string, string[]> = {};
+        
+        toModify.forEach(spec => {
+          if (spec.type === 'ImportSpecifier' && 
+              spec.imported && 
+              'name' in spec.imported &&
+              typeof spec.imported.name === 'string') {
+            
+            const importName = spec.imported.name;
+            if (importName in TYPE_IMPORT_MAP) {
+              const newPath = TYPE_IMPORT_MAP[importName];
+              
+              if (!importByPath[newPath]) {
+                importByPath[newPath] = [];
+              }
+              
+              importByPath[newPath].push(importName);
+            }
+          }
+        });
+        
+        // 新しいインポート文を作成して追加
+        Object.entries(importByPath).forEach(([newPath, importNames]) => {
+          const newImport = j.importDeclaration(
+            importNames.map(name => 
+              j.importSpecifier(j.identifier(name))
+            ),
+            j.stringLiteral(newPath)
+          );
+          
+          path.insertAfter(newImport);
+        });
+      }
+    });
+
   // 非推奨のパスを修正（例：@/types/common-interfaces → @/types/common/interfaces）
   root
     .find(j.ImportDeclaration)

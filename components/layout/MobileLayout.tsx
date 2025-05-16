@@ -1,5 +1,6 @@
 // components/layout/MobileLayout.tsx
 // 作成: モバイル表示用のレイアウトコンポーネント
+// 更新: 2025/5/16 - 背景色の設定を修正
 
 "use client"
 
@@ -7,7 +8,7 @@ import React, { useRef } from "react"
 import { Card } from "@/components/ui/card"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { MobileResizeHandle } from "@/components/ui/MobileResizeHandle"
-import { theme } from "@/styles/colors"
+
 
 interface MobileLayoutProps {
   chatSection: React.ReactNode
@@ -46,7 +47,7 @@ export function MobileLayout({
       />
       
       <div className="h-1/2 min-h-[200px] overflow-hidden">
-        <Card className="h-full flex flex-col border-0 rounded-none shadow-none" style={{ backgroundColor: bg-background-card }}>
+        <Card className="h-full flex flex-col border-0 rounded-none shadow-none bg-card">
           {toolbarSection}
           <Tabs value={activeTab} onValueChange={onTabChange} className="flex-1 flex flex-col">
             <TabsContent value="chart" className="flex-1 m-0 p-0 data-[state=active]:flex flex-col">

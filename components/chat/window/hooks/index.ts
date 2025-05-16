@@ -1,7 +1,10 @@
 /**
  * components/chat/window/hooks/index.ts
  * 作成: ChatWindowフックのバレルエクスポート
+ * 更新: 2025-06-28 - useScrollManagerをuseAutoScrollに置き換え
  */
 
+import useAutoScroll from '@/hooks/ui/useAutoScroll';
+
 export { default as useChatWindowStores } from './useChatWindowStores';
-export { default as useScrollManager } from './useScrollManager'; 
+export { useAutoScroll }; 

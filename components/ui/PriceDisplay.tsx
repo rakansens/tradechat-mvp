@@ -1,6 +1,6 @@
 // components/ui/PriceDisplay.tsx
 // 更新: 価格表示用の共通コンポーネント - Zodバリデーションスキーマを適用
-// 更新: 2025-06-28 - theme.accent参照とインラインスタイルをTailwindクラスに変更
+// 更新: 2025-06-28 - インラインスタイルをTailwindクラスに変更
 
 "use client"
 

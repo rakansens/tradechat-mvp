@@ -9,7 +9,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { theme } from "@/styles/colors"
+
 import type { QuickCommand } from "@/hooks/chat"
 
 interface QuickCommandsProps {

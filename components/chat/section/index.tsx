@@ -20,7 +20,6 @@ import { FormEvent, useState, useEffect } from "react"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import ChatWindow from "@/components/chat/window"
-import { theme } from "@/styles/colors"
 import { useChatSectionStores, useQuickCommands } from "@/hooks/chat"
 import { Sidebar } from "@/components/chat/sidebar"
 import { MessageSquare, Plus } from "lucide-react"
@@ -158,7 +157,7 @@ export default function ChatSection({
 
   return (
     <div className="w-full h-full flex flex-col">
-      <Card className="flex-1 flex flex-col overflow-hidden border-0 rounded-none shadow-none" style={{ backgroundColor: bg-background-secondary }}>
+      <Card className="flex-1 flex flex-col overflow-hidden border-0 rounded-none shadow-none bg-background-secondary">
         {/* マルチスレッドチャットUI */}
         <div className="flex h-full">
           {/* モバイル用サイドバートリガー - モバイル時のみ表示 */}

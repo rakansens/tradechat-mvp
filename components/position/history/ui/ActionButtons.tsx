@@ -5,7 +5,7 @@
  * 
  * 変更履歴:
  * - 2023-05-13: PositionHistory.tsxから抽出
- * - 2025-06-28: theme.accent参照とインラインスタイルをTailwindクラスに変更
+ * - 2025-06-28: インラインスタイルをTailwindクラスに変更
  */
 
 "use client"

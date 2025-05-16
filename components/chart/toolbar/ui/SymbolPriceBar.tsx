@@ -5,7 +5,7 @@
 // 役割:
 // 1. 銘柄選択ボタンの表示
 // 2. 現在価格と変化率のバッジ表示
-// 更新: 2025-06-28 - theme.accent参照をTailwindクラスに置換
+// 更新: 2025-06-28 - Tailwindクラスに変更
 
 import React, { memo } from 'react';
 import { Button } from '@/components/ui/button';

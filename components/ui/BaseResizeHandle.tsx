@@ -6,7 +6,6 @@
 
 import React, { forwardRef } from "react"
 import { cn } from "@/lib/utils"
-import { theme } from "@/styles/colors"
 
 export interface BaseResizeHandleProps {
   className?: string
@@ -43,8 +42,8 @@ export const BaseResizeHandle = forwardRef<
       )}
       style={{ 
         backgroundColor: isActive 
-          ? `${bg-background-elevated}` 
-          : `${bg-background-tertiary}`,
+          ? 'var(--color-bg-elevated)' 
+          : 'var(--color-bg-tertiary)',
         // デフォルトの寸法
         ...(direction === "horizontal" 
           ? { width: '8px', height: '100%' } 

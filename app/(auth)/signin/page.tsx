@@ -50,7 +50,13 @@ export default function SignInPage() {
       console.log('ログイン結果:', { data, error });
       
       if (error) {
+        console.error('ログインエラー詳細 (error):', error);
         throw error;
+      }
+      
+      if (!data) {
+        console.error('ログインエラー: データがありません');
+        throw new Error('認証に失敗しました。データが返されませんでした。');
       }
       
       toast({
@@ -62,13 +68,14 @@ export default function SignInPage() {
       router.push('/');
       
     } catch (error: any) {
-      console.error('ログインエラー詳細:', error);
+      console.error('ログインエラー詳細 (catch):', error);
       toast({
         title: 'ログインエラー',
         description: error.message || '認証に失敗しました。メールアドレスとパスワードを確認してください。',
         variant: 'destructive',
       });
     } finally {
+      console.log('ログイン処理完了: loading状態をリセットします');
       setIsSubmitting(false);
     }
   };

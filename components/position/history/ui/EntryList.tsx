@@ -10,7 +10,7 @@
 "use client"
 
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { theme } from "@/styles/colors"
+
 import type { Entry } from "@/types/entry"
 import EntryCard from "./EntryCard"
 
@@ -42,10 +42,8 @@ export function EntryList({
   if (entries.length === 0) {
     return (
       <div
-        className="flex items-center justify-center p-6 text-sm"
+        className="flex items-center justify-center p-6 text-sm text-text-muted bg-background-card"
         style={{ 
-          color: text-text-muted,
-          backgroundColor: bg-background-card,
           minHeight: "200px"
         }}
       >
@@ -56,7 +54,7 @@ export function EntryList({
 
   return (
     <ScrollArea style={{ maxHeight }} className="pr-3">
-      <div className="p-3 space-y-2" style={{ backgroundColor: bg-background-card }}>
+      <div className="p-3 space-y-2 bg-background-card">
         {entries.map((entry) => (
           <EntryCard
             key={entry.id}

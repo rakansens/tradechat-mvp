@@ -8,7 +8,7 @@
 // 更新日: 2025/5/31 - 既存アプリのトーンマナーに合わせたスタイル調整
 // 更新日: 2025/6/1 - OpenAI API連携のembedding生成機能を追加
 // 更新日: 2025/6/27 - ConversationContextの統合、Embedding検索API連携
-// 更新日: 2025/6/28 - theme.accent参照とインラインスタイルをTailwindクラスに変更
+// 更新日: 2025/6/28 - インラインスタイルをTailwindクラスに変更
 
 import { useState, useEffect } from "react";
 import { Search, Trash2, RefreshCw, Brain, X } from "lucide-react";

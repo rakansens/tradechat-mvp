@@ -109,6 +109,7 @@ Would you like to enter a long position at the current price of $60,500?`,
 
         setPendingEntry({
           id: Date.now().toString(),
+          userId: 'currentUser',
           side: isBuy ? "buy" : "sell",
           symbol: "BTC/USD",
           price,
@@ -240,6 +241,7 @@ Would you like to enter a long position at the current price of $60,500? Target:
     // Set entry information
     setPendingEntry({
       id: Date.now().toString(),
+      userId: 'currentUser',
       side: "buy",
       symbol: "BTC/USD",
       price: 60500,
@@ -278,6 +280,7 @@ Would you like to enter a long position based on this positive news sentiment?`,
     // Set entry information
     setPendingEntry({
       id: Date.now().toString(),
+      userId: 'currentUser',
       side: "buy",
       symbol: "BTC/USD",
       price: 60500,
@@ -297,22 +300,29 @@ Would you like to enter a long position based on this positive news sentiment?`,
     // Use latest proposal details if available, otherwise use defaults
     const proposalDetails = latestProposal
       ? {
-          price: latestProposal.price || 60500,
           side: (latestProposal.proposalType === "buy" ? "buy" : "sell") as TradeSide,
+          price: latestProposal.price || 60500,
+          takeProfit: latestProposal.takeProfit,
+          stopLoss: latestProposal.stopLoss,
         }
       : {
-          price: 60500,
           side: "buy" as TradeSide,
+          price: 60500,
+          takeProfit: 62000,
+          stopLoss: 59000,
         }
 
     // Set entry information
     setPendingEntry({
       id: Date.now().toString(),
+      userId: 'currentUser',
       side: proposalDetails.side,
       symbol: "BTC/USD",
       price: proposalDetails.price,
       time: new Date().toISOString(),
       status: "open",
+      takeProfit: proposalDetails.takeProfit,
+      stopLoss: proposalDetails.stopLoss,
     })
 
     // Switch to the chart tab

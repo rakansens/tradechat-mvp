@@ -4,7 +4,7 @@
  * 
  * 変更履歴:
  * - 2023-06-10: ChatSection.tsxのリファクタリングに伴い作成
- * - 2025-06-28: theme.accent.blue参照をTailwindクラスに変更
+ * - 2025-06-28: Tailwindクラスに変更
  */
 
 "use client"

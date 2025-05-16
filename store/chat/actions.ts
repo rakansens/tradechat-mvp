@@ -67,6 +67,9 @@ const getChartData = () => {
   }
 }
 
+// バイプロダクション内で必ず使用されるデフォルト会話ID
+const DEFAULT_CONVERSATION_ID = 'default';
+
 // チャットスライスのアクション作成関数
 export const createChatActions = (
   set: (fn: (state: ChatSliceState) => void) => void,
@@ -545,17 +548,31 @@ export const createChatActions = (
   
   // 特殊なクエリハンドラー - 後方互換性のために残す
   handleEntryPointQuery: () => {
-    const { messages, activeConversationId = 'default' } = get()
-    const ohlcData = getChartData()
+    // アクティブな会話IDを取得（必ずstring型に）
+    const { activeConversationId } = get();
+    const conversationId = activeConversationId || DEFAULT_CONVERSATION_ID;
+    
+    // OHLCデータを取得
+    const { ohlcData } = getChartData() || { ohlcData: [] }
     
     // チャートデータが必要
     if (!ohlcData || ohlcData.length === 0) {
       set((state) => {
+        // 会話の状態を取得、不存在なら初期化
+        const conversation = state.byConversation[conversationId] || {
+          id: conversationId,
+          title: '新しい会話',
+          messages: [],
+          systemPrompt: null,
+          connectionStatus: 'DISCONNECTED',
+          connectionError: null
+        };
+        
         // 会話の状態を更新
-        state.byConversation[activeConversationId] = {
-          ...state.byConversation[activeConversationId],
+        state.byConversation[conversationId] = {
+          ...conversation,
           messages: [
-            ...state.byConversation[activeConversationId].messages,
+            ...conversation.messages,
             {
               id: Date.now().toString(),
               role: "assistant",
@@ -565,7 +582,7 @@ export const createChatActions = (
         }
         
         // 後方互換性のために残す
-        state.messages = state.byConversation[activeConversationId].messages
+        state.messages = state.byConversation[conversationId].messages;
       })
       return
     }
@@ -600,18 +617,28 @@ export const createChatActions = (
     
     // メッセージを更新
     set((state) => {
+      // 会話の状態を取得、不存在なら初期化
+      const conversation = state.byConversation[conversationId] || {
+        id: conversationId,
+        title: '新しい会話',
+        messages: [],
+        systemPrompt: null,
+        connectionStatus: 'DISCONNECTED',
+        connectionError: null
+      };
+      
       // 会話のメッセージを更新
-      state.byConversation[activeConversationId] = {
-        ...state.byConversation[activeConversationId],
-        messages: [...state.byConversation[activeConversationId].messages, userMessage, aiResponse],
+      state.byConversation[conversationId] = {
+        ...conversation,
+        messages: [...conversation.messages, userMessage, aiResponse],
         input: "",
         isSearching: false
       }
       
       // 後方互換性のために残す
-      state.messages = state.byConversation[activeConversationId].messages
-      state.input = ""
-      state.isSearching = false
+      state.messages = state.byConversation[conversationId].messages;
+      state.input = "";
+      state.isSearching = false;
     })
     
     // エントリー情報を設定

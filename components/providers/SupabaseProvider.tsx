@@ -66,11 +66,22 @@ export function SupabaseProvider({
   // ログイン処理
   const signIn = async (email: string, password: string) => {
     try {
+      // 環境変数チェック
+      if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+        console.error('環境変数エラー: Supabase設定が不足しています', {
+          url: process.env.NEXT_PUBLIC_SUPABASE_URL ? '設定済み' : '未設定',
+          key: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? '設定済み' : '未設定'
+        });
+        return { data: null, error: new Error('認証システムの設定エラー。管理者に連絡してください。') };
+      }
+
+      console.log('Supabase認証開始:', { email });
       const data = await signInWithPassword(email, password);
+      console.log('Supabase認証成功:', { session: !!data?.session });
       await refreshSession();
       return { data, error: null };
     } catch (error) {
-      console.error('ログインエラー:', error);
+      console.error('ログインエラー (SupabaseProvider):', error);
       return { data: null, error };
     }
   }

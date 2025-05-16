@@ -9,7 +9,7 @@ import { Card } from "@/components/ui/card"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { ResizeHandle } from "@/components/ui/ResizeHandle"
 import { useLayoutState } from "@/hooks/chart/layout"
-import { theme } from "@/styles/colors"
+
 
 interface ResizableLayoutProps {
   chatSection: React.ReactNode
@@ -62,7 +62,7 @@ export function ResizableLayout({
           minSize={minSizes[1]}
           className="overflow-hidden"
         >
-          <Card className="h-full flex flex-col border-0 rounded-none shadow-none" style={{ backgroundColor: bg-background-card }}>
+          <Card className="h-full flex flex-col border-0 rounded-none shadow-none bg-background-card">
             {toolbarSection}
             <Tabs value={activeTab} onValueChange={onTabChange} className="flex-1 flex flex-col">
               <TabsContent value="chart" className="flex-1 m-0 p-0 data-[state=active]:flex flex-col">

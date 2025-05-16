@@ -1,6 +1,7 @@
 /**
  * components/chat/window/__tests__/index.test.tsx
  * 作成: ChatWindowコンポーネントのテスト
+ * 更新: 2025-06-28 - useScrollManagerモックをuseAutoScrollに更新
  */
 
 import React from 'react';
@@ -15,7 +16,7 @@ jest.mock('../hooks/useChatWindowStores', () => () => ({
   streamingMessage: null
 }));
 
-jest.mock('../hooks/useScrollManager', () => () => ({
+jest.mock('@/hooks/ui/useAutoScroll', () => () => ({
   containerRef: { current: null },
   showScrollButton: true,
   handleScroll: jest.fn(),

@@ -1,6 +1,7 @@
 /**
  * types/constants/enums.ts
  * 作成: T-7.3フェーズ - 共通のEnum型と定数値を集約
+ * 更新: T-7.5フェーズ - 8時間足を追加
  * 
  * このファイルはアプリケーション全体で使用される列挙型と定数値を
  * Single Source of Truthとして一元管理します。
@@ -24,7 +25,7 @@ export const EXCHANGE_PRODUCT_TYPES = ['spot', 'futures'] as const;
 export type ExchangeProductType = typeof EXCHANGE_PRODUCT_TYPES[number];
 
 // チャートの時間枠
-export const TIMEFRAMES = ['1m', '3m', '5m', '15m', '30m', '1h', '2h', '4h', '6h', '12h', '1d', '3d', '1w', '1M'] as const;
+export const TIMEFRAMES = ['1m', '3m', '5m', '15m', '30m', '1h', '2h', '4h', '6h', '8h', '12h', '1d', '3d', '1w', '1M'] as const;
 export type Timeframe = typeof TIMEFRAMES[number];
 
 // チャートの種類

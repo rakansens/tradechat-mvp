@@ -15,7 +15,7 @@
 import { useState, useEffect } from "react"
 import { useInfiniteQuery, useQueryClient, HydrationBoundary } from "@tanstack/react-query"
 import { Card } from "@/components/ui/card"
-import { theme } from "@/styles/colors"
+
 import type { Entry } from "@/types/entry"
 import { useHistoryTabs, usePriceSimulator, usePositionActions } from "./hooks"
 import { fetchJSON } from "@/utils/fetcher"

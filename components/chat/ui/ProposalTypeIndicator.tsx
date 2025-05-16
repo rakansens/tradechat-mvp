@@ -1,7 +1,7 @@
 // components/chat/ui/ProposalTypeIndicator.tsx
 // 作成: トレード提案種類を表示するインジケーター
 // 移行: ChatWindow.tsxから分離
-// 更新: 2025-06-28 - theme.accent参照をTailwindクラスに変更
+// 更新: 2025-06-28 - Tailwindクラスに変更
 
 import { ArrowUp, ArrowDown } from "lucide-react"
 import { Badge } from "@/components/ui/badge"

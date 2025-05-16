@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { SaveIcon, RotateCw } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
-import { theme } from "@/styles/colors";
+import { cn } from "@/lib/utils";
 
 interface SystemPromptEditorProps {
   conversationId: string;
@@ -101,10 +101,9 @@ export default function SystemPromptEditor({
   if (isModal) {
     return (
       <Card 
-        className="w-full max-w-md border rounded-md shadow-md"
-        style={{ backgroundColor: bg-background-secondary }}
+        className="w-full max-w-md border rounded-md shadow-md bg-background-secondary"
       >
-        <CardHeader className="p-4 border-b" style={{ borderColor: border-border-light }}>
+        <CardHeader className="p-4 border-b border-border-light">
           <CardTitle className="text-lg font-medium">システムプロンプトの編集</CardTitle>
         </CardHeader>
         <CardContent className="p-4">
@@ -113,15 +112,14 @@ export default function SystemPromptEditor({
               placeholder="AIアシスタントの動作を制御するシステムプロンプトを入力..."
               value={prompt}
               onChange={handlePromptChange}
-              className="min-h-[150px] resize-y bg-slate-800 border-slate-700"
-              style={{ backgroundColor: bg-background-tertiary }}
+              className="min-h-[150px] resize-y bg-slate-800 border-slate-700 bg-background-tertiary"
             />
             <p className="text-xs text-muted-foreground">
               会話の性質や制約を決定する指示をAIに与えます。変更内容は会話全体に適用されます。
             </p>
           </div>
         </CardContent>
-        <CardFooter className="p-4 border-t flex justify-end space-x-2" style={{ borderColor: border-border-light }}>
+        <CardFooter className="p-4 border-t flex justify-end space-x-2 border-border-light">
           <Button 
             variant="outline" 
             onClick={handleCancel}
@@ -163,8 +161,7 @@ export default function SystemPromptEditor({
         placeholder="AIアシスタントの動作を制御するシステムプロンプトを入力..."
         value={prompt}
         onChange={handlePromptChange}
-        className="min-h-[100px] resize-y bg-slate-800 border-slate-700"
-        style={{ backgroundColor: bg-background-tertiary }}
+        className="min-h-[100px] resize-y bg-slate-800 border-slate-700 bg-background-tertiary"
       />
       
       <p className="text-xs text-muted-foreground">
