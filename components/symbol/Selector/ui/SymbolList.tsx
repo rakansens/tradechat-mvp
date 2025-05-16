@@ -4,6 +4,7 @@
  * 
  * 変更履歴:
  * - 2023-06-05: SymbolSelector.tsxのリファクタリングに伴い作成
+ * - 2025-05-17: T-7.6フェーズ - 型インポートパスと属性名を修正
  */
 
 "use client";
@@ -14,7 +15,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Star, StarOff } from 'lucide-react';
 import { validateSymbolInfo } from '@/lib/validations/symbol';
-import type { SymbolInfo } from '@/store/useSymbolStore';
+import type { SymbolInfo } from '@/services/symbol';
 
 interface SymbolListProps {
   symbols: SymbolInfo[];
@@ -96,8 +97,8 @@ export const SymbolList = ({
                   >
                   <div className="flex flex-col items-start">
                     <div className="flex items-center">
-                      <span className="font-medium">{symbol.baseAsset}</span>
-                      <span className="text-muted-foreground text-xs ml-1">/{symbol.quoteAsset}</span>
+                      <span className="font-medium">{symbol.baseCoin}</span>
+                      <span className="text-muted-foreground text-xs ml-1">/{symbol.quoteCoin}</span>
                     </div>
                     <span className="text-xs text-muted-foreground">{symbol.symbol}</span>
                   </div>
@@ -108,7 +109,7 @@ export const SymbolList = ({
                       onToggleFavorite(symbol.symbol);
                     }}
                   >
-                    {symbol.isFavorite ? (
+                    {symbol.favorite ? (
                       <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
                     ) : (
                       <StarOff className="h-3.5 w-3.5" />

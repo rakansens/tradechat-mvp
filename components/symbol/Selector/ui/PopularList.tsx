@@ -4,6 +4,7 @@
  * 
  * 変更履歴:
  * - 2023-06-05: SymbolSelector.tsxのリファクタリングに伴い作成
+ * - 2025-05-17: T-7.6フェーズ - 型インポートパスとプロパティ名を修正
  */
 
 "use client";
@@ -11,7 +12,7 @@
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Star, StarOff } from 'lucide-react';
-import type { SymbolInfo } from '@/store/useSymbolStore';
+import type { SymbolInfo } from '@/services/symbol';
 
 interface PopularListProps {
   symbols: SymbolInfo[];
@@ -50,8 +51,8 @@ export const PopularList = ({
           >
             <div className="flex flex-col items-start">
               <div className="flex items-center">
-                <span className="font-medium">{symbol.baseAsset}</span>
-                <span className="text-muted-foreground text-xs ml-1">/{symbol.quoteAsset}</span>
+                <span className="font-medium">{symbol.baseCoin}</span>
+                <span className="text-muted-foreground text-xs ml-1">/{symbol.quoteCoin}</span>
               </div>
               <span className="text-xs text-muted-foreground">{symbol.symbol}</span>
             </div>
@@ -62,7 +63,7 @@ export const PopularList = ({
                 onToggleFavorite(symbol.symbol);
               }}
             >
-              {symbol.isFavorite ? (
+              {symbol.favorite ? (
                 <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
               ) : (
                 <StarOff className="h-3.5 w-3.5" />

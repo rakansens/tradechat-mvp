@@ -3,10 +3,11 @@
 // 更新: 型定義の問題を修正
 // 更新: プロパティ名の衝突回避による変更を反映
 
-import { ExchangeType } from '@/types/api';
-import { symbolService, type FilterOptions, type SymbolInfo } from '@/services/symbol/symbol-service';
-import { SymbolSliceState } from './state';
 import { logger } from '@/utils/common';
+import type { StoreApi } from 'zustand';
+import type { ExchangeType } from '@/types/network/api';
+import { symbolService, type FilterOptions, type SymbolInfo } from '@/services/symbol';
+import type { SymbolSliceState } from './state';
 
 /**
  * シンボルスライスのアクション型定義

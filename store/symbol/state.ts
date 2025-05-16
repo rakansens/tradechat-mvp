@@ -2,8 +2,8 @@
 // 作成: SymbolSliceの状態定義
 // 更新: プロパティ名の衝突を避けるための修正
 
-import { ExchangeType } from '@/types/api';
-import { symbolService, type SymbolInfo, type FilterOptions, type SymbolChangeHistory } from '@/services/symbol/symbol-service';
+import { ExchangeType } from '@/types/network/api';
+import { symbolService, type SymbolInfo, type FilterOptions, type SymbolChangeHistory } from '@/services/symbol';
 
 /**
  * シンボルスライスの状態型定義

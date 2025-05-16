@@ -3,11 +3,14 @@
 // 更新: 型エラーを修正
 // 更新: セレクター名の衝突を解決
 // 更新: プロパティ名変更に合わせた修正
+// 更新: シンボルスライスのセレクタ関数を定義する
+// 更新: T-7.6フェーズ - 型インポートパスの修正
 
 import { createSelector } from 'reselect';
 import type { RootStore } from '../rootStore';
-import { type SymbolInfo, type FilterOptions, type SymbolChangeHistory } from '@/services/symbol/symbol-service';
-import { ExchangeType } from '@/types/api';
+import { logger } from '@/utils/common';
+import { type SymbolInfo, type FilterOptions, type SymbolChangeHistory } from '@/services/symbol';
+import { ExchangeType } from '@/types/network/api';
 
 /**
  * 現在のシンボルを選択するセレクター
@@ -113,5 +116,28 @@ export const selectQuoteAssets = createSelector(
     // 重複を排除して基軸通貨の一覧を取得
     const quoteAssets = new Set(symbols.map(s => s.quoteAsset));
     return Array.from(quoteAssets).sort();
+  }
+);
+
+// シンボルが特定の条件でフィルタリングされていないかのセレクタ
+export const selectRawSymbols = (state: RootStore) => {
+  return state.symbols.filter(s => !s.favorite); // お気に入りではないシンボルを取得
+};
+
+// 特定の基軸通貨に基づいてフィルタリングされたシンボルのセレクタ
+export const selectSymbolsByQuoteAsset = createSelector(
+  [(state: RootStore) => state.symbols, (state: RootStore) => state.filterOptions.quoteAsset],
+  (symbols, quoteAsset) => {
+    if (!quoteAsset) return symbols;
+    return symbols.filter(symbol => symbol.quoteCoin === quoteAsset);
+  }
+);
+
+// 利用可能な基軸通貨のリストのセレクタ
+export const selectQuoteAssets = createSelector(
+  [(state: RootStore) => state.symbols],
+  (symbols) => {
+    const uniqueQuoteAssets = new Set(symbols.map(s => s.quoteCoin));
+    return Array.from(uniqueQuoteAssets).sort();
   }
 ); 

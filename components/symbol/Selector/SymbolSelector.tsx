@@ -14,25 +14,31 @@
 "use client";
 
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import { useRootStore } from '@/store/rootStore';
+import { useRootStore } from '@/store';
 import { 
   selectCurrentSymbol, 
-  selectSymbolList, 
-  selectFilteredSymbols, 
+  selectExchangeType,
+  selectFilteredSymbols,
+  selectIsLoadingSymbols,
+  selectSymbolsError,
+  selectCommonQuoteAssets,
+  selectFilterOptions,
   selectIsLoadingSymbols
 } from '@/store/barrel';
-import { SymbolInfo } from '@/services/symbol/symbol-service';
+import { SymbolInfo } from '@/services/symbol';
 import { logger } from '@/utils/common';
 
-import ExchangeTabs from './ui/ExchangeTabs';
-import SearchBar from './ui/SearchBar';
-import FilterBar from './ui/FilterBar';
-import PopularList from './ui/PopularList';
-import SymbolList from './ui/SymbolList';
-import { ExchangeType } from '@/types/api';
-import { FilterOptions } from '@/types/symbol';
+import { ExchangeTabs } from './ui/ExchangeTabs';
+import { SearchBar } from './ui/SearchBar';
+import { SymbolList } from './ui/SymbolList';
+import { FilterBar } from './ui/FilterBar';
+import { PopularList } from './ui/PopularList';
+import { StarIcon, StarFilledIcon } from '@/components/ui/icons';
+import { ExchangeType } from '@/types/network/api';
+import { useFilterState } from '@/hooks/symbol/filter';
 import { validateSymbolSelectorProps } from '@/lib/validations/symbol';
 import type { SymbolSelectorPropsSchema } from '@/lib/validations/symbol';
+import { symbolService } from '@/services/symbol';
 
 interface SymbolSelectorProps {
   onSelect?: (symbol: string) => void;
@@ -94,8 +100,8 @@ export const SymbolSelector: React.FC<SymbolSelectorProps> = ({
             {currentSymbol === '' && <option value="">シンボルを選択</option>}
             {symbols.map((symbol: SymbolInfo) => (
               <option key={symbol.symbol} value={symbol.symbol}>
-                {symbol.symbol} ({symbol.baseAsset}/{symbol.quoteAsset})
-                {symbol.isFavorite ? ' ★' : ''}
+                {symbol.symbol} ({symbol.baseCoin}/{symbol.quoteCoin})
+                {symbol.favorite ? ' ★' : ''}
               </option>
             ))}
           </>
@@ -212,7 +218,7 @@ const usePopularSymbols = (options: {
   // 人気銘柄の基準：お気に入りかつ取引量が多い、または最近追加された上位銘柄
   const popularSymbols = useMemo(() => {
     // お気に入りの銘柄を優先的に取得
-    const favorites = symbols.filter(s => s.isFavorite);
+    const favorites = symbols.filter(s => s.favorite);
     
     // もし現在のフィルターがお気に入りのみの場合は、空の配列を返す
     // (PopularListとSymbolListが重複してしまうため)
@@ -224,9 +230,9 @@ const usePopularSymbols = (options: {
     if (favorites.length <= 3) {
       const mainSymbols = ['BTC', 'ETH', 'BNB', 'SOL', 'XRP'];
       const popularByName = symbols.filter(s => 
-        !s.isFavorite && mainSymbols.some(name => 
-          s.baseAsset === name && (
-            !filterOptions.quoteAsset || s.quoteAsset === filterOptions.quoteAsset
+        !s.favorite && mainSymbols.some(name => 
+          s.baseCoin === name && (
+            !filterOptions.quoteAsset || s.quoteCoin === filterOptions.quoteAsset
           )
         )
       );
@@ -305,7 +311,51 @@ export default function AdvancedSymbolSelector({
       onSelect(symbol);
     }
   }, [onSelect]);
+
+  // 現在選択されているシンボルを探す
+  const selectedSymbol = useMemo(() => {
+    return filteredSymbols.find(s => s.symbol === currentSymbol);
+  }, [filteredSymbols, currentSymbol]);
   
+  // 分割シンボル表示（シンボル文字列からベースとクォートを抽出）
+  const splitSymbol = useMemo(() => {
+    // 選択されたシンボルオブジェクトが見つかった場合
+    if (selectedSymbol) {
+      return {
+        base: selectedSymbol.baseCoin,
+        quote: selectedSymbol.quoteCoin
+      };
+    }
+    
+    // なければ文字列を分割して推測
+    const parts = currentSymbol.split('/');
+    if (parts.length === 2) {
+      return { base: parts[0], quote: parts[1] };
+    }
+    
+    // BTCUSDT形式の場合は推測して分割
+    // 一般的な取引通貨
+    const quoteCurrencies = ['USDT', 'USD', 'BTC', 'ETH', 'BNB'];
+    for (const quote of quoteCurrencies) {
+      if (currentSymbol.endsWith(quote)) {
+        return {
+          base: currentSymbol.slice(0, currentSymbol.length - quote.length),
+          quote
+        };
+      }
+    }
+    
+    // 分割できない場合
+    return { base: currentSymbol, quote: "" };
+  }, [selectedSymbol, currentSymbol]);
+  
+  // お気に入りトグルハンドラー
+  const handleToggleFavorite = useCallback(() => {
+    if (selectedSymbol) {
+      toggleFavorite(selectedSymbol.symbol);
+    }
+  }, [selectedSymbol, toggleFavorite]);
+
   return (
     <div className="w-full space-y-4">
       {/* 取引タイプの選択 */}
@@ -349,6 +399,27 @@ export default function AdvancedSymbolSelector({
         onToggleFavorite={toggleFavorite}
         onRetry={retryFetch}
       />
+
+      {/* 現在選択中の銘柄表示 */}
+      {selectedSymbol && (
+        <div className="flex items-center">
+          <button
+            className="mr-2 text-text-secondary hover:text-accent"
+            onClick={handleToggleFavorite}
+            aria-label="お気に入りに追加/削除"
+          >
+            {selectedSymbol.favorite ? (
+              <StarFilledIcon className="w-4 h-4 text-yellow-400" />
+            ) : (
+              <StarIcon className="w-4 h-4" />
+            )}
+          </button>
+          <div className="text-base font-medium">
+            <span className="text-text-primary">{splitSymbol.base}</span>
+            <span className="text-text-secondary">/{splitSymbol.quote}</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 } 

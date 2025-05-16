@@ -4,13 +4,14 @@
  * 
  * 変更履歴:
  * - 2023-06-05: SymbolSelector.tsxのリファクタリングに伴い作成
+ * - 2025-05-17: T-7.6フェーズ - 型インポートパスを修正
  */
 
 "use client";
 
 import { Button } from '@/components/ui/button';
 import { Star, StarOff } from 'lucide-react';
-import type { FilterOptions } from '@/store/useSymbolStore';
+import type { FilterOptions } from '@/services/symbol';
 
 interface FilterBarProps {
   filterOptions: FilterOptions;
