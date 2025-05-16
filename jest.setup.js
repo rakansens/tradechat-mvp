@@ -1,5 +1,6 @@
 // jest.setup.js
 // 更新: テスト前の共通セットアップ - @testing-library/jest-domの型定義を追加
+// 更新: 2025-06-26 - IntersectionObserverのモックをインポート
 
 // エラーのスタックトレースを詳細に表示
 Error.stackTraceLimit = Infinity;
@@ -34,6 +35,16 @@ class MockCanvas {
 // グローバルオブジェクトの設定
 global.fetch = jest.fn();
 global.HTMLCanvasElement = MockCanvas;
+
+// IntersectionObserverのモックをインポート
+// テスト内で個別にセットアップする代わりに、テスト環境全体でモックを有効化
+try {
+  const { setupIntersectionObserverMock } = require('./utils/dom/mockIntersectionObserver');
+  // グローバルなIntersectionObserverモックを設定
+  setupIntersectionObserverMock();
+} catch (e) {
+  console.warn('IntersectionObserverモックの読み込みに失敗しました。', e);
+}
 
 // documentのモック
 global.document = global.document || {

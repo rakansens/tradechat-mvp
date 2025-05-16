@@ -7,6 +7,7 @@
 // 更新日: 2025/5/31 - TabsContentエラーを修正し、正しいコンポーネント階層にする
 // 更新日: 2025/5/31 - 既存アプリのトーンマナーに合わせたスタイル調整
 // 更新日: 2025/6/1 - OpenAI API連携のembedding生成機能を追加
+// 更新日: 2025/6/27 - ConversationContextの統合、Embedding検索API連携
 
 import { useState, useEffect } from "react";
 import { Search, Trash2, RefreshCw, Brain, X } from "lucide-react";
@@ -19,6 +20,8 @@ import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/use-toast";
 import { theme } from "@/styles/colors";
+import { useConversation } from "@/contexts/ConversationContext";
+import type { Memory } from "@/types/memory";
 import { 
   AlertDialog, 
   AlertDialogAction, 
@@ -29,16 +32,6 @@ import {
   AlertDialogHeader, 
   AlertDialogTitle 
 } from "@/components/ui/alert-dialog";
-
-// メモリの型定義
-interface Memory {
-  id: string;
-  content: string;
-  metadata: Record<string, any>;
-  created_at: string;
-  external_id: string | null;
-  is_synced: boolean;
-}
 
 interface MemoryPanelProps {
   isOpen: boolean;
@@ -64,6 +57,9 @@ export function MemoryPanel({
   const [activeTab, setActiveTab] = useState<string>("all");
   const [deleteMemoryId, setDeleteMemoryId] = useState<string | null>(null);
   const { toast } = useToast();
+  
+  // ConversationContextから会話IDを取得
+  const { conversationId } = useConversation();
 
   // メモリデータを取得
   const fetchMemories = async () => {
@@ -128,15 +124,32 @@ export function MemoryPanel({
   const searchMemoriesBySimilarity = async (query: string) => {
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/memories/similarity?q=${encodeURIComponent(query)}`);
+      // ConversationContextから会話IDを取得して検索APIに渡す
+      const apiUrl = `/api/v1/memory?q=${encodeURIComponent(query)}`;
+      const apiUrlWithConversationId = conversationId 
+        ? `${apiUrl}&conversationId=${conversationId}` 
+        : apiUrl;
+      
+      const response = await fetch(apiUrlWithConversationId);
       
       if (!response.ok) {
         throw new Error("メモリの類似度検索に失敗しました");
       }
       
       const data = await response.json();
-      setMemories(data);
-      applyFilters(data, searchTerm, activeTab);
+      
+      // スコアでソート（スコアが高い順）
+      const sortedData = [...data].sort((a, b) => {
+        // スコアがある場合は降順（高い順）
+        if (a.score !== undefined && b.score !== undefined) {
+          return b.score - a.score;
+        }
+        // スコアがない場合は作成日時の降順
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      });
+      
+      setMemories(sortedData);
+      applyFilters(sortedData, searchTerm, activeTab);
     } catch (error) {
       console.error("メモリ類似度検索エラー:", error);
       // 失敗時は通常検索にフォールバック

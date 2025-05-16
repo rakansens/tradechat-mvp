@@ -1,9 +1,13 @@
 /**
  * hooks/ui/useLongPress.ts
  * 作成: 2025-06-26 - モバイルデバイス向けlong-press検出フック
+ * 更新: 2025-06-27 - デフォルトdelayを定数化
  */
 
 import { useCallback, useRef } from 'react';
+
+// デフォルト設定値
+const DEFAULT_DELAY = 500; // ミリ秒
 
 interface LongPressOptions {
   delay?: number;
@@ -49,7 +53,7 @@ export function useLongPress(
   options: LongPressOptions = {}
 ): LongPressResult {
   const { 
-    delay = 500,
+    delay = DEFAULT_DELAY,
     preventContextMenu = true,
     preventDefault = true 
   } = options;

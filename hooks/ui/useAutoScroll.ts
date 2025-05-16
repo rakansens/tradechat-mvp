@@ -4,6 +4,7 @@
  * 移動: components/chat/window/hooks/useScrollManagerから移動
  * 更新: 2025-06-25 - 汎用コンポーネントとして移動
  * 更新: 2025-06-26 - IntersectionObserverを使った実装に変更
+ * 更新: 2025-06-27 - リンターエラー修正
  */
 
 import { useState, useRef, useCallback, useEffect } from "react";
@@ -85,7 +86,7 @@ export default function useAutoScroll(): ScrollManagerReturn {
     
     return () => {
       observerRef.current?.disconnect();
-      if (chatEndRef.current && chatEndRef.current.parentNode === containerRef.current) {
+      if (chatEndRef.current && containerRef.current && chatEndRef.current.parentNode === containerRef.current) {
         containerRef.current.removeChild(chatEndRef.current);
       }
     };
