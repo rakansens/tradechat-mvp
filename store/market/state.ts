@@ -3,7 +3,9 @@
 // 更新: 2025-06-01 - OrderBookStoreの状態を統合
 
 import type { ExchangeType } from '@/types/constants/enums'
-import type { OrderBookData, TradeData, MarketStatsData, SymbolInfo } from '@/types/market'
+import type { OrderBookData } from '@/types/common/orderbook'
+import type { SymbolInfo } from '@/types/common/symbol'
+import type { TradeData, MarketStatsData } from '@/types/market'
 
 // ポーリング情報の型定義
 export interface PollingInfo {
@@ -68,7 +70,7 @@ export interface MarketSliceState {
 export const initialMarketState: MarketSliceState = {
   // シンボル関連
   currentSymbol: 'BTC-USDT',
-  exchangeType: 'spot',
+  exchangeType: 'bitget',
   
   // オーダーブック関連
   orderBook: null,

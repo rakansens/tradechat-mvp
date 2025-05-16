@@ -22,7 +22,13 @@ export const initialRealTimeState: RealTimeSliceState = {
   chartApi: null,
   
   // 接続状態
-  connected: false
+  connected: false,
+  
+  // Bitget API クライアント
+  bitgetApi: null,
+  
+  // 最後に購読したキー
+  lastSubscriptionKey: null
 }; 
 
 // リアルタイムスライスの状態型を再エクスポート（型参照問題解消のため）

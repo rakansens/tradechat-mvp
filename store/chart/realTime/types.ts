@@ -22,6 +22,12 @@ export interface RealTimeSliceState {
   
   // WebSocketの接続状態
   connected: boolean;
+  
+  // Bitget API クライアント
+  bitgetApi: any | null;
+  
+  // 最後に購読したキー
+  lastSubscriptionKey: string | null;
 }
 
 /**

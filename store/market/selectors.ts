@@ -7,7 +7,9 @@
 // 基本セレクターは単純なステート取得のみを行い、計算が必要なセレクターはメモ化されています。
 
 import { createSelector } from 'reselect';
-import type { OrderBookData, OrderBookEntry, TradeData, MarketStatsData, SymbolInfo } from '@/types/market';
+import type { OrderBookData, OrderBookEntry } from '@/types/common/orderbook';
+import type { SymbolInfo } from '@/types/common/symbol';
+import type { TradeData, MarketStatsData } from '@/types/market';
 import type { ExchangeType } from '@/types/constants/enums';
 import type { OrderBookPollingInfo } from './state';
 

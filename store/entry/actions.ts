@@ -1,12 +1,17 @@
 // store/entry/actions.ts
 // エントリースライスのアクション
 // 更新: 2025/6/1 - APIエンドポイントとの連携機能を追加
+// 更新: 2025/5/16 - EntrySliceActions の型定義を整理
 
 import type { Entry, OpenEntry } from "@/types/entry"
 import type { EntrySliceState } from "./state"
+import { createClient } from "@/lib/supabase/client"
 
-// エントリースライスのアクション定義
-export interface EntrySliceActions {
+// Supabase クライアントの初期化
+const supabase = createClient()
+
+// エントリースライスのアクション型
+export type EntrySliceActions = {
   // 保留中のエントリーを設定するアクション
   setPendingEntry: (entry: OpenEntry | null) => void
   
@@ -36,9 +41,12 @@ export interface EntrySliceActions {
 }
 
 // エントリースライスのアクション作成関数
+type SetState = (fn: (state: EntrySliceState) => void) => void
+type GetState = () => EntrySliceState
+
 export const createEntryActions = (
-  set: (fn: (state: EntrySliceState) => void) => void,
-  get: () => EntrySliceState
+  set: SetState,
+  get: GetState
 ): EntrySliceActions => ({
   
   // 保留中のエントリーを設定するアクション
@@ -56,16 +64,59 @@ export const createEntryActions = (
     })
     
     try {
-      const response = await fetch('/api/entries')
-      
-      if (!response.ok) {
-        throw new Error(`エントリーの取得に失敗しました: ${response.statusText}`)
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        throw new Error('認証されていません')
       }
       
-      const entries = await response.json()
+      const { data: entries, error } = await supabase
+        .from('entries')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .order('created_at', { ascending: false })
+      
+      if (error) {
+        throw error
+      }
+      
+      // Supabaseのデータをフロントエンドの型に変換
+      const formattedEntries = (entries || []).map(entry => {
+        const baseEntry = {
+          id: entry.id,
+          userId: entry.user_id,
+          side: entry.side as 'buy' | 'sell',
+          symbol: entry.symbol,
+          price: entry.price,
+          time: entry.time,
+          takeProfit: entry.take_profit || undefined,
+          stopLoss: entry.stop_loss || undefined,
+          isPublic: entry.is_public || false,
+          status: entry.status as 'open' | 'closed' | 'canceled'
+        };
+
+        if (entry.status === 'closed' && entry.exit_price && entry.exit_time) {
+          return {
+            ...baseEntry,
+            status: 'closed' as const,
+            exitPrice: entry.exit_price,
+            exitTime: entry.exit_time,
+            profit: entry.profit || 0
+          };
+        } else if (entry.status === 'canceled') {
+          return {
+            ...baseEntry,
+            status: 'canceled' as const
+          };
+        } else {
+          return {
+            ...baseEntry,
+            status: 'open' as const
+          };
+        }
+      })
       
       set((state) => {
-        state.entries = entries
+        state.entries = formattedEntries
         state.isLoading = false
       })
     } catch (error) {

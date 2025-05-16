@@ -11,8 +11,8 @@ import { subscribeToEntries } from '@/lib/supabase/features/entry'
 import { Tables } from '@/types/network/supabase'
 import { Entry as FrontendEntry, OpenEntry, ClosedEntry, CanceledEntry } from '@/types/entry'
 
-// アクションの型定義を追加
-export type EntrySliceActions = ReturnType<typeof createEntryActions>;
+// アクションの型をインポート
+import type { EntrySliceActions } from './actions';
 
 // SupabaseのEntry型
 type SupabaseEntry = Tables<'entries'>;
@@ -126,33 +126,31 @@ const subscribeMiddleware = (config: any) => (set: any, get: any, api: any) => {
 };
 
 // エントリーストア作成
-export const useEntryStore = create<
-  EntrySliceState & EntrySliceActions
->()(
+export const useEntryStore = create<EntrySlice>()(
   subscribeMiddleware(
     immer((set, get, api) => ({
       ...initialEntryState,
-      ...createEntryActions(set, get),
+      ...createEntryActions(set as SetState, get as GetState),
     }))
   )
 );
 
 // エントリースライスの完全な型
-export type EntrySlice = EntrySliceState & EntrySliceActions
+type EntrySlice = EntrySliceState & EntrySliceActions
 
 // エントリースライスの作成関数
-export const createEntrySlice = (
-  set: (fn: (state: EntrySliceState) => void) => void,
-  get: () => EntrySliceState
-): EntrySlice => {
-  // アクションを作成
-  const actions = createEntryActions(set, get)
+type SetState = (fn: (state: EntrySliceState) => void) => void
+type GetState = () => EntrySliceState
 
-  // 状態とアクションを組み合わせたスライスを返す
+export const createEntrySlice = (
+  set: SetState,
+  get: GetState
+): EntrySlice => {
+  const actions = createEntryActions(set, get);
   return {
     ...initialEntryState,
     ...actions
-  }
+  };
 }
 
 // メモ化されたセレクターのエクスポート

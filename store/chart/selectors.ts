@@ -3,7 +3,8 @@
 
 import { createMemoSelector } from "@/store/core/selectors"
 import type { RootStore } from "@/store/rootStore"
-import type { ChartType, OHLCData, Timeframe } from "@/types/chart"
+import type { OHLCData } from "@/types/chart"
+import type { ChartType, Timeframe } from "@/types/constants/enums"
 
 // チャートスライスの各状態セレクター
 export const selectTimeframe = createMemoSelector<RootStore, Timeframe>(

@@ -162,10 +162,8 @@ export const createChartDataActions = (
       const exchangeType = getExchangeTypeFromLocalStorage();
       if (
         errorMessage.includes('先物取引でサポートされていません') ||
-        (
-          exchangeType === 'futures' &&
-          (errorMessage.includes('status code 400') || errorMessage.includes('Bad Request'))
-        )
+        errorMessage.includes('status code 400') ||
+        errorMessage.includes('Bad Request')
       ) {
         errorMessage = `この銘柄は先物取引で利用できません。現物取引をお試しください。`
       }

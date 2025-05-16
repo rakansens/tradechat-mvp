@@ -6,7 +6,8 @@ import { createTool } from "@mastra/core/tools";
 import { z } from "zod";
 import { logger } from "../../../utils/common";
 import fetch, { Response } from "node-fetch";
-import { ExchangeType } from "../../../types/api";
+// 取引タイプを表す型（現物/先物）
+type TradeType = 'spot' | 'futures';
 
 // APIレスポンスの型定義
 interface ApiResponse {
@@ -38,11 +39,17 @@ export const changeInstrumentTypeTool = createTool({
     fromType: z.enum(["spot", "futures"]).optional().describe("変更前の取引タイプ"),
     error: z.string().optional().describe("エラーメッセージ（失敗時のみ）")
   }),
-  execute: async ({ context }) => {
+  execute: async ({ context }): Promise<{
+    message: string;
+    type: 'spot' | 'futures';
+    success: boolean;
+    fromType?: 'spot' | 'futures';
+    error?: string;
+  }> => {
     try {
       const { type, symbol } = context;
       // 元の取引タイプを明示的に指定（現在のタイプの反対）
-      const fromType: ExchangeType = type === 'spot' ? 'futures' : 'spot';
+      const fromType: TradeType = type === 'spot' ? 'futures' : 'spot';
       
       logger.info(`取引タイプ変更ツールが実行されました: ${type}${symbol ? `, 銘柄: ${symbol}` : ''}`, {
         component: 'changeInstrumentTypeTool',
@@ -166,7 +173,7 @@ export const changeInstrumentTypeTool = createTool({
         success: false,
         message: `取引タイプの変更に失敗しました: ${errorMessage}`,
         type: context.type,
-        fromType: context.type === 'spot' ? 'futures' : 'spot' as ExchangeType,
+        fromType: (context.type === 'spot' ? 'futures' : 'spot') as TradeType,
         error: errorMessage
       };
     }
