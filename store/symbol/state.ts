@@ -1,6 +1,7 @@
 // store/symbol/state.ts
 // 作成: SymbolSliceの状態定義
 // 更新: プロパティ名の衝突を避けるための修正
+// 更新: 2025-10-05 - 型定義をtypes.tsに移動
 
 import { ExchangeType } from '@/types/network/api';
 import { symbolService, type SymbolInfo, type FilterOptions, type SymbolChangeHistory } from '@/services/symbol';
@@ -38,17 +39,17 @@ const getInitialExchangeType = (): ExchangeType => {
 /**
  * シンボルスライスの初期状態
  */
-export const initialSymbolState: SymbolSliceState = {
+export const initialSymbolState = {
   currentSymbol: getInitialSymbol(),
   exchangeType: getInitialExchangeType(),
-  symbolsList: [],
-  filteredSymbols: [],
+  symbolsList: [] as SymbolInfo[],
+  filteredSymbols: [] as SymbolInfo[],
   symbolFilterOptions: {
     searchTerm: '',
     quoteAsset: '',
     favoritesOnly: false
-  },
+  } as FilterOptions,
   isLoadingSymbols: false,
-  symbolError: null,
-  symbolChangeHistory: []
+  symbolError: null as string | null,
+  symbolChangeHistory: [] as SymbolChangeHistory[]
 }; 

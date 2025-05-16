@@ -1,49 +1,37 @@
-import { useState, useEffect } from 'react';
-import { getStoredLogs, clearStoredLogs, StoredLog } from '@/utils/logStorage';
+import { useState } from 'react';
 
-export type LogLevel = 'all' | 'error' | 'warn' | 'debug';
+export interface LogEntry {
+  message: string;
+  timestamp: number;
+  level: 'info' | 'warning' | 'error';
+  data?: any;
+}
 
 /**
- * ログ表示と管理に関するフック
- * 
- * 指定されたレベルでログをフィルタリングし、表示/クリア機能を提供
- * 
- * 更新: リファクタリングによりhooks/debug/logs/に移動
+ * デバッグログを管理するフック
  */
-export function useLogs(activeTab: LogLevel = 'all') {
-  const [logs, setLogs] = useState<StoredLog[]>([]);
+export function useLogs() {
+  const [logs, setLogs] = useState<LogEntry[]>([]);
   
-  // ログを取得して状態を更新
-  const refreshLogs = () => {
-    const allLogs = getStoredLogs();
-    
-    // タブに応じてフィルタリング
-    let filteredLogs = allLogs;
-    if (activeTab === 'error') {
-      filteredLogs = allLogs.filter(log => log.level === 'error');
-    } else if (activeTab === 'warn') {
-      filteredLogs = allLogs.filter(log => log.level === 'warn');
-    } else if (activeTab === 'debug') {
-      filteredLogs = allLogs.filter(log => log.level === 'debug');
-    }
-    
-    setLogs(filteredLogs);
+  const addLog = (entry: Omit<LogEntry, 'timestamp'>) => {
+    setLogs(prev => [
+      ...prev,
+      {
+        ...entry,
+        timestamp: Date.now()
+      }
+    ]);
   };
   
-  // ログをクリア
-  const handleClearLogs = () => {
-    clearStoredLogs();
+  const clearLogs = () => {
     setLogs([]);
   };
   
-  // タブが変更されたときにログを更新
-  useEffect(() => {
-    refreshLogs();
-  }, [activeTab]);
-  
   return {
     logs,
-    refreshLogs,
-    handleClearLogs
+    addLog,
+    clearLogs
   };
-} 
+}
+
+export default useLogs; 

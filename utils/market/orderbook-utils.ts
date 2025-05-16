@@ -2,8 +2,9 @@
 // 作成: オーダーブックデータの変換ユーティリティ関数
 // OrderBookEntry型と配列形式[string, string][]の相互変換を行います
 // 更新: T-7.8フェーズ - 型インポートパスを修正し、型安全性を向上
+// 更新: T-8フェーズ - リファクタリングされた型バレルからインポート
 
-import { OrderBookData, OrderBookEntry } from '@/types/chart/orderbook';
+import { OrderBookData, OrderBookEntry } from '@/types/orderbook';
 
 /**
  * 配列形式のオーダーブックエントリー[string, string]をOrderBookEntry型に変換

@@ -22,11 +22,12 @@
 // 更新: useSymbolStoreからrootStore経由のセレクタに移行
 // 更新: 2025-06-05 - useOrderBookStoreをuseRootStoreに統合
 // 更新: 2025-06-30 - インポートパスを修正
+// 更新: 2025-10-06 - Spinnerコンポーネントのインポートパスを修正
 
 'use client';
 
 import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
-import { OrderBookEntry } from '@/types/chart/orderbook';
+import { OrderBookEntry } from '@/types/orderbook';
 import { cn, normalizeSymbol } from '../../lib/utils';
 import { orderBookPropsSchema, validateOrderBookProps } from '@/lib/validations/market';
 import { useRootStore } from '../../store/rootStore';
@@ -39,7 +40,7 @@ import {
 import { getPrice, getAmount, normalizeOrderBookData } from '@/utils/market/orderbook-utils';
 import { useSocketConnected } from '@/store/barrel';
 import Decimal from 'decimal.js';
-import { OrderBookData } from '@/types/chart/orderbook';
+import { OrderBookData } from '@/types/orderbook';
 import { Spinner } from '@/components/ui/spinner';
 
 // 価格を表示するためのフォーマット関数

@@ -1,5 +1,5 @@
 import { renderHook, act } from '@testing-library/react';
-import { useDebugPolling } from "../utils/useDebugPolling";
+import { useDebugPolling } from '../polling/useDebugPolling';
 
 // グローバルのsetIntervalとclearIntervalをモック
 jest.useFakeTimers();
@@ -8,6 +8,10 @@ describe('useDebugPolling', () => {
   // テスト前にタイマーをリセット
   beforeEach(() => {
     jest.clearAllTimers();
+  });
+  
+  afterEach(() => {
+    jest.useRealTimers();
   });
   
   test('isDebugMode=trueの場合、ポーリングを開始する', () => {

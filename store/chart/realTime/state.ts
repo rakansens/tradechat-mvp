@@ -1,28 +1,25 @@
 // store/chart/realTime/state.ts
 // 作成: RealTimeSliceの状態定義
+// 更新: 2025-10-06 - 型定義をtypes.tsに移動し、状態構造を更新
 
-import type { BitgetApiClient } from "@/services/api/bitget/client"
-import type { ExchangeType } from "@/types/api"
-
-/**
- * リアルタイム更新スライスの状態型定義
- */
-export interface RealTimeSliceState {
-  // リアルタイムデータ更新の有効/無効設定
-  useRealTimeData: boolean
-  
-  // WebSocket APIクライアント
-  bitgetApi: BitgetApiClient | null
-  
-  // 最後に購読したキー
-  lastSubscriptionKey: string
-}
+import { type RealTimeSliceState } from './types';
 
 /**
  * リアルタイム更新スライスの初期状態
  */
 export const initialRealTimeState: RealTimeSliceState = {
+  // リアルタイム設定
   useRealTimeData: true,
-  bitgetApi: null,
-  lastSubscriptionKey: ""
-} 
+  
+  // タイマー
+  timer: null,
+  
+  // イベントハンドラー
+  eventHandlers: {},
+  
+  // チャートAPI
+  chartApi: null,
+  
+  // 接続状態
+  connected: false
+}; 

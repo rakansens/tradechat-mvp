@@ -1,23 +1,12 @@
 // store/chart/realTime/actions.ts
 // 作成: RealTimeSliceのアクション定義
+// 更新: 2025-10-06 - 型定義をtypes.tsに移動し、immerSetを使用するように更新
 
-import type { StateCreator } from "zustand"
-import type { ExchangeType } from "@/types/api"
-import type { Timeframe, OHLCData } from "@/types/chart"
-import type { RealTimeSliceState } from "./state"
+import type { IChartApi } from "lightweight-charts"
+import type { OHLCData } from "@/types/chart"
+import { type RealTimeSliceActions, type RealTimeSlice } from "./types"
 import { logger } from '@/utils/common'
-import { socketService } from "@/services/socket"
-
-// 購読キーの型定義
-type SubscriptionKey = string
-
-// 現在のサブスクリプション状態を追跡するためのグローバル変数
-let currentSubscriptions = new Map<SubscriptionKey, boolean>()
-
-// サブスクリプションキーを生成する関数
-function getSubscriptionKey(symbol: string, timeframe: Timeframe): SubscriptionKey {
-  return `${symbol}:${timeframe}`
-}
+import { useRootStore } from "@/store/rootStore"
 
 // デバウンス関数の実装
 function debounce<T extends (...args: any[]) => any>(func: T, wait: number): (...args: Parameters<T>) => void {
@@ -35,239 +24,147 @@ function debounce<T extends (...args: any[]) => any>(func: T, wait: number): (..
   }
 }
 
-export interface RealTimeActions {
-  // リアルタイム更新を開始するアクション
-  startRealTimeUpdates: () => void
-  
-  // リアルタイム更新を停止するアクション
-  stopRealTimeUpdates: () => void
-  
-  // リアルタイムデータの有効/無効を切り替えるアクション
-  toggleRealTimeData: () => void
-  
-  // APIクライアントを初期化するアクション
-  initializeApi: (exchangeType: ExchangeType) => void
-}
-
-export type RealTimeSlice = RealTimeSliceState & RealTimeActions
-
 /**
  * リアルタイム更新スライスのアクションを作成する関数
  */
-export const createRealTimeActions = <T extends RealTimeSlice>(
-  set: (state: Partial<T>) => void,
-  get: () => T
-): RealTimeActions => {
+export const createRealTimeActions = (
+  set: (state: any) => void,
+  get: () => RealTimeSlice
+): RealTimeSliceActions => {
   // リアルタイム更新の実装（デバウンスされたバージョン）
   const startRealTimeUpdatesImpl = () => {
     try {
-      // 現在のAPIクライアントを取得
-      let api = get().bitgetApi || socketService.getCurrentApiClient()
-      
-      // APIクライアントが初期化されていない場合は初期化する
-      if (!api) {
-        try {
-          // 取引種別をローカルストレージから直接取得（循環参照回避のため）
-          const exchangeType = typeof window !== 'undefined' 
-            ? (localStorage.getItem('lastUsedExchangeType') || localStorage.getItem('selectedInstrumentType') || 'spot') as ExchangeType
-            : 'spot';
-          get().initializeApi(exchangeType)
-          api = get().bitgetApi
-          
-          if (!api) {
-            logger.error('API client not initialized', null, {
-              component: 'RealTimeSlice',
-              action: 'startRealTimeUpdates'
-            })
-            return
-          }
-        } catch (e) {
-          logger.error('Failed to initialize API client', e, {
-            component: 'RealTimeSlice',
-            action: 'startRealTimeUpdates'
-          })
-          return
-        }
+      // 現在のタイマーをクリア
+      const timer = get().timer;
+      if (timer) {
+        clearInterval(timer);
       }
       
-      // rootStoreから現在のシンボルとタイムフレームを取得（循環参照回避）
-      const rootStore = require('@/store/rootStore').useRootStore.getState();
+      // rootStoreから現在のシンボルとタイムフレームを取得
+      const rootStore = useRootStore.getState();
       const currentSymbol = rootStore.currentSymbol;
       const currentTimeFrame = rootStore.currentTimeFrame;
-      const updateLastCandle = rootStore.updateLastCandle;
       
-      // 購読キーを生成
-      const subscriptionKey = getSubscriptionKey(currentSymbol, currentTimeFrame)
-      
-      // 既に同じシンボルとタイムフレームを購読している場合は早期リターン
-      if (currentSubscriptions.get(subscriptionKey) === true && get().lastSubscriptionKey === subscriptionKey) {
-        logger.info('既に購読中のシンボルとタイムフレームです', {
-          component: 'RealTimeSlice',
-          action: 'startRealTimeUpdates',
-          symbol: currentSymbol,
-          timeframe: currentTimeFrame
-        })
-        return
-      }
-      
-      // 前の購読をクリーンアップ
-      try {
-        get().stopRealTimeUpdates()
-      } catch (error) {
-        logger.warn('前の購読のクリーンアップ中にエラーが発生しました', {
-          component: 'RealTimeSlice',
-          action: 'startRealTimeUpdates',
-          error
-        })
-        // エラーが発生しても続行する
-      }
-      
-      // WebSocket接続を開始
-      if (typeof api.subscribeToKline === 'function') {
-        try {
-          api.subscribeToKline(currentSymbol, currentTimeFrame)
-          
-          // 購読状態を更新
-          currentSubscriptions.set(subscriptionKey, true)
-          set({ lastSubscriptionKey: subscriptionKey } as Partial<T>)
-          
-          logger.info('WebSocket購読を開始しました', {
-            component: 'RealTimeSlice',
-            action: 'startRealTimeUpdates',
-            symbol: currentSymbol,
-            timeframe: currentTimeFrame
-          })
-          
-          // WebSocketからのデータ受信時のコールバックを設定
-          if (typeof api.onKlineUpdate === 'function') {
-            api.onKlineUpdate((data: OHLCData) => {
-              try {
-                // 現在の価格を取得して更新
-                updateLastCandle(data)
-              } catch (error) {
-                logger.error('WebSocketデータ処理中にエラーが発生しました', {
-                  component: 'RealTimeSlice',
-                  action: 'onKlineUpdate',
-                  error
-                })
-              }
-            })
-          } else {
-            logger.error('APIクライアントのonKlineUpdateメソッドが存在しません', null, {
-              component: 'RealTimeSlice',
-              action: 'startRealTimeUpdates'
-            })
-          }
-        } catch (error) {
-          logger.error('WebSocket購読開始中にエラーが発生しました', {
-            component: 'RealTimeSlice',
-            action: 'startRealTimeUpdates',
-            error
-          })
-        }
-      } else {
-        logger.error('APIクライアントのsubscribeToKlineメソッドが存在しません', {
+      if (!currentSymbol) {
+        logger.warn('シンボルが設定されていません', {
           component: 'RealTimeSlice',
           action: 'startRealTimeUpdates'
-        })
+        });
+        return;
       }
+      
+      // リアルタイム更新用のタイマーを設定
+      const newTimer = setInterval(() => {
+        // 最新のデータをフェッチ
+        rootStore.fetchData(currentSymbol, currentTimeFrame, undefined, false)
+          .then((data: OHLCData[] | undefined) => {
+            // イベントハンドラを実行
+            const handlers = get().eventHandlers['dataUpdate'] || [];
+            handlers.forEach(handler => handler(data));
+          })
+          .catch((error: any) => {
+            logger.error('リアルタイムデータ取得中にエラーが発生しました', {
+              component: 'RealTimeSlice',
+              action: 'timerUpdate',
+              error
+            });
+          });
+      }, 10000); // 10秒ごとに更新
+      
+      // タイマーを保存
+      set({ 
+        timer: newTimer,
+        connected: true
+      });
+      
+      logger.info('リアルタイム更新を開始しました', {
+        component: 'RealTimeSlice',
+        action: 'startRealTimeUpdates',
+        symbol: currentSymbol,
+        timeframe: currentTimeFrame
+      });
     } catch (error) {
       logger.error('リアルタイム更新の開始中にエラーが発生しました', {
         component: 'RealTimeSlice',
         action: 'startRealTimeUpdates',
         error
-      })
+      });
     }
-  }
+  };
   
-  const debouncedStartRealTimeUpdates = debounce(startRealTimeUpdatesImpl, 500)
+  const debouncedStartRealTimeUpdates = debounce(startRealTimeUpdatesImpl, 500);
   
   return {
     startRealTimeUpdates: () => {
-      debouncedStartRealTimeUpdates()
+      if (!get().useRealTimeData) {
+        logger.info('リアルタイムデータが無効になっています', {
+          component: 'RealTimeSlice',
+          action: 'startRealTimeUpdates'
+        });
+        return;
+      }
+      
+      debouncedStartRealTimeUpdates();
     },
     
     stopRealTimeUpdates: () => {
       try {
-        const api = get().bitgetApi
-        if (!api) {
-          logger.warn('API client not initialized when trying to stop updates.', {
-            component: 'RealTimeSlice',
-            action: 'stopRealTimeUpdates',
-            note: 'This might be normal during cleanup.'
-          })
-          return
-        }
-        
-        // WebSocket接続を停止
-        if (typeof api.disconnectWebSocket === 'function') {
-          try {
-            api.disconnectWebSocket()
-            logger.info('WebSocket接続を正常に切断しました', {
-              component: 'RealTimeSlice',
-              action: 'stopRealTimeUpdates'
-            })
-          } catch (wsError) {
-            logger.warn('WebSocket切断中にエラーが発生しました', {
-              component: 'RealTimeSlice',
-              action: 'stopRealTimeUpdates',
-              error: wsError
-            })
-            // エラーが発生しても続行する
-          }
-        } else {
-          logger.warn('APIクライアントのdisconnectWebSocketメソッドが存在しません', {
+        // タイマーを停止
+        const timer = get().timer;
+        if (timer) {
+          clearInterval(timer);
+          set({ 
+            timer: null,
+            connected: false
+          });
+          
+          logger.info('リアルタイム更新を停止しました', {
             component: 'RealTimeSlice',
             action: 'stopRealTimeUpdates'
-          })
+          });
         }
-        
-        // 購読状態をクリア
-        currentSubscriptions.clear()
-        set({ lastSubscriptionKey: "" } as Partial<T>)
-        
-        logger.info('WebSocket購読状態をリセットしました', {
-          component: 'RealTimeSlice',
-          action: 'stopRealTimeUpdates'
-        })
       } catch (error) {
-        logger.error('WebSocket切断処理中にエラーが発生しました:', {
+        logger.error('リアルタイム更新停止中にエラーが発生しました:', {
           component: 'RealTimeSlice',
           action: 'stopRealTimeUpdates',
           error
-        })
+        });
       }
     },
     
     toggleRealTimeData: () => {
-      const newValue = !get().useRealTimeData
-      set({ useRealTimeData: newValue } as Partial<T>)
+      const newValue = !get().useRealTimeData;
+      set({ useRealTimeData: newValue });
       
       if (newValue) {
         // リアルタイムデータを有効にした場合は更新を開始
-        get().startRealTimeUpdates()
+        get().startRealTimeUpdates();
       } else {
         // リアルタイムデータを無効にした場合は更新を停止
-        get().stopRealTimeUpdates()
+        get().stopRealTimeUpdates();
       }
     },
     
-    initializeApi: (exchangeType: ExchangeType) => {
+    initializeApi: (api: IChartApi) => {
       try {
-        // 共通のソケットサービスを使用してAPIクライアントを初期化
-        const newApi = socketService.initializeApiClient(exchangeType)
-        set({ bitgetApi: newApi } as Partial<T>)
+        set({ chartApi: api });
         
-        // リアルタイムデータが有効な場合はWebSocket接続を開始
+        // リアルタイムデータが有効な場合は更新を開始
         if (get().useRealTimeData) {
-          get().startRealTimeUpdates()
+          get().startRealTimeUpdates();
         }
-      } catch (error) {
-        logger.error('API初期化エラー:', error, {
+        
+        logger.info('チャートAPIを初期化しました', {
           component: 'RealTimeSlice',
           action: 'initializeApi'
-        })
+        });
+      } catch (error) {
+        logger.error('チャートAPI初期化エラー:', {
+          component: 'RealTimeSlice',
+          action: 'initializeApi',
+          error
+        });
       }
     }
-  }
-} 
+  };
+}; 

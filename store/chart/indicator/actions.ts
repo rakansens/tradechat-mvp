@@ -1,10 +1,11 @@
 // store/chart/indicator/actions.ts
 // 作成: IndicatorSliceのアクション定義
 // 更新: T-7.5フェーズ - 型インポートパスを修正
+// 更新: 2025-10-05 - 型定義をtypes.tsに移動し、そこから参照するように変更
 
-import type { IndicatorType, ActiveIndicator } from "@/types/store/chart"
-import type { IndicatorSliceState } from "./state"
-import { getDefaultIndicatorParams } from "@/utils/chart/indicatorFactory"
+import type { IndicatorType } from "@/types/store/chart";
+import type { IndicatorSliceState, IndicatorSliceActions, IndicatorSlice } from "./types";
+import { getDefaultIndicatorParams } from "@/utils/chart/indicatorFactory";
 
 export interface IndicatorActions {
   // インジケーターの有効/無効を切り替えるアクション
@@ -22,10 +23,10 @@ export type IndicatorSlice = IndicatorSliceState & IndicatorActions
 /**
  * インジケータースライスのアクションを作成する関数
  */
-export const createIndicatorActions = <T extends IndicatorSlice>(
-  set: (state: Partial<T>) => void,
-  get: () => T
-): IndicatorActions => ({
+export const createIndicatorActions = (
+  set: (state: Partial<IndicatorSliceState>) => void,
+  get: () => IndicatorSlice
+): IndicatorSliceActions => ({
   // インジケーターの有効/無効を切り替え
   toggleIndicator: (indicator, params) => {
     const currentIndicators = [...get().activeIndicators];
@@ -46,7 +47,7 @@ export const createIndicatorActions = <T extends IndicatorSlice>(
       });
     }
     
-    set({ activeIndicators: currentIndicators } as unknown as Partial<T>);
+    set({ activeIndicators: currentIndicators });
   },
   
   // インジケーターのパラメーターを更新
@@ -63,12 +64,12 @@ export const createIndicatorActions = <T extends IndicatorSlice>(
           ...params
         }
       };
-      set({ activeIndicators: currentIndicators } as unknown as Partial<T>);
+      set({ activeIndicators: currentIndicators });
     }
   },
   
   // 全てのインジケーターをクリア
   clearAllIndicators: () => {
-    set({ activeIndicators: [] } as unknown as Partial<T>);
+    set({ activeIndicators: [] });
   }
-}) 
+}); 

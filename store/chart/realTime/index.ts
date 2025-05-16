@@ -1,25 +1,42 @@
 // store/chart/realTime/index.ts
 // 作成: RealTimeSliceの統合とエクスポート
+// 更新: 2025-10-06 - 型定義をtypes.tsに移動し、immerSetを使用するように更新
 
-import { RealTimeSliceState, initialRealTimeState } from './state'
-import { RealTimeActions, RealTimeSlice, createRealTimeActions } from './actions'
+import { initialRealTimeState } from './state'
+import { createRealTimeActions } from './actions'
 import { create } from 'zustand'
 import { devtools, persist } from 'zustand/middleware'
+import { immer } from 'zustand/middleware/immer'
+import { type RealTimeSlice, type RealTimeSliceState, type RealTimeSliceActions, type RealTimeSliceCreator } from './types'
+import { createImmerSetter } from '@/store/core/immerSet'
 
 /**
  * RealTimeSliceを作成する関数
  * 状態とアクションを統合してスライスを作成します
  */
-export const createRealTimeSlice = <T extends RealTimeSlice>(
-  set: (state: Partial<T>) => void,
-  get: () => T
-): RealTimeSlice => {
+export const createRealTimeSlice: RealTimeSliceCreator = (
+  set,
+  get
+) => {
+  // immerSetラッパーを作成
+  const immerSet = createImmerSetter<RealTimeSliceState>(set)
+  
+  // 型安全なゲッター関数
+  const getState = () => get() as RealTimeSlice
+  
+  // アクションを作成
+  const actions = createRealTimeActions(
+    immerSet,
+    getState
+  )
+  
+  // 状態とアクションを結合して返す
   return {
     // 初期状態
     ...initialRealTimeState,
     
     // アクション
-    ...createRealTimeActions(set, get)
+    ...actions
   }
 }
 
@@ -31,7 +48,7 @@ export const createRealTimeSlice = <T extends RealTimeSlice>(
 export const useRealTimeStore = create<RealTimeSlice>()(
   devtools(
     persist(
-      (set, get) => createRealTimeSlice(set, get),
+      immer((set, get) => createRealTimeSlice(set, get)),
       {
         name: "real-time-storage",
         partialize: (state: RealTimeSlice) => ({
@@ -45,4 +62,4 @@ export const useRealTimeStore = create<RealTimeSlice>()(
 )
 
 // 型をエクスポート
-export type { RealTimeSlice, RealTimeActions, RealTimeSliceState } 
+export type { RealTimeSlice, RealTimeSliceState, RealTimeSliceActions } from './types' 

@@ -1,47 +1,42 @@
 // store/chart/drawingTool/actions.ts
 // 作成: DrawingToolSliceのアクション定義
 // 更新: T-7.5フェーズ - 型インポートパスを修正
+// 更新: 2025-10-06 - 型定義をtypes.tsに移動し、immerSetを使用するように更新
 
 import type { DrawingToolType } from "@/types/store/chart"
-import type { DrawingToolSliceState } from "./state"
-
-export interface DrawingToolActions {
-  // 描画ツールの有効/無効を切り替えるアクション
-  toggleDrawingTool: (tool: DrawingToolType) => void
-  
-  // 全ての描画ツールをクリアするアクション
-  clearAllDrawingTools: () => void
-}
-
-export type DrawingToolSlice = DrawingToolSliceState & DrawingToolActions
+import { type DrawingToolSliceActions, type DrawingToolSlice } from "./types"
 
 /**
  * 描画ツールスライスのアクションを作成する関数
  */
-export const createDrawingToolActions = <T extends DrawingToolSlice>(
-  set: (state: Partial<T>) => void,
-  get: () => T
-): DrawingToolActions => ({
+export const createDrawingToolActions = (
+  set: (state: any) => void,
+  get: () => DrawingToolSlice
+): DrawingToolSliceActions => ({
   // 描画ツールの有効/無効を切り替え
-  toggleDrawingTool: (tool) => {
-    const currentTools = [...get().activeDrawingTools];
-    const toolIndex = currentTools.indexOf(tool);
+  toggleDrawingTool: (toolType) => {
+    const currentTool = get().activeDrawingTool;
     
-    // 描画ツールは排他的に選択する（一度に1つのみアクティブ）
-    if (toolIndex >= 0) {
-      // ツールが既に選択されている場合は解除
-      currentTools.splice(toolIndex, 1);
+    // 同じツールが選択された場合は、描画モードのON/OFFを切り替え
+    if (currentTool === toolType) {
+      set({ 
+        isDrawingActive: !get().isDrawingActive 
+      });
     } else {
-      // 他のツールをクリアして新しいツールを選択
-      currentTools.length = 0;
-      currentTools.push(tool);
+      // 異なるツールが選択された場合は、新しいツールをアクティブにして描画モードをON
+      set({ 
+        activeDrawingTool: toolType,
+        isDrawingActive: true 
+      });
     }
-    
-    set({ activeDrawingTools: currentTools } as unknown as Partial<T>);
   },
   
   // 全ての描画ツールをクリア
   clearAllDrawingTools: () => {
-    set({ activeDrawingTools: [] } as unknown as Partial<T>);
+    set({ 
+      activeDrawingTool: null,
+      isDrawingActive: false,
+      drawingData: null
+    });
   }
-}) 
+}); 

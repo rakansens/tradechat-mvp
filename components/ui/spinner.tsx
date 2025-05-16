@@ -1,5 +1,5 @@
 /**
- * components/ui/spinner.tsx
+ * componen@/components/ui/spinner.tsx
  * ローディング状態を表示するスピナーコンポーネント
  */
 

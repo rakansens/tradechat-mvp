@@ -1,5 +1,5 @@
 import { renderHook, act } from '@testing-library/react';
-import { useLogs, LogLevel } from '../useLogs';
+import { useLogs } from '../logs/useLogs';
 import { getStoredLogs, clearStoredLogs, StoredLog } from '@/utils/logStorage';
 
 // モックの設定
@@ -113,5 +113,64 @@ describe('useLogs', () => {
     // エラーログのみが返されることを確認
     expect(result.current.logs).toEqual([mockLogs[0]]);
     expect(getStoredLogs).toHaveBeenCalledTimes(2); // 2回目の呼び出し
+  });
+
+  it('should return logs filtered by activeTab', () => {
+    // モックデータ設定
+    const mockLogs = [
+      { id: '1', message: 'Error log', level: 'error', timestamp: Date.now() },
+      { id: '2', message: 'Warning log', level: 'warn', timestamp: Date.now() },
+      { id: '3', message: 'Debug log', level: 'debug', timestamp: Date.now() }
+    ];
+    
+    (getStoredLogs as jest.Mock).mockReturnValue(mockLogs);
+    
+    // 'all' タブでレンダリング
+    const { result, rerender } = renderHook(() => useLogs('all'));
+    
+    // すべてのログが表示されるはず
+    expect(result.current.logs).toHaveLength(3);
+    
+    // 'error' タブに変更
+    rerender(() => useLogs('error'));
+    
+    // エラーログのみが表示されるはず
+    expect(result.current.logs).toHaveLength(1);
+    expect(result.current.logs[0].level).toBe('error');
+  });
+
+  it('should clear logs when handleClearLogs is called', () => {
+    const { result } = renderHook(() => useLogs());
+    
+    act(() => {
+      result.current.handleClearLogs();
+    });
+    
+    // clearStoredLogsが呼ばれたはず
+    expect(clearStoredLogs).toHaveBeenCalled();
+    // logsが空になったはず
+    expect(result.current.logs).toHaveLength(0);
+  });
+
+  it('should refresh logs when refreshLogs is called', () => {
+    const mockLogs = [
+      { id: '1', message: 'Test log', level: 'debug', timestamp: Date.now() }
+    ];
+    
+    (getStoredLogs as jest.Mock).mockReturnValue(mockLogs);
+    
+    const { result } = renderHook(() => useLogs());
+    
+    // 初回レンダリングで一度呼ばれている
+    expect(getStoredLogs).toHaveBeenCalledTimes(1);
+    
+    // refreshLogsを呼び出す
+    act(() => {
+      result.current.refreshLogs();
+    });
+    
+    // さらにもう一度呼ばれたはず
+    expect(getStoredLogs).toHaveBeenCalledTimes(2);
+    expect(result.current.logs).toEqual(mockLogs);
   });
 }); 
