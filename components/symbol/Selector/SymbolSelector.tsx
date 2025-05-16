@@ -20,12 +20,12 @@ import {
   selectExchangeType,
   selectFilteredSymbols,
   selectIsLoadingSymbols,
-  selectSymbolsError,
-  selectCommonQuoteAssets,
-  selectFilterOptions,
-  selectIsLoadingSymbols
+  selectSymbolError,
+  selectQuoteAssets,
+  selectSymbolFilterOptions,
+  selectSymbolList
 } from '@/store/barrel';
-import { SymbolInfo } from '@/services/symbol';
+import { SymbolInfo, FilterOptions } from '@/services/symbol';
 import { logger } from '@/utils/common';
 
 import { ExchangeTabs } from './ui/ExchangeTabs';
@@ -169,7 +169,7 @@ const useSelectorStores = (options: {
   const symbols = useRootStore(selectFilteredSymbols);
   const allSymbols = useRootStore(selectSymbolList);
   const isLoading = useRootStore(selectIsLoadingSymbols);
-  const error = useRootStore(state => state.symbolError);
+  const error = useRootStore(selectSymbolError);
   
   // ストアからアクションを取得
   const toggleFavorite = useRootStore(state => state.toggleFavorite);
@@ -290,6 +290,7 @@ export default function AdvancedSymbolSelector({
   });
   
   // フィルター状態を管理するフックを使用
+  const filterState = useFilterState();
   const {
     filterOptions,
     commonQuoteAssets,
@@ -297,7 +298,7 @@ export default function AdvancedSymbolSelector({
     handleQuoteAssetFilter,
     handleFavoritesToggle,
     resetFilters
-  } = useFilterState();
+  } = filterState;
   
   // 人気銘柄を取得
   const popularSymbols = usePopularSymbols({
