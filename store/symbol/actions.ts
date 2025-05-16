@@ -8,6 +8,7 @@ import type { StoreApi } from 'zustand';
 import type { ExchangeType } from '@/types/network/api';
 import { symbolService, type FilterOptions, type SymbolInfo } from '@/services/symbol';
 import type { SymbolSliceState } from './state';
+import { produce } from 'immer';
 
 /**
  * シンボルスライスのアクション型定義
@@ -206,18 +207,30 @@ export const createSymbolActions = <T extends SymbolSlice>(
   
   // お気に入りを切り替え
   toggleFavorite: (symbol: string) => {
-    const { symbolsList } = get();
-    
-    const updatedSymbols = symbolsList.map(s =>
-      s.symbol === symbol ? { ...s, isFavorite: !s.isFavorite } : s
-    );
-    
-    set((state: T) => {
-      state.symbolsList = updatedSymbols;
-    });
-    
-    // フィルターを再適用
-    get().applyFilters(get().symbolFilterOptions);
+    set(produce((state) => {
+      // 対象の銘柄を見つける
+      const targetSymbol = state.symbols.find(s => s.symbol === symbol);
+      
+      if (targetSymbol) {
+        // お気に入りの状態を切り替える
+        targetSymbol.favorite = !targetSymbol.favorite;
+        
+        // 変更履歴に追加
+        state.changeHistory.push({
+          timestamp: Date.now(),
+          changeType: 'toggleFavorite',
+          symbolId: symbol,
+          value: targetSymbol.favorite
+        });
+        
+        // ログ出力
+        logger.info(`Symbol favorite toggled: ${symbol}`, {
+          component: 'SymbolSlice',
+          action: 'toggleFavorite',
+          newState: targetSymbol.favorite
+        });
+      }
+    }));
   },
   
   // フィルターをクリア

@@ -91,9 +91,7 @@ export const makeSelectSymbolInfo = () =>
  */
 export const selectFavoriteSymbols = createSelector(
   [selectSymbolList],
-  (symbols: SymbolInfo[]): SymbolInfo[] => {
-    return symbols.filter(s => s.isFavorite);
-  }
+  (symbols) => symbols.filter(symbol => symbol.favorite)
 );
 
 /**
