@@ -1,15 +1,19 @@
 // lib/agent.ts
 // Mastraエージェントとの対話ヘルパー関数
 // 作成日: 2025/5/20
+// 更新日: 2025/9/16 - SupabaseClient DIパターン対応
 
 // /api/mastra/chat エンドポイントを使ってAIエージェントからの応答を取得する
 
 import type { Message } from 'ai';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/types/network/supabase';
 
 interface AskOptions {
-  threadId?: string;      // 会話ID（スレッドごとのコンテキスト用）
-  instructions?: string;  // システムプロンプト
-  resourceId?: string;    // リソースID
+  threadId?: string;                      // 会話ID（スレッドごとのコンテキスト用）
+  instructions?: string;                  // システムプロンプト
+  resourceId?: string;                    // リソースID
+  supabaseClient?: SupabaseClient<Database>; // Supabaseクライアントインスタンス
 }
 
 interface AgentResponse {
@@ -22,7 +26,7 @@ interface AgentResponse {
 /**
  * Mastraエージェントに問い合わせるヘルパー関数
  * @param messages メッセージ履歴
- * @param options オプション（threadId, instructions, resourceId）
+ * @param options オプション（threadId, instructions, resourceId, supabaseClient）
  * @returns AIからの応答
  */
 export async function askAgent(
@@ -36,7 +40,7 @@ export async function askAgent(
     }
 
     // オプションの展開
-    const { threadId, instructions, resourceId } = options;
+    const { threadId, instructions, resourceId, supabaseClient } = options;
 
     // /api/mastra/chat エンドポイントにリクエスト
     const response = await fetch('/api/mastra/chat', {

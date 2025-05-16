@@ -56,31 +56,47 @@ export interface SymbolFilterOptions {
  * 作成: 2025-06-05 - 古いuseSymbolStoreからの型定義を移行
  */
 
-import { ExchangeType } from './api';
+import { ExchangeType } from './network/api';
+import type { SymbolInfo, SymbolFilterOptions } from './common/symbol';
 
-// フィルターオプションの型定義
-export interface FilterOptions {
-  searchTerm: string;
-  quoteAsset: string;
-  favoritesOnly: boolean;
-}
+// 注: 共通モジュールから直接インポートしてください
+// import { SymbolInfo, SymbolFilterOptions } from './common/symbol';
 
-// シンボル変更履歴エントリの型定義
+/**
+ * シンボル（銘柄）変更履歴のエントリー
+ */
 export interface SymbolChangeHistoryEntry {
+  timestamp: number;
   symbol: string;
   exchangeType: ExchangeType;
-  timestamp: number;
-  source: string;
 }
 
-// シンボルスライスの状態型定義
+/**
+ * シンボルストアの状態
+ */
 export interface SymbolSliceState {
+  // シンボル関連の状態
   currentSymbol: string;
-  exchangeType: ExchangeType;
-  symbols: any[]; // SymbolInfo[]
-  filteredSymbols: any[]; // SymbolInfo[]
+  previousSymbols: SymbolChangeHistoryEntry[];
+  symbols: SymbolInfo[];
+  filteredSymbols: SymbolInfo[];
+  selectedSymbol: SymbolInfo | null;
+  
+  // フィルター関連の状態
+  filterOptions: SymbolFilterOptions;
+  
+  // ローディング状態
   isLoading: boolean;
   error: string | null;
-  filterOptions: FilterOptions;
-  changeHistory: SymbolChangeHistoryEntry[];
+  
+  // ドメイン固有のメソッド
+  setCurrentSymbol: (symbol: string) => void;
+  fetchSymbols: (exchangeType: ExchangeType) => Promise<void>;
+  setFilterOptions: (options: Partial<SymbolFilterOptions>) => void;
+  toggleFavorite: (symbol: string) => void;
+  clearFilters: () => void;
+  getSymbolByName: (symbolName: string) => SymbolInfo | undefined;
+  
+  // 内部メソッド
+  _normalizeSymbol: (symbol: string) => string;
 }

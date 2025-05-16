@@ -5,8 +5,7 @@
 
 import type { NextRequest } from "next/server"
 import { askAgent } from "@/lib/agent"
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs"
-import { cookies } from "next/headers"
+import { createRouteHandlerClient } from '@/lib/supabase/routeHandlerClient'
 import { Database } from "@/types/network/supabase"
 
 // Allow responses up to 5 minutes
@@ -15,7 +14,7 @@ export const maxDuration = 300
 export async function POST(req: NextRequest) {
   try {
     const { messages } = await req.json()
-    const supabase = createRouteHandlerClient<Database>({ cookies })
+    const supabase = await createRouteHandlerClient()
 
     // System prompt to define the AI's behavior
     const systemPrompt = `

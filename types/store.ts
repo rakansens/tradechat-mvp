@@ -1,13 +1,15 @@
 // types/store.ts
 // 更新: ストア関連の型定義、AppState型を追加
+// 更新: 共通モジュールからSymbolInfoを参照するように変更
 //
 // このファイルはZustandストアの型定義を集約しています。
 // 各ストアの状態とアクションの型を定義し、型安全性を確保します。
 // リアルタイム更新用のメソッドも含みます。
 
 import { OHLCData, Timeframe, ChartType } from './chart';
-import { ExchangeType } from './api';
+import { ExchangeType } from './network/api';
 import { BitgetApiClient } from '../services/api/bitget/client';
+import { SymbolInfo } from './common/symbol';
 
 /**
  * インジケーターの種類
@@ -178,19 +180,21 @@ export interface MarketState {
 }
 
 /**
- * シンボル情報の型定義
+ * フィルターオプションの型定義
+ * 
+ * @deprecated StoreFilterOptionsを使用してください
  */
-export interface SymbolInfo {
-  symbol: string;
-  baseAsset: string;
+export interface FilterOptions {
+  searchTerm: string;
   quoteAsset: string;
-  isFavorite: boolean;
+  favoritesOnly: boolean;
 }
 
 /**
- * フィルターオプションの型定義
+ * ストアのフィルターオプション型定義
+ * types/index.tsではこの型がStoreFilterOptionsとしてエクスポートされています
  */
-export interface FilterOptions {
+export interface StoreFilterOptions {
   searchTerm: string;
   quoteAsset: string;
   favoritesOnly: boolean;
@@ -216,7 +220,7 @@ export interface AppState {
   exchangeType: ExchangeType;
   symbols: SymbolInfo[];
   filteredSymbols: SymbolInfo[];
-  filterOptions: FilterOptions;
+  filterOptions: StoreFilterOptions;
   isLoadingSymbols: boolean;
   symbolError: string | null;
   
@@ -245,10 +249,10 @@ export interface AppState {
   setCurrentSymbol: (symbol: string) => void;
   setExchangeType: (type: ExchangeType) => void;
   fetchSymbols: (exchangeType: ExchangeType) => Promise<void>;
-  setFilterOptions: (options: Partial<FilterOptions>) => void;
+  setFilterOptions: (options: Partial<StoreFilterOptions>) => void;
   toggleFavorite: (symbol: string) => void;
   clearFilters: () => void;
-  applyFilters: (options: FilterOptions) => void;
+  applyFilters: (options: StoreFilterOptions) => void;
   
   // チャート関連のアクション
   updateTimeFrame: (timeFrame: Timeframe) => Promise<void>;

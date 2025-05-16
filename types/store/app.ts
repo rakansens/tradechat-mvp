@@ -1,27 +1,11 @@
 // types/store/app.ts
 // アプリケーション全体のストア状態型定義
+// 更新: 共通モジュールからSymbolInfoをインポートし、StoreFilterOptionsを使用するように変更
 
 import { OHLCData, Timeframe } from '../chart';
-import { ExchangeType } from '../api';
-
-/**
- * シンボル情報の型定義
- */
-export interface SymbolInfo {
-  symbol: string;
-  baseAsset: string;
-  quoteAsset: string;
-  isFavorite: boolean;
-}
-
-/**
- * フィルターオプションの型定義
- */
-export interface FilterOptions {
-  searchTerm: string;
-  quoteAsset: string;
-  favoritesOnly: boolean;
-}
+import { ExchangeType } from '../network/api';
+import { SymbolInfo } from '../common/symbol';
+import { StoreFilterOptions } from '../store';
 
 /**
  * アクティブデータ取得の型定義
@@ -43,7 +27,7 @@ export interface AppState {
   exchangeType: ExchangeType;
   symbols: SymbolInfo[];
   filteredSymbols: SymbolInfo[];
-  filterOptions: FilterOptions;
+  filterOptions: StoreFilterOptions;
   isLoadingSymbols: boolean;
   symbolError: string | null;
   
@@ -72,7 +56,7 @@ export interface AppState {
   setCurrentSymbol: (symbol: string) => void;
   setExchangeType: (type: ExchangeType) => void;
   fetchSymbols: (exchangeType: ExchangeType) => Promise<void>;
-  setFilterOptions: (options: Partial<FilterOptions>) => void;
+  setFilterOptions: (options: Partial<StoreFilterOptions>) => void;
   toggleFavorite: (symbol: string) => void;
   clearFilters: () => void;
   

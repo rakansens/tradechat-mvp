@@ -1,24 +1,17 @@
 // types/index.ts
-// 更新: T-5フェーズ - 共通型の整理完了
 // 更新: T-6フェーズ - 循環依存解消、共通型の参照先を統一
 
-// ファイル間での型定義の重複があるため、選択的にエクスポートします
-// 以下は最小限の互換性を維持するためのエクスポートです
+// アプリケーション全体で使用される型定義をエクスポート
+// エクスポート順序は依存関係に基づいています（循環依存を防ぐため）
 
-// 基本的な型定義ファイル（重複を避けるため個別にエクスポート）
-// T-3: api.ts, websocket.ts, external-libs.tsはnetworkドメインに移動
-// T-4: chat.ts, entry.ts, ui.ts, symbol.tsはそれぞれのドメインに移動
-// T-5: common.ts, common-interfaces.tsはcommonドメインに移動
-export * from './indicators';
+// まず共通モジュールをエクスポート（基本的な型定義）
+export * from './common';  // 基本的な共通型を最初にエクスポート
 
-// ドメイン別の型定義（FilterOptions型の衝突を回避するため、store以外を先にエクスポート）
-export * from './common';  // 共通型を最初にエクスポート
-export * from './chart';
-export * from './network';
-export * from './ui';
-export * from './chat';
-export * from './entry';
-export * from './symbol';
+// 次にドメイン固有の型をエクスポート（ドメイン間の依存関係に注意）
+export * from './network'; // APIとネットワーク型をエクスポート
+export * from './chart';   // チャート関連の型をエクスポート
+export * from './ui';      // UI関連の型をエクスポート
+export * from './indicators'; // インジケーター関連の型をエクスポート
 
 // storeドメインは明示的な型エクスポートを使用
 export type {
@@ -37,15 +30,12 @@ export type {
   TabType
 } from './store';
 
-// 後方互換性のための非推奨ファイルからのエクスポート
-// T-4〜T-5フェーズで非推奨となったファイル
-// これらは段階的に削除される予定です
-// 注: 後方互換性のため、ファイル自体も維持されています
-// export * from './chat';    // @deprecated - 循環依存のため削除
-// export * from './entry';   // @deprecated - 循環依存のため削除
-// export * from './ui';      // @deprecated - 循環依存のため削除
-// export * from './symbol';  // @deprecated - 循環依存のため削除
-// export * from './common';  // @deprecated - 上ですでにエクスポート済み
+// その他のドメイン型をエクスポート
+export * from './chat';
+export * from './entry';
+export * from './symbol';
+
+// 後方互換性のための非推奨ファイルからのエクスポート（T-7で削除予定）
 export * from './common-interfaces'; // @deprecated
 
 // 型の重複があるファイルは個別にエクスポート

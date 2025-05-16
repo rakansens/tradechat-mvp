@@ -5,13 +5,11 @@
  * 型に変換するためのマッピング関数を提供します。
  */
 
-import { Tables } from '@/types/network/supabase';
+import { Database } from '../supabase';
 import { TradeSide, EntryStatus, Entry, OpenEntry, ClosedEntry, CanceledEntry } from './base';
 
-/**
- * Supabaseのエントリー型（データベース形式）
- */
-export type SupabaseEntry = Tables<'entries'>;
+// Supabaseの型定義をより明確にする
+export type SupabaseEntry = Database['public']['Tables']['entries']['Row'];
 
 /**
  * Supabaseのエントリーデータをフロントエンド用の型に変換
@@ -102,4 +100,11 @@ export function toSupabaseEntry(entry: Entry): Partial<SupabaseEntry> {
   }
 
   return base;
+}
+
+/**
+ * 複数のエントリーをまとめて変換するヘルパー関数
+ */
+export function fromSupabaseEntries(entries: SupabaseEntry[]): Entry[] {
+  return entries.map(fromSupabaseEntry);
 } 

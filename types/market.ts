@@ -1,15 +1,22 @@
 // types/market.ts
 // 市場データ関連の型定義
+// 更新: 共通モジュールからOrderBookEntryとSymbolInfoをインポートするように変更
 
-import { ExchangeType } from './api';
-import { OrderBookEntry, OrderBookData, OrderBookProps } from './common/orderbook';
-import { SymbolInfo, SymbolListProps } from './common/symbol';
+import { ExchangeType } from './network/api';
+import { 
+  OrderBookEntry, OrderBookData, OrderBookProps, 
+  BitgetOrderBookResponse 
+} from './common/orderbook';
+import { 
+  SymbolInfo, SymbolListProps, 
+  BitgetSymbolsResponse 
+} from './common/symbol';
 
-// オーダーブック関連の型
-export type { OrderBookEntry, OrderBookData, OrderBookProps };
+// オーダーブック関連の型を再エクスポート
+export type { OrderBookEntry, OrderBookData, OrderBookProps, BitgetOrderBookResponse };
 
-// シンボル関連の型
-export type { SymbolInfo, SymbolListProps };
+// シンボル関連の型を再エクスポート
+export type { SymbolInfo, SymbolListProps, BitgetSymbolsResponse };
 
 // 取引履歴関連の型
 export enum TradeDirection {
@@ -50,17 +57,7 @@ export interface MarketStatsProps {
   error: string | null;
 }
 
-// API レスポンス型
-export interface BitgetOrderBookResponse {
-  code: string;
-  data: {
-    asks: string[][];
-    bids: string[][];
-    timestamp: string;
-  };
-  msg: string;
-}
-
+// API レスポンス型（Bitget取引所固有のものは共通モジュールにすでに移動）
 export interface BitgetTradesResponse {
   code: string;
   data: {
@@ -84,20 +81,6 @@ export interface BitgetTickerResponse {
     priceChangePercent24h: string;
     lastPr: string;
     ts: string;
-  }[];
-  msg: string;
-}
-
-export interface BitgetSymbolsResponse {
-  code: string;
-  data: {
-    symbol: string;
-    baseCoin: string;
-    quoteCoin: string;
-    minTradeAmount: string;
-    pricePrecision: string;
-    quantityPrecision: string;
-    status: string;
   }[];
   msg: string;
 } 

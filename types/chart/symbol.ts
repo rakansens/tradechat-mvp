@@ -1,30 +1,20 @@
 // types/chart/symbol.ts
 // チャート用シンボル関連の型定義
+// 更新: 共通モジュールからSymbolInfoをインポートするように変更
 
-import { ExchangeType } from '../api';
+import { ExchangeType } from '../network/api';
+import { SymbolInfo, SymbolListProps } from '../common/symbol';
 
-/**
- * 銘柄情報の型
- */
-export interface SymbolInfo {
-  symbol: string;
-  baseCoin: string;
-  quoteCoin: string;
-  minOrderSize: number;
-  pricePrecision: number;
-  quantityPrecision: number;
-  status: string; // 'online' | 'offline' などの状態
-  exchangeType: ExchangeType;
-}
+// 共通型の再エクスポート
+export type { SymbolInfo, SymbolListProps };
 
 /**
- * シンボル一覧コンポーネントのProps
+ * チャート固有の拡張銘柄情報型（固有プロパティがある場合）
  */
-export interface SymbolListProps {
-  symbols: SymbolInfo[];
-  isLoading: boolean;
-  error: string | null;
-  onSelectSymbol?: (symbol: string) => void;
+export interface ChartSymbolInfo extends SymbolInfo {
+  // チャート固有のプロパティがあれば追加
+  hasHistoricalData?: boolean;
+  supportedTimeframes?: string[];
 }
 
 /**

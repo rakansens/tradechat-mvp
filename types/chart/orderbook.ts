@@ -1,33 +1,12 @@
 // types/chart/orderbook.ts
 // オーダーブック関連の型定義
+// 更新: 共通モジュールからOrderBookEntry/Dataをインポートするように変更
 
-import { ExchangeType } from '../api';
+import { ExchangeType } from '../network/api';
+import { OrderBookEntry, OrderBookData, OrderBookProps } from '../common/orderbook';
 
-/**
- * オーダーブックエントリーの型
- */
-export interface OrderBookEntry {
-  price: number;
-  amount: number;
-  total?: number; // UI表示用の累積数量
-}
-
-/**
- * オーダーブックデータの型
- */
-export interface OrderBookData {
-  symbol?: string;
-  timestamp: number;
-  bids: OrderBookEntry[] | [string, string][]; // 買い注文
-  asks: OrderBookEntry[] | [string, string][]; // 売り注文
-}
-
-export interface OrderBookProps {
-  data: OrderBookData | null;
-  isLoading: boolean;
-  error: string | null;
-  depth?: number; // 表示する深さ（デフォルト値はコンポーネントで設定）
-}
+// 共通型の再エクスポート
+export type { OrderBookEntry, OrderBookData, OrderBookProps };
 
 // 市場・取引関連の型定義
 

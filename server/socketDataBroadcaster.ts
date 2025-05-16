@@ -1,6 +1,7 @@
 /**
  * server/socketDataBroadcaster.ts
  * Socket.IOを使用したデータ配信を管理するブロードキャスタークラス
+ * - 改善点: チャンネル名とキャッシュキーの生成をユーティリティに移動
  */
 
 import { Server as SocketIOServer, Socket } from 'socket.io';
@@ -8,6 +9,12 @@ import { LRUCache } from './cacheManager';
 import { logger } from '@/utils/common';
 import { ExchangeType } from '../types/api';
 import { validateWebSocketMessage } from '../types/websocket';
+import { 
+  buildChannelKey, 
+  createChannelKeyComponents, 
+  getChannelName as utilGetChannelName, 
+  getCacheKey as utilGetCacheKey
+} from '../utils/channelKey';
 
 // チャンネル名の定数
 export enum ChannelName {
@@ -260,11 +267,19 @@ export class SocketDataBroadcaster {
         });
       }
       
+      // チャンネルコンポーネントの作成
+      const channelComponents = createChannelKeyComponents(
+        ChannelName.ORDERBOOK, 
+        symbol, 
+        undefined, 
+        exchangeType
+      );
+      
       // チャンネル名の生成
-      const channelName = this.getChannelName(ChannelName.ORDERBOOK, symbol, undefined, exchangeType);
+      const channelName = utilGetChannelName(channelComponents);
       
       // データをキャッシュ
-      this.cache.orderBook.set(this.getCacheKey(ChannelName.ORDERBOOK, symbol, undefined, exchangeType), data);
+      this.cache.orderBook.set(utilGetCacheKey(channelComponents), data);
       
       // データをブロードキャスト
       this.broadcastToChannel(channelName, 'orderbook', {
@@ -311,11 +326,19 @@ export class SocketDataBroadcaster {
         });
       }
       
+      // チャンネルコンポーネントの作成
+      const channelComponents = createChannelKeyComponents(
+        ChannelName.KLINE, 
+        symbol, 
+        timeframe, 
+        exchangeType
+      );
+      
       // チャンネル名の生成
-      const channelName = this.getChannelName(ChannelName.KLINE, symbol, timeframe, exchangeType);
+      const channelName = utilGetChannelName(channelComponents);
       
       // データをキャッシュ
-      this.cache.kline.set(this.getCacheKey(ChannelName.KLINE, symbol, timeframe, exchangeType), data);
+      this.cache.kline.set(utilGetCacheKey(channelComponents), data);
       
       // データをブロードキャスト
       this.broadcastToChannel(channelName, 'kline', {
@@ -362,11 +385,19 @@ export class SocketDataBroadcaster {
         });
       }
       
+      // チャンネルコンポーネントの作成
+      const channelComponents = createChannelKeyComponents(
+        ChannelName.TRADE, 
+        symbol, 
+        undefined, 
+        exchangeType
+      );
+      
       // チャンネル名の生成
-      const channelName = this.getChannelName(ChannelName.TRADE, symbol, undefined, exchangeType);
+      const channelName = utilGetChannelName(channelComponents);
       
       // データをキャッシュ
-      this.cache.trade.set(this.getCacheKey(ChannelName.TRADE, symbol, undefined, exchangeType), data);
+      this.cache.trade.set(utilGetCacheKey(channelComponents), data);
       
       // データをブロードキャスト
       this.broadcastToChannel(channelName, 'trade', {
@@ -455,7 +486,8 @@ export class SocketDataBroadcaster {
     timeframe?: string,
     exchangeType: ExchangeType = 'spot'
   ): any | null {
-    const cacheKey = this.getCacheKey(type, symbol, timeframe, exchangeType);
+    const components = createChannelKeyComponents(type, symbol, timeframe, exchangeType);
+    const cacheKey = utilGetCacheKey(components);
     
     switch (type) {
       case ChannelName.ORDERBOOK:
@@ -484,9 +516,8 @@ export class SocketDataBroadcaster {
     timeframe?: string,
     exchangeType: ExchangeType = 'spot'
   ): string {
-    return timeframe
-      ? `${type}:${symbol}:${timeframe}:${exchangeType}`
-      : `${type}:${symbol}:${exchangeType}`;
+    const components = createChannelKeyComponents(type, symbol, timeframe, exchangeType);
+    return utilGetCacheKey(components);
   }
 
   /**
@@ -504,9 +535,8 @@ export class SocketDataBroadcaster {
     timeframe?: string,
     exchangeType: ExchangeType = 'spot'
   ): string {
-    return timeframe
-      ? `${type}:${symbol}:${timeframe}:${exchangeType}`
-      : `${type}:${symbol}:${exchangeType}`;
+    const components = createChannelKeyComponents(type, symbol, timeframe, exchangeType);
+    return utilGetChannelName(components);
   }
 
   /**
