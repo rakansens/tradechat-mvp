@@ -4,11 +4,13 @@
  * 
  * 変更履歴:
  * - 2023-06-10: ChatSection.tsxのリファクタリングに伴い作成
+ * - 2025-06-29: インラインスタイルをTailwindクラスに変更
  */
 
 "use client"
 
 import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 
 import type { QuickCommand } from "@/hooks/chat"
 
@@ -32,12 +34,13 @@ export const QuickCommands = ({ commands }: QuickCommandsProps) => {
           key={cmd.value}
           size="sm"
           variant="outline"
-          className="text-xs h-7" 
-          style={{ 
-            backgroundColor: bg-background-tertiary,
-            borderColor: border-border-light,
-            color: text-text-secondary,
-          }}
+          className={cn(
+            "text-xs h-7",
+            "bg-background-tertiary",
+            "border-border-light",
+            "text-text-secondary",
+            "hover:bg-background-tertiary/80"
+          )}
           onClick={cmd.action}
         >
           {cmd.icon}

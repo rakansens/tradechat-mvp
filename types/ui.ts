@@ -1,6 +1,8 @@
 /**
  * @deprecated このファイルはT-4フェーズで非推奨となりました。代わりに types/ui/base.ts を使用してください。
  * 後方互換性のために保持されていますが、今後は types/ui からインポートすることを推奨します。
+ * 
+ * 更新：T-7.5フェーズ - 循環参照を防ぐためimportを修正
  */
 
 // types/ui.ts
@@ -37,9 +39,26 @@ export interface UIStateDeprecated {
   toggleSettings?: () => void;
 }
 
-// store/ui.ts からUIStateとTabTypeをエクスポート
-export type { UIState } from '@/types/store/ui';
-export type { TabType } from '@/types/store/ui';
+// 直接のimportではなく型のみを定義して循環参照を防ぐ
+/**
+ * タブの種類（types/store/ui.ts から）
+ */
+export type TabType = 'chart' | 'orderbook' | 'trades' | 'positions' | 'settings';
+
+/**
+ * UIストアの状態（types/store/ui.ts から）
+ */
+export interface UIState {
+  // 状態
+  activeTab: TabType;
+  isDarkMode: boolean;
+  isSidebarOpen: boolean;
+  
+  // アクション
+  setActiveTab: (tab: TabType) => void;
+  toggleDarkMode: () => void;
+  toggleSidebar: () => void;
+}
 
 /**
  * レスポンシブ表示のブレークポイント

@@ -1,7 +1,8 @@
 // types/store/chart.ts
 // チャートストア関連の型定義
 
-import { OHLCData, Timeframe, ChartType } from '../chart';
+import { OHLCData } from '../chart';
+import { Timeframe, ChartType } from '../constants/enums';
 import { ExchangeType } from '../api';
 import { BitgetApiClient } from '../../services/api/bitget/client';
 

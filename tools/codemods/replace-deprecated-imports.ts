@@ -23,12 +23,12 @@ const TYPE_IMPORT_MAP: Record<string, string> = {
   'TabType': '@/types/store/ui',
   'ChartDataState': '@/types/store/chart',
   'ChartConfigState': '@/types/store/chart',
-  'IndicatorState': '@/types/store/chart',
-  'DrawingToolState': '@/types/store/chart',
-  'RealTimeState': '@/types/store/chart',
+  'IndicatorState': '@/types/store/chart/indicator',
+  'DrawingToolState': '@/types/store/chart/drawingTool',
+  'RealTimeState': '@/types/store/chart/realtime',
   'MarketState': '@/types/store/market',
-  'StoreFilterOptions': '@/types/store',
-  'FilterOptions': '@/types/store',
+  'StoreFilterOptions': '@/types/store/symbol',
+  'FilterOptions': '@/types/store/symbol',
   'IndicatorType': '@/types/store/chart',
   'ActiveIndicator': '@/types/store/chart',
   'DrawingToolType': '@/types/store/chart',
@@ -43,6 +43,17 @@ const TYPE_IMPORT_MAP: Record<string, string> = {
   'Timeframe': '@/types/constants/enums',
   'ChartType': '@/types/constants/enums',
   'OHLCData': '@/types/chart',
+  'TradeSide': '@/types/constants/enums',
+
+  // 追加の型マッピング - エラー解決のため
+  'BaseEntry': '@/types/entry/base',
+  'OpenEntry': '@/types/entry/base',
+  'ClosedEntry': '@/types/entry/base',
+  'CanceledEntry': '@/types/entry/base',
+  'Entry': '@/types/entry/base',
+  'EntryState': '@/types/entry/state',
+  'EntryStatus': '@/types/constants/enums',
+  'SymbolListProps': '@/types/common/symbol',
 };
 
 /**
@@ -53,6 +64,26 @@ const PATH_TRANSFORM_MAP: Record<string, string> = {
   '@/types/common': '@/types/common/index',
   '@/utils/supabase': '@/lib/supabase',
   '@/types/store': '@/types/store/index', // 循環参照解消のため
+  '@/types': '@/types/index',  // 直接の@/typesインポートを解消
+  '@/store/useSymbolStore': '@/store/symbol',
+  '@/store/useDebugStore': '@/store/debug',
+  '@/store/useChartDataStore': '@/store/chart/data',
+  '@/types/orderbook': '@/types/common/orderbook',
+  '@/styles/colors': '@/styles/theme',
+  '../useLogs': '../utils/useLogs',
+  '../useDebugPolling': '../utils/useDebugPolling',
+  '../../types/orderbook': '@/types/common/orderbook',
+  '@/app/signin/page': '@/app/(auth)/signin/page',
+  '@/lib/supabase/supabase': '@/lib/supabase',
+  '../../store/useSymbolStore': '@/store/symbol',
+  '../../store/chart': '@/store/chart/index',
+  '@/store/socketActions': '@/store/socket/actions',
+  '../../../store/socketActions': '@/store/socket/actions',
+  '@/services/symbol/symbol-service': '@/services/symbol',
+  '@/components/ui/spinner': '@/components/ui/loading-spinner',
+  '../socket-service': '@/services/socket/index',
+  './supabase': '@/lib/supabase/client',
+  '../useDebugStores': '@/hooks/debug/utils/useDebugStores',
 };
 
 export default function transformer(file: FileInfo, api: API, options: Options) {

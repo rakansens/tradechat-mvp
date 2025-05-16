@@ -1,5 +1,5 @@
 import { renderHook, act } from '@testing-library/react';
-import { useDebugPolling } from '../useDebugPolling';
+import { useDebugPolling } from "../utils/useDebugPolling";
 
 // グローバルのsetIntervalとclearIntervalをモック
 jest.useFakeTimers();

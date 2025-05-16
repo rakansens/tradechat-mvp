@@ -243,10 +243,10 @@ export default function ChatSection({
               />
             </CardContent>
 
-            <Separator className="border" style={{ borderColor: border-border-light }} />
+            <Separator className="border border-border-light" />
 
             {/* フッター部分 - クイックコマンドと入力エリア */}
-            <CardFooter className="p-2 flex flex-col gap-2 border-t" style={{ backgroundColor: bg-background-secondary, borderColor: border-border-light }}>
+            <CardFooter className="p-2 flex flex-col gap-2 border-t border-border-light bg-background-secondary">
               {/* クイックコマンドボタンとエントリー実行ボタン */}
               <div className="flex items-center justify-between w-full">
                 <QuickCommands commands={quickCommands} />
