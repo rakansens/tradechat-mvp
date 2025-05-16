@@ -6,7 +6,7 @@
 // types/symbol.ts
 // T-7フェーズで完全に削除予定のスタブファイル
 
-import { ExchangeType } from './network/api';
+import { ExchangeType } from './constants/enums';
 
 // 共通モジュールからの型をエクスポート
 export type { 

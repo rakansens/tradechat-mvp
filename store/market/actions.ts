@@ -1,7 +1,7 @@
 // store/market/actions.ts
 // 初期実装: マーケットスライスのアクション
 
-import type { ExchangeType } from '@/types/api'
+import type { ExchangeType } from '@/types/constants/enums'
 import type { OrderBookData, TradeData, MarketStatsData } from '@/types/market'
 import type { MarketSliceState } from './state'
 import { orderBookService } from '@/services/data'

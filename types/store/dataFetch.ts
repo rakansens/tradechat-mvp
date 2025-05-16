@@ -2,7 +2,7 @@
 // 作成: 2025-10-07 - データフェッチストア関連の型定義
 // 更新: 2025-10-08 - S-1フェーズ: store/dataFetch/state.tsの定義を統合
 
-import { ExchangeType } from '@/types/api';
+import { ExchangeType } from '@/types/constants/enums';
 
 /**
  * このファイルはデータフェッチストアの型定義を提供します。

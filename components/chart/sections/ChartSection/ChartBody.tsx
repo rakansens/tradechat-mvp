@@ -13,7 +13,7 @@ import ChartCanvas from "@/components/chart/Canvas";
 import ErrorDisplay from "@/components/common/ErrorDisplay";
 import { OrderBook } from "@/components/market";
 import type { Timeframe } from "@/types/chart";
-import type { ExchangeType } from "@/types/api";
+import type { ExchangeType } from "@/types/constants/enums";
 
 interface ChartBodyProps {
   // 表示データ
@@ -57,9 +57,9 @@ export const ChartBody: React.FC<ChartBodyProps> = ({
               error?.includes('先物取引で利用できません') || error?.includes('先物取引でサポートされていません')
                 ? [
                     {
-                      label: '現物取引に切り替える',
+                      label: 'Bitgetに切り替える',
                       action: () => {
-                        setExchangeType('spot');
+                        setExchangeType('bitget');
                       }
                     }
                   ]

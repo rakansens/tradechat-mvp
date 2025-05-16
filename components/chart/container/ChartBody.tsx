@@ -11,7 +11,7 @@
 
 import React from 'react';
 import type { OHLCData } from '@/types/chart';
-import type { ExchangeType } from '@/types/api';
+import type { ExchangeType } from '@/types/constants/enums';
 import type { Timeframe, ChartType } from '@/types/chart';
 import type { ActiveIndicator } from '@/types/store/chart';
 

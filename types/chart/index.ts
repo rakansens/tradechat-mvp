@@ -20,10 +20,14 @@ export type { SymbolInfo, SymbolListProps } from '../common/symbol';
 // チャート固有の拡張型をエクスポート
 export type { ChartSymbolInfo } from './symbol';
 
+// 注文帳関連の型は @/types/common/orderbook から直接インポートしてください
+// このファイルではチャート固有の型のみをエクスポートします
+
+export type {
+  // 注文帳関連の型は @/types/common/orderbook から直接インポートしてください
+};
+
 // トレード関連の型をエクスポート
-export type { 
-  TradeDirection, TradeData, TradeListProps,
-  MarketStatsData, MarketStatsProps,
-  BitgetOrderBookResponse, BitgetTradesResponse,
-  BitgetTickerResponse
-} from './orderbook'; 
+export type {
+  // トレード関連の型は @/types/common/orderbook から直接インポートしてください
+};

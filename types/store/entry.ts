@@ -2,7 +2,7 @@
 // 作成: 2025-10-07 - エントリーストア関連の型定義
 // 更新: 2025-10-08 - S-1フェーズ: store/entry/state.tsの定義を統合
 
-import { ExchangeType } from '@/types/api';
+import { ExchangeType } from '@/types/constants/enums';
 import type { Entry, OpenEntry, ClosedEntry, CanceledEntry } from '@/types/entry';
 
 /**

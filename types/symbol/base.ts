@@ -7,8 +7,9 @@
  */
 
 import { ExchangeType, ExchangeProductType } from '../constants/enums';
-import { SymbolInfo, SymbolChangeHistoryEntry, SymbolFilterOptions } from './common';
+import { SymbolInfo, SymbolChangeHistoryEntry } from './common';
 import { SymbolState } from './store';
+import type { SymbolFilterOptions } from '../common/symbol';
 
 // 共通型を再エクスポート
 export type { SymbolInfo, SymbolChangeHistoryEntry };

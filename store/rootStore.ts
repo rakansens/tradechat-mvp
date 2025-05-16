@@ -17,10 +17,11 @@
 // 更新: 2025-10-01 - T-8フェーズ - ジェネリック問題を解消するimmerSetラッパーを追加
 // 更新: 2025-10-09 - S-10.1フェーズ: 暗黙的any型を明示的型に修正
 
-import { create, type StoreApi } from 'zustand'
-import { devtools, persist } from 'zustand/middleware'
-import { immer } from 'zustand/middleware/immer'
-import type { Draft } from 'immer'
+import { create, StateCreator, StoreApi, useStore } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import { immer } from 'zustand/middleware/immer';
+import { produce } from 'immer';
+import { devtools } from 'zustand/middleware';
 import { logger as loggerFn } from '@/utils/common'
 import { ChartSlice, createChartSlice } from './chart'
 import type { ChartSliceState } from './chart/state'
@@ -56,18 +57,18 @@ import { createSettingsSlice, type SettingsSlice } from './settings'
 import type { SettingsState } from './settings/types'
 
 // RootStore型定義 - 各スライスの状態を統合
-export interface RootState extends 
-  ChartSliceState, 
-  EntrySliceState, 
-  ChatSliceState, 
-  UISliceState, 
-  MarketSliceState, 
-  ChartConfigSliceState, 
+export interface RootState extends
+  Omit<ChartSliceState, 'chartType'>, // chartType を除外
+  EntrySliceState,
+  ChatSliceState,
+  UISliceState,
+  MarketSliceState,
+  ChartConfigSliceState, // chartType を含む
   DrawingToolSliceState,
   IndicatorSliceState,
   RealTimeSliceState,
   ChartDataSliceState,
-  SymbolSliceState,
+  Omit<SymbolSliceState, 'exchangeType'>, // exchangeType を除外
   SocketSliceState,
   DebugSliceState,
   DataFetchSliceState,
@@ -217,18 +218,29 @@ export const useRootStore = create<RootStore>()(
       persist(
         immer((set, get, api) => {
           // immerSetラッパー - ジェネリックな型パラメータを持つヘルパー関数
-          const immerSet = <TState>(fn: (draft: Draft<TState>) => void) => {
-            return set((state) => {
-              // stateをTStateとして扱い、immerのdraftとして関数に渡す
-              fn(state as unknown as Draft<TState>);
-              // ここで返り値は不要（immerがオートマチックに変更を適用する）
-              return state;
+          const immerSet = <TState>(
+            fn: ((state: TState) => void | TState | Partial<TState>) | TState | Partial<TState>
+          ) => {
+            return set((state: RootState) => {
+              // Immerのproduceを使用して不変更新を実行
+              return produce(state, (draft: TState) => {
+                if (typeof fn === 'function') {
+                  const result = (fn as (state: TState) => void | TState | Partial<TState>)(draft);
+                  // 関数がオブジェクトを返した場合はマージ
+                  if (result && typeof result === 'object') {
+                    Object.assign(draft as Record<string, any>, result);
+                  }
+                } else if (fn && typeof fn === 'object') {
+                  // オブジェクトが渡された場合はそのままマージ
+                  Object.assign(draft as Record<string, any>, fn);
+                }
+              });
             });
           };
-          
+
           // 型安全なGetState関数
           const getState = <TState>() => get() as unknown as TState;
-          
+
           // スライスの作成 - 全て同じパターンを使用
           const dataFetchSlice = createDataFetchSlice(
             (fn) => immerSet<DataFetchSliceState>(fn),

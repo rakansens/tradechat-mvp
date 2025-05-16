@@ -8,7 +8,7 @@
 
 import { createSelector } from 'reselect';
 import type { OrderBookData, OrderBookEntry, TradeData, MarketStatsData, SymbolInfo } from '@/types/market';
-import type { ExchangeType } from '@/types/api';
+import type { ExchangeType } from '@/types/constants/enums';
 import type { OrderBookPollingInfo } from './state';
 
 // ==========================================

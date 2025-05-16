@@ -9,7 +9,7 @@
 // 作成: 市場データ関連のZodバリデーションスキーマ
 
 import { z } from "zod"
-import { ExchangeType } from "@/types/api"
+import { ExchangeType } from "@/types/constants/enums"
 
 // OrderBookEntry（注文エントリー）のバリデーションスキーマ
 export const orderBookEntrySchema = z.object({

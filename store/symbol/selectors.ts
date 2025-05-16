@@ -11,7 +11,8 @@
 import { createSelector } from 'reselect';
 import type { RootState } from '../rootStore';
 import { logger } from '@/utils/common';
-import { type SymbolInfo, type SymbolFilterOptions, type SymbolChangeHistoryEntry } from '@/types/symbol/common';
+import { type SymbolInfo, type SymbolChangeHistoryEntry } from '@/types/symbol/common';
+import type { SymbolFilterOptions } from '@/types/common/symbol';
 import { ExchangeProductType } from '@/types/constants/enums';
 import type { SymbolSliceState } from './state';
 

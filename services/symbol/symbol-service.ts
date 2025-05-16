@@ -10,7 +10,8 @@ import { getApiClient } from '../api/client-factory';
 import { ExchangeProductType } from '@/types/constants/enums';
 import { normalizeSymbol } from '@/lib/utils';
 import { logger } from '@/utils/common';
-import type { SymbolInfo, SymbolFilterOptions } from '@/types/symbol';
+import type { SymbolInfo } from '@/types/symbol';
+import type { SymbolFilterOptions } from '@/types/common/symbol';
 import { toCommonSymbol, toUISymbol } from '@/types/symbol/base';
 
 // レガシーサポートのための型エイリアス

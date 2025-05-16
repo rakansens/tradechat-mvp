@@ -2,7 +2,7 @@
 // 作成: シンボルセレクター関連のZodバリデーションスキーマ
 
 import { z } from "zod"
-import { ExchangeType } from "@/types/api"
+import { ExchangeType } from "@/types/constants/enums"
 
 // シンボル情報のバリデーションスキーマ
 export const symbolInfoSchema = z.object({

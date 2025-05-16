@@ -8,7 +8,8 @@
 import { type ExchangeProductType } from '@/types/constants/enums';
 import { symbolService } from '@/services/symbol';
 import type { SymbolInfo, SymbolChangeHistoryEntry } from '@/types/symbol';
-import type { SymbolState, SymbolFilterOptions } from '@/types/symbol/store';
+import type { SymbolState } from '@/types/symbol/store';
+import type { SymbolFilterOptions } from '@/types/common/symbol';
 
 /**
  * シンボルスライスの状態型定義

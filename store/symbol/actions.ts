@@ -6,7 +6,7 @@
 
 import { produce } from 'immer';
 import { logger } from '@/utils/logger';
-import { type ExchangeType } from '@/types/api';
+import { type ExchangeType } from '@/types/constants/enums';
 import type { ExchangeProductType } from '@/types/constants/enums';
 import { toExchangeProductType, isValidExchangeType, isValidExchangeProductType } from '@/utils/exchange';
 import { symbolService } from '@/services/symbol';

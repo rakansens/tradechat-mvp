@@ -3,7 +3,7 @@
 // 更新: 共通モジュールからSymbolInfoをインポートし、StoreFilterOptionsを使用するように変更
 
 import { OHLCData, Timeframe } from '../chart';
-import { ExchangeType } from '../network/api';
+import { ExchangeType } from '../constants/enums';
 import { SymbolInfo } from '../common/symbol';
 import { StoreFilterOptions } from '../store';
 

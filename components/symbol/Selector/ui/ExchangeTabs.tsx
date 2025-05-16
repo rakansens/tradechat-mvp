@@ -10,7 +10,7 @@
 "use client";
 
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import type { ExchangeType } from '@/types/api';
+import type { ExchangeType } from '@/types/constants/enums';
 
 interface ExchangeTabsProps {
   currentExchangeType: ExchangeType;

@@ -3,7 +3,7 @@
 // 更新: 2025-05-12 - インポートパスを新しいBitgetApiClientに更新
 
 import { BitgetApiClient } from './bitget/client';
-import { ExchangeType } from '@/types/api';
+import { ExchangeType } from '@/types/constants/enums';
 
 // APIクライアントのインスタンスをキャッシュ
 const apiClients: Record<string, BitgetApiClient> = {};

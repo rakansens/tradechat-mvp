@@ -17,7 +17,7 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { OrderBookData } from '@/types/market';
-import { ExchangeType } from '@/types/api';
+import { ExchangeType } from '@/types/constants/enums';
 import { orderBookService } from '@/services/data';
 import { logger } from '@/utils/common';
 

@@ -2,7 +2,7 @@
 // 作成: 2025-05-30 - dataFetchのスライス化に伴う状態定義
 // 役割: DataFetchスライスの状態型を定義し、初期値を提供する
 
-import { ExchangeType } from '@/types/api';
+import { ExchangeType } from '@/types/constants/enums';
 
 // アクティブデータ取得の型定義
 export interface ActiveFetch {

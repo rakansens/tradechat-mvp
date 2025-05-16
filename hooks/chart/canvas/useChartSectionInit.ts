@@ -13,7 +13,7 @@ import { useEffect, useCallback } from 'react';
 // useSymbolStoreを削除
 import { useRootStore } from '@/store';
 import type { Timeframe } from '@/types/chart';
-import type { ExchangeType } from '@/types/api';
+import type { ExchangeType } from '@/types/constants/enums';
 import { logger } from '@/utils/common';
 
 interface UseChartSectionInitProps {

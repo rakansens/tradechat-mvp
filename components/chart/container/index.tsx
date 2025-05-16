@@ -19,7 +19,7 @@ import { ChartFooter } from './ChartFooter';
 import { useChartGlobalEvents, useRealTimeCleanup } from '@/hooks/chart';
 import { useChartStores } from '@/hooks/chart';
 import type { Timeframe, ChartType } from '@/types/chart';
-import type { ExchangeType } from '@/types/api';
+import type { ExchangeType } from '@/types/constants/enums';
 import type { IndicatorType, DrawingToolType } from '@/types/store/chart';
 
 /**

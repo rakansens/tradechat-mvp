@@ -5,7 +5,7 @@
 
 import { NextResponse } from 'next/server';
 import { logger } from '@/utils/common';
-import { ExchangeType } from '@/types/api';
+import { ExchangeType } from '@/types/constants/enums';
 
 // server.jsで定義されたグローバル関数の型定義
 declare global {

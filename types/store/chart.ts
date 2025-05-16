@@ -4,8 +4,7 @@
 // 更新: 2025-10-10 - DrawingTool型を追加
 
 import { OHLCData } from '../chart';
-import { Timeframe, ChartType } from '../constants/enums';
-import { ExchangeType } from '../api';
+import { Timeframe, ChartType, ExchangeType } from '../constants/enums';
 import { BitgetApiClient } from '../../services/api/bitget/client';
 
 /**

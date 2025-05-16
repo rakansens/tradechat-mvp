@@ -17,7 +17,7 @@ import { SocketCore } from '@/services/socket/core';
 import { logger } from './logger';
 import { storeEmit } from '@/store/socket/dispatcher';
 import { Timeframe } from '@/types/chart';
-import { ExchangeType } from '@/types/api';
+import { ExchangeType } from '@/types/constants/enums';
 import { captureChartAsBase64 } from './screenshotUtils';
 
 // レガシー状態変数

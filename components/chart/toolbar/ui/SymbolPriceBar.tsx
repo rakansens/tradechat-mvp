@@ -15,7 +15,7 @@ import { Badge } from '@/components/ui/badge';
 import { CandlestickChart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import SymbolSelectorModal from '../../SymbolSelectorModal';
-import { ExchangeType } from '@/types/api';
+import { ExchangeType } from '@/types/constants/enums';
 import { SymbolSelector } from '@/components/symbol/Selector';
 import { ExchangeSelector } from '@/components/symbol/ExchangeSelector';
 

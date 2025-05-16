@@ -3,7 +3,7 @@
 // 役割: シンボル選択時の取引所選択UI
 
 import React from 'react';
-import { ExchangeType } from '@/types/api';
+import { ExchangeType } from '@/types/constants/enums';
 
 interface ExchangeSelectorProps {
   currentExchange: ExchangeType;

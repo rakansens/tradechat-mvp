@@ -2,7 +2,7 @@
 // 初期実装: マーケットスライスの状態と初期値を定義
 // 更新: 2025-06-01 - OrderBookStoreの状態を統合
 
-import type { ExchangeType } from '@/types/api'
+import type { ExchangeType } from '@/types/constants/enums'
 import type { OrderBookData, TradeData, MarketStatsData, SymbolInfo } from '@/types/market'
 
 // ポーリング情報の型定義

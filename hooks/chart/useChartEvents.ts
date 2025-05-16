@@ -10,7 +10,7 @@
 
 import { useEffect } from 'react';
 import { logger } from '@/utils/common';
-import type { ExchangeType } from '@/types/api';
+import type { ExchangeType } from '@/types/constants/enums';
 import type { Timeframe } from '@/types/chart';
 
 interface ChartEventProps {

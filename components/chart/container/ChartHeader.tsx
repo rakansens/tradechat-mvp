@@ -9,7 +9,7 @@
 "use client";
 
 import React from 'react';
-import type { ExchangeType } from '@/types/api';
+import type { ExchangeType } from '@/types/constants/enums';
 import type { Timeframe, ChartType } from '@/types/chart';
 
 interface ChartHeaderProps {

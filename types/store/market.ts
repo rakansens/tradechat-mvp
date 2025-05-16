@@ -1,7 +1,7 @@
 // types/store/market.ts
 // マーケットデータストア関連の型定義
 
-import { ExchangeType } from '../api';
+import { ExchangeType } from '@/types/constants/enums';
 
 /**
  * マーケットストアの状態

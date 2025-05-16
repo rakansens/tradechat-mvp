@@ -4,7 +4,7 @@
 // 更新: 2025-10-10 - updateDataとupdateLastCandle関数のimmerSet使用を修正
 
 import { OHLCData, Timeframe } from "@/types/chart"
-import { ExchangeType } from "@/types/api"
+import { ExchangeType } from "@/types/constants/enums"
 import { ChartDataSliceState, initialTimeframe } from "./state"
 import { ChartDataSlice, ChartDataSliceActions } from "./types"
 import { chartDataService } from "@/services/data"
@@ -21,17 +21,18 @@ import {
 
 // ローカルストレージから取引種別を取得する関数
 const getExchangeTypeFromLocalStorage = (): ExchangeType => {
-  if (typeof window === 'undefined') return 'spot'
+  if (typeof window === 'undefined') return 'bitget' // デフォルト値を 'bitget' に設定
   
   const storedExchangeType =
     localStorage.getItem('lastUsedExchangeType') ||
     localStorage.getItem('selectedInstrumentType')
     
-  if (storedExchangeType && (storedExchangeType === 'spot' || storedExchangeType === 'futures')) {
+  // 有効な ExchangeType かどうかをチェック
+  if (storedExchangeType && ['bitget', 'binance', 'bybit', 'demo'].includes(storedExchangeType)) {
     return storedExchangeType as ExchangeType
   }
   
-  return 'spot'
+  return 'bitget' // デフォルト値を 'bitget' に設定
 }
 
 /**

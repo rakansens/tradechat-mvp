@@ -26,7 +26,7 @@ import { selectPriceChangePercent } from '@/store/chart/selectors';
 import { selectChartType, selectExchangeType } from '@/store/chart/config/selectors';
 import { TabType } from '@/types/store/ui';
 import { Timeframe, ChartType } from '@/types/chart';
-import { ExchangeType } from '@/types/api';
+import { ExchangeType } from '@/types/constants/enums';
 
 /**
  * ChartToolbarコンポーネントの状態管理を統一するためのカスタムフック

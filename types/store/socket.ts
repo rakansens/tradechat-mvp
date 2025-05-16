@@ -3,7 +3,7 @@
 // 更新: 2025-10-08 - S-1フェーズ: store/socket/state.tsの定義を統合
 
 import { WebSocketSubscription } from '@/types/network/websocket';
-import { ExchangeType } from '@/types/api';
+import { ExchangeType } from '@/types/constants/enums';
 
 /**
  * このファイルはWebSocket接続ストアの型定義を提供します。

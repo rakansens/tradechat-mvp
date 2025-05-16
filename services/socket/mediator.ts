@@ -3,7 +3,7 @@
 // 更新: 2025-05-14 - 実際のSocketServiceとの接続
 
 import { logger } from '@/utils/common';
-import { ExchangeType } from "@/types/api";
+import { ExchangeType } from "@/types/constants/enums";
 import { Timeframe } from "@/types/chart";
 import { storeEmit } from "@/store/socket/dispatcher";
 import { EventEmitter } from 'events';

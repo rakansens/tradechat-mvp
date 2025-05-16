@@ -9,7 +9,7 @@
 // 更新: 2025-05-20 - fetchChartDataの型を修正
 
 import React, { memo } from 'react';
-import { ExchangeType } from '@/types/api';
+import { ExchangeType } from '@/types/constants/enums';
 import { Timeframe } from '@/types/chart';
 
 interface TradeTypeSwitchProps {

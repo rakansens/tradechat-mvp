@@ -17,7 +17,7 @@ import { useChartDataStore } from './chart';
 import { useWebSocketStore } from './useWebSocketStore';
 import { logger } from '@/utils/common';
 import { Timeframe } from '@/types/chart';
-import { ExchangeType } from '@/types/api';
+import { ExchangeType } from '@/types/constants/enums';
 
 /**
  * 銘柄を更新する

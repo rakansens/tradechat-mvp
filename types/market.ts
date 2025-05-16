@@ -1,7 +1,10 @@
 // types/market.ts
 // 市場データ関連の型定義
 
-import { ExchangeType } from './network/api';
+import { ExchangeType } from '@/types/constants/enums';
+import { OrderBookData } from './common/orderbook'; // OrderBookData をインポート
+
+export type { OrderBookData }; // 型として再エクスポート
 
 // 取引履歴関連の型
 export enum TradeDirection {

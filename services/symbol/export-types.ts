@@ -9,7 +9,4 @@
 export type { SymbolInfo } from '@/types/common/symbol';
 
 // symbol-serviceからの型エクスポート
-export type { 
-  FilterOptions, 
-  SymbolChangeHistory 
-} from './symbol-service'; 
+export type { FilterOptions } from './symbol-service';
