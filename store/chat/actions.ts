@@ -646,6 +646,7 @@ export const createChatActions = (
       const rootStore = require('../rootStore')
       rootStore.useRootStore.getState().setPendingEntry({
         id: Date.now().toString(),
+        userId: 'currentUser',  // userIdフィールドを追加
         side: "buy",
         symbol: "BTC/USD",
         price: 60500,

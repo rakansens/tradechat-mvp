@@ -3,11 +3,12 @@
 // 
 // このファイルはチャートインジケーターの作成と管理を一元化するファクトリー関数を提供します。
 // 各インジケーターの実装を統一的なインターフェースで扱うことで、コードの一貫性と保守性を向上させます。
+// 更新: T-7.5フェーズ - 型インポートパスを修正
 
 import { IChartApi } from 'lightweight-charts';
 import { OHLCData } from '@/types/chart';
 import { BaseIndicatorParams, ChartIndicator, IndicatorSeriesRefs, RSIParams, MACDParams, IchimokuParams, BollingerParams } from '@/types/indicators';
-import { IndicatorType } from '@/types/store';
+import { IndicatorType } from '@/types/store/chart';
 import { logger } from '@/utils/common';
 
 // インジケーターのレジストリ

@@ -1,7 +1,8 @@
 // store/ui/actions.ts
 // 初期実装: UIスライスのアクション
+// 更新: T-7.5フェーズ - 型インポートパスを修正
 
-import type { TabType } from '@/types/store'
+import type { TabType } from '@/types/store/ui'
 import type { UISliceState } from './state'
 
 // UIスライスのアクション定義

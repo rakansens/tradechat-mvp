@@ -3,6 +3,7 @@
  * 
  * このファイルはトレードポジションと関連機能の型定義を集約しています。
  * T-4フェーズでtypes/entry.tsから移動されました。
+ * 更新: T-7.5フェーズ - userId フィールドを追加
  */
 
 /**
@@ -20,6 +21,7 @@ export type EntryStatus = "open" | "closed" | "canceled";
  */
 export interface BaseEntry {
   id: string;           // エントリーの一意識別子
+  userId: string;       // ユーザーID（所有者）
   side: TradeSide;      // 買いか売りか
   symbol: string;       // 取引対象の通貨ペア（例: "BTC/USD"）
   price: number;        // エントリー価格

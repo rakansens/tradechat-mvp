@@ -9,9 +9,8 @@
 // UI基本型定義をエクスポート
 export * from './base';
 
-// 注：循環参照を避けるため、以下は削除しました
-// export type { UIState } from '@/types/store/ui';
-// export type { TabType } from '@/types/store/ui';
+// ストアUIの型を再エクスポート
+export type { UIState, TabType } from '@/types/store/ui';
 
 // T-4で実装予定
 // export * from './modal';

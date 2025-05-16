@@ -1,12 +1,94 @@
 /**
  * types/converters/common.ts
- * 作成: T-7.5フェーズ - 共通型変換関数
+ * 基本的な型変換と確認のためのユーティリティ関数
  * 
- * このファイルでは、数値以外の一般的なデータ型変換関数を提供します。
- * 文字列操作、日時変換、配列変換などの共通ユーティリティを実装しています。
+ * 更新: T-7.5フェーズ - null/undefined ガード関数を追加
  */
 
 import { toNumber } from './number';
+
+/**
+ * nullまたはundefinedでないことを確認する型ガード
+ */
+export function isDefined<T>(value: T | null | undefined): value is T {
+  return value !== null && value !== undefined;
+}
+
+/**
+ * 値が undefined / null なら throw するアサーション関数
+ * 使用例: 
+ * const value: unknown = getValueFromSomewhere();
+ * assertIsDefined(value);
+ * // この後は value は NonNullable<unknown> として扱える
+ */
+export function assertIsDefined<T>(
+  val: T,
+  msg = 'Required value is undefined'
+): asserts val is NonNullable<T> {
+  if (val === null || val === undefined) throw new Error(msg);
+}
+
+/**
+ * 値が特定の型であることを確認するアサーション関数
+ * 使用例:
+ * const value: unknown = getValueFromSomewhere();
+ * assertIsType<string>(value, (v): v is string => typeof v === 'string');
+ * // この後は value は string として扱える
+ */
+export function assertIsType<T>(
+  val: unknown, 
+  typeGuard: (val: unknown) => val is T,
+  msg = 'Value is not of expected type'
+): asserts val is T {
+  if (!typeGuard(val)) {
+    throw new Error(msg);
+  }
+}
+
+/**
+ * 値がオブジェクトであることを確認するアサーション関数
+ */
+export function assertIsObject(
+  val: unknown,
+  msg = 'Value is not an object'
+): asserts val is Record<string, unknown> {
+  if (val === null || typeof val !== 'object') {
+    throw new Error(msg);
+  }
+}
+
+/**
+ * 値が配列であることを確認するアサーション関数
+ */
+export function assertIsArray<T = unknown>(
+  val: unknown,
+  msg = 'Value is not an array'
+): asserts val is T[] {
+  if (!Array.isArray(val)) {
+    throw new Error(msg);
+  }
+}
+
+/**
+ * 値がstringであることを確認するガード関数
+ */
+export function isString(val: unknown): val is string {
+  return typeof val === 'string';
+}
+
+/**
+ * 値がnumberであることを確認するガード関数
+ */
+export function isNumber(val: unknown): val is number {
+  return typeof val === 'number' && !isNaN(val);
+}
+
+/**
+ * 値がbooleanであることを確認するガード関数
+ */
+export function isBoolean(val: unknown): val is boolean {
+  return typeof val === 'boolean';
+}
 
 /**
  * 値が有効か（null, undefined, 空文字でない）チェック

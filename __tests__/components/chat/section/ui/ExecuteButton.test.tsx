@@ -31,6 +31,7 @@ describe('ExecuteButton', () => {
   // テスト用のモックエントリー
   const mockEntry: OpenEntry = {
     id: 'test-entry-1',
+    userId: 'test-user-1',
     side: 'buy',
     price: 50000,
     symbol: 'BTCUSDT',

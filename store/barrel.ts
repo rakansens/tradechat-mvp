@@ -6,6 +6,7 @@
 // 更新: 2025-05-30 - DataFetchSliceのセレクターを追加
 // 更新: 2025-06-01 - OrderBookStore統合に伴うセレクターを追加
 // 更新: 2025-06-01 - セレクターの名前衝突を解決
+// 更新: 2025-06-29 - ChatSliceの会話単位セレクターを追加
 
 // DataFetchSliceのセレクターを追加
 export * from "./dataFetch/selectors"
@@ -98,16 +99,31 @@ export {
 
 // Chat Sliceのセレクターをエクスポート
 export {
+  // 基本セレクター
   selectMessages,
   selectIsSearching,
   selectInput,
+  
+  // アクティブ会話セレクター
+  selectActiveConversationId,
+  selectActiveConversation,
+  selectActiveMessages,
+  selectActiveInput,
+  selectActiveIsSearching,
+  selectConversationConnection,
+  selectGlobalConnectionStatus,
+  
+  // メモ化されたセレクター
   selectLastMessage,
+  selectActiveLastMessage,
   selectMessageCount,
   selectUserMessages,
   selectAIMessages,
   selectProposalMessages,
   selectLatestProposal,
+  selectActiveMessagesWithStreaming,
   selectMessagesWithStreaming,
+  selectActiveStreamingMessage,
   selectStreamingMessage
 } from './chat/selectors'
 

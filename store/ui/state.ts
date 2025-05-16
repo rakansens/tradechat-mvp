@@ -1,7 +1,8 @@
 // store/ui/state.ts
 // 初期実装: UIスライスの状態と初期値を定義
+// 更新: T-7.5フェーズ - 型インポートパスを修正
 
-import type { TabType } from '@/types/store'
+import type { TabType } from '@/types/store/ui'
 
 // UIスライスの状態インターフェース
 export interface UISliceState {

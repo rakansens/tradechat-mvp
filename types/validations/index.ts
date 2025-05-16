@@ -1,7 +1,7 @@
 /**
  * Zod 検証スキーマのインデックスファイル
  * 各ドメインの検証スキーマを再エクスポート
- * 更新: T-7.5フェーズ - 明示的なエクスポート方式に変更
+ * 更新: T-7.5フェーズ - 明示的なエクスポート方式に変更し、衝突を解消
  */
 
 // Chart
@@ -22,12 +22,15 @@ export {
   entrySchema, validateEntry
 } from './entry';
 
-// Market
+// Market - 衝突するシンボル関連を除外
 export { 
   orderBookDataSchema, validateOrderBookData,
   orderBookEntrySchema, validateOrderBookEntry,
   marketStatsDataSchema, validateMarketStatsData
 } from './market';
+
+// Market関連の重複exportは削除（symbolを一次ソースとする）
+// 衝突するsymbolInfoSchemaとvalidateSymbolInfoは下部のsymbolからのexportを使用する
 
 // Price
 export { 
@@ -35,7 +38,7 @@ export {
   priceChangeSchema, validatePriceChange
 } from './price';
 
-// Symbol - 明示的にexport (market.tsとの競合を避ける)
+// Symbol - シンボル関連（プライマリソースとして明示的にエクスポート）
 export { 
   filterOptionsSchema, validateFilterOptions,
   symbolInfoSchema, validateSymbolInfo

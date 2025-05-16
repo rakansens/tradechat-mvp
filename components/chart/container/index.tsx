@@ -1,10 +1,13 @@
 /**
  * components/chart/container/index.tsx
- * リファクタリングされたチャートコンテナのメインコンポーネント
+ * チャートコンテナコンポーネント
+ * 
+ * チャートの表示、インジケータ、描画ツール、設定などをラップする
  * 
  * 変更履歴:
- * - 2023-06-01: ChartContainer.tsxのリファクタリングに伴い作成
- * - 2023-06-02: handleChartTypeChangeの型をChartType型に修正
+ * - 2023-05-30: 初期実装
+ * - 2023-06-01: サブコンポーネントに分割
+ * - 2025-06-05: T-7.5フェーズ - 型インポートパスを修正
  */
 
 "use client";
@@ -17,7 +20,7 @@ import { useChartGlobalEvents, useRealTimeCleanup } from '@/hooks/chart';
 import { useChartStores } from '@/hooks/chart';
 import type { Timeframe, ChartType } from '@/types/chart';
 import type { ExchangeType } from '@/types/api';
-import type { IndicatorType, DrawingToolType } from '@/types/store';
+import type { IndicatorType, DrawingToolType } from '@/types/store/chart';
 
 /**
  * リファクタリングされたチャートコンテナ

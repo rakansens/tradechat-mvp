@@ -1,7 +1,8 @@
 // store/chart/indicator/actions.ts
 // 作成: IndicatorSliceのアクション定義
+// 更新: T-7.5フェーズ - 型インポートパスを修正
 
-import type { IndicatorType, ActiveIndicator } from "@/types/store"
+import type { IndicatorType, ActiveIndicator } from "@/types/store/chart"
 import type { IndicatorSliceState } from "./state"
 import { getDefaultIndicatorParams } from "@/utils/chart/indicatorFactory"
 

@@ -1,7 +1,8 @@
 // store/chart/drawingTool/actions.ts
 // 作成: DrawingToolSliceのアクション定義
+// 更新: T-7.5フェーズ - 型インポートパスを修正
 
-import type { DrawingToolType } from "@/types/store"
+import type { DrawingToolType } from "@/types/store/chart"
 import type { DrawingToolSliceState } from "./state"
 
 export interface DrawingToolActions {

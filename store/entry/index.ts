@@ -1,6 +1,7 @@
 // store/entry/index.ts
 // エントリーストアのエントリーポイント
 // 更新: 2025/6/1 - リアルタイム購読ミドルウェアを追加
+// 更新: T-7.5フェーズ - userIdフィールドをエントリー型に追加
 
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
@@ -10,6 +11,9 @@ import { subscribeToEntries } from '@/lib/supabase/features/entry'
 import { Tables } from '@/types/network/supabase'
 import { Entry as FrontendEntry, OpenEntry, ClosedEntry, CanceledEntry } from '@/types/entry'
 
+// アクションの型定義を追加
+export type EntrySliceActions = ReturnType<typeof createEntryActions>;
+
 // SupabaseのEntry型
 type SupabaseEntry = Tables<'entries'>;
 
@@ -18,6 +22,7 @@ const convertToFrontendEntry = (dbEntry: SupabaseEntry): FrontendEntry => {
   // 基本のエントリーデータ
   const baseEntry = {
     id: dbEntry.id,
+    userId: dbEntry.user_id,  // userIdフィールドを追加
     side: dbEntry.side as 'buy' | 'sell',
     symbol: dbEntry.symbol,
     price: dbEntry.price,
@@ -122,7 +127,7 @@ const subscribeMiddleware = (config: any) => (set: any, get: any, api: any) => {
 
 // エントリーストア作成
 export const useEntryStore = create<
-  EntrySliceState & ReturnType<typeof createEntryActions>
+  EntrySliceState & EntrySliceActions
 >()(
   subscribeMiddleware(
     immer((set, get, api) => ({

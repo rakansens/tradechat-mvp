@@ -1,7 +1,8 @@
 // store/chart/drawingTool/state.ts
 // 作成: DrawingToolSliceの状態定義
+// 更新: T-7.5フェーズ - 型インポートパスを修正
 
-import type { DrawingToolType } from "@/types/store"
+import type { DrawingToolType } from "@/types/store/chart"
 
 /**
  * 描画ツールスライスの状態型定義

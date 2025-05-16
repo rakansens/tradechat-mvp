@@ -5,9 +5,24 @@
  * 更新：T-7.5フェーズ - 循環参照を防ぐためimportを修正
  */
 
-// types/ui.ts
-// 作成: UI関連の型定義
-// 更新: T-7.5フェーズ - インポートパスを修正
+/**
+ * types/ui.ts
+ * 
+ * UI関連の型定義を再エクスポートするファイル
+ * 
+ * 更新: T-7.5フェーズ - 循環参照解消のため修正
+ */
+
+// ストアのUIState型とTabType型を明示的に再エクスポート
+export type { UIState, TabType } from './store/ui';
+
+/**
+ * @deprecated このファイルの直接利用は推奨されません。
+ * 代わりに次のインポートパスを使用してください：
+ * 
+ * - UIState, TabType: import { UIState, TabType } from '@/types/store/ui';
+ * - その他UI関連の型: import { ... } from '@/types/ui/base';
+ */
 
 /**
  * アプリケーションのタブ
@@ -37,27 +52,6 @@ export interface UIStateDeprecated {
   setThemeMode?: (mode: ThemeMode) => void;
   toggleSidebar?: () => void;
   toggleSettings?: () => void;
-}
-
-// 直接のimportではなく型のみを定義して循環参照を防ぐ
-/**
- * タブの種類（types/store/ui.ts から）
- */
-export type TabType = 'chart' | 'orderbook' | 'trades' | 'positions' | 'settings';
-
-/**
- * UIストアの状態（types/store/ui.ts から）
- */
-export interface UIState {
-  // 状態
-  activeTab: TabType;
-  isDarkMode: boolean;
-  isSidebarOpen: boolean;
-  
-  // アクション
-  setActiveTab: (tab: TabType) => void;
-  toggleDarkMode: () => void;
-  toggleSidebar: () => void;
 }
 
 /**

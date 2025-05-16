@@ -12,7 +12,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { LineChart } from 'lucide-react';
-import { IndicatorType, DrawingToolType } from '@/types/store';
+import { IndicatorType, DrawingToolType } from '@/types/store/chart';
 
 // インジケーター定義
 const indicators = [

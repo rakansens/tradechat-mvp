@@ -9,7 +9,7 @@
 
 import React, { memo, useState, useEffect } from 'react';
 import { Separator } from '@/components/ui/separator';
-import { TabType } from '@/types/store';
+import { TabType } from '@/types/store/ui';
 import { Timeframe } from '@/types/chart';
 
 // フックのインポート

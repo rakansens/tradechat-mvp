@@ -4,6 +4,7 @@
  * 
  * 変更履歴:
  * - 2023-06-01: ChartContainer.tsxのリファクタリングに伴い作成
+ * - 2025-06-05: T-7.5フェーズ - 型インポートパスを修正
  */
 
 "use client";
@@ -12,7 +13,7 @@ import React from 'react';
 import type { OHLCData } from '@/types/chart';
 import type { ExchangeType } from '@/types/api';
 import type { Timeframe, ChartType } from '@/types/chart';
-import type { ActiveIndicator } from '@/types/store';
+import type { ActiveIndicator } from '@/types/store/chart';
 
 interface ChartBodyProps {
   // 表示データ

@@ -220,6 +220,7 @@ export default function ChatSection({
               <Header 
                 onToggleMemory={toggleMemoryPanel} 
                 isMemoryOpen={isMemoryPanelOpen} 
+                connection={chat.connection}
               />
               
               {/* メモリパネル - ヘッダー直下に配置 */}

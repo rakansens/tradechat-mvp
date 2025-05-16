@@ -6,6 +6,7 @@
 // 1. 銘柄選択ボタンの表示
 // 2. 現在価格と変化率のバッジ表示
 // 更新: 2025-06-28 - Tailwindクラスに変更
+// 更新: T-7.5フェーズ - currentPriceをnullableに変更
 
 import React, { memo } from 'react';
 import { Button } from '@/components/ui/button';
@@ -14,6 +15,9 @@ import { CandlestickChart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import SymbolSelectorModal from '../../SymbolSelectorModal';
 import { ExchangeType } from '@/types/api';
+import { SymbolSelector } from '@/components/symbol/Selector';
+import { formatPrice, formatPercentage } from '@/utils/market/formatters';
+import { ExchangeSelector } from '@/components/symbol/ExchangeSelector';
 
 interface SymbolPriceBarProps {
   // シンボル関連
@@ -23,8 +27,8 @@ interface SymbolPriceBarProps {
   onExchangeTypeChange: (type: ExchangeType) => void;
   
   // 価格関連
-  currentPrice: number;
-  priceChangePercent: number;
+  currentPrice: number | null;
+  priceChangePercent: number | null;
   mounted: boolean; // クライアントサイドレンダリング用
 }
 
@@ -65,7 +69,7 @@ const SymbolPriceBar = memo(function SymbolPriceBar({
 
       {/* 最新価格表示 */}
       <div className="relative z-10 flex items-center">
-        {currentPrice > 0 && (
+        {currentPrice !== null && currentPrice > 0 && (
           <Badge 
             variant="outline" 
             className="font-mono text-sm font-bold py-1 px-2 ml-2 bg-background-tertiary border-border-light text-text-primary shadow-md" 
@@ -75,7 +79,7 @@ const SymbolPriceBar = memo(function SymbolPriceBar({
         )}
 
         {/* 価格変化率表示 */}
-        {priceChangePercent !== 0 && (
+        {priceChangePercent !== null && priceChangePercent !== 0 && (
           <Badge 
             variant="outline" 
             className={cn(

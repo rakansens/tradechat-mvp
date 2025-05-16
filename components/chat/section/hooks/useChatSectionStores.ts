@@ -7,14 +7,17 @@
  * - 2025-05-20: useChatStoreをuseRootStoreに置き換え
  * - 2025-05-13: 古いuseChatStore参照を完全に削除
  * - 2025-05-15: useEntryStoreをuseRootStoreに置き換え
+ * - 2025-06-29: アクティブ会話単位のセレクターを使用するよう変更
+ * - 2025-06-29: 接続状態情報を取得するように変更
  */
 
 import { 
   useRootStore,
   // メモ化されたセレクター
-  selectMessages, 
-  selectIsSearching,
-  selectInput,
+  selectActiveMessages,
+  selectActiveIsSearching,
+  selectActiveInput,
+  selectConversationConnection,
   selectPendingEntry,
   selectHasPendingEntry
 } from "@/store";
@@ -28,13 +31,11 @@ import {
  * @returns チャットセクションで使用する状態とアクション
  */
 export const useChatSectionStores = () => {
-  // ChatStoreは不要なため削除（RootStoreに統合）
-  // const chatStore = useChatStore();
-  
-  // RootStoreから状態を取得
-  const messages = useRootStore(selectMessages);
-  const isLoading = useRootStore(selectIsSearching);
-  const input = useRootStore(selectInput);
+  // アクティブ会話のデータを取得
+  const messages = useRootStore(selectActiveMessages);
+  const isLoading = useRootStore(selectActiveIsSearching);
+  const input = useRootStore(selectActiveInput);
+  const connection = useRootStore(selectConversationConnection);
   
   // RootStoreからアクションを直接取得
   const rootStore = useRootStore();
@@ -51,6 +52,7 @@ export const useChatSectionStores = () => {
       messages,
       isLoading,
       input,
+      connection, // 接続状態情報を追加
       setInput,
       sendMessage,
     },

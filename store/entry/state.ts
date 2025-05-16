@@ -1,6 +1,7 @@
 // store/entry/state.ts
 // エントリースライスの状態と初期値を定義
 // 更新: 2025/6/1 - ローディングとエラー状態を追加
+// 更新: T-7.5フェーズ - userIdフィールドを追加
 
 import type { Entry, OpenEntry } from '@/types/entry'
 
@@ -18,6 +19,7 @@ export const initialEntryState: EntrySliceState = {
   entries: [
     {
       id: "1",
+      userId: "example-user-1",
       side: "buy",
       symbol: "BTC/USD",
       price: 58750,
@@ -29,6 +31,7 @@ export const initialEntryState: EntrySliceState = {
     },
     {
       id: "2",
+      userId: "example-user-1",
       side: "sell",
       symbol: "BTC/USD",
       price: 62500,
@@ -40,6 +43,7 @@ export const initialEntryState: EntrySliceState = {
     },
     {
       id: "3",
+      userId: "example-user-1",
       side: "buy",
       symbol: "BTC/USD",
       price: 59200,

@@ -29,9 +29,11 @@ const TYPE_IMPORT_MAP: Record<string, string> = {
   'MarketState': '@/types/store/market',
   'StoreFilterOptions': '@/types/store/symbol',
   'FilterOptions': '@/types/store/symbol',
+  
+  // --- store/chart で定義されている enum / 型 ---------------
   'IndicatorType': '@/types/store/chart',
-  'ActiveIndicator': '@/types/store/chart',
   'DrawingToolType': '@/types/store/chart',
+  'ActiveIndicator': '@/types/store/chart',
   
   // 共通型の変換マップ
   'SymbolInfo': '@/types/common/symbol',
@@ -44,6 +46,7 @@ const TYPE_IMPORT_MAP: Record<string, string> = {
   'ChartType': '@/types/constants/enums',
   'OHLCData': '@/types/chart',
   'TradeSide': '@/types/constants/enums',
+  'EntryStatus': '@/types/constants/enums',
 
   // 追加の型マッピング - エラー解決のため
   'BaseEntry': '@/types/entry/base',
@@ -52,8 +55,19 @@ const TYPE_IMPORT_MAP: Record<string, string> = {
   'CanceledEntry': '@/types/entry/base',
   'Entry': '@/types/entry/base',
   'EntryState': '@/types/entry/state',
-  'EntryStatus': '@/types/constants/enums',
   'SymbolListProps': '@/types/common/symbol',
+  'ConnectionStatus': '@/types/network/connection',
+  'SelectQueryError': '@/types/network/supabase',
+  
+  // T-7.5フェーズ追加 - コンポーネントのエラー解決
+  'ChartDataSlice': '@/store/chart/data/types',
+  'RealTimeSlice': '@/store/chart/realtime/types',
+  'IndicatorSlice': '@/store/chart/indicator/types',
+  'DrawingToolSlice': '@/store/chart/drawingTool/types',
+  'ChartConfigSlice': '@/store/chart/config/types',
+  'EntrySliceState': '@/store/entry/state',
+  'EntrySliceActions': '@/store/entry/actions',
+  'DataFetchSliceState': '@/store/datafetch/state',
 };
 
 /**
@@ -63,15 +77,14 @@ const PATH_TRANSFORM_MAP: Record<string, string> = {
   '@/types/common-interfaces': '@/types/common/interfaces',
   '@/types/common': '@/types/common/index',
   '@/utils/supabase': '@/lib/supabase',
-  '@/types/store': '@/types/store/index', // 循環参照解消のため
+  // 旧 store バレル → 正規パス（fallback 防止用）
+  '@/types/store': '@/types/store/index',
   '@/types': '@/types/index',  // 直接の@/typesインポートを解消
   '@/store/useSymbolStore': '@/store/symbol',
   '@/store/useDebugStore': '@/store/debug',
   '@/store/useChartDataStore': '@/store/chart/data',
   '@/types/orderbook': '@/types/common/orderbook',
   '@/styles/colors': '@/styles/theme',
-  '../useLogs': '../utils/useLogs',
-  '../useDebugPolling': '../utils/useDebugPolling',
   '../../types/orderbook': '@/types/common/orderbook',
   '@/app/signin/page': '@/app/(auth)/signin/page',
   '@/lib/supabase/supabase': '@/lib/supabase',
@@ -83,7 +96,17 @@ const PATH_TRANSFORM_MAP: Record<string, string> = {
   '@/components/ui/spinner': '@/components/ui/loading-spinner',
   '../socket-service': '@/services/socket/index',
   './supabase': '@/lib/supabase/client',
-  '../useDebugStores': '@/hooks/debug/utils/useDebugStores',
+  './position': '@/utils/position/position',
+  './market/formatters': '@/utils/market/formatters/index',
+  './position/calculations': '@/utils/position/calculations/index',
+  '../types/market': '@/types/common/market',
+  'vitest': 'jest',
+  
+  // T-7.5フェーズ追加 - 相対パスからの絶対パス変換
+  '../useDebugStores': '@/hooks/debug/useDebugStores',
+  '../useDebugPolling': '@/hooks/debug/useDebugPolling',
+  '../useLogs': '@/hooks/debug/useLogs',
+  '@/store': '@/store/index',
 };
 
 export default function transformer(file: FileInfo, api: API, options: Options) {
