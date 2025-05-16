@@ -9,12 +9,12 @@
  * - 2025-05-31: AIアシスタントテキストを左寄せに修正
  * - 2025-05-31: レイアウト構造を単純化し、AIアシスタントを左、メモリボタンを右に確実に配置
  * - 2025-06-01: メモリパネルを最新のメモリトグルコンポーネントに更新
+ * - 2025-06-28: theme.accent参照をTailwindクラスに変更
  */
 
 "use client"
 
 import { MessageSquare } from "lucide-react"
-import { theme } from "@/styles/colors"
 import { MemoryToggle } from "@/components/chat/ui/MemoryToggle"
 
 interface HeaderProps {
@@ -30,13 +30,12 @@ interface HeaderProps {
 export const Header = ({ onToggleMemory, isMemoryOpen }: HeaderProps) => {
   return (
     <div 
-      className="flex items-center justify-between px-4 py-2 border-b"
-      style={{ backgroundColor: theme.background.secondary, borderColor: theme.border.light }}
+      className="flex items-center justify-between px-4 py-2 border-b bg-background-secondary border-border-light"
     >
       {/* 左側: AIアシスタントタイトル */}
       <div className="flex items-center">
-        <MessageSquare className="h-4 w-4 mr-2" style={{ color: theme.accent.blue }} />
-        <span className="text-sm font-medium" style={{ color: theme.text.primary }}>
+        <MessageSquare className="h-4 w-4 mr-2 text-accent-blue" />
+        <span className="text-sm font-medium text-text-primary">
           AI Assistant
         </span>
       </div>

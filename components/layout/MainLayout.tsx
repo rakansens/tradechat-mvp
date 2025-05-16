@@ -43,14 +43,14 @@ export function MainLayout({
   onTabChange
 }: MainLayoutProps) {
   return (
-    <main className="flex flex-col h-screen" style={{ backgroundColor: theme.background.primary }}>
+    <main className="flex flex-col h-screen" style={{ backgroundColor: bg-background-primary }}>
       <HeaderSection 
         currentSymbol={currentSymbol}
         currentPrice={currentPrice}
         priceChangePercent={priceChangePercent}
       />
       
-      <div className="h-full" style={{ backgroundColor: theme.background.primary }}>
+      <div className="h-full" style={{ backgroundColor: bg-background-primary }}>
         {/* モバイルレイアウト（md以下で表示） */}
         <MobileLayout
           chatSection={chatSection}

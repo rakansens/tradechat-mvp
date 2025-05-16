@@ -102,9 +102,9 @@ export default function SystemPromptEditor({
     return (
       <Card 
         className="w-full max-w-md border rounded-md shadow-md"
-        style={{ backgroundColor: theme.background.secondary }}
+        style={{ backgroundColor: bg-background-secondary }}
       >
-        <CardHeader className="p-4 border-b" style={{ borderColor: theme.border.light }}>
+        <CardHeader className="p-4 border-b" style={{ borderColor: border-border-light }}>
           <CardTitle className="text-lg font-medium">システムプロンプトの編集</CardTitle>
         </CardHeader>
         <CardContent className="p-4">
@@ -114,14 +114,14 @@ export default function SystemPromptEditor({
               value={prompt}
               onChange={handlePromptChange}
               className="min-h-[150px] resize-y bg-slate-800 border-slate-700"
-              style={{ backgroundColor: theme.background.tertiary }}
+              style={{ backgroundColor: bg-background-tertiary }}
             />
             <p className="text-xs text-muted-foreground">
               会話の性質や制約を決定する指示をAIに与えます。変更内容は会話全体に適用されます。
             </p>
           </div>
         </CardContent>
-        <CardFooter className="p-4 border-t flex justify-end space-x-2" style={{ borderColor: theme.border.light }}>
+        <CardFooter className="p-4 border-t flex justify-end space-x-2" style={{ borderColor: border-border-light }}>
           <Button 
             variant="outline" 
             onClick={handleCancel}
@@ -164,7 +164,7 @@ export default function SystemPromptEditor({
         value={prompt}
         onChange={handlePromptChange}
         className="min-h-[100px] resize-y bg-slate-800 border-slate-700"
-        style={{ backgroundColor: theme.background.tertiary }}
+        style={{ backgroundColor: bg-background-tertiary }}
       />
       
       <p className="text-xs text-muted-foreground">

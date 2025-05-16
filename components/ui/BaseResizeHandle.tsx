@@ -43,8 +43,8 @@ export const BaseResizeHandle = forwardRef<
       )}
       style={{ 
         backgroundColor: isActive 
-          ? `${theme.background.elevated}` 
-          : `${theme.background.tertiary}`,
+          ? `${bg-background-elevated}` 
+          : `${bg-background-tertiary}`,
         // デフォルトの寸法
         ...(direction === "horizontal" 
           ? { width: '8px', height: '100%' } 

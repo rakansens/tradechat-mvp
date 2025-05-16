@@ -52,10 +52,10 @@ export function HeaderTabs({ selectedTab, onTabChange, counts }: HeaderTabsProps
   const displayCounts = counts || defaultCounts;
 
   return (
-    <CardHeader className="py-2 px-4 flex flex-row items-center justify-between border-b" style={{ borderColor: theme.border.light }}>
-      <CardTitle className="text-base font-medium" style={{ color: theme.text.primary }}>Position History</CardTitle>
+    <CardHeader className="py-2 px-4 flex flex-row items-center justify-between border-b" style={{ borderColor: border-border-light }}>
+      <CardTitle className="text-base font-medium" style={{ color: text-text-primary }}>Position History</CardTitle>
       <Tabs value={selectedTab} onValueChange={(v) => onTabChange(v as HistoryTab)}>
-        <TabsList className="grid grid-cols-4 h-7 border" style={{ backgroundColor: theme.background.tertiary, borderColor: theme.border.light }}>
+        <TabsList className="grid grid-cols-4 h-7 border" style={{ backgroundColor: bg-background-tertiary, borderColor: border-border-light }}>
           <TabsTrigger 
             value="all" 
             className="text-xs h-6 data-[state=active]:bg-[#2a2e3d] data-[state=active]:text-white relative"

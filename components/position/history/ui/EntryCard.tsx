@@ -5,6 +5,7 @@
  * 
  * 変更履歴:
  * - 2023-05-13: PositionHistory.tsxから抽出
+ * - 2025-06-28: インラインスタイルをTailwindクラスに変更
  */
 
 "use client"
@@ -12,7 +13,7 @@
 import { useMemo } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { theme } from "@/styles/colors"
+import { cn } from "@/lib/utils"
 import { formatPrice, formatDate } from "@/utils/formatUtils"
 import type { Entry } from "@/types/entry"
 
@@ -43,28 +44,24 @@ export function EntryCard({ entry, currentPrice, onClose, onCancel }: EntryCardP
     }
   }, [entry, currentPrice])
 
-  // PnLのスタイル（正ならプラス、負ならマイナス）
-  const pnlColor = pnl >= 0 ? theme.accent.green : theme.accent.red
-
   return (
-    <Card className="mb-2 last:mb-0 overflow-hidden border" style={{ borderColor: theme.border.light }}>
+    <Card className="mb-2 last:mb-0 overflow-hidden border border-border-light">
       <CardContent className="p-4">
         <div className="flex justify-between items-start">
           <div>
-            <div className="font-medium" style={{ color: theme.text.primary }}>
+            <div className="font-medium text-text-primary">
               {entry.symbol}
               <Badge 
-                className="ml-2 text-xs" 
-                style={{ 
-                  backgroundColor: entry.status === "open" ? theme.background.tertiary : theme.background.elevated,
-                  color: theme.text.primary
-                }}
+                className={cn(
+                  "ml-2 text-xs text-text-primary",
+                  entry.status === "open" ? "bg-background-tertiary" : "bg-background-elevated"
+                )}
               >
                 {entry.status === "open" ? "Open" : "Closed"}
               </Badge>
             </div>
             
-            <div className="text-sm mt-1" style={{ color: theme.text.secondary }}>
+            <div className="text-sm mt-1 text-text-secondary">
               Entry: {formatPrice(entry.price)}
               {entry.status === "closed" && 'exitPrice' in entry && (
                 <span className="ml-2">
@@ -73,17 +70,20 @@ export function EntryCard({ entry, currentPrice, onClose, onCancel }: EntryCardP
               )}
             </div>
             
-            <div className="text-xs mt-1" style={{ color: theme.text.muted }}>
+            <div className="text-xs mt-1 text-text-muted">
               {formatDate(entry.time)}
             </div>
           </div>
           
           <div className="text-right">
-            <div className="font-medium" style={{ color: pnlColor }}>
+            <div className={cn(
+              "font-medium",
+              pnl >= 0 ? "text-accent-green" : "text-accent-red"
+            )}>
               {pnl >= 0 ? "+" : ""}{formatPrice(pnl)}
             </div>
             
-            <div className="text-sm mt-1" style={{ color: theme.text.secondary }}>
+            <div className="text-sm mt-1 text-text-secondary">
               {entry.side} {entry.symbol}
             </div>
             
@@ -91,15 +91,13 @@ export function EntryCard({ entry, currentPrice, onClose, onCancel }: EntryCardP
               <div className="flex gap-2 mt-2">
                 <button
                   onClick={onClose}
-                  className="px-3 py-1 text-xs rounded"
-                  style={{ backgroundColor: theme.accent.blue, color: "#ffffff" }}
+                  className="px-3 py-1 text-xs rounded bg-accent-blue text-white"
                 >
                   Close
                 </button>
                 <button
                   onClick={onCancel}
-                  className="px-3 py-1 text-xs rounded"
-                  style={{ backgroundColor: theme.background.tertiary, color: theme.text.secondary }}
+                  className="px-3 py-1 text-xs rounded bg-background-tertiary text-text-secondary"
                 >
                   Cancel
                 </button>

@@ -34,9 +34,9 @@ export const QuickCommands = ({ commands }: QuickCommandsProps) => {
           variant="outline"
           className="text-xs h-7" 
           style={{ 
-            backgroundColor: theme.background.tertiary,
-            borderColor: theme.border.light,
-            color: theme.text.secondary,
+            backgroundColor: bg-background-tertiary,
+            borderColor: border-border-light,
+            color: text-text-secondary,
           }}
           onClick={cmd.action}
         >

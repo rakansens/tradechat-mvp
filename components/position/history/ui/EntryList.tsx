@@ -44,8 +44,8 @@ export function EntryList({
       <div
         className="flex items-center justify-center p-6 text-sm"
         style={{ 
-          color: theme.text.muted,
-          backgroundColor: theme.background.card,
+          color: text-text-muted,
+          backgroundColor: bg-background-card,
           minHeight: "200px"
         }}
       >
@@ -56,7 +56,7 @@ export function EntryList({
 
   return (
     <ScrollArea style={{ maxHeight }} className="pr-3">
-      <div className="p-3 space-y-2" style={{ backgroundColor: theme.background.card }}>
+      <div className="p-3 space-y-2" style={{ backgroundColor: bg-background-card }}>
         {entries.map((entry) => (
           <EntryCard
             key={entry.id}

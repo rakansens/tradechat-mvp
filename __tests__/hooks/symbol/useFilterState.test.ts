@@ -2,15 +2,16 @@
  * __tests__/hooks/symbol/useFilterState.test.ts
  * useFilterStateフックのテストスイート
  * 更新: T-7.3フェーズ - インポートパスを types/validations に変更
+ * 更新: T-7.5フェーズ - ストア参照パスを修正
  */
 
 import { renderHook, act } from '@testing-library/react';
-import { useFilterState } from '@/hooks/symbol';
-import { useSymbolStore } from '@/store/useSymbolStore';
+import { useFilterState } from '@/hooks/symbol/filter/useFilterState';
+import { useSymbolStore } from '@/store/symbol';
 import { validateFilterOptions } from '@/types/validations/symbol';
 
 // モックの設定
-jest.mock('@/store/useSymbolStore', () => ({
+jest.mock('@/store/symbol', () => ({
   useSymbolStore: jest.fn(),
 }));
 

@@ -2,7 +2,7 @@
 
 import type { ChangeEvent } from "react"
 import { Input } from "@/components/ui/input"
-import { theme } from "@/styles/colors"
+import { cn } from "@/lib/utils"
 
 interface InputBoxProps {
   value: string
@@ -12,8 +12,8 @@ interface InputBoxProps {
 }
 
 export default function InputBox({ value, onChange, placeholder = "Type a message...", className }: InputBoxProps) {
-  // テーマカラーを使用したデフォルトスタイル
-  const defaultClassName = `flex-1 bg-[${theme.background.tertiary}] border-[${theme.border.light}] text-[${theme.text.primary}] placeholder:text-[${theme.text.muted}]`;
+  // Tailwindクラスを使用したデフォルトスタイル
+  const defaultClassName = "flex-1 bg-background-tertiary border-border-light text-text-primary placeholder:text-text-muted";
   
   return (
     <Input 
@@ -21,7 +21,7 @@ export default function InputBox({ value, onChange, placeholder = "Type a messag
       value={value} 
       onChange={onChange} 
       placeholder={placeholder} 
-      className={`${defaultClassName} ${className || ''}`} 
+      className={cn(defaultClassName, className)} 
     />
   )
 }

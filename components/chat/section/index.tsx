@@ -158,7 +158,7 @@ export default function ChatSection({
 
   return (
     <div className="w-full h-full flex flex-col">
-      <Card className="flex-1 flex flex-col overflow-hidden border-0 rounded-none shadow-none" style={{ backgroundColor: theme.background.secondary }}>
+      <Card className="flex-1 flex flex-col overflow-hidden border-0 rounded-none shadow-none" style={{ backgroundColor: bg-background-secondary }}>
         {/* マルチスレッドチャットUI */}
         <div className="flex h-full">
           {/* モバイル用サイドバートリガー - モバイル時のみ表示 */}
@@ -244,10 +244,10 @@ export default function ChatSection({
               />
             </CardContent>
 
-            <Separator className="border" style={{ borderColor: theme.border.light }} />
+            <Separator className="border" style={{ borderColor: border-border-light }} />
 
             {/* フッター部分 - クイックコマンドと入力エリア */}
-            <CardFooter className="p-2 flex flex-col gap-2 border-t" style={{ backgroundColor: theme.background.secondary, borderColor: theme.border.light }}>
+            <CardFooter className="p-2 flex flex-col gap-2 border-t" style={{ backgroundColor: bg-background-secondary, borderColor: border-border-light }}>
               {/* クイックコマンドボタンとエントリー実行ボタン */}
               <div className="flex items-center justify-between w-full">
                 <QuickCommands commands={quickCommands} />

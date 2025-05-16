@@ -11,10 +11,16 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
-        background: "hsl(var(--background))",
+        background: {
+          DEFAULT: "hsl(var(--background))",
+          primary: "var(--color-bg-primary)",
+          secondary: "var(--color-bg-secondary)",
+          tertiary: "var(--color-bg-tertiary)",
+          card: "var(--color-bg-card)",
+          elevated: "var(--color-bg-elevated)",
+        },
         foreground: "hsl(var(--foreground))",
         primary: {
           DEFAULT: "hsl(var(--primary))",
@@ -35,6 +41,12 @@ const config: Config = {
         accent: {
           DEFAULT: "hsl(var(--accent))",
           foreground: "hsl(var(--accent-foreground))",
+          blue: "var(--color-accent-blue)",
+          lightBlue: "var(--color-accent-lightBlue)",
+          green: "var(--color-accent-green)",
+          red: "var(--color-accent-red)",
+          yellow: "var(--color-accent-yellow)",
+          purple: "var(--color-accent-purple)",
         },
         popover: {
           DEFAULT: "hsl(var(--popover))",
@@ -43,6 +55,25 @@ const config: Config = {
         card: {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
+        },
+        text: {
+          primary: "var(--color-text-primary)",
+          secondary: "var(--color-text-secondary)",
+          muted: "var(--color-text-muted)",
+          disabled: "var(--color-text-disabled)",
+        },
+        border: {
+          DEFAULT: "hsl(var(--border))",
+          light: "var(--color-border-light)",
+          dark: "var(--color-border-dark)",
+          highlight: "var(--color-border-highlight)",
+        },
+        chart: {
+          grid: "var(--color-chart-grid)",
+          upCandle: "var(--color-chart-upCandle)",
+          downCandle: "var(--color-chart-downCandle)",
+          line: "var(--color-chart-line)",
+          crosshair: "var(--color-chart-crosshair)",
         },
       },
       borderRadius: {

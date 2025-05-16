@@ -4,6 +4,7 @@
  * 
  * 変更履歴:
  * - 2023-06-10: ChatSection.tsxのリファクタリングに伴い作成
+ * - 2025-06-28: theme.accent.blue参照をTailwindクラスに変更
  */
 
 "use client"
@@ -12,7 +13,6 @@ import { FormEvent } from "react"
 import { Send } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import InputBox from "@/components/chat/InputBox"
-import { theme } from "@/styles/colors"
 
 interface InputFormProps {
   value: string
@@ -42,11 +42,7 @@ export const InputForm = ({ value, onChange, onSubmit }: InputFormProps) => {
         <Button 
           type="submit" 
           size="icon" 
-          className=""
-          style={{ 
-            backgroundColor: theme.accent.blue,
-            color: "white"
-          }}
+          className="bg-accent-blue text-white"
         >
           <Send className="h-4 w-4" />
         </Button>

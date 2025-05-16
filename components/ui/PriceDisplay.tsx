@@ -1,11 +1,12 @@
 // components/ui/PriceDisplay.tsx
 // 更新: 価格表示用の共通コンポーネント - Zodバリデーションスキーマを適用
+// 更新: 2025-06-28 - theme.accent参照とインラインスタイルをTailwindクラスに変更
 
 "use client"
 
 import React, { useState, useEffect } from "react"
 import { Badge } from "@/components/ui/badge"
-import { theme } from "@/styles/colors"
+import { cn } from "@/lib/utils"
 import {
   PriceDisplayProps,
   PriceChangeProps,
@@ -48,13 +49,10 @@ export function PriceDisplay({
   return (
     <Badge
       variant="outline"
-      className={`font-mono font-bold ${sizeClasses[size]} ${className}`}
-      style={{
-        backgroundColor: theme.background.tertiary,
-        borderColor: theme.border.light,
-        color: theme.text.primary,
-        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
-      }}
+      className={cn(
+        `font-mono font-bold ${sizeClasses[size]} bg-background-tertiary border-border-light text-text-primary shadow-md`,
+        className
+      )}
     >
       <span suppressHydrationWarning>
         {isClient && showSymbol && symbol ? `${symbol}: ` : ""}
@@ -87,13 +85,13 @@ export function PriceChange({
 
   return (
     <Badge 
-      className={`font-mono font-bold ${sizeClasses[size]} ${className}`}
-      style={{
-        backgroundColor: isPositive ? `${theme.accent.green}20` : `${theme.accent.red}20`,
-        borderColor: isPositive ? theme.accent.green : theme.accent.red,
-        color: isPositive ? theme.accent.green : theme.accent.red,
-        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
-      }}
+      className={cn(
+        `font-mono font-bold ${sizeClasses[size]} shadow-md`,
+        isPositive 
+          ? "bg-accent-green/10 border border-accent-green text-accent-green" 
+          : "bg-accent-red/10 border border-accent-red text-accent-red",
+        className
+      )}
     >
       {isPositive && showPlusSign ? '+' : ''}{changePercent.toFixed(2)}%
     </Badge>

@@ -69,6 +69,35 @@
   --sidebar-accent-foreground: 240 5.9% 10%;
   --sidebar-border: 220 13% 91%;
   --sidebar-ring: 217.2 91.2% 59.8%;
+
+  /* カスタムカラートークン - ライトモード（未使用） */
+  --color-bg-primary: #ffffff;
+  --color-bg-secondary: #f8f9fa;
+  --color-bg-tertiary: #e9ecef;
+  --color-bg-card: #ffffff;
+  --color-bg-elevated: #f1f3f5;
+
+  --color-text-primary: #212529;
+  --color-text-secondary: #495057;
+  --color-text-muted: #868e96;
+  --color-text-disabled: #ced4da;
+
+  --color-accent-blue: #2962FF;
+  --color-accent-lightBlue: #5B8AF9;
+  --color-accent-green: #26A69A;
+  --color-accent-red: #EF5350;
+  --color-accent-yellow: #F9A825;
+  --color-accent-purple: #9B59B6;
+
+  --color-border-light: #dee2e6;
+  --color-border-dark: #ced4da;
+  --color-border-highlight: #adb5bd;
+
+  --color-chart-grid: #e9ecef;
+  --color-chart-upCandle: #26A69A;
+  --color-chart-downCandle: #EF5350;
+  --color-chart-line: #2962FF;
+  --color-chart-crosshair: #868e96;
 }
 
 .dark {
@@ -110,6 +139,35 @@
   --sidebar-accent-foreground: 210 40% 98%;
   --sidebar-border: 222 47% 15%;
   --sidebar-ring: 217 91% 60%;
+
+  /* カスタムカラートークン - ダークモード */
+  --color-bg-primary: #151924;
+  --color-bg-secondary: #1c2030;
+  --color-bg-tertiary: #242838;
+  --color-bg-card: #1E222D;
+  --color-bg-elevated: #2a2e3d;
+
+  --color-text-primary: #E0E3EB;
+  --color-text-secondary: #A7B0C4;
+  --color-text-muted: #6B7A98;
+  --color-text-disabled: #4D5575;
+
+  --color-accent-blue: #2962FF;
+  --color-accent-lightBlue: #5B8AF9;
+  --color-accent-green: #26A69A;
+  --color-accent-red: #EF5350;
+  --color-accent-yellow: #F9A825;
+  --color-accent-purple: #9B59B6;
+
+  --color-border-light: #2A2E39;
+  --color-border-dark: #1F2333;
+  --color-border-highlight: #374151;
+
+  --color-chart-grid: #242838;
+  --color-chart-upCandle: #26A69A;
+  --color-chart-downCandle: #EF5350;
+  --color-chart-line: #2962FF;
+  --color-chart-crosshair: #6B7A98;
 }
 
 html {

@@ -7,6 +7,7 @@
  * - 2023-06-25: ChatWindow.tsxのリファクタリングに伴いウィンドウ関連フックを追加
  * - 2023-06-30: バレルエクスポート更新
  * - 2025-05-14: useChatInteractionをエクスポート追加
+ * - 2025-06-28: useScrollManagerをuseAutoScrollに置き換え
  */
 
 // フックのエクスポート
@@ -17,7 +18,7 @@ export { useQuickCommands } from "@/components/chat/section/hooks/useQuickComman
 export type { QuickCommand } from "@/components/chat/section/hooks/useQuickCommands";
 
 export { default as useChatWindowStores } from '@/components/chat/window/hooks/useChatWindowStores';
-export { default as useScrollManager } from '@/components/chat/window/hooks/useScrollManager'; 
+export { default as useAutoScroll } from '@/hooks/ui/useAutoScroll';
 
 // useChatInteractionフックのエクスポート
 export { useChatInteraction } from './useChatInteraction'; 

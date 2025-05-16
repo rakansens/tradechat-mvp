@@ -8,6 +8,7 @@
 // 更新日: 2025/5/31 - 既存アプリのトーンマナーに合わせたスタイル調整
 // 更新日: 2025/6/1 - OpenAI API連携のembedding生成機能を追加
 // 更新日: 2025/6/27 - ConversationContextの統合、Embedding検索API連携
+// 更新日: 2025/6/28 - theme.accent参照とインラインスタイルをTailwindクラスに変更
 
 import { useState, useEffect } from "react";
 import { Search, Trash2, RefreshCw, Brain, X } from "lucide-react";
@@ -19,7 +20,7 @@ import { Empty } from "@/components/ui/Empty";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/use-toast";
-import { theme } from "@/styles/colors";
+import { cn } from "@/lib/utils";
 import { useConversation } from "@/contexts/ConversationContext";
 import type { Memory } from "@/types/memory";
 import { 
@@ -313,23 +314,16 @@ export function MemoryPanel({
 
   return (
     <div 
-      className="absolute top-10 inset-x-0 border-b z-10 shadow-lg" 
-      style={{ 
-        maxHeight: "calc(60vh)", 
-        overflowY: "auto",
-        backgroundColor: theme.background.secondary,
-        borderColor: theme.border.light
-      }}
+      className="absolute top-10 inset-x-0 border-b z-10 shadow-lg max-h-[60vh] overflow-y-auto bg-background-secondary border-border-light"
     >
       <div className="flex flex-col">
         {/* ヘッダー */}
         <div 
-          className="flex items-center justify-between p-2 px-3 border-b" 
-          style={{ borderColor: theme.border.light, backgroundColor: theme.background.tertiary }}
+          className="flex items-center justify-between p-2 px-3 border-b border-border-light bg-background-tertiary"
         >
           <div className="flex items-center">
-            <Brain className="h-4 w-4 mr-2" style={{ color: theme.accent.blue }} />
-            <h2 className="text-sm font-medium" style={{ color: theme.text.primary }}>メモリ</h2>
+            <Brain className="h-4 w-4 mr-2 text-accent-blue" />
+            <h2 className="text-sm font-medium text-text-primary">メモリ</h2>
           </div>
           <div className="flex items-center space-x-2">
             {currentChatContext && (
@@ -337,8 +331,7 @@ export function MemoryPanel({
                 variant="outline"
                 size="sm"
                 onClick={saveCurrentContext}
-                className="h-7 text-xs"
-                style={{ borderColor: theme.border.light }}
+                className="h-7 text-xs border-border-light"
               >
                 現在の会話を保存
               </Button>
@@ -355,15 +348,14 @@ export function MemoryPanel({
         </div>
 
         {/* 検索バー - 共通セクション */}
-        <div className="p-2 px-3 border-b" style={{ borderColor: theme.border.light }}>
+        <div className="p-2 px-3 border-b border-border-light">
           <div className="relative">
             <Input
               placeholder="検索..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               onKeyDown={handleKeyDown}
-              className="pr-8 text-xs h-8 bg-slate-800 border-slate-700"
-              style={{ backgroundColor: theme.background.tertiary, color: theme.text.primary }}
+              className="pr-8 text-xs h-8 bg-background-tertiary text-text-primary"
             />
             <Search 
               className="h-3.5 w-3.5 absolute top-2.5 right-3 text-muted-foreground opacity-70" 
@@ -380,10 +372,9 @@ export function MemoryPanel({
             className="flex-1 flex"
           >
             {/* 左側：タブ選択部分 */}
-            <div className="w-1/4 border-r p-2" style={{ borderColor: theme.border.light }}>
+            <div className="w-1/4 border-r p-2 border-border-light">
               <TabsList 
-                className="grid grid-cols-1 gap-1 h-auto w-full bg-slate-800/50"
-                style={{ backgroundColor: theme.background.tertiary }}
+                className="grid grid-cols-1 gap-1 h-auto w-full bg-background-tertiary"
               >
                 <TabsTrigger value="all" className="justify-start text-xs">すべて</TabsTrigger>
                 <TabsTrigger value="synced" className="justify-start text-xs">同期済み</TabsTrigger>
@@ -395,8 +386,7 @@ export function MemoryPanel({
                 variant="outline"
                 size="sm"
                 onClick={fetchMemories}
-                className="w-full mt-2 h-8 text-xs border-slate-700 hover:bg-slate-700"
-                style={{ borderColor: theme.border.light }}
+                className="w-full mt-2 h-8 text-xs border-border-light hover:bg-slate-700"
               >
                 <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
                 更新
@@ -441,8 +431,7 @@ export function MemoryPanel({
       {deleteMemoryId && (
         <AlertDialog open={!!deleteMemoryId} onOpenChange={() => setDeleteMemoryId(null)}>
           <AlertDialogContent 
-            className="border-slate-700" 
-            style={{ backgroundColor: theme.background.secondary }}
+            className="border-slate-700 bg-background-secondary"
           >
             <AlertDialogHeader>
               <AlertDialogTitle>本当にこのメモリを削除しますか？</AlertDialogTitle>
@@ -493,21 +482,19 @@ function MemoryList({ memories, isLoading, formatDate, onDelete, onInsert }: Mem
       {memories.map((memory) => (
         <Card 
           key={memory.id} 
-          className="p-1.5 hover:bg-slate-800/50 transition cursor-pointer border-slate-700/80"
-          style={{ backgroundColor: theme.background.tertiary }}
+          className="p-1.5 hover:bg-slate-800/50 transition cursor-pointer border-slate-700/80 bg-background-tertiary"
           onClick={() => onInsert(memory.content)}
         >
           <div className="flex justify-between">
             <div className="flex items-center space-x-1.5">
               <Badge 
                 variant={memory.is_synced ? "default" : "secondary"} 
-                className="text-[10px] h-4 px-1.5"
-                style={{ 
-                  backgroundColor: memory.is_synced 
-                    ? theme.accent.blue 
-                    : theme.background.tertiary,
-                  color: theme.text.primary
-                }}
+                className={cn(
+                  "text-[10px] h-4 px-1.5",
+                  memory.is_synced 
+                    ? "bg-accent-blue text-white"
+                    : "bg-background-tertiary text-text-muted"
+                )}
               >
                 {memory.is_synced ? "同期済み" : "ローカル"}
               </Badge>

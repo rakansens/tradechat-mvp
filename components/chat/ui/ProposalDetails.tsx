@@ -1,13 +1,14 @@
 // components/chat/ui/ProposalDetails.tsx
 // 作成: トレード提案の詳細とアクション
 // 移行: ChatWindow.tsxから分離、UI/UXを向上
+// 更新: 2025-06-28 - theme.accent参照をTailwindクラスに変更
 
 import { useState } from "react"
 import { Check, ChevronDown, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 import type { ProposalType } from "@/types/chat"
 import type { OpenEntry } from "@/types/entry"
-import { theme } from "@/styles/colors"
 
 interface ProposalDetailsProps {
   price: number
@@ -92,10 +93,10 @@ export const ProposalDetails = ({
             onClick={handleExecuteEntry}
             disabled={actionInProgress || actionComplete}
             size="sm"
-            style={{
-              background: proposalType === "buy" ? theme.accent.green : theme.accent.red,
-              color: "white"
-            }}
+            className={cn(
+              "text-white",
+              proposalType === "buy" ? "bg-accent-green hover:bg-accent-green/90" : "bg-accent-red hover:bg-accent-red/90"
+            )}
           >
             {actionInProgress && (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />

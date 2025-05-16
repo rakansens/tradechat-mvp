@@ -5,12 +5,13 @@
 // 役割:
 // 1. 銘柄選択ボタンの表示
 // 2. 現在価格と変化率のバッジ表示
+// 更新: 2025-06-28 - theme.accent参照をTailwindクラスに置換
 
 import React, { memo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { CandlestickChart } from 'lucide-react';
-import { theme } from '@/styles/colors';
+import { cn } from '@/lib/utils';
 import SymbolSelectorModal from '../../SymbolSelectorModal';
 import { ExchangeType } from '@/types/api';
 
@@ -58,7 +59,7 @@ const SymbolPriceBar = memo(function SymbolPriceBar({
         }
       />
       
-      <Badge variant="outline" className="font-mono text-xs py-0.5 px-1.5" style={{ backgroundColor: theme.background.tertiary, borderColor: theme.border.light, color: theme.text.secondary }}>
+      <Badge variant="outline" className="font-mono text-xs py-0.5 px-1.5 bg-background-tertiary border-border-light text-text-secondary">
         24h Vol: 12.5K
       </Badge>
 
@@ -67,13 +68,7 @@ const SymbolPriceBar = memo(function SymbolPriceBar({
         {currentPrice > 0 && (
           <Badge 
             variant="outline" 
-            className="font-mono text-sm font-bold py-1 px-2 ml-2" 
-            style={{
-              backgroundColor: theme.background.tertiary,
-              borderColor: theme.border.light,
-              color: theme.text.primary,
-              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
-            }}
+            className="font-mono text-sm font-bold py-1 px-2 ml-2 bg-background-tertiary border-border-light text-text-primary shadow-md" 
           >
             ${currentPrice.toLocaleString('en-US')}
           </Badge>
@@ -83,13 +78,10 @@ const SymbolPriceBar = memo(function SymbolPriceBar({
         {priceChangePercent !== 0 && (
           <Badge 
             variant="outline" 
-            className="font-mono text-sm font-bold py-1 px-2 ml-2" 
-            style={{
-              backgroundColor: theme.background.tertiary,
-              borderColor: theme.border.light,
-              color: priceChangePercent >= 0 ? theme.accent.green : theme.accent.red,
-              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
-            }}
+            className={cn(
+              "font-mono text-sm font-bold py-1 px-2 ml-2 bg-background-tertiary border-border-light shadow-md",
+              priceChangePercent >= 0 ? "text-accent-green" : "text-accent-red"
+            )}
           >
             {priceChangePercent >= 0 ? '+' : ''}{priceChangePercent.toFixed(2)}%
           </Badge>

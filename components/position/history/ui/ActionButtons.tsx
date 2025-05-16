@@ -5,12 +5,12 @@
  * 
  * 変更履歴:
  * - 2023-05-13: PositionHistory.tsxから抽出
+ * - 2025-06-28: theme.accent参照とインラインスタイルをTailwindクラスに変更
  */
 
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { theme } from "@/styles/colors"
 import { CheckCircle, X } from "lucide-react"
 import type { Entry } from "@/types/entry"
 
@@ -38,23 +38,14 @@ export function ActionButtons({ entry, onClose, onCancel }: ActionButtonsProps) 
       <Button
         variant="outline"
         size="sm"
-        className="text-xs"
-        style={{ 
-          backgroundColor: theme.background.tertiary, 
-          borderColor: theme.border.light,
-          color: theme.text.secondary
-        }}
+        className="text-xs bg-background-tertiary border-border-light text-text-secondary"
         onClick={onCancel}
       >
         <X className="h-3 w-3 mr-1" /> Cancel
       </Button>
       <Button
         size="sm"
-        className="text-xs"
-        style={{ 
-          backgroundColor: theme.accent.blue,
-          color: "white" 
-        }}
+        className="text-xs bg-accent-blue text-white"
         onClick={onClose}
       >
         <CheckCircle className="h-3 w-3 mr-1" /> Close

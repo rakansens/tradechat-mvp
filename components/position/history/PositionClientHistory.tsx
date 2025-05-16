@@ -155,7 +155,7 @@ function PositionHistoryInner({
   );
 
   return (
-    <Card className="border" style={{ borderColor: theme.border.light }}>
+    <Card className="border" style={{ borderColor: border-border-light }}>
       {/* ヘッダーとタブ */}
       <HeaderTabs 
         selectedTab={selectedTab}

@@ -37,9 +37,10 @@ const TYPE_IMPORT_MAP: Record<string, string> = {
   'OrderBookEntry': '@/types/common/orderbook',
   
   // その他の型
-  'ExchangeType': '@/types/network/api',
-  'Timeframe': '@/types/chart',
-  'ChartType': '@/types/chart',
+  'ExchangeType': '@/types/constants/enums',
+  'ExchangeProductType': '@/types/constants/enums',
+  'Timeframe': '@/types/constants/enums',
+  'ChartType': '@/types/constants/enums',
   'OHLCData': '@/types/chart',
 };
 

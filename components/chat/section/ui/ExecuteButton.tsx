@@ -4,13 +4,13 @@
  * 
  * 変更履歴:
  * - 2023-06-10: ChatSection.tsxのリファクタリングに伴い作成
+ * - 2025-06-28: theme.accent.blue参照をTailwindクラスに変更
  */
 
 "use client"
 
 import { Send } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { theme } from "@/styles/colors"
 import type { OpenEntry } from "@/types/entry"
 
 interface ExecuteButtonProps {
@@ -33,11 +33,7 @@ export const ExecuteButton = ({ pendingEntry, executeEntry }: ExecuteButtonProps
     <Button
       variant="success"
       size="sm"
-      className="h-7 text-xs ml-auto"
-      style={{ 
-        backgroundColor: theme.accent.blue,
-        color: "white"
-      }}
+      className="h-7 text-xs ml-auto bg-accent-blue text-white"
       onClick={() => executeEntry()}
     >
       <Send className="h-3 w-3 mr-1" />

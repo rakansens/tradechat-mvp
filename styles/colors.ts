@@ -1,59 +1,62 @@
 // TradingView風の洗練されたカラーテーマ
 // 目に優しく、コントラスト比の高い配色
 
+// カラートークンの薄いラッパー
+// ✅ 今後は極力直接インポートしない想定
+// 更新: 2025-06-28 - Tailwind CSSユーティリティクラスを返すように変更
+
 export const theme = {
   // 背景色
   background: {
-    primary: '#151924', // メイン背景色 - より目に優しいダークトーン
-    secondary: '#1c2030', // セカンダリ背景色
-    tertiary: '#242838', // テキスト入力や選択項目の背景
-    card: '#1E222D',     // カード背景
-    elevated: '#2a2e3d', // やや明るい背景（ホバー状態など）
+    primary: 'bg-background-primary',
+    secondary: 'bg-background-secondary',
+    tertiary: 'bg-background-tertiary',
+    card: 'bg-background-card',
+    elevated: 'bg-background-elevated',
   },
   
   // テキスト色
   text: {
-    primary: '#E0E3EB',   // 主要テキスト - より白に近く読みやすい
-    secondary: '#A7B0C4', // 二次的なテキスト
-    muted: '#6B7A98',     // 弱めのテキスト
-    disabled: '#4D5575',  // 無効化されたテキスト
+    primary: 'text-text-primary',
+    secondary: 'text-text-secondary',
+    muted: 'text-text-muted',
+    disabled: 'text-text-disabled',
   },
   
-  // アクセント色
+  // アクセント色 (Tailwindで直接使うことができないため、値を残す)
   accent: {
-    blue: '#2962FF',     // プライマリアクセント - より明るいブルー
-    lightBlue: '#5B8AF9', // ホバー状態のブルー
-    green: '#26A69A',    // 買い/ロング/成功
-    red: '#EF5350',      // 売り/ショート/エラー
-    yellow: '#F9A825',   // 警告
-    purple: '#9B59B6',   // 特殊機能
+    blue: 'var(--color-accent-blue)',
+    lightBlue: 'var(--color-accent-lightBlue)',
+    green: 'var(--color-accent-green)',
+    red: 'var(--color-accent-red)',
+    yellow: 'var(--color-accent-yellow)',
+    purple: 'var(--color-accent-purple)',
   },
   
   // 境界線
   border: {
-    light: '#2A2E39',    // 明るい境界線
-    dark: '#1F2333',     // 暗い境界線
-    highlight: '#374151', // 強調された境界線
+    light: 'border-border-light',
+    dark: 'border-border-dark',
+    highlight: 'border-border-highlight',
   },
   
-  // グラデーション
+  // グラデーション (Tailwindで直接使うことができないため、値を残す)
   gradient: {
-    blue: 'linear-gradient(135deg, #2962FF 0%, #5B8AF9 100%)',
-    profit: 'linear-gradient(135deg, #26A69A 0%, #80CBC4 100%)',
-    loss: 'linear-gradient(135deg, #EF5350 0%, #FF8A80 100%)',
+    blue: 'linear-gradient(135deg, var(--color-accent-blue) 0%, var(--color-accent-lightBlue) 100%)',
+    profit: 'linear-gradient(135deg, var(--color-accent-green) 0%, #80CBC4 100%)',
+    loss: 'linear-gradient(135deg, var(--color-accent-red) 0%, #FF8A80 100%)',
   },
   
   // チャート特有の色
   chart: {
-    grid: '#242838',
-    upCandle: '#26A69A',
-    downCandle: '#EF5350',
+    grid: 'bg-chart-grid',
+    upCandle: 'text-chart-upCandle',
+    downCandle: 'text-chart-downCandle',
+    line: 'stroke-chart-line',
+    crosshair: 'stroke-chart-crosshair',
     volume: {
-      up: 'rgba(38, 166, 154, 0.3)',
-      down: 'rgba(239, 83, 80, 0.3)',
+      up: 'bg-opacity-30 bg-chart-upCandle',
+      down: 'bg-opacity-30 bg-chart-downCandle',
     },
-    line: '#2962FF',
-    area: 'rgba(41, 98, 255, 0.1)',
-    crosshair: '#6B7A98',
   },
 };

@@ -1,7 +1,6 @@
 import { renderHook } from '@testing-library/react';
-import { useDebugStores } from '../useDebugStores';
-import { useDebugStore } from '@/store/useDebugStore';
-import { useSymbolStore } from '@/store/useSymbolStore';
+import { useDebugStores } from '../store/useDebugStores';
+import { useRootStore } from '@/store/rootStore';
 import { cacheService } from '@/services/cache';
 import { requestHistoryService } from '@/services/history';
 
@@ -9,14 +8,11 @@ import { requestHistoryService } from '@/services/history';
 type MockFunction<T = any> = jest.Mock<T>;
 
 // モックの設定
-jest.mock('@/store/useDebugStore', () => ({
+jest.mock('@/store/rootStore', () => ({
   __esModule: true,
-  useDebugStore: jest.fn()
+  useRootStore: jest.fn()
 }));
-jest.mock('@/store/useSymbolStore', () => ({
-  __esModule: true,
-  useSymbolStore: jest.fn()
-}));
+
 jest.mock('@/services/cache', () => ({
   cacheService: {
     getStats: jest.fn()
@@ -45,20 +41,26 @@ describe('useDebugStores', () => {
     jest.clearAllMocks();
     
     // モックの実装
-    (useDebugStore as unknown as MockFunction).mockImplementation((selector) => 
-      selector({
-        isDebugMode: true,
-        toggleDebugMode: jest.fn(),
-        getActiveFetchesInfo: mockGetActiveFetchesInfo,
-        getPollingStatus: mockGetPollingStatus
-      })
-    );
-    
-    (useSymbolStore as unknown as MockFunction).mockImplementation((selector) => 
-      selector({
-        getSymbolChangeHistory: mockGetSymbolChangeHistory
-      })
-    );
+    (useRootStore as unknown as MockFunction).mockImplementation((selector) => {
+      // DebugSliceのセレクタの場合
+      if (selector.name === 'debugSelector') {
+        return {
+          isDebugMode: true,
+          toggleDebugMode: jest.fn(),
+          getActiveFetchesInfo: mockGetActiveFetchesInfo,
+          getPollingStatus: mockGetPollingStatus
+        };
+      }
+      
+      // SymbolSliceのセレクタの場合
+      if (selector.name === 'symbolSelector') {
+        return {
+          getSymbolChangeHistory: mockGetSymbolChangeHistory
+        };
+      }
+      
+      return {};
+    });
     
     // サービスモック
     (cacheService.getStats as jest.Mock).mockReturnValue(mockCacheStats);
@@ -92,14 +94,26 @@ describe('useDebugStores', () => {
   
   test('デバッグモードがfalseの場合、空のデバッグ情報を返す', () => {
     // デバッグモードをfalseに設定
-    (useDebugStore as unknown as MockFunction).mockImplementation((selector) => 
-      selector({
-        isDebugMode: false,
-        toggleDebugMode: jest.fn(),
-        getActiveFetchesInfo: mockGetActiveFetchesInfo,
-        getPollingStatus: mockGetPollingStatus
-      })
-    );
+    (useRootStore as unknown as MockFunction).mockImplementation((selector) => {
+      // DebugSliceのセレクタの場合
+      if (selector.name === 'debugSelector') {
+        return {
+          isDebugMode: false,
+          toggleDebugMode: jest.fn(),
+          getActiveFetchesInfo: mockGetActiveFetchesInfo,
+          getPollingStatus: mockGetPollingStatus
+        };
+      }
+      
+      // SymbolSliceのセレクタの場合
+      if (selector.name === 'symbolSelector') {
+        return {
+          getSymbolChangeHistory: mockGetSymbolChangeHistory
+        };
+      }
+      
+      return {};
+    });
     
     // フックをレンダリング
     const { result } = renderHook(() => useDebugStores());

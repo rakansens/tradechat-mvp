@@ -62,7 +62,7 @@ export function ResizableLayout({
           minSize={minSizes[1]}
           className="overflow-hidden"
         >
-          <Card className="h-full flex flex-col border-0 rounded-none shadow-none" style={{ backgroundColor: theme.background.card }}>
+          <Card className="h-full flex flex-col border-0 rounded-none shadow-none" style={{ backgroundColor: bg-background-card }}>
             {toolbarSection}
             <Tabs value={activeTab} onValueChange={onTabChange} className="flex-1 flex flex-col">
               <TabsContent value="chart" className="flex-1 m-0 p-0 data-[state=active]:flex flex-col">

@@ -5,6 +5,7 @@
 
 // types/ui.ts
 // 作成: UI関連の型定義
+// 更新: T-7.5フェーズ - インポートパスを修正
 
 /**
  * アプリケーションのタブ
@@ -19,8 +20,8 @@ export type ThemeMode = "light" | "dark" | "system";
 /**
  * UIの状態型
  *
- * 注意: このインターフェースは非推奨です。代わりに types/store.ts の UIState を使用してください。
- * @deprecated Use UIState from types/store.ts instead
+ * 注意: このインターフェースは非推奨です。代わりに types/store/ui.ts の UIState を使用してください。
+ * @deprecated Use UIState from types/store/ui.ts instead
  */
 export interface UIStateDeprecated {
   // 状態
@@ -36,8 +37,9 @@ export interface UIStateDeprecated {
   toggleSettings?: () => void;
 }
 
-// types/store.ts からUIStateをエクスポート
-export type { UIState, TabType } from './store';
+// store/ui.ts からUIStateとTabTypeをエクスポート
+export type { UIState } from '@/types/store/ui';
+export type { TabType } from '@/types/store/ui';
 
 /**
  * レスポンシブ表示のブレークポイント

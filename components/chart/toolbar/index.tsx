@@ -74,7 +74,7 @@ const ChartToolbar = memo(function ChartToolbar({
   const { currentPrice, priceChangePercent } = usePriceMetrics(chartDataStore.chartData);
   
   return (
-    <div className="flex flex-col w-full" style={{ backgroundColor: theme.background.card }}>
+    <div className="flex flex-col w-full" style={{ backgroundColor: bg-background-card }}>
       {/* エラーメッセージ表示エリア */}
       {chartDataStore.error && (
         <div className="w-full px-4 py-1 bg-red-900/20 text-red-300 text-xs">
@@ -82,7 +82,7 @@ const ChartToolbar = memo(function ChartToolbar({
         </div>
       )}
 
-      <div className="flex justify-between items-center py-2 px-3 border-b" style={{ borderColor: theme.border.light, backgroundColor: theme.background.secondary }}>
+      <div className="flex justify-between items-center py-2 px-3 border-b" style={{ borderColor: border-border-light, backgroundColor: bg-background-secondary }}>
         <SymbolPriceBar
           currentSymbol={symbolStore.currentSymbol}
           exchangeType={symbolStore.exchangeType}
@@ -119,7 +119,7 @@ const ChartToolbar = memo(function ChartToolbar({
         </div>
       </div>
       
-      <div className="flex items-center justify-between px-3 py-1 border-b" style={{ borderColor: theme.border.light, backgroundColor: theme.background.secondary }}>
+      <div className="flex items-center justify-between px-3 py-1 border-b" style={{ borderColor: border-border-light, backgroundColor: bg-background-secondary }}>
         <div className="flex items-center space-x-4">
           {/* チャートタイプ選択 */}
           <ChartTypeSelector
