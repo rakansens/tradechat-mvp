@@ -391,3 +391,74 @@
 ## 以前の作業
 
 [ここに以前の作業の進捗を記載] 
+
+## T-8フェーズ：TypeScriptエラー修正とリファクタリング
+
+### スプリント8.1：パス参照エラー修正とモック設定
+
+日付：2023年10月4日
+進捗状況：75%（約150件→約50件）
+担当者：チームCLI
+
+#### 完了したタスク
+1. テスト関連のモジュール解決エラー修正
+   - jest.config.jsのmoduleNameMapperを追加し、旧パスを現行パスにリダイレクト
+   - WebSocketとfetchのモックファクトリ関数を作成
+   - createMockWebSocket関数の実装と型定義
+
+2. 存在しないモジュールの修正
+   - 存在しないutils/market/formatters.tsへの参照を修正
+   - styles/colors.tsスタブの作成
+   - types/orderbook.tsスタブの作成（@/types/chart/orderbookを再エクスポート）
+
+3. 型定義関連
+   - AuthContextTypeにresetPassword関数を追加
+
+#### 残タスク
+1. ジェネリック崩れ問題の修正（約70件）
+   - 各スライスがstate+actionsを一つのオブジェクトで返すよう修正中
+   - immerSetラッパーの実装とrootStoreへの適用
+
+2. WebSocketモックの統合
+   - テスト時にグローバルWebSocketオブジェクトをモック化
+
+### スプリント8.2：Zustandジェネリック問題修正
+
+日付：2023年10月5日
+進捗状況：30%
+担当者：チームCLI
+
+#### 作業内容
+1. スライス構造のリファクタリング
+   - state, actions, slice（state & actions）の3つの型を定義
+   - 共通型をtypes/store/core.tsに定義（SliceCreator, ImmerStateSetter等）
+   - chartDataSliceで新構造を試験的に適用（残りは横展開予定）
+
+2. immerSetラッパー関数の実装
+   - store/core/immerSet.tsを作成し、型安全なImmerラッパー関数を提供
+   - createImmerSetter関数でdraftオブジェクトを操作できるよう実装
+
+#### 残タスク
+1. 各スライスクリエーターの修正
+   - symbolSlice, chartConfigSlice等の残りのスライスを修正
+   - rootStore.tsのスライス呼び出し部分を修正
+
+2. 型エラーの解決
+   - immerSet呼び出し時の型互換性エラーを解決
+   - getState呼び出し時の型キャストを適切に修正
+
+3. createPersistedSliceの再実装
+   - 型安全なcreatePersistedSlice関数を実装
+
+4. テスト環境のモック設定完了
+   - jest.setup.jsからWebSocketモックを統合
+
+#### 目標コンプリート基準
+- TypeScriptエラー0〜5件（残りは無視可能なテスト用の型エラー）
+- テストが全て成功すること
+- パフォーマンス・オーバーヘッドが無いこと
+
+|  日付   | 開始エラー数 | 終了  | 残件数 |
+|--------|--------------|-------|------------|
+| 10/4   | 約150件      | A-1,A-2,C一部 | 約94件 |
+| 10/5   | 約94件       | B一部  | 約70件 | 
