@@ -298,9 +298,9 @@
 2. Jestテストを修正してパスさせる
 3. Chartリファクタリングの詳細計画を立てる 
 
-## TypeScript エラー修正作業
+## TypeScript エラー修正作業（2025-07-01更新）
 
-**完了した修正**:
+### 完了した修正（第1フェーズ）:
 
 1. **types バレルの最終調整**:
    - types/store/chart.ts と ui.ts にそれぞれ IndicatorType/DrawingToolType と TabType の型エクスポートを追加
@@ -324,24 +324,69 @@
    - createSymbolSlice 関数の正しい型定義に更新
    - rootStore.ts のスライス作成時の型キャストを改善
 
-**残っているエラー**:
+### 完了した修正（第2フェーズ）:
 
-1. **テスト関連のエラー**:
-   - 存在しないモジュールの参照（例: '@/lib/supabase/supabase' など）
-   - Mock オブジェクトの型互換性の問題
+1. **テスト関連のエラー修正**:
+   - jest.config.js のmoduleNameMapperに古いパスの解決設定を追加:
+     - `'^@/lib/supabase/supabase$': '<rootDir>/lib/supabase/client'`
+     - `'^@/store/useSymbolStore$': '<rootDir>/store/symbol'`
+   - 型安全なモックファクトリ関数の作成:
+     - WebSocketのモックファクトリ（`createMockWebSocket`）を実装
+     - Fetchのモックファクトリ（`createMockFetch`）を実装
+     - 汎用的なモック型定義を作成（`MockFunction`, `Mocked`, `PartialMocked`）
+     - ReadyState定数の定義と型付け
 
-2. **rootStore.ts の型キャスト問題**:
-   - set と get 関数の型定義に関する複雑な問題
+2. **マーケットデータフォーマッターの追加**:
+   - utils/market/formatters.ts を作成し、価格・数量表示用関数を実装:
+     - `formatPrice`: 価格の通貨形式フォーマット
+     - `formatAmount`: 数量のフォーマット
+     - `formatPercentage`: パーセンテージのフォーマット
+     - `formatWithUnits`: 単位付き（K, M, B, T）フォーマット
 
-3. **存在しないファイルや移動されたファイルへの参照**:
-   - 一部のパスが古いままになっているファイルへの参照
-   - './supabase' などの存在しないモジュールへの参照
+3. **コンポーネントの追加と修正**:
+   - ExchangeSelector コンポーネントを実装（現物/先物切り替え）
+   - Spinner コンポーネントを実装（ローディング表示）
+   - OrderBook コンポーネントのインポートパスを修正:
+     - 不要な theme インポートを削除
+     - BookEntry型の参照エラーを修正
 
-**次のステップ**:
+4. **store/dataFetch/index.ts のスライス型定義改善**:
+   - 型安全なDataFetchSlice実装への変更
+   - set/get関数の型定義を明確化してStoreApi型を使用
+   - 型エラーを解消しアクション実行時の型推論を改善
 
-1. テスト用のモックファイルを作成または修正
-2. rootStore.ts の型定義をより深く修正
-3. 存在しないファイルへの参照を修正するまたは必要なファイルを作成
+5. **rootStore.ts の全面的な型エラー修正**:
+   - StoreApi型を活用した型定義
+   - typedSet/typedGet関数の実装
+   - 各スライス生成時の型キャストを修正
+
+### 残っているエラー:
+
+1. **一部テストファイルのエラー**:
+   - モック関数の返り値型に関するエラー
+   - 認証関連のテストでのresetPassword参照エラー
+
+2. **旧式APIや移動された型の参照**:
+   - utils/market/formattersへの古い参照
+   - SymbolFilterOptionsなどの名前変更された型への参照
+
+3. **一部コンポーネントのエラー**:
+   - PositionServerComponentのlastPage型エラー
+   - OrderBookコンポーネントのBookEntry型エラー
+
+### 次のステップ:
+
+1. 残りのテスト関連エラーを解消する（モック関数の改善）
+2. コンポーネント内の型参照を最新のものに更新する
+3. CI/CD処理でのTypeScriptエラーチェックを有効化する
+4. ユニットテストを実行して新たな問題がないか確認する
+
+### エラー数推移:
+
+| フェーズ | 開始時エラー数 | 解消数 | 残りエラー数 |
+|--------|--------------|-------|------------|
+| Phase 1 | 150+ | ~55 | ~95 |
+| Phase 2 | ~95 | ~50 | ~50 |
 
 ## 以前の作業
 
