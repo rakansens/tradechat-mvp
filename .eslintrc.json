@@ -5,6 +5,7 @@
     "./eslint-supabase.json"
   ],
   "rules": {
+    "import/no-cycle": "error",
     "no-restricted-imports": [
       "warn",
       {
@@ -32,6 +33,15 @@
           {
             "name": "./types/common-interfaces.ts",
             "message": "このファイルは非推奨です。代わりに 'types/common' をインポートしてください。"
+          },
+          {
+            "name": "@/lib/validations/chart",
+            "message": "このファイルは非推奨です。代わりに '@/types/validations/chart' をインポートしてください。"
+          },
+          {
+            "name": "@/types",
+            "importNames": ["AppState", "UIState", "ChartDataState", "ChartConfigState", "IndicatorState", "DrawingToolState", "RealTimeState", "MarketState", "StoreFilterOptions", "FilterOptions", "IndicatorType", "ActiveIndicator", "DrawingToolType", "TabType"],
+            "message": "ストア型を @/types からインポートすると循環参照が発生します。代わりに @/types/store/* から直接インポートしてください。例：import { AppState } from '@/types/store/app';"
           }
         ],
         "patterns": [
@@ -50,6 +60,10 @@
           {
             "group": ["utils/supabase/*", "@/utils/supabase/*"],
             "message": "旧パスは非推奨です。代わりに '@/lib/supabase/*' を使用してください。"
+          },
+          {
+            "group": ["lib/validations/*", "@/lib/validations/*"],
+            "message": "旧パスは非推奨です。代わりに '@/types/validations/*' を使用してください。"
           }
         ]
       }

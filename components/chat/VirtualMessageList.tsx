@@ -2,6 +2,7 @@
 // 更新: メッセージリスト表示用の最適化されたコンポーネント
 // 更新: ExtendedMessage型を使用するように変更
 // 更新: 2025-05-21 - conversationIdプロパティを追加
+// 更新: 2025-06-25 - ConversationContextを使用するよう変更、conversationIdプロパティ削除
 
 "use client"
 
@@ -17,7 +18,6 @@ interface MessageListProps {
   executeEntry?: () => void
   editPendingEntry?: (entry: OpenEntry) => void
   cancelPendingEntry?: () => void
-  conversationId?: string | null // 追加: 会話ID
 }
 
 // 個別メッセージをメモ化して不要な再レンダリングを防止
@@ -26,15 +26,13 @@ const MemoizedChatMessage = memo(({
   pendingEntry, 
   executeEntry, 
   editPendingEntry, 
-  cancelPendingEntry,
-  conversationId
+  cancelPendingEntry
 }: {
   message: ExtendedMessage
   pendingEntry: OpenEntry | null
   executeEntry?: () => void
   editPendingEntry?: (entry: OpenEntry) => void
   cancelPendingEntry?: () => void
-  conversationId?: string | null // 追加: 会話ID
 }) => (
   <ChatMessage
     message={message}
@@ -42,7 +40,6 @@ const MemoizedChatMessage = memo(({
     executeEntry={executeEntry}
     editPendingEntry={editPendingEntry}
     cancelPendingEntry={cancelPendingEntry}
-    conversationId={conversationId}
   />
 ))
 MemoizedChatMessage.displayName = "MemoizedChatMessage"
@@ -53,8 +50,7 @@ export function MessageList({
   chatEndRef,
   executeEntry,
   editPendingEntry,
-  cancelPendingEntry,
-  conversationId
+  cancelPendingEntry
 }: MessageListProps) {
   // 親コンテナのref
   const scrollContainerRef = useRef<HTMLDivElement>(null)
@@ -81,7 +77,6 @@ export function MessageList({
             executeEntry={executeEntry}
             editPendingEntry={editPendingEntry}
             cancelPendingEntry={cancelPendingEntry}
-            conversationId={conversationId}
           />
         ))}
       </div>

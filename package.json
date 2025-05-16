@@ -19,7 +19,8 @@
     "supabase:push": "supabase db push",
     "supabase:lint": "supabase db lint --level=warning",
     "supabase:types": "supabase gen types typescript --local > types/generated/supabase.ts",
-    "test:db": "npm run test -- --runInBand"
+    "test:db": "npm run test -- --runInBand",
+    "codemod": "jscodeshift -t tools/codemods/replace-deprecated-imports.ts --parser=tsx --extensions=ts,tsx"
   },
   "dependencies": {
     "@ai-sdk/google": "^1.2.14",
@@ -115,6 +116,7 @@
     "@testing-library/react-hooks": "^8.0.1",
     "@types/crypto-js": "^4.2.2",
     "@types/jest": "^29.5.14",
+    "@types/jscodeshift": "^17.3.0",
     "@types/node": "^22.15.3",
     "@types/react": "^19",
     "@types/react-dom": "^19",
@@ -130,6 +132,7 @@
     "jest-environment-jsdom": "^29.7.0",
     "jest-fetch-mock": "^3.0.3",
     "jest-websocket-mock": "^2.5.0",
+    "jscodeshift": "^17.3.0",
     "madge": "^8.0.0",
     "msw": "^2.7.5",
     "postcss": "^8",

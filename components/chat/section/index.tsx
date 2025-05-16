@@ -11,6 +11,7 @@
  * - 2025-05-31: メモリパネル機能を統合
  * - 2025-05-31: メモリパネルの表示位置を調整し、ヘッダー下に表示するよう変更
  * - 2025-06-01: メモリパネルに現在のチャットコンテキストを渡す機能を追加
+ * - 2025-06-25: ConversationContextを使用するよう変更
  */
 
 "use client"
@@ -31,6 +32,7 @@ import {
 } from "@/components/ui/sheet"
 import NewThreadModal from "@/components/chat/modals/NewThreadModal"
 import { MemoryPanel } from "@/components/chat/ui/MemoryPanel"
+import { useConversation } from "@/contexts/ConversationContext"
 
 // UIコンポーネント
 import Header from "./ui/Header"
@@ -63,6 +65,9 @@ export default function ChatSection({
   // ストアから状態とアクションを取得
   const { chat, entry } = useChatSectionStores();
   
+  // ConversationContextから会話IDを取得
+  const { conversationId, setConversationId } = useConversation();
+  
   // クイックコマンドを取得
   const quickCommands = useQuickCommands();
   
@@ -78,9 +83,6 @@ export default function ChatSection({
       chat.sendMessage(chat.input);
     }
   };
-
-  // アクティブな会話ID
-  const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   
   // マウント後にサイドバーを表示
   const [isMounted, setIsMounted] = useState(false);
@@ -119,11 +121,8 @@ export default function ChatSection({
   
   // 新規会話作成後のコールバック
   const onNewThreadCreated = (newThread: any) => {
-    // イベントを発行して会話の切り替えを通知
-    window.dispatchEvent(new CustomEvent('conversationCreated', { 
-      detail: { conversationId: newThread.id } 
-    }));
-    
+    // コンテキストを使用して会話IDを設定
+    setConversationId(newThread.id);
     setIsModalOpen(false);
   };
   

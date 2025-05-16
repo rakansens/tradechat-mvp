@@ -11,12 +11,14 @@ import { logger } from '@/utils/common'
 import { LogViewer } from '@/components/debug'
 import { Button } from '@/components/ui/button'
 import { BugIcon, XIcon } from 'lucide-react'
+import { ConversationProvider } from '@/contexts/ConversationContext'
 
 // 更新: デバッグ機能の追加、SocketInitializerの機能を統合、useAppStoreの初期化を追加
 // 更新: useSymbolStoreをuseRootStoreに置き換え
 // 更新: 2025-05-15 - useDebugStoreをrootStoreセレクターに置き換え
 // 更新: 2025-05-30 - OrderBookStoreの初期化を循環参照を避けるために明示的に行うよう修正
 // 更新: 2025-06-05 - useOrderBookStoreをuseRootStoreに統合
+// 更新: 2025-06-25 - ConversationProviderを追加
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   const [showDebugPanel, setShowDebugPanel] = useState(false);
   const isDebugMode = useRootStore(selectIsDebugMode);
@@ -68,7 +70,9 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   return (
     <ThemeProvider attribute="class" defaultTheme="dark" forcedTheme="dark" enableSystem disableTransitionOnChange>
       <ErrorBoundary>
-        {children}
+        <ConversationProvider>
+          {children}
+        </ConversationProvider>
         
         {/* デバッグモードの場合のみデバッグボタンを表示 */}
         {process.env.NODE_ENV === 'development' && (

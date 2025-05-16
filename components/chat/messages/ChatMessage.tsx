@@ -2,8 +2,10 @@
 // 更新: パフォーマンス最適化のためのリファクタリング
 // 静的要素の定数化とコンポーネントの分割を行いました
 // 更新: 2025-05-21 - conversationIdプロパティを追加
+// 更新: 2025-06-25 - ConversationContextを使用するよう変更、conversationIdプロパティ削除
+// 更新: 2025-06-26 - モバイルデバイスでのlong-press対応に伴う修正
 
-import { useState, memo, useMemo } from "react"
+import { useState, memo, useMemo, useEffect } from "react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
 import type { ExtendedMessage } from "@/types/chat"
@@ -42,7 +44,6 @@ interface ChatMessageProps {
   executeEntry?: () => void
   editPendingEntry?: (entry: OpenEntry) => void
   cancelPendingEntry?: () => void
-  conversationId?: string | null // 追加: 会話ID
 }
 
 interface MessageBubbleProps {
@@ -76,10 +77,27 @@ export const ChatMessage = memo(({
   pendingEntry,
   executeEntry,
   editPendingEntry,
-  cancelPendingEntry,
-  conversationId // 追加: 会話ID
+  cancelPendingEntry
 }: ChatMessageProps) => {
   const [isHovering, setIsHovering] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
+  
+  // モバイルデバイスの判定
+  useEffect(() => {
+    // matchMediaを使ってhoverが利用可能かどうかを判定
+    const mediaQuery = window.matchMedia('(hover: none)');
+    setIsMobile(mediaQuery.matches);
+    
+    // 画面サイズやメディア状態が変化した場合に再評価
+    const handleChange = (e: MediaQueryListEvent) => {
+      setIsMobile(e.matches);
+    };
+    
+    mediaQuery.addEventListener('change', handleChange);
+    return () => {
+      mediaQuery.removeEventListener('change', handleChange);
+    };
+  }, []);
   
   // メッセージのプロパティをメモ化
   const { isUser, isProposal, proposalType, price, isStreaming } = useMemo(() => ({
@@ -98,11 +116,24 @@ export const ChatMessage = memo(({
     )
   }, [isUser])
 
+  // PCの場合はhover時、モバイルの場合はlong-pressで操作を表示
+  const handleMouseEnter = () => {
+    if (!isMobile) {
+      setIsHovering(true);
+    }
+  };
+  
+  const handleMouseLeave = () => {
+    if (!isMobile) {
+      setIsHovering(false);
+    }
+  };
+
   return (
     <div 
       className={containerStyle}
-      onMouseEnter={() => setIsHovering(true)}
-      onMouseLeave={() => setIsHovering(false)}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
       {!isUser && <AIAvatar />}
 
@@ -116,8 +147,7 @@ export const ChatMessage = memo(({
         {/* Actions menu appears on hover */}
         <MessageActions 
           message={message} 
-          isVisible={isHovering} 
-          conversationId={conversationId} // 追加: 会話ID
+          isVisible={isHovering}
         />
 
         {/* Proposal action buttons */}

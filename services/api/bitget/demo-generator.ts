@@ -3,14 +3,16 @@
  * Bitget APIのデモデータ生成クラス
  * 
  * 作成: 2025-05-12 - BitgetApiClientのリファクタリング
+ * 更新: 共通モジュールから型定義をインポートするように変更
  * 
  * このファイルは、テストやフォールバック用のデモデータ生成を担当します。
  */
 
 import { OHLCData } from '../../../types/chart';
 import { OrderBookData } from '../../../types/market';
-import { SymbolInfo } from '../../../types/symbol';
-import { ExchangeType } from '../../../types/api';
+import { ExchangeType } from '../../../types/network/api';
+import { SymbolInfo } from '../../../types/common/symbol';
+import { LegacySymbolInfo, toCommonSymbol } from '../../../types/symbol/base';
 import { logger } from '@/utils/common';
 
 /**
@@ -176,8 +178,8 @@ export class BitgetDemoGenerator {
     // 現在時刻を取得
     const now = Date.now();
     
-    // ダミーの銘柄情報を生成
-    return mainPairs.map(({ base, quote }) => {
+    // ダミーの銘柄情報を生成（レガシータイプで生成し、共通タイプに変換）
+    const legacySymbols = mainPairs.map(({ base, quote }) => {
       // 基準価格（BTCは高め、他はそれなりの価格）
       const basePrice = base === 'BTC' ? 50000 : base === 'ETH' ? 3000 : Math.random() * 100 + 1;
       
@@ -201,8 +203,12 @@ export class BitgetDemoGenerator {
         status: 'TRADING',
         volume24h,
         priceChangePercent,
-        lastPrice
-      } as SymbolInfo;
+        lastPrice,
+        isFavorite: false
+      } as LegacySymbolInfo;
     });
+    
+    // レガシータイプから共通タイプに変換
+    return legacySymbols.map(symbol => toCommonSymbol(symbol, exchangeType));
   }
 }

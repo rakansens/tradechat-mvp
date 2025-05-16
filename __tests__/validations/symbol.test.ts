@@ -1,5 +1,6 @@
 // __tests__/validations/symbol.test.ts
 // 作成: シンボルバリデーションのテスト
+// 更新: T-7.3フェーズ - インポートパスを types/validations に変更、ExchangeProductType参照を更新
 
 import {
   validateSymbolInfo,
@@ -8,8 +9,8 @@ import {
   symbolInfoSchema,
   filterOptionsSchema,
   symbolSelectorPropsSchema
-} from '@/lib/validations/symbol';
-import { ExchangeType } from '@/types/api';
+} from '@/types/validations/symbol';
+import { ExchangeProductType } from '@/types/constants/enums';
 
 describe('Symbol Validations', () => {
   describe('symbolInfoSchema', () => {
@@ -102,8 +103,8 @@ describe('Symbol Validations', () => {
       const validProps = {
         onSelect: (symbol: string) => {},
         currentSymbol: 'BTCUSDT',
-        defaultExchangeType: 'spot' as ExchangeType,
-        onExchangeTypeChange: (type: ExchangeType) => {}
+        defaultExchangeType: 'spot' as ExchangeProductType,
+        onExchangeTypeChange: (type: ExchangeProductType) => {}
       };
 
       const result = symbolSelectorPropsSchema.safeParse(validProps);
@@ -114,7 +115,7 @@ describe('Symbol Validations', () => {
       const invalidProps = {
         // onSelectが欠けている
         currentSymbol: 'BTCUSDT',
-        defaultExchangeType: 'spot' as ExchangeType
+        defaultExchangeType: 'spot' as ExchangeProductType
       };
 
       const result = symbolSelectorPropsSchema.safeParse(invalidProps);
@@ -125,7 +126,7 @@ describe('Symbol Validations', () => {
       const validProps = {
         onSelect: (symbol: string) => {},
         currentSymbol: 'BTCUSDT',
-        defaultExchangeType: 'spot' as ExchangeType
+        defaultExchangeType: 'spot' as ExchangeProductType
       };
 
       const result = validateSymbolSelectorProps(validProps);

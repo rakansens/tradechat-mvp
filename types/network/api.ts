@@ -9,11 +9,13 @@
  */
 
 import { AxiosRequestConfig, AxiosResponse } from 'axios';
+import { ExchangeProductType } from '@/types/constants/enums';
 
 /**
  * 取引所タイプ
+ * @deprecated constants/enumsからExchangeProductTypeを使用してください
  */
-export type ExchangeType = 'spot' | 'futures';
+export type ExchangeType = ExchangeProductType;
 
 /**
  * Bitget API認証情報

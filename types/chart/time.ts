@@ -1,8 +1,10 @@
 // types/chart/time.ts
 // チャートの時間関連の型定義
+// 更新: T-7.3フェーズ - Timeframe型をenums.tsから参照
 
 import { z } from "zod";
 import { timeframeSchema } from "@/types/validations/chart";
+import { Timeframe } from "@/types/constants/enums";
 
 /**
  * Nominal 型（lightweight-charts の型定義から）
@@ -44,7 +46,7 @@ export type ChartTimeCompatible = Time | number;
 /**
  * チャートのタイムフレーム
  */
-export type Timeframe = "1m" | "3m" | "5m" | "15m" | "30m" | "1h" | "2h" | "4h" | "6h" | "8h" | "12h" | "1d" | "3d" | "1w" | "1M";
+export type { Timeframe };
 
 /**
  * ZodスキーマからのTimeframeの型

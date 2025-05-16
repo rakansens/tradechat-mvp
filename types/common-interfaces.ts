@@ -1,6 +1,7 @@
 /**
  * @deprecated このファイルはT-5フェーズで非推奨となりました。代わりに types/common/interfaces.ts を使用してください。
  * 後方互換性のために保持されていますが、今後は types/common からインポートすることを推奨します。
+ * このファイルはT-8フェーズで完全に削除される予定です。
  */
 
 // types/common-interfaces.ts

@@ -3,8 +3,13 @@
 // 更新: lightweight-charts v5 互換の型定義を追加
 // 更新: Zodスキーマから生成した型定義と一致するように修正
 // 更新: オーダーブック関連の型を共通モジュールから参照するように変更
+// 更新: T-7.3フェーズ - Timeframe型をenums.tsから参照
 
 import { OrderBookEntry, OrderBookData } from './common/orderbook';
+import { Timeframe, TIMEFRAMES } from './constants/enums';
+
+// Timeframe型を再エクスポート
+export type { Timeframe };
 
 /**
  * Nominal 型（lightweight-charts の型定義から）
@@ -42,11 +47,6 @@ export type Time = UTCTimestamp | BusinessDay | string;
  * インジケーターデータの型変換に使用
  */
 export type ChartTimeCompatible = Time | number;
-
-/**
- * チャートのタイムフレーム
- */
-export type Timeframe = "1m" | "3m" | "5m" | "15m" | "30m" | "1h" | "2h" | "4h" | "6h" | "8h" | "12h" | "1d" | "3d" | "1w" | "1M";
 
 /**
  * チャートの表示タイプ

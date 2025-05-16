@@ -1,5 +1,6 @@
 // __tests__/validations/market.test.ts
 // 作成: 市場データバリデーションのテスト
+// 更新: T-7.3フェーズ - インポートパスを types/validations に変更
 
 import {
   validateOrderBookEntry,
@@ -14,7 +15,7 @@ import {
   tradeDataSchema,
   marketStatsDataSchema,
   symbolInfoSchema
-} from '@/lib/validations/market';
+} from '@/types/validations/market';
 
 describe('Market Validations', () => {
   describe('orderBookEntrySchema', () => {

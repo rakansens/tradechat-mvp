@@ -3,14 +3,30 @@
  * 
  * このファイルは銘柄情報と関連機能の型定義を集約しています。
  * T-4フェーズでtypes/symbol.tsから移動されました。
+ * T-6フェーズで重複型定義を解消し、共通モジュールからインポートするように変更しました。
  */
 
 import { ExchangeType } from '../network/api';
+import type { SymbolInfo, SymbolFilterOptions } from '../common/symbol';
+
+// 共通型を再エクスポート
+export type { SymbolInfo, SymbolFilterOptions };
 
 /**
- * 銘柄情報の型定義
+ * @deprecated common/symbol.tsのSymbolFilterOptionsを使用してください。
+ * このインターフェースは後方互換性のために保持されています。
  */
-export interface SymbolInfo {
+export interface FilterOptions {
+  searchTerm: string;
+  quoteAsset: string;
+  favoritesOnly: boolean;
+}
+
+/**
+ * UI層用のシンボル情報型（レガシー互換性のため）
+ * @deprecated common/symbol.tsのSymbolInfoを使用し、必要に応じて変換してください。
+ */
+export interface LegacySymbolInfo {
   /** 銘柄のシンボル (例: BTCUSDT) */
   symbol: string;
   /** 基礎通貨 (例: BTC) */
@@ -38,27 +54,6 @@ export interface SymbolInfo {
 }
 
 /**
- * 銘柄リストのフィルタリングオプション
- */
-export interface SymbolFilterOptions {
-  /** 検索キーワード */
-  searchTerm: string;
-  /** 見積通貨フィルター (例: USDT, BTC) */
-  quoteAsset: string;
-  /** お気に入りのみ表示 */
-  favoritesOnly: boolean;
-}
-
-/**
- * フィルターオプションの型定義
- */
-export interface FilterOptions {
-  searchTerm: string;
-  quoteAsset: string;
-  favoritesOnly: boolean;
-}
-
-/**
  * シンボル変更履歴エントリの型定義
  */
 export interface SymbolChangeHistoryEntry {
@@ -74,10 +69,44 @@ export interface SymbolChangeHistoryEntry {
 export interface SymbolSliceState {
   currentSymbol: string;
   exchangeType: ExchangeType;
-  symbols: any[]; // SymbolInfo[]
-  filteredSymbols: any[]; // SymbolInfo[]
+  symbols: SymbolInfo[];
+  filteredSymbols: SymbolInfo[];
   isLoading: boolean;
   error: string | null;
   filterOptions: FilterOptions;
   changeHistory: SymbolChangeHistoryEntry[];
+}
+
+/**
+ * 共通SymbolInfo型とレガシーSymbolInfo型の変換関数
+ */
+export function toUISymbol(commonSymbol: SymbolInfo): LegacySymbolInfo {
+  return {
+    symbol: commonSymbol.symbol,
+    baseAsset: commonSymbol.baseCoin,
+    quoteAsset: commonSymbol.quoteCoin,
+    displayName: `${commonSymbol.baseCoin}/${commonSymbol.quoteCoin}`,
+    pricePrecision: commonSymbol.pricePrecision,
+    quantityPrecision: commonSymbol.quantityPrecision,
+    minNotional: commonSymbol.minOrderSize?.toString(),
+    status: commonSymbol.status,
+    isFavorite: commonSymbol.favorite
+  };
+}
+
+/**
+ * レガシーSymbolInfo型から共通SymbolInfo型への変換関数
+ */
+export function toCommonSymbol(uiSymbol: LegacySymbolInfo, exchangeType: ExchangeType): SymbolInfo {
+  return {
+    symbol: uiSymbol.symbol,
+    baseCoin: uiSymbol.baseAsset,
+    quoteCoin: uiSymbol.quoteAsset,
+    minOrderSize: parseFloat(uiSymbol.minNotional || '0'),
+    pricePrecision: uiSymbol.pricePrecision,
+    quantityPrecision: uiSymbol.quantityPrecision,
+    status: uiSymbol.status,
+    exchangeType,
+    favorite: uiSymbol.isFavorite
+  };
 } 

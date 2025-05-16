@@ -4,7 +4,7 @@
 "use client"
 import { memo } from "react"
 import type { Timeframe } from "@/types/chart"
-import type { TimeframeControlProps } from "@/types/common-interfaces"
+import type { TimeframeControlProps } from "@/types/common/interfaces"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 
 // TimeframeControlPropsを拡張して使用

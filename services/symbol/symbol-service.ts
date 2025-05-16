@@ -1,33 +1,18 @@
 // services/symbol/symbol-service.ts
-// 作成: シンボル関連の機能を提供するサービス層
+// 作成: シンボル情報を提供するサービス層
+// 更新: 共通モジュールから型定義をインポートするように変更
 // 
 // このサービスはシンボル情報の取得、正規化、フィルタリングなどの機能を提供します。
 // Zustandストアと分離し、ビジネスロジックをサービス層に移動させることで、
 // コードの再利用性と保守性を向上させます。
 
 import { getApiClient } from '../api/client-factory';
-import { ExchangeType } from '@/types/api';
+import { ExchangeType } from '@/types/network/api';
 import { normalizeSymbol } from '@/lib/utils';
 import { logger } from '@/utils/common';
-
-// シンボル情報の型定義
-export interface SymbolInfo {
-  symbol: string;
-  baseAsset: string;
-  quoteAsset: string;
-  isFavorite: boolean;
-  // 取引量データ
-  volume24h?: string; // 24時間取引量
-  priceChangePercent24h?: string; // 24時間価格変動率
-  lastPrice?: string; // 最新価格
-}
-
-// フィルターオプションの型定義
-export interface FilterOptions {
-  searchTerm: string;
-  quoteAsset: string;
-  favoritesOnly: boolean;
-}
+import { SymbolInfo } from '@/types/common/symbol'; 
+import { StoreFilterOptions } from '@/types/store';
+import { LegacySymbolInfo, toUISymbol, toCommonSymbol } from '@/types/symbol/base';
 
 // シンボル変更履歴の型定義
 export interface SymbolChangeHistory {
@@ -37,18 +22,21 @@ export interface SymbolChangeHistory {
   reason?: string;
 }
 
+// FilterOptionsの型エイリアス（後方互換性のため）
+export type FilterOptions = StoreFilterOptions;
+
 // モックデータ（実際の実装では API から取得）
-const mockSymbols: SymbolInfo[] = [
-  { symbol: 'BTCUSDT', baseAsset: 'BTC', quoteAsset: 'USDT', isFavorite: true },
-  { symbol: 'ETHUSDT', baseAsset: 'ETH', quoteAsset: 'USDT', isFavorite: false },
-  { symbol: 'BNBUSDT', baseAsset: 'BNB', quoteAsset: 'USDT', isFavorite: false },
-  { symbol: 'ADAUSDT', baseAsset: 'ADA', quoteAsset: 'USDT', isFavorite: false },
-  { symbol: 'DOGEUSDT', baseAsset: 'DOGE', quoteAsset: 'USDT', isFavorite: false },
-  { symbol: 'XRPUSDT', baseAsset: 'XRP', quoteAsset: 'USDT', isFavorite: false },
-  { symbol: 'DOTUSDT', baseAsset: 'DOT', quoteAsset: 'USDT', isFavorite: false },
-  { symbol: 'UNIUSDT', baseAsset: 'UNI', quoteAsset: 'USDT', isFavorite: false },
-  { symbol: 'LTCUSDT', baseAsset: 'LTC', quoteAsset: 'USDT', isFavorite: false },
-  { symbol: 'LINKUSDT', baseAsset: 'LINK', quoteAsset: 'USDT', isFavorite: false },
+const mockSymbols: LegacySymbolInfo[] = [
+  { symbol: 'BTCUSDT', baseAsset: 'BTC', quoteAsset: 'USDT', isFavorite: true, displayName: 'BTC/USDT', pricePrecision: 8, quantityPrecision: 8, status: 'TRADING' },
+  { symbol: 'ETHUSDT', baseAsset: 'ETH', quoteAsset: 'USDT', isFavorite: false, displayName: 'ETH/USDT', pricePrecision: 8, quantityPrecision: 8, status: 'TRADING' },
+  { symbol: 'BNBUSDT', baseAsset: 'BNB', quoteAsset: 'USDT', isFavorite: false, displayName: 'BNB/USDT', pricePrecision: 8, quantityPrecision: 8, status: 'TRADING' },
+  { symbol: 'ADAUSDT', baseAsset: 'ADA', quoteAsset: 'USDT', isFavorite: false, displayName: 'ADA/USDT', pricePrecision: 8, quantityPrecision: 8, status: 'TRADING' },
+  { symbol: 'DOGEUSDT', baseAsset: 'DOGE', quoteAsset: 'USDT', isFavorite: false, displayName: 'DOGE/USDT', pricePrecision: 8, quantityPrecision: 8, status: 'TRADING' },
+  { symbol: 'XRPUSDT', baseAsset: 'XRP', quoteAsset: 'USDT', isFavorite: false, displayName: 'XRP/USDT', pricePrecision: 8, quantityPrecision: 8, status: 'TRADING' },
+  { symbol: 'DOTUSDT', baseAsset: 'DOT', quoteAsset: 'USDT', isFavorite: false, displayName: 'DOT/USDT', pricePrecision: 8, quantityPrecision: 8, status: 'TRADING' },
+  { symbol: 'UNIUSDT', baseAsset: 'UNI', quoteAsset: 'USDT', isFavorite: false, displayName: 'UNI/USDT', pricePrecision: 8, quantityPrecision: 8, status: 'TRADING' },
+  { symbol: 'LTCUSDT', baseAsset: 'LTC', quoteAsset: 'USDT', isFavorite: false, displayName: 'LTC/USDT', pricePrecision: 8, quantityPrecision: 8, status: 'TRADING' },
+  { symbol: 'LINKUSDT', baseAsset: 'LINK', quoteAsset: 'USDT', isFavorite: false, displayName: 'LINK/USDT', pricePrecision: 8, quantityPrecision: 8, status: 'TRADING' },
 ];
 
 /**
@@ -77,9 +65,9 @@ class SymbolService {
         action: 'fetchSymbols',
       });
 
-      // 実際の実装ではAPIからデータを取得
-      // ここではモックデータを返す
-      const symbols = mockSymbols;
+      // モックデータを取得し共通型に変換
+      const legacySymbols = mockSymbols;
+      const symbols = legacySymbols.map(symbol => toCommonSymbol(symbol, exchangeType));
 
       // シンボルをソート
       const sortedSymbols = this.sortSymbols(symbols);
@@ -110,19 +98,19 @@ class SymbolService {
       filtered = filtered.filter(
         (s) =>
           s.symbol.toLowerCase().includes(term) ||
-          s.baseAsset.toLowerCase().includes(term) ||
-          s.quoteAsset.toLowerCase().includes(term)
+          s.baseCoin.toLowerCase().includes(term) ||
+          s.quoteCoin.toLowerCase().includes(term)
       );
     }
 
     // 基軸通貨でフィルター
     if (options.quoteAsset) {
-      filtered = filtered.filter((s) => s.quoteAsset === options.quoteAsset);
+      filtered = filtered.filter((s) => s.quoteCoin === options.quoteAsset);
     }
 
     // お気に入りでフィルター
     if (options.favoritesOnly) {
-      filtered = filtered.filter((s) => s.isFavorite);
+      filtered = filtered.filter((s) => s.favorite);
     }
 
     return filtered;
@@ -140,18 +128,18 @@ class SymbolService {
     // 銘柄を優先順位でソート
     return [...symbols].sort((a, b) => {
       // お気に入りを最優先
-      if (a.isFavorite && !b.isFavorite) return -1;
-      if (!a.isFavorite && b.isFavorite) return 1;
+      if (a.favorite && !b.favorite) return -1;
+      if (!a.favorite && b.favorite) return 1;
 
       // 基軸通貨がUSDTの銘柄を優先
-      if (a.quoteAsset === 'USDT' && b.quoteAsset !== 'USDT') return -1;
-      if (a.quoteAsset !== 'USDT' && b.quoteAsset === 'USDT') return 1;
+      if (a.quoteCoin === 'USDT' && b.quoteCoin !== 'USDT') return -1;
+      if (a.quoteCoin !== 'USDT' && b.quoteCoin === 'USDT') return 1;
 
       // 同じ基軸通貨の場合の並べ替えロジック
-      if (a.quoteAsset === b.quoteAsset) {
+      if (a.quoteCoin === b.quoteCoin) {
         // 優先銘柄リストにある場合
-        const aIndex = prioritySymbols.indexOf(a.baseAsset);
-        const bIndex = prioritySymbols.indexOf(b.baseAsset);
+        const aIndex = prioritySymbols.indexOf(a.baseCoin);
+        const bIndex = prioritySymbols.indexOf(b.baseCoin);
 
         // 両方がリストにある場合はリスト順
         if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex;
@@ -159,10 +147,14 @@ class SymbolService {
         if (aIndex !== -1) return -1;
         if (bIndex !== -1) return 1;
 
+        // レガシーUI属性を取得するための変換
+        const aUI = toUISymbol(a);
+        const bUI = toUISymbol(b);
+
         // 取引量データがあれば、取引量の多い順に並べ替え
-        if (a.volume24h && b.volume24h) {
-          const aVolume = parseFloat(a.volume24h);
-          const bVolume = parseFloat(b.volume24h);
+        if (aUI.volume24h && bUI.volume24h) {
+          const aVolume = parseFloat(aUI.volume24h);
+          const bVolume = parseFloat(bUI.volume24h);
 
           // 有効な数値の場合のみ比較
           if (!isNaN(aVolume) && !isNaN(bVolume) && aVolume !== bVolume) {
@@ -171,9 +163,9 @@ class SymbolService {
         }
 
         // 価格変動率があれば、変動率の大きい順に並べ替え
-        if (a.priceChangePercent24h && b.priceChangePercent24h) {
-          const aChange = Math.abs(parseFloat(a.priceChangePercent24h));
-          const bChange = Math.abs(parseFloat(b.priceChangePercent24h));
+        if (aUI.priceChangePercent24h && bUI.priceChangePercent24h) {
+          const aChange = Math.abs(parseFloat(aUI.priceChangePercent24h));
+          const bChange = Math.abs(parseFloat(bUI.priceChangePercent24h));
 
           // 有効な数値の場合のみ比較
           if (!isNaN(aChange) && !isNaN(bChange) && aChange !== bChange) {
