@@ -14,10 +14,12 @@
 // 更新: 2025-06-X - SettingsSliceを統合
 // 更新: 2025-06-XX - T-7.5フェーズ - ジェネリック型を追加し、unknown型問題を解決
 // 更新: 2025-06-30 - T-7.8フェーズ - 型安全なSlice定義とプロパティアクセスを実装
+// 更新: 2025-10-01 - T-8フェーズ - ジェネリック問題を解消するimmerSetラッパーを追加
 
 import { create, type StoreApi } from 'zustand'
 import { devtools, persist } from 'zustand/middleware'
 import { immer } from 'zustand/middleware/immer'
+import type { Draft } from 'immer'
 import { logger as loggerFn } from '@/utils/common'
 import { ChartSlice, createChartSlice } from './chart'
 import type { ChartSliceState } from './chart/state'
@@ -208,93 +210,95 @@ export const useRootStore = create<RootStore>()(
     devtools(
       persist(
         immer((set, get, api) => {
-          // 型付きset/get関数を定義
-          // 型安全なSetState関数
-          const typedSet = <T>(fn: (state: T) => void) => 
-            set((state) => {
-              fn(state as unknown as T);
+          // immerSetラッパー - ジェネリックな型パラメータを持つヘルパー関数
+          const immerSet = <TState>(fn: (draft: Draft<TState>) => void) => {
+            return set((state) => {
+              // stateをTStateとして扱い、immerのdraftとして関数に渡す
+              fn(state as unknown as Draft<TState>);
+              // ここで返り値は不要（immerがオートマチックに変更を適用する）
               return state;
             });
+          };
           
           // 型安全なGetState関数
-          const typedGet = <T>() => get() as unknown as T;
+          const getState = <TState>() => get() as unknown as TState;
           
-          // スライスの作成結果を変数に入れて型安全性を確保
+          // スライスの作成 - 全て同じパターンを使用
           const dataFetchSlice = createDataFetchSlice(
-            set as StoreApi<DataFetchSlice>['setState'],
-            get as StoreApi<DataFetchSlice>['getState'],
+            (fn) => immerSet<DataFetchSliceState>(fn),
+            () => getState<DataFetchSliceState>(),
             api as unknown as StoreApi<DataFetchSlice>
           );
           
           const socketSlice = createSocketSlice(
-            set as StoreApi<SocketSlice>['setState'],
-            get as StoreApi<SocketSlice>['getState'],
+            (fn) => immerSet<SocketSliceState>(fn),
+            () => getState<SocketSliceState>(),
             api as unknown as StoreApi<SocketSlice>
           );
           
           const symbolSlice = createSymbolSlice(
-            set as StoreApi<SymbolSlice>['setState'],
-            get as StoreApi<SymbolSlice>['getState']
+            (fn) => immerSet<SymbolSliceState>(fn),
+            () => getState<SymbolSliceState>()
           );
 
           const chartDataSlice = createChartDataSlice(
-            set as StoreApi<ChartDataSlice>['setState'],
-            get as StoreApi<ChartDataSlice>['getState']
+            (fn) => immerSet<ChartDataSliceState>(fn),
+            () => getState<ChartDataSliceState>()
           );
 
           const realTimeSlice = createRealTimeSlice(
-            set as StoreApi<RealTimeSlice>['setState'],
-            get as StoreApi<RealTimeSlice>['getState']
+            (fn) => immerSet<RealTimeSliceState>(fn),
+            () => getState<RealTimeSliceState>()
           );
           
           const indicatorSlice = createIndicatorSlice(
-            set as StoreApi<IndicatorSlice>['setState'],
-            get as StoreApi<IndicatorSlice>['getState']
+            (fn) => immerSet<IndicatorSliceState>(fn),
+            () => getState<IndicatorSliceState>()
           );
           
           const drawingToolSlice = createDrawingToolSlice(
-            set as StoreApi<DrawingToolSlice>['setState'],
-            get as StoreApi<DrawingToolSlice>['getState']
+            (fn) => immerSet<DrawingToolSliceState>(fn),
+            () => getState<DrawingToolSliceState>()
           );
           
           const chartConfigSlice = createChartConfigSlice(
-            set as StoreApi<ChartConfigSlice>['setState'],
-            get as StoreApi<ChartConfigSlice>['getState']
+            (fn) => immerSet<ChartConfigSliceState>(fn),
+            () => getState<ChartConfigSliceState>()
           );
           
           const chartSlice = createChartSlice(
-            set as StoreApi<ChartSlice>['setState'],
-            get as StoreApi<ChartSlice>['getState']
+            (fn) => immerSet<ChartSliceState>(fn),
+            () => getState<ChartSliceState>()
           );
           
           const entrySlice = createEntrySlice(
-            set as StoreApi<EntrySlice>['setState'],
-            get as StoreApi<EntrySlice>['getState']
+            (fn) => immerSet<EntrySliceState>(fn),
+            () => getState<EntrySliceState>()
           );
           
           const chatSlice = createChatSlice(
-            set as StoreApi<ChatSlice>['setState'],
-            get as StoreApi<ChatSlice>['getState']
+            (fn) => immerSet<ChatSliceState>(fn),
+            () => getState<ChatSliceState>()
           );
           
           const uiSlice = createUISlice(
-            set as StoreApi<UISlice>['setState'],
-            get as StoreApi<UISlice>['getState']
+            (fn) => immerSet<UISliceState>(fn),
+            () => getState<UISliceState>()
           );
           
           const marketSlice = createMarketSlice(
-            set as StoreApi<MarketSlice>['setState'],
-            get as StoreApi<MarketSlice>['getState']
+            (fn) => immerSet<MarketSliceState>(fn),
+            () => getState<MarketSliceState>()
           );
           
           const debugSlice = createDebugSlice(
-            set as StoreApi<DebugSlice>['setState'],
-            get as StoreApi<DebugSlice>['getState']
+            (fn) => immerSet<DebugSliceState>(fn),
+            () => getState<DebugSliceState>()
           );
           
           const settingsSlice = createSettingsSlice(
-            set as StoreApi<SettingsSlice>['setState'],
-            get as StoreApi<SettingsSlice>['getState']
+            (fn) => immerSet<SettingsState>(fn),
+            () => getState<SettingsState>()
           );
 
           // すべてのスライスを合成して返す
@@ -325,8 +329,7 @@ export const useRootStore = create<RootStore>()(
         name: 'TradeChat-RootStore', // devtoolsでの表示名
         enabled: process.env.NODE_ENV === 'development',
       }
-    ),
-    'root'
+    )
   )
 )
 

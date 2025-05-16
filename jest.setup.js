@@ -75,15 +75,33 @@ try {
 }
 
 // WebSocketのモック
-global.WebSocket = function MockWebSocket() {
-  return {
-    send: jest.fn(),
-    close: jest.fn(),
-    onopen: null,
-    onclose: null,
-    onmessage: null,
-    onerror: null,
-  };
+global.WebSocket = class MockWebSocket {
+  constructor(url) {
+    this.url = url;
+    this.readyState = 0; // CONNECTING
+    this.CONNECTING = 0;
+    this.OPEN = 1;
+    this.CLOSING = 2;
+    this.CLOSED = 3;
+    // メソッド
+    this.send = jest.fn();
+    this.close = jest.fn();
+    // イベントハンドラ
+    this.onopen = null;
+    this.onclose = null;
+    this.onmessage = null;
+    this.onerror = null;
+    // イベントリスナー関連
+    this.addEventListener = jest.fn();
+    this.removeEventListener = jest.fn();
+    this.dispatchEvent = jest.fn();
+    
+    // 自動的に接続状態にする
+    setTimeout(() => {
+      this.readyState = 1; // OPEN
+      if (this.onopen) this.onopen(new Event('open'));
+    }, 0);
+  }
 };
 
 // WebSocketの定数
@@ -91,3 +109,12 @@ WebSocket.CONNECTING = 0;
 WebSocket.OPEN = 1;
 WebSocket.CLOSING = 2;
 WebSocket.CLOSED = 3;
+
+// ResizeObserverのモック
+class ResizeObserverMock {
+  observe = jest.fn();
+  unobserve = jest.fn();
+  disconnect = jest.fn();
+}
+
+window.ResizeObserver = ResizeObserverMock;

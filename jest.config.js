@@ -11,7 +11,13 @@ module.exports = {
     '^@/supabase/(.*)$': '<rootDir>/lib/supabase/$1',
     '^lightweight-charts$': '<rootDir>/__tests__/lightweight-charts.js',
     '^@/lib/supabase/supabase$': '<rootDir>/lib/supabase/client',
-    '^@/store/useSymbolStore$': '<rootDir>/store/symbol'
+    '^@/store/useSymbolStore$': '<rootDir>/store/symbol',
+    // テスト専用のマッピング - 旧ストア名を新ストアにリダイレクト
+    '^@/store/socketActions$': '<rootDir>/store/socket',
+    '^../.*/store/socketActions$': '<rootDir>/store/socket',
+    '^../../store/useSymbolStore$': '<rootDir>/store/symbol',
+    '^../../../store/socketActions$': '<rootDir>/store/socket',
+    '^../../../store/useSymbolStore$': '<rootDir>/store/symbol'
   },
   transform: {
     '^.+\\.(ts|tsx)$': ['babel-jest', {
