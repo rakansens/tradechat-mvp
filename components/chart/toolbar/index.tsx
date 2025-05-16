@@ -10,8 +10,6 @@
 import React, { memo, useState, useEffect } from 'react';
 import { Separator } from '@/components/ui/separator';
 import { TabType } from '@/types/store/ui';
-import { Timeframe } from '@/types/chart';
-
 // フックのインポート
 import { 
   usePriceMetrics, 
@@ -29,8 +27,13 @@ import RealtimeToggle from './ui/RealtimeToggle';
 import TradeTypeSwitch from './ui/TradeTypeSwitch';
 
 // 利用可能な時間足とチャートタイプ
-const availableTimeframes = ['1m', '5m', '15m', '30m', '1h', '4h', '1d', '1w'];
-const chartTypes = ['candles', 'line', 'area'];
+import { CHART_TYPES, type ChartType, type Timeframe } from '@/types/constants/enums';
+
+// Define available timeframes
+const availableTimeframes: Timeframe[] = ['1m', '5m', '15m', '30m', '1h', '4h', '1d', '1w'];
+
+// Define chart types
+const chartTypes = [...CHART_TYPES]; // This is already a readonly array
 
 interface ChartToolbarProps {
   // タブ関連のprops（親コンポーネントから渡される）
@@ -124,14 +127,14 @@ const ChartToolbar = memo(function ChartToolbar({
           <ChartTypeSelector
             chartTypes={chartTypes}
             currentChartType={chartConfigStore.chartType}
-            onChartTypeChange={chartConfigStore.setChartType}
+            onChartTypeChange={(type: ChartType) => chartConfigStore.setChartType(type)}
           />
 
           {/* インジケーター選択ポップオーバー */}
           <IndicatorPopover
             isIndicatorActive={indicatorStore.isIndicatorActive}
             toggleIndicator={indicatorStore.toggleIndicator}
-            activeDrawingTools={drawingToolStore.activeDrawingTools}
+            activeDrawingTools={drawingToolStore.activeDrawingTools as any} // TODO: Fix type
             toggleDrawingTool={drawingToolStore.toggleDrawingTool}
             clearAllDrawingTools={drawingToolStore.clearAllDrawingTools}
           />
@@ -146,8 +149,8 @@ const ChartToolbar = memo(function ChartToolbar({
         <div className="flex items-center">
           {/* 取引種別切り替えボタン */}
           <TradeTypeSwitch
-            exchangeType={symbolStore.exchangeType}
-            onExchangeTypeChange={symbolStore.setExchangeType}
+            productType={symbolStore.exchangeType as 'spot' | 'futures'}
+            onProductTypeChange={symbolStore.setExchangeType}
             fetchChartData={(symbol, timeFrame, signal, useCache) => {
               return chartDataStore.fetchChartData(symbol, timeFrame as Timeframe, signal, useCache);
             }}

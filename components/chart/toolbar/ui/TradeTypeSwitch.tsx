@@ -1,58 +1,57 @@
 "use client"
 
 // components/chart/toolbar/ui/TradeTypeSwitch.tsx
-// 作成: 現物/先物取引の切り替えボタンコンポーネント
+// 作成: 取引タイプ（現物・先物）を切り替えるトグルスイッチコンポーネント
 // 役割:
-// 1. 現物/先物切り替えUIの表示
-// 2. 現在選択中の取引種別のハイライト
-// 3. 取引種別変更時のコールバック
-// 更新: 2025-05-20 - fetchChartDataの型を修正
+// 1. 取引タイプのトグルスイッチ表示
+// 2. 現在の取引タイプのハイライト
+// 3. タイプ変更時のコールバック
 
 import React, { memo } from 'react';
-import { ExchangeType } from '@/types/constants/enums';
-import { Timeframe } from '@/types/chart';
+import type { ExchangeProductType } from '@/types/constants/enums';
 
 interface TradeTypeSwitchProps {
-  // 現在選択中の取引種別
-  exchangeType: ExchangeType;
-  // 取引種別変更時のコールバック
-  onExchangeTypeChange: (type: ExchangeType) => void;
-  // データ再取得のコールバック
-  fetchChartData: (symbol: string, timeFrame: Timeframe | string, signal?: AbortSignal, useCache?: boolean) => Promise<any>;
-  // 現在の銘柄と時間足
-  currentSymbol: string;
-  currentTimeFrame: string;
-  // クライアントサイドレンダリング用
-  isClient: boolean;
+  // 現在選択中の取引タイプ
+  productType: ExchangeProductType;
+  // 取引タイプ変更時のコールバック
+  onProductTypeChange: (type: ExchangeProductType) => void;
+  // 無効状態
+  disabled?: boolean;
 }
 
 /**
  * 現物/先物取引の切り替えボタンコンポーネント
  */
 const TradeTypeSwitch = memo(function TradeTypeSwitch({
-  exchangeType,
-  onExchangeTypeChange,
+  productType,
+  onProductTypeChange,
   fetchChartData,
   currentSymbol,
   currentTimeFrame,
   isClient
 }: TradeTypeSwitchProps) {
+  // 取引種別を切り替えるハンドラー
+  const handleProductTypeChange = useCallback((newType: ExchangeProductType) => {
+    if (productType === newType) return; // 同じタイプの場合は何もしない
+    
+    // 取引種別を更新
+    onProductTypeChange(newType);
+    
+    // データを再取得
+    if (typeof fetchChartData === 'function') {
+      fetchChartData(currentSymbol, currentTimeFrame);
+    } else {
+      console.error('fetchChartData is not a function', fetchChartData);
+    }
+  }, [productType, onProductTypeChange, fetchChartData, currentSymbol, currentTimeFrame]);
+  
   return (
     <div className="flex items-center">
       <button
-        onClick={() => {
-          // 取引種別を更新
-          onExchangeTypeChange('spot');
-          // データを再取得
-          if (typeof fetchChartData === 'function') {
-            fetchChartData(currentSymbol, currentTimeFrame);
-          } else {
-            console.error('fetchChartData is not a function', fetchChartData);
-          }
-        }}
+        onClick={() => handleProductTypeChange('spot')}
         className={`flex items-center px-2 py-1 text-xs rounded-l ${
           !isClient ? 'bg-dark-800 text-gray-300' : // 初期レンダリング時はデフォルトスタイル
-          exchangeType === 'spot'
+          productType === 'spot'
             ? 'bg-blue-600 text-white'
             : 'bg-dark-800 text-gray-300 hover:bg-dark-700'
         }`}
@@ -60,19 +59,10 @@ const TradeTypeSwitch = memo(function TradeTypeSwitch({
         現物
       </button>
       <button
-        onClick={() => {
-          // 取引種別を更新
-          onExchangeTypeChange('futures');
-          // データを再取得
-          if (typeof fetchChartData === 'function') {
-            fetchChartData(currentSymbol, currentTimeFrame);
-          } else {
-            console.error('fetchChartData is not a function', fetchChartData);
-          }
-        }}
+        onClick={() => handleProductTypeChange('futures')}
         className={`flex items-center px-2 py-1 text-xs rounded-r ${
           !isClient ? 'bg-dark-800 text-gray-300' : // 初期レンダリング時はデフォルトスタイル
-          exchangeType === 'futures'
+          productType === 'futures'
             ? 'bg-blue-600 text-white'
             : 'bg-dark-800 text-gray-300 hover:bg-dark-700'
         }`}

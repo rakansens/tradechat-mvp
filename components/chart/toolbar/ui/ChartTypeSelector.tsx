@@ -8,11 +8,11 @@
 // 3. タイプ変更時のコールバック
 
 import React, { memo } from 'react';
-import { ChartType } from '@/types/chart';
+import { type ChartType } from '@/types/constants/enums';
 
 interface ChartTypeSelectorProps {
   // 利用可能なチャートタイプの配列
-  chartTypes: string[];
+  chartTypes: readonly ChartType[];
   // 現在選択中のチャートタイプ
   currentChartType: ChartType;
   // チャートタイプ変更時のコールバック
@@ -32,7 +32,7 @@ const ChartTypeSelector = memo(function ChartTypeSelector({
       {chartTypes.map((type) => (
         <button
           key={type}
-          onClick={() => onChartTypeChange(type as ChartType)}
+          onClick={() => onChartTypeChange(type)}
           className={`px-3 py-1 text-xs rounded ${
             currentChartType === type
               ? 'bg-blue-600 text-white'
