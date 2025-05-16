@@ -1,6 +1,6 @@
 // store/chart/indicator/index.ts
 // 作成: IndicatorSliceの統合とエクスポート
-// 更新: 2025-10-05 - 型定義をtypes.tsに移動し、SliceCreator型に準拠するように修正
+// 更新: 2025-10-06 - 型定義をtypes.tsに移動し、immerSetを使用するように更新
 
 import { initialIndicatorState } from './state';
 import { createIndicatorActions } from './actions';
@@ -23,7 +23,7 @@ export const createIndicatorSlice: IndicatorSliceCreator = (
   
   // アクションを作成
   const actions = createIndicatorActions(
-    set,
+    immerSet,
     getState
   );
   

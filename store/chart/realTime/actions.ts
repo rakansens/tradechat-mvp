@@ -4,7 +4,7 @@
 
 import type { IChartApi } from "lightweight-charts"
 import type { OHLCData } from "@/types/chart"
-import { type RealTimeSliceActions, type RealTimeSlice } from "./types"
+import { type RealTimeSliceActions, type RealTimeSlice, type RealTimeSliceState } from "./types"
 import { logger } from '@/utils/common'
 import { useRootStore } from "@/store/rootStore"
 
@@ -28,7 +28,7 @@ function debounce<T extends (...args: any[]) => any>(func: T, wait: number): (..
  * リアルタイム更新スライスのアクションを作成する関数
  */
 export const createRealTimeActions = (
-  set: (state: any) => void,
+  set: (fn: (state: RealTimeSliceState) => void) => void,
   get: () => RealTimeSlice
 ): RealTimeSliceActions => {
   // リアルタイム更新の実装（デバウンスされたバージョン）
@@ -72,9 +72,9 @@ export const createRealTimeActions = (
       }, 10000); // 10秒ごとに更新
       
       // タイマーを保存
-      set({ 
-        timer: newTimer,
-        connected: true
+      set(state => { 
+        state.timer = newTimer;
+        state.connected = true;
       });
       
       logger.info('リアルタイム更新を開始しました', {
@@ -113,9 +113,9 @@ export const createRealTimeActions = (
         const timer = get().timer;
         if (timer) {
           clearInterval(timer);
-          set({ 
-            timer: null,
-            connected: false
+          set(state => { 
+            state.timer = null;
+            state.connected = false;
           });
           
           logger.info('リアルタイム更新を停止しました', {
@@ -134,7 +134,9 @@ export const createRealTimeActions = (
     
     toggleRealTimeData: () => {
       const newValue = !get().useRealTimeData;
-      set({ useRealTimeData: newValue });
+      set(state => { 
+        state.useRealTimeData = newValue;
+      });
       
       if (newValue) {
         // リアルタイムデータを有効にした場合は更新を開始
@@ -147,7 +149,9 @@ export const createRealTimeActions = (
     
     initializeApi: (api: IChartApi) => {
       try {
-        set({ chartApi: api });
+        set(state => {
+          state.chartApi = api;
+        });
         
         // リアルタイムデータが有効な場合は更新を開始
         if (get().useRealTimeData) {

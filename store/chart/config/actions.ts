@@ -4,23 +4,27 @@
 
 import type { ChartType } from "@/types/chart"
 import { ExchangeType } from "@/types/network/api"
-import { type ChartConfigSliceActions, type ChartConfigSlice } from "./types"
+import { type ChartConfigSliceActions, type ChartConfigSlice, type ChartConfigSliceState } from "./types"
 
 /**
  * チャート設定スライスのアクションを作成する関数
  */
 export const createChartConfigActions = (
-  set: (state: any) => void,
+  set: (fn: (state: ChartConfigSliceState) => void) => void,
   get: () => ChartConfigSlice
 ): ChartConfigSliceActions => ({
   // チャートタイプを設定
   setChartType: (chartType) => {
-    set({ chartType });
+    set(state => {
+      state.chartType = chartType;
+    });
   },
   
   // 取引タイプを設定
   setExchangeType: (exchangeType) => {
-    set({ exchangeType });
+    set(state => {
+      state.exchangeType = exchangeType;
+    });
     
     // 注意: 実際の実装では、ここでRealTimeStoreのAPIクライアントを更新するイベントを発行する
     // 循環参照を避けるために、イベント駆動型のアプローチを使用

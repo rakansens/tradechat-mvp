@@ -1,5 +1,6 @@
 // types/store/chart.ts
 // チャートストア関連の型定義
+// 更新: 2025-10-06 - IndicatorConfig型を追加
 
 import { OHLCData } from '../chart';
 import { Timeframe, ChartType } from '../constants/enums';
@@ -10,6 +11,17 @@ import { BitgetApiClient } from '../../services/api/bitget/client';
  * インジケーターの種類
  */
 type IndicatorType = 'rsi' | 'macd' | 'ichimoku' | 'bollinger' | 'ema';
+
+/**
+ * インジケーターの設定
+ */
+interface IndicatorConfig {
+  id: string;
+  type: IndicatorType;
+  params: Record<string, any>;
+  isActive: boolean;
+  name?: string;
+}
 
 /**
  * アクティブなインジケーターの設定
@@ -106,4 +118,4 @@ export interface RealTimeState {
   _startRealTimeUpdatesImpl: () => void;
 }
 
-export type { IndicatorType, ActiveIndicator, DrawingToolType }; 
+export type { IndicatorType, ActiveIndicator, DrawingToolType, IndicatorConfig }; 

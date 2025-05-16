@@ -106,8 +106,9 @@ export interface RootActions {
   
   // IndicatorSliceActions
   toggleIndicator: IndicatorSlice['toggleIndicator']
-  updateIndicatorParams: IndicatorSlice['updateIndicatorParams']
-  clearAllIndicators: IndicatorSlice['clearAllIndicators']
+  addIndicator: IndicatorSlice['addIndicator']
+  removeIndicator: IndicatorSlice['removeIndicator']
+  updateIndicatorSettings: IndicatorSlice['updateIndicatorSettings']
   
   // DrawingToolSliceActions
   toggleDrawingTool: DrawingToolSlice['toggleDrawingTool']
