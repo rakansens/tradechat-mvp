@@ -1,27 +1,42 @@
 // store/chart/data/index.ts
 // 作成: ChartDataSliceの統合とエクスポート
+// 更新: 2025-10-04 - スライスの型定義をtypes.tsに移動、State & Actions型を使用
 
-import { ChartDataSliceState, initialChartDataState } from './state'
-import { ChartDataActions, ChartDataSlice, createChartDataActions } from './actions'
+import { initialChartDataState } from './state'
+import { createChartDataActions } from './actions'
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
+import { ChartDataSlice, ChartDataSliceState, ChartDataSliceActions } from './types'
+import { type SliceCreator } from '@/types/store/core'
+import { createImmerSetter } from '@/store/core/immerSet'
 
 /**
  * ChartDataSliceを作成する関数
  * 状態とアクションを統合してスライスを作成します
  */
-export const createChartDataSlice = <T extends ChartDataSlice>(
-  set: (state: Partial<T>) => void,
-  get: () => T
-): ChartDataSlice => {
+export const createChartDataSlice: SliceCreator<ChartDataSlice, ChartDataSliceState> = (
+  set,
+  get,
+  api
+) => {
+  // immerSetラッパーを作成
+  const immerSet = createImmerSetter<ChartDataSliceState>(set);
+  
+  // 型安全なゲッター関数
+  const getState = () => get() as ChartDataSlice;
+  
+  // アクションの作成
+  const actions = createChartDataActions(set, getState);
+  
+  // 状態とアクションを結合して返す
   return {
     // 初期状態
     ...initialChartDataState,
     
     // アクション
-    ...createChartDataActions(set, get)
-  }
-}
+    ...actions
+  };
+};
 
 /**
  * ChartDataSliceを使用したスタンドアロンストア
@@ -36,4 +51,4 @@ export const useChartDataStore = create<ChartDataSlice>()(
 )
 
 // 型をエクスポート
-export type { ChartDataSlice, ChartDataActions, ChartDataSliceState } 
+export type { ChartDataSlice, ChartDataSliceState, ChartDataSliceActions } from './types' 

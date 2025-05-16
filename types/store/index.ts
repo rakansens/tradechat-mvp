@@ -51,4 +51,18 @@ export interface StoreState {
  * - IndicatorType, ActiveIndicator, DrawingToolType: './chart'
  * - SymbolInfo: '@/types/common/symbol'
  * - FilterOptions (StoreFilterOptions): '@/types/store.ts'
- */ 
+ */
+
+import type { StateCreator, StoreApi } from 'zustand'
+import type { TabType, IndicatorType, DrawingToolType } from './ui'
+import type { DrawingTool } from './chart'
+
+export { TabType, IndicatorType, DrawingToolType, DrawingTool }
+
+// スライスクリエーター型定義
+// これは各スライスが共通で使用する型です
+export type SliceCreator<TSlice> = (
+  set: (fn: (state: any) => any) => any,
+  get: () => any,
+  api?: any
+) => TSlice 

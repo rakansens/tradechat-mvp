@@ -1,10 +1,11 @@
 // store/chart/data/actions.ts
 // 作成: ChartDataSliceのアクション定義
+// 更新: 2025-10-04 - 型定義を types.ts に移動し、内部で直接使用するように変更
 
-import type { StateCreator } from "zustand"
 import { OHLCData, Timeframe } from "@/types/chart"
 import { ExchangeType } from "@/types/api"
 import { ChartDataSliceState, initialTimeframe } from "./state"
+import { ChartDataSlice, ChartDataSliceActions } from "./types"
 import { chartDataService } from "@/services/data"
 import { cacheService } from "@/services/cache"
 import { logger } from '@/utils/common'
@@ -32,33 +33,16 @@ const getExchangeTypeFromLocalStorage = (): ExchangeType => {
   return 'spot'
 }
 
-export interface ChartDataActions {
-  // チャートデータを取得するアクション
-  fetchData: (symbol: string, timeFrame: Timeframe, signal?: AbortSignal, useCache?: boolean) => Promise<OHLCData[] | undefined>
-  
-  // データを更新するアクション
-  updateData: (data: OHLCData) => void
-  
-  // タイムフレームを更新するアクション
-  updateTimeFrame: (timeFrame: Timeframe) => Promise<void>
-  
-  // シンボルを更新するアクション
-  updateSymbol: (symbol: string) => Promise<void>
-  
-  // 最後のローソク足を更新するアクション（リアルタイム更新用）
-  updateLastCandle: (newCandle: OHLCData) => void
-}
-
-export type ChartDataSlice = ChartDataSliceState & ChartDataActions
-
 /**
  * チャートデータスライスのアクションを作成する関数
  */
-export const createChartDataActions = <T extends ChartDataSlice>(
-  set: (state: Partial<T>) => void,
-  get: () => T
-): ChartDataActions => ({
+export const createChartDataActions = (
+  set: (state: Partial<ChartDataSliceState>) => void,
+  get: () => ChartDataSlice
+): ChartDataSliceActions => ({
+  // 既存の実装をそのまま使用
   fetchData: async (symbol: string, timeFrame: Timeframe, signal?: AbortSignal, useCache: boolean = false) => {
+    // 実装内容は変更なし
     // 開発環境でのバリデーション
     if (process.env.NODE_ENV !== 'production') {
       const timeframeResult = validateTimeframe(timeFrame)
@@ -71,7 +55,7 @@ export const createChartDataActions = <T extends ChartDataSlice>(
       }
     }
     
-    set({ isLoading: true, error: null } as Partial<T>)
+    set({ isLoading: true, error: null });
     
     // 最新の状態を取得（リフレッシュボタンが押された場合など、状態が変わっている可能性がある）
     const currentState = get()
@@ -137,7 +121,7 @@ export const createChartDataActions = <T extends ChartDataSlice>(
         isLoading: false,
         currentSymbol: finalSymbol,
         currentTimeFrame: finalTimeFrame
-      } as Partial<T>)
+      });
       
       // 状態更新後のデータ内容を記録
       logger.debug(`状態更新後のデータ内容:`, {
@@ -198,7 +182,7 @@ export const createChartDataActions = <T extends ChartDataSlice>(
         error: errorMessage,
         currentSymbol: finalSymbol,         // エラー時でも現在のシンボルを保持
         currentTimeFrame: finalTimeFrame    // エラー時でも現在のタイムフレームを保持
-      } as Partial<T>)
+      });
       
       return dummyData
     }
@@ -217,9 +201,11 @@ export const createChartDataActions = <T extends ChartDataSlice>(
         })
       }
     }
-    set((state: ChartDataSliceState) => ({
+    // ここでは関数を直接渡すのではなく、部分的な状態オブジェクトを返す
+    const state = get();
+    set({
       data: [...state.data, data]
-    }) as Partial<T>)
+    });
   },
   
   // タイムフレームを更新
@@ -307,7 +293,7 @@ export const createChartDataActions = <T extends ChartDataSlice>(
       currentTimeFrame: timeFrame,
       isLoading: true,
       error: null
-    } as Partial<T>)
+    });
     
     // 少し遅延させてから新しいデータを取得
     // これにより、UIの更新が先に行われる
@@ -406,7 +392,7 @@ export const createChartDataActions = <T extends ChartDataSlice>(
       isLoading: true,
       error: null,
       _abortController: abortController
-    } as Partial<T>)
+    });
     
     // データ取得
     try {
@@ -460,28 +446,27 @@ export const createChartDataActions = <T extends ChartDataSlice>(
       }
     }
     
-    set((state: ChartDataSliceState) => {
-      // 既存のデータ配列を取得
-      const data = [...state.data]
+    // 既存のデータ配列を取得
+    const state = get();
+    const data = [...state.data];
+    
+    // 最後のローソク足を取得
+    const lastCandle = data[data.length - 1];
+    
+    // 同じ時間のローソク足なら更新、そうでなければ追加
+    if (lastCandle && lastCandle.time === newCandle.time) {
+      // 最後のローソク足を更新
+      data[data.length - 1] = newCandle;
+    } else {
+      // 新しいローソク足を追加
+      data.push(newCandle);
       
-      // 最後のローソク足を取得
-      const lastCandle = data[data.length - 1]
-      
-      // 同じ時間のローソク足なら更新、そうでなければ追加
-      if (lastCandle && lastCandle.time === newCandle.time) {
-        // 最後のローソク足を更新
-        data[data.length - 1] = newCandle
-      } else {
-        // 新しいローソク足を追加
-        data.push(newCandle)
-        
-        // データが多すぎる場合は古いものを削除
-        if (data.length > 500) {
-          data.shift()
-        }
+      // データが多すぎる場合は古いものを削除
+      if (data.length > 500) {
+        data.shift();
       }
-      
-      return { data } as Partial<T>
-    })
+    }
+    
+    set({ data });
   }
 }) 
