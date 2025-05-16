@@ -5,6 +5,8 @@
  * 変更履歴:
  * - 2023-06-05: SymbolSelector.tsxのリファクタリングに伴い作成
  * - 2025-05-17: T-7.6フェーズ - 型インポートパスと属性名を修正
+ * - 2025-06-05: T-7.7.1フェーズ - 型インポートパスを@/types/common/symbolに変更
+ * - 2025-06-05: T-7.7.4フェーズ - lucide-react v0.36対応 (Star/StarOffに変更)
  */
 
 "use client";
@@ -15,7 +17,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Star, StarOff } from 'lucide-react';
 import { validateSymbolInfo } from '@/lib/validations/symbol';
-import type { SymbolInfo } from '@/services/symbol';
+import type { SymbolInfo } from '@/types/common/symbol';
 
 interface SymbolListProps {
   symbols: SymbolInfo[];

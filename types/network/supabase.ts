@@ -601,6 +601,36 @@ export type Database = {
             referencedColumns: ["id"];
           }
         ];
+      },
+      user_settings: {
+        Row: {
+          id: string;
+          user_id: string;
+          value: Json;
+          updated_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          value: Json;
+          created_at?: string | null;
+          updated_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          value?: Json;
+          created_at?: string | null;
+          updated_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "user_settings_user_id_fkey";
+            columns: ["user_id"];
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          }
+        ];
       }
     }
     Views: {

@@ -10,7 +10,7 @@
 
 import React, { memo } from "react";
 import { MessageList } from "../../VirtualMessageList";
-import type { ExtendedMessage } from "@/types/chat";
+import type { ExtendedMessage } from "@/types/chat/base";
 import type { OpenEntry } from "@/types/entry";
 import type { TradeActionProps } from "@/types/common/interfaces";
 import { useConversation } from "@/contexts/ConversationContext";

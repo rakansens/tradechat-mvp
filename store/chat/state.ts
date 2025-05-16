@@ -3,8 +3,10 @@
 // 更新: 2025/5/20 - 会話IDごとのネームスペースをサポート
 // 更新: 2025/5/28 - システムプロンプト情報をサポート
 // 更新: 2025/6/2 - リアルタイム購読の接続状態とエラー管理フィールドを追加
+// 更新: 2025/6/30 - インポートパスを修正（/types/chat → /types/chat/base）
+// 更新: 2025/6/30 - インポートパスを相対パスに変更
 
-import type { ExtendedMessage } from '@/types/chat'
+import type { ExtendedMessage } from '../../types/chat/base'
 
 // リアルタイム接続状態タイプ
 export type ConnectionStatus = 

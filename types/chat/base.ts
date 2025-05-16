@@ -3,9 +3,18 @@
  * 
  * このファイルはチャット機能とAIトレード提案に関連する型定義を集約しています。
  * T-4フェーズでtypes/chat.tsから移動されました。
+ * 更新: 2025/6/30 - ConnectionInfo型を追加
  */
 
 import type { Message } from "ai";
+
+/**
+ * リアルタイム接続情報の型
+ */
+export interface ConnectionInfo {
+  status: "DISCONNECTED" | "CONNECTING" | "CONNECTED" | "RECONNECTING" | "ERROR" | "MAX_RETRIES_EXCEEDED";
+  error: string | null;
+}
 
 /**
  * トレード提案の種類

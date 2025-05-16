@@ -7,14 +7,18 @@
 // 更新: 2025/6/22 - Supabase SSRクライアント対応（インポートパス更新）
 // 更新: 2025/6/29 - 接続状態遷移の厳密化と明示的な状態更新
 // 更新: 2025/6/30 - 循環参照の修正と引数の整理
+// 更新: 2025/6/30 - インポートパスを修正
+// 更新: 2025/6/30 - インポートパスを相対パスに変更
+// 更新: 2025/6/30 - ConversationState初期化をヘルパー関数に統一
 
 // 循環参照を避けるため、直接インポートせずに動的にインポートする
 // import { useRootStore } from '../rootStore'
-import type { ExtendedMessage, ProposalType } from '@/types/chat'
+import type { ExtendedMessage, ProposalType } from '../../types/chat/base'
 import type { ChatSliceState, ConversationState, ConnectionStatus } from './state'
-import { logger } from '@/utils/common'
-import { subscribeToConversationMessages } from '@/lib/supabase/features/conversations'
-import { useToast } from '@/components/ui/use-toast'
+import { logger } from '../../utils/common'
+import { subscribeToConversationMessages } from '../../lib/supabase/features/conversations'
+import { useToast } from '../../components/ui/use-toast'
+import { createEmptyConversation } from './utils'
 
 // チャットスライスのアクション定義
 export interface ChatSliceActions {
@@ -421,16 +425,7 @@ export const createChatActions = (
     set((state) => {
       // 会話が存在しない場合は作成
       if (!state.byConversation[conversationId]) {
-        state.byConversation[conversationId] = {
-          messages: [],
-          isSearching: false,
-          input: "",
-          systemPrompt: null,
-          title: `会話 ${new Date().toLocaleDateString()}`,
-          connectionStatus: 'DISCONNECTED',
-          connectionError: null,
-          lastMessageAt: null
-        }
+        state.byConversation[conversationId] = createEmptyConversation(`会話 ${new Date().toLocaleDateString()}`);
       }
       
       // アクティブな会話IDを更新
@@ -565,14 +560,7 @@ export const createChatActions = (
     if (!ohlcData || ohlcData.length === 0) {
       set((state) => {
         // 会話の状態を取得、不存在なら初期化
-        const conversation = state.byConversation[conversationId] || {
-          id: conversationId,
-          title: '新しい会話',
-          messages: [],
-          systemPrompt: null,
-          connectionStatus: 'DISCONNECTED',
-          connectionError: null
-        };
+        const conversation = state.byConversation[conversationId] || createEmptyConversation('新しい会話');
         
         // 会話の状態を更新
         state.byConversation[conversationId] = {
@@ -624,14 +612,7 @@ export const createChatActions = (
     // メッセージを更新
     set((state) => {
       // 会話の状態を取得、不存在なら初期化
-      const conversation = state.byConversation[conversationId] || {
-        id: conversationId,
-        title: '新しい会話',
-        messages: [],
-        systemPrompt: null,
-        connectionStatus: 'DISCONNECTED',
-        connectionError: null
-      };
+      const conversation = state.byConversation[conversationId] || createEmptyConversation('新しい会話');
       
       // 会話のメッセージを更新
       state.byConversation[conversationId] = {

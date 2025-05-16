@@ -21,6 +21,18 @@
       ],
       "@/supabase/*": [
         "lib/supabase/*"
+      ],
+      "@/types/*": [
+        "./types/*"
+      ],
+      "@/utils/*": [
+        "./utils/*"
+      ],
+      "@/lib/*": [
+        "./lib/*"
+      ],
+      "@/components/*": [
+        "./components/*"
       ]
     }
   },

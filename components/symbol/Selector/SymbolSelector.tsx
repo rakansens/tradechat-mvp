@@ -9,6 +9,9 @@
  * - 2025-05-14: 不足している型定義を追加
  * - 2025-05-14: モック実装を実際の実装に置き換え
  * - 2025-06-05: selectSymbolCurrentSymbolをselectCurrentSymbolに変更
+ * - 2025-06-05: T-7.7.1フェーズ - 型インポートパスを修正
+ * - 2025-06-05: T-7.7.2フェーズ - 内部関数の名前衝突を解消
+ * - 2025-06-05: T-7.7.3フェーズ - プロパティ名を統一（quoteCoin→quoteCoin、isFavorite→favorite）
  */
 
 "use client";
@@ -25,7 +28,8 @@ import {
   selectSymbolFilterOptions,
   selectSymbolList
 } from '@/store/barrel';
-import { SymbolInfo, FilterOptions } from '@/services/symbol';
+import type { SymbolInfo } from '@/types/common/symbol';
+import type { FilterOptions } from '@/services/symbol/types';
 import { logger } from '@/utils/common';
 
 import { ExchangeTabs } from './ui/ExchangeTabs';
@@ -33,9 +37,8 @@ import { SearchBar } from './ui/SearchBar';
 import { SymbolList } from './ui/SymbolList';
 import { FilterBar } from './ui/FilterBar';
 import { PopularList } from './ui/PopularList';
-import { StarIcon, StarFilledIcon } from '@/components/ui/icons';
+// アイコンは子コンポーネントで使用されるため、ここでのインポートは不要
 import { ExchangeType } from '@/types/network/api';
-import { useFilterState } from '@/hooks/symbol/filter';
 import { validateSymbolSelectorProps } from '@/lib/validations/symbol';
 import type { SymbolSelectorPropsSchema } from '@/lib/validations/symbol';
 import { symbolService } from '@/services/symbol';
@@ -113,8 +116,9 @@ export const SymbolSelector: React.FC<SymbolSelectorProps> = ({
 
 /**
  * フィルター状態を管理するフック
+ * 内部で使用するためのフック (外部のuseFilterStateとは別)
  */
-const useFilterState = () => {
+const useSymbolFilterState = () => {
   const [filterOptions, setFilterOptions] = useState<FilterOptions>({
     searchTerm: '',
     quoteAsset: '',
@@ -290,7 +294,7 @@ export default function AdvancedSymbolSelector({
   });
   
   // フィルター状態を管理するフックを使用
-  const filterState = useFilterState();
+  const filterState = useSymbolFilterState();
   const {
     filterOptions,
     commonQuoteAssets,
@@ -409,11 +413,10 @@ export default function AdvancedSymbolSelector({
             onClick={handleToggleFavorite}
             aria-label="お気に入りに追加/削除"
           >
-            {selectedSymbol.favorite ? (
-              <StarFilledIcon className="w-4 h-4 text-yellow-400" />
-            ) : (
-              <StarIcon className="w-4 h-4" />
-            )}
+            {selectedSymbol.favorite ? 
+              "★" : 
+              "☆"
+            }
           </button>
           <div className="text-base font-medium">
             <span className="text-text-primary">{splitSymbol.base}</span>

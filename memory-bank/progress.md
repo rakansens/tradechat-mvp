@@ -245,3 +245,55 @@
 ### 今後の課題
 
 - ⬜ ユーザープロフィール管理機能 
+
+## 2025/06/30 - Chatリアルタイム接続リファクタとTSパス修正
+
+### 完了した作業
+
+#### 1. Chatリアルタイム接続リファクタリング
+
+- ✅ `Header`への接続バッジ実装 (`ChatSection` → `Header`への props 受け渡し)
+- ✅ `ChatWindow` → `SearchingIndicator`への connection 伝播実装
+- ✅ `ConnectionInfo` 型の追加 (`types/chat/base.ts`に定義)
+- ✅ `startMessageSubscription`のステータス遷移実装
+
+#### 2. TSパスエラーの抜本解決
+
+- ✅ tsconfig.jsonのエイリアス統一 (`@/types/*`, `@/utils/*`, `@/lib/*`, `@/components/*`)
+- ✅ `types/chat.ts` の deprecated フラグ付けと再エクスポート化
+- ✅ `@/types/chat` インポートパスを `@/types/chat/base` に自動置換
+- ✅ `ConversationState` 初期化の一貫化
+  - ✅ `store/chat/utils.ts` 作成とヘルパー関数実装
+  - ✅ `createEmptyConversation`関数の導入
+
+#### 3. CIパイプライン確認
+
+- ✅ `typecheck` と `pretest` スクリプトの追加 (package.json)
+
+### 残作業
+
+#### 1. TS型エラーの解消
+
+- ⚠️ `npx tsc --noEmit` でいくつかのエラーがまだ残っています
+  - `store/rootStore.ts` の多数のエラー
+  - store/*/selectors.ts ファイルの型エラー
+  - __tests__ ディレクトリ内のテストファイルのエラー
+  - 旧式のAPIや型(特に Symbol関連)を参照しているエラー
+
+#### 2. Jestテストの修正
+
+- ⚠️ connection props 追加に伴うテストコードの修正が必要
+
+#### 3. Chartリファクタリングの準備
+
+- ✅ Chart関連の依存関係調査完了
+- ⚠️ 次のタスク分割が必要:
+  - A. Slice整理: chart/data, chart/config, chart/realTimeのpublic APIを点検
+  - B. DrawingTool: 色トークン移行／Tailwind化
+  - C. ChartComponent: RechartsやLightweight-chartsラッパーのhooks化
+
+### 次のステップ
+
+1. 残りのTypeScript型エラーを解消する
+2. Jestテストを修正してパスさせる
+3. Chartリファクタリングの詳細計画を立てる 

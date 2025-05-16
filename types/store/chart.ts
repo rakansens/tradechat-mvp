@@ -9,12 +9,12 @@ import { BitgetApiClient } from '../../services/api/bitget/client';
 /**
  * インジケーターの種類
  */
-export type IndicatorType = 'rsi' | 'macd' | 'ichimoku' | 'bollinger' | 'ema';
+type IndicatorType = 'rsi' | 'macd' | 'ichimoku' | 'bollinger' | 'ema';
 
 /**
  * アクティブなインジケーターの設定
  */
-export interface ActiveIndicator {
+interface ActiveIndicator {
   type: IndicatorType;
   params: Record<string, any>;
 }
@@ -22,7 +22,7 @@ export interface ActiveIndicator {
 /**
  * 描画ツールの種類
  */
-export type DrawingToolType = 'fibonacci' | 'rectangle' | 'line' | 'arrow' | 'text';
+type DrawingToolType = 'fibonacci' | 'rectangle' | 'line' | 'arrow' | 'text';
 
 /**
  * チャートデータストアの状態
@@ -104,4 +104,6 @@ export interface RealTimeState {
   // 内部アクション
   _debouncedStartRealTimeUpdates: () => void;
   _startRealTimeUpdatesImpl: () => void;
-} 
+}
+
+export type { IndicatorType, ActiveIndicator, DrawingToolType }; 

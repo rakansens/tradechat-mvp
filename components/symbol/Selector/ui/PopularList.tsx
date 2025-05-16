@@ -5,6 +5,7 @@
  * 変更履歴:
  * - 2023-06-05: SymbolSelector.tsxのリファクタリングに伴い作成
  * - 2025-05-17: T-7.6フェーズ - 型インポートパスとプロパティ名を修正
+ * - 2025-06-05: T-7.7.1フェーズ - 型インポートパスとプロパティ名を修正
  */
 
 "use client";
@@ -12,7 +13,7 @@
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Star, StarOff } from 'lucide-react';
-import type { SymbolInfo } from '@/services/symbol';
+import type { SymbolInfo } from '@/types/common/symbol';
 
 interface PopularListProps {
   symbols: SymbolInfo[];

@@ -4,7 +4,7 @@
 
 import { SymbolSliceState, initialSymbolState } from './state';
 import { SymbolActions, SymbolSlice, createSymbolActions } from './actions';
-import { create } from 'zustand';
+import { create, type StoreApi } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 
@@ -12,12 +12,12 @@ import { immer } from 'zustand/middleware/immer';
  * SymbolSliceを作成する関数
  * 状態とアクションを統合してスライスを作成します
  */
-export const createSymbolSlice = <T extends SymbolSlice>(
-  set: any, // Zustandのset関数の型を適切に扱うためany型を使用
-  get: () => T
+export const createSymbolSlice = (
+  set: (partial: ((draft: SymbolSlice) => void) | Partial<SymbolSlice>) => void,
+  get: () => SymbolSlice,
 ): SymbolSlice => {
   // immerをここで使用して状態更新を簡略化
-  const immerSet = (fn: (state: T) => void) => set(fn);
+  const immerSet = (fn: (state: SymbolSlice) => void) => set(fn);
   
   return {
     // 初期状態

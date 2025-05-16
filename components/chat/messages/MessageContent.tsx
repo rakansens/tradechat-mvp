@@ -4,7 +4,7 @@
 
 import { useMemo } from "react"
 import Image from "next/image"
-import type { ExtendedMessage } from "@/types/chat"
+import type { ExtendedMessage } from "@/types/chat/base"
 import { CodeBlock } from "../ui/CodeBlock"
 
 // メッセージコンテンツの種類を表す型

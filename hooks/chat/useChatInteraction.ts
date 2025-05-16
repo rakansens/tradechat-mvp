@@ -23,7 +23,7 @@ import { useState, useEffect, useRef, useCallback } from "react"
 import { useChat } from "ai/react"
 import { useRootStore, selectLatestProposal } from "@/store"
 import type { Entry, OpenEntry, TradeSide } from "@/types/entry"
-import type { ExtendedMessage, ProposalType } from "@/types/chat"
+import type { ExtendedMessage, ProposalType } from "@/types/chat/base"
 import type { ChangeEvent, FormEvent } from "react"
 import type { Message } from "ai"
 
@@ -109,7 +109,7 @@ Would you like to enter a long position at the current price of $60,500?`,
 
         setPendingEntry({
           id: Date.now().toString(),
-          userId: 'currentUser',
+          userId: getCurrentUserId(), // 現在のユーザーIDを設定
           side: isBuy ? "buy" : "sell",
           symbol: "BTC/USD",
           price,
@@ -349,7 +349,7 @@ Would you like to enter a long position based on this positive news sentiment?`,
     // Set entry information
     setPendingEntry({
       id: Date.now().toString(),
-      userId: 'currentUser',
+      userId: getCurrentUserId(), // 現在のユーザーIDを設定
       side: proposalDetails.side,
       symbol: "BTC/USD",
       price: proposalDetails.price,
@@ -375,14 +375,12 @@ Would you like to enter a long position based on this positive news sentiment?`,
         {
           id: Date.now().toString(),
           role: "user",
-          content: "Execute trade",
+          content: "Proceed with the entry",
         } as ExtendedMessage,
         {
           id: Date.now().toString() + "-response",
           role: "assistant",
-          content: `I've executed a ${pendingEntry.side} order for BTC/USD at $${pendingEntry.price}. The position is now open.
-
-I'll monitor this position and alert you of any significant price movements. You can view your position details in the Trades tab.`,
+          content: `Entry confirmed! I've opened a ${pendingEntry.side} position for you.`,
         } as ExtendedMessage,
       ])
     }

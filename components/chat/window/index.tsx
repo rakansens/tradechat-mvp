@@ -13,7 +13,7 @@
 import React, { forwardRef, useEffect } from "react";
 import type { TradeActionProps } from "@/types/common/interfaces";
 import type { OpenEntry } from "@/types/entry";
-import type { ConnectionInfo } from "@/types/chat";
+import type { ConnectionInfo } from "@/types/chat/base";
 
 // カスタムフック
 import useChatWindowStores from "./hooks/useChatWindowStores";

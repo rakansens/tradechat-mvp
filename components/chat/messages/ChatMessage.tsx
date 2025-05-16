@@ -8,7 +8,7 @@
 import { useState, memo, useMemo, useEffect } from "react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
-import type { ExtendedMessage } from "@/types/chat"
+import type { ExtendedMessage } from "@/types/chat/base"
 import { MessageContent } from "./MessageContent"
 import { MessageActions } from "../ui/MessageActions"
 import { ProposalTypeIndicator } from "../ui/ProposalTypeIndicator"

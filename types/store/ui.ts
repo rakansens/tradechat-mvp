@@ -4,7 +4,7 @@
 /**
  * タブの種類
  */
-export type TabType = 'chart' | 'orderbook' | 'trades' | 'positions' | 'settings';
+type TabType = 'chart' | 'orderbook' | 'trades' | 'positions' | 'settings';
 
 /**
  * UIストアの状態
@@ -20,3 +20,5 @@ export interface UIState {
   toggleDarkMode: () => void;
   toggleSidebar: () => void;
 } 
+
+export type { TabType }; 

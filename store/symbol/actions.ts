@@ -2,11 +2,12 @@
 // 作成: SymbolSliceのアクション定義
 // 更新: 型定義の問題を修正
 // 更新: プロパティ名の衝突回避による変更を反映
+// 更新: T-7.7.1フェーズ - SymbolChangeHistory型の使用を修正
 
 import { logger } from '@/utils/common';
 import type { StoreApi } from 'zustand';
 import type { ExchangeType } from '@/types/network/api';
-import { symbolService, type FilterOptions, type SymbolInfo } from '@/services/symbol';
+import { symbolService, type FilterOptions, type SymbolInfo, type SymbolChangeHistory } from '@/services/symbol';
 import type { SymbolSliceState } from './state';
 import { produce } from 'immer';
 
@@ -41,9 +42,9 @@ type StateCreator<T> = (
 /**
  * シンボルスライスのアクションを作成する関数
  */
-export const createSymbolActions = <T extends SymbolSlice>(
-  set: any, // Zustandのset関数の型を適切に扱うためany型を使用
-  get: () => T
+export const createSymbolActions = (
+  set: (partial: ((draft: SymbolSliceState) => void) | Partial<SymbolSliceState>) => void,
+  get: () => SymbolSliceState & Partial<SymbolActions>,
 ): SymbolActions => ({
   // 現在のシンボルを設定
   setCurrentSymbol: (symbol: string, reason?: string) => {
@@ -65,7 +66,7 @@ export const createSymbolActions = <T extends SymbolSlice>(
     });
     
     // シンボル変更履歴に追加
-    set((state: T) => {
+    set((state: SymbolSliceState) => {
       state.symbolChangeHistory = [
         ...state.symbolChangeHistory,
         {
@@ -95,7 +96,7 @@ export const createSymbolActions = <T extends SymbolSlice>(
     // 最後に使用したシンボルをローカルストレージに保存
     symbolService.saveLastUsedSymbol(symbol);
     
-    set((state: T) => {
+    set((state: SymbolSliceState) => {
       state.currentSymbol = symbol;
     });
   },
@@ -128,7 +129,7 @@ export const createSymbolActions = <T extends SymbolSlice>(
     // 現在の銘柄を保持
     const currentSymbol = get().currentSymbol;
     
-    set((state: T) => {
+    set((state: SymbolSliceState) => {
       state.exchangeType = type;
       // 現在の銘柄を明示的に保持
       state.currentSymbol = currentSymbol;
@@ -145,7 +146,7 @@ export const createSymbolActions = <T extends SymbolSlice>(
   // シンボル一覧を取得
   fetchSymbols: async (exchangeType: ExchangeType) => {
     try {
-      set((state: T) => {
+      set((state: SymbolSliceState) => {
         state.isLoadingSymbols = true;
         state.symbolError = null;
       });
@@ -158,7 +159,7 @@ export const createSymbolActions = <T extends SymbolSlice>(
         action: 'fetchSymbols'
       });
       
-      set((state: T) => {
+      set((state: SymbolSliceState) => {
         state.symbolsList = symbols;
         state.filteredSymbols = symbols;
         state.isLoadingSymbols = false;
@@ -175,7 +176,7 @@ export const createSymbolActions = <T extends SymbolSlice>(
         error
       });
       
-      set((state: T) => {
+      set((state: SymbolSliceState) => {
         state.isLoadingSymbols = false;
         state.symbolError = error instanceof Error ? error.message : 'シンボルの取得に失敗しました';
       });
@@ -187,7 +188,7 @@ export const createSymbolActions = <T extends SymbolSlice>(
     const currentOptions = get().symbolFilterOptions;
     const newOptions = { ...currentOptions, ...options };
     
-    set((state: T) => {
+    set((state: SymbolSliceState) => {
       state.symbolFilterOptions = newOptions;
     });
     get().applyFilters(newOptions);
@@ -200,37 +201,52 @@ export const createSymbolActions = <T extends SymbolSlice>(
     // シンボルサービスのフィルター機能を使用
     const filtered = symbolService.filterSymbols(symbolsList, options);
     
-    set((state: T) => {
+    set((state: SymbolSliceState) => {
       state.filteredSymbols = filtered;
     });
   },
   
   // お気に入りを切り替え
   toggleFavorite: (symbol: string) => {
-    set(produce((state) => {
-      // 対象の銘柄を見つける
-      const targetSymbol = state.symbols.find(s => s.symbol === symbol);
-      
-      if (targetSymbol) {
+    // 対象の銘柄を見つける
+    const { symbolsList } = get();
+    
+    // 対象の銘柄を見つける
+    const targetSymbol = symbolsList.find(s => s.symbol === symbol);
+    
+    if (targetSymbol) {
+      // お気に入りの状態を切り替える
+      set((state: SymbolSliceState) => {
         // お気に入りの状態を切り替える
-        targetSymbol.favorite = !targetSymbol.favorite;
+        const updatedSymbols = symbolsList.map(s => 
+          s.symbol === symbol ? { ...s, favorite: !targetSymbol.favorite } : s
+        );
+        
+        // お気に入りの状態を切り替える
+        state.symbolsList = updatedSymbols;
         
         // 変更履歴に追加
-        state.changeHistory.push({
-          timestamp: Date.now(),
-          changeType: 'toggleFavorite',
-          symbolId: symbol,
-          value: targetSymbol.favorite
-        });
-        
-        // ログ出力
-        logger.info(`Symbol favorite toggled: ${symbol}`, {
-          component: 'SymbolSlice',
-          action: 'toggleFavorite',
-          newState: targetSymbol.favorite
-        });
-      }
-    }));
+        state.symbolChangeHistory = [
+          ...state.symbolChangeHistory,
+          {
+            from: symbol,
+            to: symbol,
+            timestamp: Date.now(),
+            reason: `お気に入り状態を${!targetSymbol.favorite ? '追加' : '解除'}に変更`
+          }
+        ];
+      });
+      
+      // ログ出力
+      logger.info(`Symbol favorite toggled: ${symbol}`, {
+        component: 'SymbolSlice',
+        action: 'toggleFavorite',
+        newState: !targetSymbol.favorite
+      });
+      
+      // フィルターを再適用
+      get().applyFilters(get().symbolFilterOptions);
+    }
   },
   
   // フィルターをクリア
@@ -241,7 +257,7 @@ export const createSymbolActions = <T extends SymbolSlice>(
       favoritesOnly: false
     };
     
-    set((state: T) => {
+    set((state: SymbolSliceState) => {
       state.symbolFilterOptions = clearOptions;
     });
     get().applyFilters(clearOptions);

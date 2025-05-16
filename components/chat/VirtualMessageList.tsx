@@ -9,7 +9,7 @@
 import React, { useRef, useEffect, memo } from "react"
 import { ChatMessage } from "@/components/chat/messages/ChatMessage"
 import { OpenEntry } from "@/types/entry"
-import { ExtendedMessage } from "@/types/chat"
+import { ExtendedMessage } from "@/types/chat/base"
 
 interface MessageListProps {
   messages: ExtendedMessage[]

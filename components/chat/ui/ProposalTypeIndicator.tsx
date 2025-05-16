@@ -6,7 +6,7 @@
 import { ArrowUp, ArrowDown } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
-import type { ProposalType } from "@/types/chat"
+import type { ProposalType } from "@/types/chat/base"
 
 interface ProposalTypeIndicatorProps {
   type: ProposalType | undefined

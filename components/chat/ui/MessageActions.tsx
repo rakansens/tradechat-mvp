@@ -8,7 +8,7 @@
 import { useState, memo, useEffect, useRef } from "react"
 import { Copy, Check, Download } from "lucide-react"
 import { cn } from "@/lib/utils"
-import type { ExtendedMessage } from "@/types/chat"
+import type { ExtendedMessage } from "@/types/chat/base"
 import { useConversation } from "@/contexts/ConversationContext"
 import { useLongPress } from "@/hooks/ui/useLongPress"
 

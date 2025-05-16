@@ -5,6 +5,10 @@
  * 移動されました。
  * T-7フェーズで循環依存を解消するために再構成されました。
  * T-7.1フェーズで循環参照を完全に解消しました。
+ * T-7.7フェーズでエクスポート方法を統一し、型参照エラーを解消しました。
+ * T-7.7.1フェーズで型エクスポートを修正し、未解決の参照エラーを解消しました。
+ * T-7.7.3フェーズで次の型を正式にエクスポート: IndicatorType, ActiveIndicator, DrawingToolType, TabType
+ * T-7.7.4フェーズで残りの参照エラーを解消するために追加の型をエクスポート
  * 
  * 依存方向：common → domain → store（循環参照を防ぐために逆方向の依存は避ける）
  * 
@@ -13,21 +17,17 @@
  * 悪い例: import { AppState } from '@/types'; // 循環参照の原因になります
  */
 
+// チャート関連の型を明示的にエクスポート（コンポーネントから参照されるため）
+export type { IndicatorType, ActiveIndicator, DrawingToolType } from './chart';
+
+// UI関連の型を明示的にエクスポート
+export type { TabType } from './ui';
+
 // ストアドメイン固有の型をエクスポート
 export * from './app';
 export * from './chart';
 export * from './market';
 export * from './ui';
-
-// チャート関連の型を明示的に再エクスポート（コンポーネントから参照されるため）
-export type { 
-  IndicatorType, 
-  ActiveIndicator,
-  DrawingToolType 
-} from './chart';
-
-// UI関連の型を明示的に再エクスポート
-export type { TabType } from './ui';
 
 // アプリケーションの状態全体を表す型
 export interface StoreState {

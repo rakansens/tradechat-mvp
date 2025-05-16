@@ -385,7 +385,7 @@ export const getUserSettings = async (
   const supabase = supabaseClient ?? createClient();
   const { data, error } = await supabase
     .from('user_settings')
-    .select('settings')
+    .select('value')
     .eq('user_id', userId)
     .single();
 
@@ -397,7 +397,7 @@ export const getUserSettings = async (
     throw error;
   }
 
-  return data?.settings || null;
+  return data?.value || null;
 };
 
 /**
@@ -418,12 +418,14 @@ export const updateUserSettings = async (
     .upsert(
       {
         user_id: userId,
-        settings,
+        value: settings,
       },
       {
         onConflict: 'user_id',
       }
-    );
+    )
+    .select()
+    .single();
 
   if (error) {
     throw error;

@@ -15,7 +15,7 @@ import {
   selectActiveStreamingMessage,
   selectConversationConnection
 } from "@/store";
-import { ExtendedMessage } from "@/types/chat";
+import { ExtendedMessage } from "@/types/chat/base";
 import { OpenEntry } from "@/types/entry";
 
 /**

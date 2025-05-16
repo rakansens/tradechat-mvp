@@ -9,7 +9,7 @@ import { Loader2, RefreshCcw, WifiOff } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { TypingIndicator } from "./TypingIndicator"
 import { cn } from "@/lib/utils"
-import type { ConnectionInfo } from "@/types/chat"
+import type { ConnectionInfo } from "@/types/chat/base"
 
 interface SearchingIndicatorProps {
   isSearching?: boolean
