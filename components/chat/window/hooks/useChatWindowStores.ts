@@ -4,6 +4,7 @@
  * 更新: 2025-05-20 - useChatStoreをuseRootStoreに置き換え
  * 更新: 2025-05-15 - useEntryStoreをuseRootStoreに置き換え
  * 更新: 2025-06-29 - アクティブ会話単位のセレクターを使用するよう変更
+ * 更新: 2025-06-29 - 接続状態情報を取得するように変更
  */
 
 import { useRootStore } from "@/store";

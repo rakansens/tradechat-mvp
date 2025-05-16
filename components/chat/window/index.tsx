@@ -7,11 +7,13 @@
  * 更新: 2025-05-21 - マルチスレッド会話IDをサポート
  * 更新: 2025-06-25 - ConversationContextを使用するように変更
  * 更新: 2025-06-25 - useScrollManagerからuseAutoScrollに変更
+ * 更新: 2025-06-29 - 接続状態情報をSearchingIndicatorに渡すように変更
  */
 
 import React, { forwardRef, useEffect } from "react";
 import type { TradeActionProps } from "@/types/common/interfaces";
 import type { OpenEntry } from "@/types/entry";
+import type { ConnectionInfo } from "@/types/chat";
 
 // カスタムフック
 import useChatWindowStores from "./hooks/useChatWindowStores";
@@ -44,7 +46,7 @@ const ChatWindow = forwardRef<HTMLDivElement, ChatWindowProps>(
     cancelPendingEntry
   }, ref) => {
     // ストアから状態を取得
-    const { messages, isSearching, pendingEntry, streamingMessage } = useChatWindowStores();
+    const { messages, isSearching, pendingEntry, streamingMessage, connection } = useChatWindowStores();
     
     // スクロール管理フックを使用
     const { containerRef, showScrollButton, handleScroll, scrollToBottom } = useAutoScroll();
@@ -118,6 +120,7 @@ const ChatWindow = forwardRef<HTMLDivElement, ChatWindowProps>(
           <SearchingIndicator
             isSearching={isSearching}
             isThinking={isThinking}
+            connection={connection}
           />
         )}
         

@@ -12,6 +12,7 @@
 // 更新: 2025-05-15 - アクション名重複を解決
 // 更新: 2025-05-30 - DataFetchSliceを統合
 // 更新: 2025-06-X - SettingsSliceを統合
+// 更新: 2025-06-XX - T-7.5フェーズ - ジェネリック型を追加し、unknown型問題を解決
 
 import { create } from 'zustand'
 import { devtools, persist } from 'zustand/middleware'
@@ -206,93 +207,81 @@ const storeLogger = (storeName: string) => (
   return config(wrappedSet, get, api);
 };
 
-// ルートストアの作成
+// ルートストアの作成 - 明示的なジェネリック型パラメータを指定
 export const useRootStore = create<RootStore>()(
   storeLogger('root')(
     devtools(
       persist(
-        immer((set, get, api) => ({
-          // DataFetchSliceを統合
-          ...createDataFetchSlice(
+        immer((set, get, api) => {
+          // スライスの作成結果を変数に入れて型安全性を確保
+          const dataFetchSlice = createDataFetchSlice(
             (fn) => set(fn),
-            get,
+            get as () => DataFetchSliceState & Record<string, unknown>,
             api
-          ),
+          ) as DataFetchSlice;
           
-          // SocketSliceを統合
-          ...createSocketSlice(
+          const socketSlice = createSocketSlice(
             set as any, 
-            get as any, 
+            get as () => SocketSliceState, 
             {} as any
-          ),
+          ) as SocketSlice;
           
-          // SymbolSliceを統合
-          ...createSymbolSlice(
+          const symbolSlice = createSymbolSlice(
             set as any,
-            get as any
-          ),
+            get as () => SymbolSliceState
+          ) as SymbolSlice;
 
-          // ChartDataSliceを統合
-          ...createChartDataSlice(
+          const chartDataSlice = createChartDataSlice(
             (fn) => set(fn),
-            get
-          ),
+            get as () => ChartDataSlice
+          ) as ChartDataSlice;
 
-          // RealTimeSliceを統合
-          ...createRealTimeSlice(
+          const realTimeSlice = createRealTimeSlice(
             (fn) => set(fn),
-            get
-          ),
+            get as () => RealTimeSlice
+          ) as RealTimeSlice;
           
-          // IndicatorSliceを統合
-          ...createIndicatorSlice(
+          const indicatorSlice = createIndicatorSlice(
             (fn) => set(fn),
-            get
-          ),
+            get as () => IndicatorSlice
+          ) as IndicatorSlice;
           
-          // DrawingToolスライスを統合
-          ...createDrawingToolSlice(
+          const drawingToolSlice = createDrawingToolSlice(
             (fn) => set(fn),
-            get
-          ),
+            get as () => DrawingToolSlice
+          ) as DrawingToolSlice;
           
-          // ChartConfigスライスを統合
-          ...createChartConfigSlice(
+          const chartConfigSlice = createChartConfigSlice(
             (fn) => set(fn),
-            get
-          ),
+            get as () => ChartConfigSlice
+          ) as ChartConfigSlice;
           
-          // チャートスライスを統合
-          ...createChartSlice(
+          const chartSlice = createChartSlice(
             (fn) => set(fn),
             () => ({
               timeframe: get().timeframe,
-              // chartType: get().chartType, // ChartConfigSliceに移行
               ohlcData: get().ohlcData
             } as ChartSliceState)
-          ),
+          ) as ChartSlice;
           
-          // エントリースライスを統合
-          ...createEntrySlice(
+          const entrySlice = createEntrySlice(
             (fn) => set(fn),
             () => ({
               entries: get().entries,
               pendingEntry: get().pendingEntry
             } as EntrySliceState)
-          ),
+          ) as EntrySlice;
           
-          // チャットスライスを統合
-          ...createChatSlice(
+          const chatSlice = createChatSlice(
             (fn) => set(fn),
             () => ({
               messages: get().messages,
               isSearching: get().isSearching,
               input: get().input
             } as ChatSliceState)
-          ),
+          ) as ChatSlice;
           
-          // UIスライスを統合
-          ...createUISlice(
+          const uiSlice = createUISlice(
             (fn) => set(fn),
             () => ({
               activeTab: get().activeTab,
@@ -303,10 +292,9 @@ export const useRootStore = create<RootStore>()(
               modalType: get().modalType,
               modalData: get().modalData
             } as UISliceState)
-          ),
+          ) as UISlice;
           
-          // マーケットスライスを統合
-          ...createMarketSlice(
+          const marketSlice = createMarketSlice(
             (fn) => set(fn),
             () => ({
               currentSymbol: get().currentSymbol,
@@ -328,18 +316,16 @@ export const useRootStore = create<RootStore>()(
               pollingInterval: get().pollingInterval,
               isDemoMode: get().isDemoMode
             } as MarketSliceState)
-          ),
+          ) as MarketSlice;
           
-          // デバッグスライスを統合
-          ...createDebugSlice(
+          const debugSlice = createDebugSlice(
             (fn) => set(fn),
             () => ({
               isDebugMode: get().isDebugMode
             } as DebugSliceState)
-          ),
+          ) as DebugSlice;
           
-          // 設定スライスを統合
-          ...createSettingsSlice(
+          const settingsSlice = createSettingsSlice(
             (fn) => set(fn),
             () => ({
               userSettings: get().userSettings,
@@ -348,8 +334,27 @@ export const useRootStore = create<RootStore>()(
               isLoading: get().isLoading,
               error: get().error
             } as SettingsState)
-          )
-        })),
+          ) as SettingsSlice;
+
+          // すべてのスライスを合成して返す
+          return {
+            ...dataFetchSlice,
+            ...socketSlice,
+            ...symbolSlice,
+            ...chartDataSlice,
+            ...realTimeSlice,
+            ...indicatorSlice,
+            ...drawingToolSlice,
+            ...chartConfigSlice,
+            ...chartSlice,
+            ...entrySlice,
+            ...chatSlice,
+            ...uiSlice,
+            ...marketSlice,
+            ...debugSlice,
+            ...settingsSlice
+          } as RootStore;
+        }),
         {
           name: 'tradechat-root-v2', // パーシスト用のキー
           version: 1,                // スキーマバージョン

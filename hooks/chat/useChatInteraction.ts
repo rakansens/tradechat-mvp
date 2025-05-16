@@ -19,7 +19,7 @@
 
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { useChat } from "ai/react"
 import { useRootStore, selectLatestProposal } from "@/store"
 import type { Entry, OpenEntry, TradeSide } from "@/types/entry"
@@ -216,6 +216,40 @@ Would you like to enter a long position at the current price of $60,500?`,
     originalHandleSubmit(e)
   }
 
+  // 現在のユーザーIDを取得（実際のアプリケーションでは認証ストアなどから取得）
+  const getCurrentUserId = () => {
+    // 実際の実装では認証情報から取得する
+    return localStorage.getItem('userId') || 'current-user-id';
+  };
+
+  // AIメッセージから推定エントリー情報をセット (handleSubmitCallback内)
+  const handleSubmitCallback = useCallback((message: ExtendedMessage | Message) => {
+    // Check if the message suggests an entry
+    if (message.content.includes("enter") || message.content.includes("position")) {
+      // Extract entry details from AI message
+      const isBuy = !message.content.includes("sell") && !message.content.includes("short")
+      const priceMatch = message.content.match(/(\d+,?\d*)/)
+      const price = priceMatch
+        ? Number.parseFloat(priceMatch[0].replace(",", ""))
+        : ohlcData.length > 0 ? ohlcData[ohlcData.length - 1].close : 0
+
+      setPendingEntry({
+        id: Date.now().toString(),
+        userId: getCurrentUserId(), // 現在のユーザーIDを設定
+        side: isBuy ? "buy" : "sell",
+        symbol: "BTC/USD",
+        price,
+        time: new Date().toISOString(),
+        status: "open",
+      })
+    } else {
+      setPendingEntry(null)
+    }
+
+    // End searching state
+    setIsSearching(false)
+  }, [ohlcData, setPendingEntry, setIsSearching]);
+
   // Handle entry point query
   const handleEntryPointQuery = () => {
     setMessages([
@@ -241,7 +275,7 @@ Would you like to enter a long position at the current price of $60,500? Target:
     // Set entry information
     setPendingEntry({
       id: Date.now().toString(),
-      userId: 'currentUser',
+      userId: getCurrentUserId(), // 現在のユーザーIDを設定
       side: "buy",
       symbol: "BTC/USD",
       price: 60500,
@@ -280,7 +314,7 @@ Would you like to enter a long position based on this positive news sentiment?`,
     // Set entry information
     setPendingEntry({
       id: Date.now().toString(),
-      userId: 'currentUser',
+      userId: getCurrentUserId(), // 現在のユーザーIDを設定
       side: "buy",
       symbol: "BTC/USD",
       price: 60500,

@@ -19,8 +19,15 @@ export * from './chart';
 export * from './market';
 export * from './ui';
 
-// 注意: 以下の循環参照を引き起こす再エクスポートをT-7.1で削除しました
-// export type { ... } from '../index';
+// チャート関連の型を明示的に再エクスポート（コンポーネントから参照されるため）
+export type { 
+  IndicatorType, 
+  ActiveIndicator,
+  DrawingToolType 
+} from './chart';
+
+// UI関連の型を明示的に再エクスポート
+export type { TabType } from './ui';
 
 // アプリケーションの状態全体を表す型
 export interface StoreState {

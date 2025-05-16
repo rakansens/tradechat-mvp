@@ -5,8 +5,18 @@
 
 // types/chat.ts
 // 作成: チャット関連の型定義
+// 更新: 2025-06-29 - ConnectionInfo型を追加
 
 import type { Message } from "ai";
+import type { ConnectionStatus } from "@/store/chat/state";
+
+/**
+ * リアルタイム接続情報の型
+ */
+export interface ConnectionInfo {
+  status: ConnectionStatus;
+  error: string | null;
+}
 
 /**
  * トレード提案の種類

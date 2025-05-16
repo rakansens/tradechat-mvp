@@ -7,6 +7,7 @@
  * - 2025-05-15: sanitizersとformattersからのエクスポートを追加
  * - 2025-05-xx: リファクタリングによりチャート関連モジュールを統合
  * - 2025-06-xx: T-7.5フェーズ - モジュールのエクスポート方式を調整
+ * - 2025-06-xx: T-7.5フェーズ - ワイルドカードエクスポートを個別エクスポートに変更して循環参照を解消
  */
 
 /**
@@ -17,16 +18,35 @@
  * 名前付きエクスポートに変更することで衝突を解消
  */
 
-// 衝突しないモジュールからのエクスポートを維持
-export * from './sanitizers';
-export * from './formatters';
-export * from './chartIndicatorUtils';
-export * from './indicatorFactory';
-export * from './indicators';
+// sanitizers.tsから選択的にインポート
+import {
+  validateTimeOrder,
+  sanitizeOHLCData,
+  generateDefaultChartData
+} from './sanitizers';
 
-// 重複するエクスポートを明示的に制限
-// chart.ts と chartUtils.ts からのエクスポートは
-// tsconfig.jsonのnoImplicitReexportsオプションで対応します
+// formatters.tsから選択的にインポート
+import {
+  formatCandlestickData,
+  formatLineData,
+  getMAPeriodForTimeframe,
+  createEntryMarkers,
+  createExitMarkers
+} from './formatters';
+
+// chartIndicatorUtils.tsからインポート
+import {
+  filterValidData,
+  createCompatibleSeries,
+  safeRemoveSeries,
+  removeIndicatorSeries,
+  extractPrices,
+  convertToLineData,
+  sortAndPrepareData,
+  convertLineData,
+  convertHistogramData,
+  convertAreaData
+} from './chartIndicatorUtils';
 
 // chart.tsから選択的にインポート
 import { getDataPointsForTimeframe } from './chart';
@@ -39,8 +59,6 @@ import {
 
 // chartUtils.tsから選択的にインポート
 import {
-  extractPrices,
-  safeRemoveSeries,
   calculateBollingerBands,
   calculateEMA,
   calculateMACD,
@@ -48,8 +66,32 @@ import {
   calculateSMA
 } from './chartUtils';
 
-// 選択的に再エクスポート
+// すべての関数を選択的に再エクスポート
 export {
+  // sanitizers.tsから
+  validateTimeOrder,
+  sanitizeOHLCData,
+  generateDefaultChartData,
+  
+  // formatters.tsから
+  formatCandlestickData,
+  formatLineData,
+  getMAPeriodForTimeframe,
+  createEntryMarkers,
+  createExitMarkers,
+  
+  // chartIndicatorUtils.tsから
+  filterValidData,
+  createCompatibleSeries,
+  safeRemoveSeries,
+  removeIndicatorSeries,
+  extractPrices,
+  convertToLineData,
+  sortAndPrepareData,
+  convertLineData,
+  convertHistogramData,
+  convertAreaData,
+  
   // chart.tsから
   getDataPointsForTimeframe,
   
@@ -58,8 +100,6 @@ export {
   normalizeTimeValue,
   
   // chartUtils.tsから
-  extractPrices,
-  safeRemoveSeries,
   calculateBollingerBands,
   calculateEMA,
   calculateMACD,
