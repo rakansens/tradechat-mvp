@@ -1,6 +1,7 @@
 // components/position/history/PositionServerComponent.tsx
 // 作成日: 2023/6/26 - サーバーサイドでのデータ取得を担当するコンポーネント
 // 更新日: 2025/6/29 - React Query Prefetch & Hydrationを追加
+// 更新日: 2025/10/09 - S-10.1フェーズ: 暗黙的any型を明示的型に修正
 
 import { Suspense } from "react";
 import { getCachedEntriesPaginated, PaginationParams } from "@/lib/supabase/features/entry";
@@ -72,7 +73,7 @@ async function PositionHistoryData({
       return responseData;
     },
     initialPageParam: 1,
-    getNextPageParam: (lastPage) => {
+    getNextPageParam: (lastPage: PositionsResponse) => {
       return lastPage.pagination.hasMore ? lastPage.pagination.page + 1 : undefined;
     }
   });

@@ -30,7 +30,7 @@ describe('useFilterState', () => {
       clearFilters: jest.fn(),
       filterOptions: {
         searchTerm: '',
-        quoteAsset: '',
+        quoteCoin: '',
         favoritesOnly: false,
       },
     });
@@ -50,7 +50,7 @@ describe('useFilterState', () => {
     // フックが正しく初期化されていることを確認
     expect(result.current.filterOptions).toEqual({
       searchTerm: '',
-      quoteAsset: '',
+      quoteCoin: '',
       favoritesOnly: false,
     });
     
@@ -65,7 +65,7 @@ describe('useFilterState', () => {
       clearFilters: jest.fn(),
       filterOptions: {
         searchTerm: '',
-        quoteAsset: '',
+        quoteCoin: '',
         favoritesOnly: false,
       },
     });
@@ -88,7 +88,7 @@ describe('useFilterState', () => {
       clearFilters: jest.fn(),
       filterOptions: {
         searchTerm: '',
-        quoteAsset: '',
+        quoteCoin: '',
         favoritesOnly: false,
       },
     });
@@ -101,7 +101,7 @@ describe('useFilterState', () => {
     });
     
     // setFilterOptionsが正しい引数で呼ばれていることを確認
-    expect(mockSetFilterOptions).toHaveBeenCalledWith({ quoteAsset: 'USDT' });
+    expect(mockSetFilterOptions).toHaveBeenCalledWith({ quoteCoin: 'USDT' });
   });
   
   test('お気に入りトグルが正しく動作する', () => {
@@ -111,7 +111,7 @@ describe('useFilterState', () => {
       clearFilters: jest.fn(),
       filterOptions: {
         searchTerm: '',
-        quoteAsset: '',
+        quoteCoin: '',
         favoritesOnly: false,
       },
     });
@@ -134,7 +134,7 @@ describe('useFilterState', () => {
       clearFilters: mockClearFilters,
       filterOptions: {
         searchTerm: 'BTC',
-        quoteAsset: 'USDT',
+        quoteCoin: 'USDT',
         favoritesOnly: true,
       },
     });

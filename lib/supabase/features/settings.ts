@@ -75,7 +75,7 @@ export const getFavoriteSymbols = async (
  * シンボル設定を作成または更新
  * @param userId ユーザーID
  * @param symbol シンボル
- * @param isFavorite お気に入りかどうか
+ * @param favorite お気に入りかどうか
  * @param displayOrder 表示順序
  * @param supabaseClient Supabaseクライアントインスタンス（オプション）
  * @returns 作成または更新されたシンボル設定
@@ -83,7 +83,7 @@ export const getFavoriteSymbols = async (
 export const upsertSymbolSettings = async (
   userId: string,
   symbol: string,
-  isFavorite: boolean | undefined = false,
+  favorite: boolean | undefined = false,
   displayOrder: number | undefined = 0,
   supabaseClient?: SupabaseClient
 ): Promise<SymbolSettings> => {
@@ -94,7 +94,7 @@ export const upsertSymbolSettings = async (
       {
         user_id: userId,
         symbol,
-        is_favorite: isFavorite,
+        is_favorite: favorite,
         display_order: displayOrder,
       },
       {

@@ -55,7 +55,7 @@ class ChartDataService extends EventEmitter implements IChartDataService {
   async fetchChartData(
     symbol: string,
     timeFrame: Timeframe,
-    exchangeType: ExchangeType = 'spot',
+    exchangeType: ExchangeType = 'bitget',
     signal?: AbortSignal,
     useCache: boolean = true
   ): Promise<OHLCData[]> {
@@ -124,7 +124,7 @@ class ChartDataService extends EventEmitter implements IChartDataService {
     symbol: string,
     timeFrame: Timeframe,
     callback: (data: OHLCData) => void,
-    exchangeType: ExchangeType = 'spot'
+    exchangeType: ExchangeType = 'bitget'
   ): () => void {
     try {
       const normalizedSymbol = normalizeSymbol(symbol);

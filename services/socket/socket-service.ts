@@ -93,7 +93,7 @@ export class SocketService implements ISocketService {
   subscribeOrderBook(
     symbol: string,
     callback: (data: OrderBookData) => void,
-    exchangeType: ExchangeType = 'spot'
+    exchangeType: ExchangeType = 'bitget'
   ): () => void {
     return this.subscriptionManager.subscribeOrderBook(symbol, callback, exchangeType);
   }
@@ -110,7 +110,7 @@ export class SocketService implements ISocketService {
     symbol: string,
     timeframe: Timeframe,
     callback: (data: OHLCData) => void,
-    exchangeType: ExchangeType = 'spot'
+    exchangeType: ExchangeType = 'bitget'
   ): () => void {
     return this.subscriptionManager.subscribeKline(symbol, timeframe, callback, exchangeType);
   }

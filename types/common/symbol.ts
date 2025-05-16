@@ -10,7 +10,7 @@
 
 // 共通型を再エクスポート
 // 後方互換性のために services/symbol/types から型を再エクスポート
-export type { SymbolInfo, SymbolChangeHistory, FilterOptions } from '@/services/symbol/types';
+export type { SymbolInfo, SymbolChangeHistoryEntry, SymbolFilterOptions } from '@/types/symbol/common';
 
 /**
  * 以下の型は後方互換性のために維持されますが、
@@ -20,7 +20,7 @@ export type { SymbolInfo, SymbolChangeHistory, FilterOptions } from '@/services/
 
 // シンボルリストコンポーネントのプロパティ型
 export interface SymbolListProps {
-  symbols: import('@/services/symbol/types').SymbolInfo[];
+  symbols: import('@/types/symbol/common').SymbolInfo[];
   isLoading: boolean;
   error: string | null;
   onSelectSymbol?: (symbol: string) => void;

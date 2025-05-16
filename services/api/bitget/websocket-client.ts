@@ -358,7 +358,7 @@ export class BitgetWebSocketClient extends EventEmitter implements IWebSocketCli
       
       if (type === 'orderbook') {
         this.subscribeOrderBook(symbol);
-      } else if (type === 'candles' && timeframe) {
+      } else if (type === 'candlestick' && timeframe) {
         this.subscribeCandles(symbol, timeframe as Timeframe);
       }
     }

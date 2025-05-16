@@ -1,6 +1,7 @@
 // types/store/chart.ts
 // チャートストア関連の型定義
 // 更新: 2025-10-06 - IndicatorConfig型を追加
+// 更新: 2025-10-10 - DrawingTool型を追加
 
 import { OHLCData } from '../chart';
 import { Timeframe, ChartType } from '../constants/enums';
@@ -35,6 +36,16 @@ interface ActiveIndicator {
  * 描画ツールの種類
  */
 type DrawingToolType = 'fibonacci' | 'rectangle' | 'line' | 'arrow' | 'text';
+
+/**
+ * 描画ツール情報
+ */
+interface DrawingTool {
+  id: string;
+  type: DrawingToolType;
+  points: Array<{ x: number; y: number }>;
+  properties?: Record<string, any>;
+}
 
 /**
  * チャートデータストアの状態
@@ -118,4 +129,4 @@ export interface RealTimeState {
   _startRealTimeUpdatesImpl: () => void;
 }
 
-export type { IndicatorType, ActiveIndicator, DrawingToolType, IndicatorConfig }; 
+export type { IndicatorType, ActiveIndicator, DrawingToolType, IndicatorConfig, DrawingTool }; 

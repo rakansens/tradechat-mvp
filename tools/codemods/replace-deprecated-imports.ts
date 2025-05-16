@@ -17,6 +17,19 @@ import { API, FileInfo, Options } from 'jscodeshift';
 
 // 型定義の変換マップ
 const TYPE_IMPORT_MAP: Record<string, string> = {
+  // オーダーブック関連の型
+  'OrderBookEntry': '@/types/common/orderbook',
+  'OrderBookData': '@/types/common/orderbook',
+  'OrderBookProps': '@/types/common/orderbook',
+  'BitgetOrderBookResponse': '@/types/common/orderbook',
+  
+  // シンボル関連の型
+  'SymbolInfo': '@/types/common/symbol',
+  'SymbolListProps': '@/types/common/symbol',
+  'BitgetSymbolsResponse': '@/types/common/symbol',
+  'SymbolFilterOptions': '@/types/common/symbol',
+  'FilterOptions': '@/types/common/symbol',
+  
   // store型の変換マップ
   'AppState': '@/types/store/app',
   'UIState': '@/types/store/ui',
@@ -28,38 +41,34 @@ const TYPE_IMPORT_MAP: Record<string, string> = {
   'RealTimeState': '@/types/store/chart/realtime',
   'MarketState': '@/types/store/market',
   'StoreFilterOptions': '@/types/store/symbol',
-  'FilterOptions': '@/types/store/symbol',
   
-  // --- store/chart で定義されている enum / 型 ---------------
+  // チャート関連の型
   'IndicatorType': '@/types/store/chart',
   'DrawingToolType': '@/types/store/chart',
   'ActiveIndicator': '@/types/store/chart',
+  'OHLCData': '@/types/chart',
   
-  // 共通型の変換マップ
-  'SymbolInfo': '@/types/common/symbol',
-  'OrderBookEntry': '@/types/common/orderbook',
-  
-  // その他の型
+  // 列挙型
   'ExchangeType': '@/types/constants/enums',
   'ExchangeProductType': '@/types/constants/enums',
   'Timeframe': '@/types/constants/enums',
   'ChartType': '@/types/constants/enums',
-  'OHLCData': '@/types/chart',
   'TradeSide': '@/types/constants/enums',
   'EntryStatus': '@/types/constants/enums',
 
-  // 追加の型マッピング - エラー解決のため
+  // エントリ関連の型
   'BaseEntry': '@/types/entry/base',
   'OpenEntry': '@/types/entry/base',
   'ClosedEntry': '@/types/entry/base',
   'CanceledEntry': '@/types/entry/base',
   'Entry': '@/types/entry/base',
   'EntryState': '@/types/entry/state',
-  'SymbolListProps': '@/types/common/symbol',
+  
+  // ネットワーク関連の型
   'ConnectionStatus': '@/types/network/connection',
   'SelectQueryError': '@/types/network/supabase',
   
-  // T-7.5フェーズ追加 - コンポーネントのエラー解決
+  // ストアスライスの型
   'ChartDataSlice': '@/store/chart/data/types',
   'RealTimeSlice': '@/store/chart/realtime/types',
   'IndicatorSlice': '@/store/chart/indicator/types',
@@ -74,18 +83,30 @@ const TYPE_IMPORT_MAP: Record<string, string> = {
  * 旧パスと新パスのマッピング
  */
 const PATH_TRANSFORM_MAP: Record<string, string> = {
+  // 共通型のパス変換
   '@/types/common-interfaces': '@/types/common/interfaces',
   '@/types/common': '@/types/common/index',
+  
+  // オーダーブック関連のパス変換
+  '@/types/orderbook': '@/types/common/orderbook',
+  '@/types/chart/orderbook': '@/types/common/orderbook',
+  '../../types/orderbook': '@/types/common/orderbook',
+  '../../types/chart/orderbook': '@/types/common/orderbook',
+  
+  // シンボル関連のパス変換
+  '@/types/symbol': '@/types/common/symbol',
+  '@/types/chart/symbol': '@/types/common/symbol',
+  '../../types/symbol': '@/types/common/symbol',
+  '../../types/chart/symbol': '@/types/common/symbol',
+  
+  // その他のパス変換
   '@/utils/supabase': '@/lib/supabase',
-  // 旧 store バレル → 正規パス（fallback 防止用）
   '@/types/store': '@/types/store/index',
-  '@/types': '@/types/index',  // 直接の@/typesインポートを解消
+  '@/types': '@/types/index',
   '@/store/useSymbolStore': '@/store/symbol',
   '@/store/useDebugStore': '@/store/debug',
   '@/store/useChartDataStore': '@/store/chart/data',
-  '@/types/orderbook': '@/types/common/orderbook',
   '@/styles/colors': '@/styles/theme',
-  '../../types/orderbook': '@/types/common/orderbook',
   '@/app/signin/page': '@/app/(auth)/signin/page',
   '@/lib/supabase/supabase': '@/lib/supabase',
   '../../store/useSymbolStore': '@/store/symbol',
@@ -102,7 +123,7 @@ const PATH_TRANSFORM_MAP: Record<string, string> = {
   '../types/market': '@/types/common/market',
   'vitest': 'jest',
   
-  // T-7.5フェーズ追加 - 相対パスからの絶対パス変換
+  // 相対パスからの絶対パス変換
   '../useDebugStores': '@/hooks/debug/useDebugStores',
   '../useDebugPolling': '@/hooks/debug/useDebugPolling',
   '../useLogs': '@/hooks/debug/useLogs',

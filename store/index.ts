@@ -1,82 +1,72 @@
 // store/index.ts
-// 更新: 新しく分割されたストアをエクスポートするように更新
-// 更新: TypeScriptエラーを修正
-// 更新: 2025-05-15 - useDebugStoreの参照を削除
-// 更新: 2025-05-15 - エクスポート衝突を解消
-// 更新: 2025-05-30 - useDataFetchStoreを非推奨に変更し、DataFetchSliceを使用するように促す
+// 更新: 全てのストアをstoreディレクトリからエクスポート
+// 更新: 2025-10-02 - フラット構造に変更し、ルートストアを単一のファイルから再エクスポート
+// 更新: 2025-10-10 - 重要な型定義を追加エクスポート（DrawingToolType、IndicatorType、TabType、ActiveIndicator）
+// 更新: 2025-10-10 - インポートパスを実際のファイル構造に合わせて修正
 
-// 汎用ストア
-export { useRootStore } from './rootStore';
+// root store
+export { useRootStore, type RootState, type RootActions, type RootStore, type Selector } from './rootStore'
 
-// セレクターの直接エクスポートを削除し、個別にインポートするように変更
-// export * from './selectors';  
+// ストアのスライス型をエクスポート
+// 実際のファイル構造に合わせて定義
+// 一部のスライスには専用のtypes.tsがあり、一部のスライスはindex.tsで型をエクスポートしている
+export type { ChartSlice } from './chart'
+export type { ChatSlice } from './chat'
+export type { EntrySlice } from './entry'
+export type { MarketSlice } from './market'
+export type { UISlice } from './ui'
+export type { SymbolSlice } from './symbol'
+export type { SocketSlice } from './socket'
+export type { ChartDataSlice } from './chart/data/types'
+export type { DrawingToolSlice } from './chart/drawingTool/types'
+export type { ChartConfigSlice } from './chart/config/types'
+export type { IndicatorSlice } from './chart/indicator/types'
+export type { RealTimeSlice } from './chart/realTime/types'
+export type { DebugSlice } from './debug'
+export type { DataFetchSlice } from './dataFetch'
+export type { SettingsSlice } from './settings/types'
 
-// コアストア
-/**
- * @deprecated このストアは非推奨です。代わりにDataFetchSliceを使用してください。
- * import { useRootStore } from '@/store';
- * import { selectActiveFetches, selectActiveFetchesInfo } from '@/store/dataFetch/selectors';
- */
-// export { default as useDataFetchStore } from './useDataFetchStore';
+// ストアの状態型をエクスポート
+export type { ChartSliceState } from './chart/state'
+export type { ChatSliceState } from './chat/state'
+export type { EntrySliceState } from './entry/state'
+export type { MarketSliceState } from './market/state'
+export type { UISliceState } from './ui/state'
+export type { SymbolSliceState } from './symbol/state'
+export type { SocketSliceState } from './socket/state'
+export type { ChartDataSliceState } from './chart/data/types'
+export type { DrawingToolSliceState } from './chart/drawingTool/types'
+export type { ChartConfigSliceState } from './chart/config/types' 
+export type { IndicatorSliceState } from './chart/indicator/types'
+export type { RealTimeSliceState } from './chart/realTime/types'
+export type { DebugSliceState } from './debug/state'
+export type { DataFetchSliceState } from './dataFetch/state'
+export type { SettingsState } from './settings/types'
 
-// 各スライスのエクスポート
-export * from './chart';
-export * from './chat';
-export * from './entry';
-export * from './ui';
-export * from './dataFetch';
+// 重要な型定義
+// DrawingToolType, IndicatorType, TabType, ActiveIndicator型をtype/storeからエクスポート
+export type { DrawingToolType, IndicatorType, ActiveIndicator } from '@/types/store/chart'
+export type { TabType } from '@/types/store/ui'
 
-// エクスポート衝突を避けるために個別スライスのエクスポートは行わず、
-// 必要なものを個別にインポートするように変更
-// export * from './market';
-// export * from './symbol';
-// export * from './socket';
-// export * from './debug';
+// createStorers
+export { createUISlice } from './ui'
+export { createChatSlice } from './chat'
+export { createChartSlice } from './chart'
+export { createEntrySlice } from './entry'
+export { createMarketSlice } from './market'
+export { createSymbolSlice } from './symbol'
+export { createSocketSlice } from './socket'
+export { createChartDataSlice } from './chart/data'
+export { createDrawingToolSlice } from './chart/drawingTool'
+export { createChartConfigSlice } from './chart/config'
+export { createIndicatorSlice } from './chart/indicator'
+export { createRealTimeSlice } from './chart/realTime'
+export { createDebugSlice } from './debug'
+export { createDataFetchSlice } from './dataFetch'
+export { createSettingsSlice } from './settings'
 
-// 各スライスの基本エクスポート（内部で衝突しないもののみ）
-export { createMarketSlice } from './market';
-export { createSymbolSlice } from './symbol';
-export { createSocketSlice } from './socket';
-export { createDebugSlice } from './debug';
-export { createDataFetchSlice } from './dataFetch';
+// セレクター
+export * from './selectors'
 
-// slice以外の関連ストア
-export { useOrderBookStore } from './market/useOrderBookStore';
-
-// 以下の古いストアはDeprecatedとして残しておく
-// 新しいスライスを使用するように移行してください。
-
-/**
- * @deprecated このストアは非推奨です。代わりにSymbolSliceを使用してください。
- * import { useRootStore } from '@/store';
- * import { selectCurrentSymbol } from '@/store/symbol/selectors';
- */
-// export { default as useSymbolStore } from './useSymbolStore'; - 削除済み
-
-/**
- * @deprecated このストアは非推奨です。代わりにChatSliceを使用してください。
- * import { useRootStore } from '@/store';
- * import { selectMessages } from '@/store/chat/selectors';
- */
-// export { default as useChatStore } from './useChatStore'; - 削除済み
-
-/**
- * @deprecated このストアは非推奨です。代わりにUISliceを使用してください。
- * import { useRootStore } from '@/store';
- * import { selectIsDarkMode } from '@/store/ui/selectors';
- */
-// export { default as useUIStore } from './useUIStore'; - 削除済み
-
-/**
- * @deprecated このストアは非推奨です。代わりにSocketSliceを使用してください。
- * import { useRootStore } from '@/store';
- * import { useSocketConnected } from '@/store/socket/selectors';
- */
-// export { default as useWebSocketStore } from './useWebSocketStore'; - 削除済み
-
-/**
- * @deprecated このストアは非推奨です。代わりにDebugSliceを使用してください。
- * import { useRootStore } from '@/store';
- * import { selectIsDebugMode } from '@/store/debug/selectors';
- */
-// export { default as useDebugStore } from './useDebugStore'; - 削除済み
+// ストアの中だけで使う内部ヘルパー（他のストアコードから必要とされる場合）
+export { createImmerSetter, createImmerSetterWithReturn } from './core/immerSet'

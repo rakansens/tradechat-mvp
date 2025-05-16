@@ -12,7 +12,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Star, StarOff } from 'lucide-react';
-import type { FilterOptions } from '@/services/symbol/types';
+import type { FilterOptions } from '@/types/symbol/store';
 
 interface FilterBarProps {
   filterOptions: FilterOptions;
@@ -34,7 +34,7 @@ export const FilterBar = ({
   onQuoteAssetFilter,
   onResetFilters
 }: FilterBarProps) => {
-  const isFiltersActive = filterOptions.searchTerm || filterOptions.quoteAsset || filterOptions.favoritesOnly;
+  const isFiltersActive = filterOptions.searchTerm || filterOptions.quoteCoin || filterOptions.favoritesOnly;
   
   return (
     <>
@@ -64,7 +64,7 @@ export const FilterBar = ({
       {/* 基軸通貨フィルター */}
       <div className="flex gap-2 overflow-x-auto pb-2">
         <Button 
-          variant={!filterOptions.quoteAsset ? "default" : "outline"} 
+          variant={!filterOptions.quoteCoin ? "default" : "outline"} 
           size="sm" 
           onClick={() => onQuoteAssetFilter('')}
         >
@@ -74,7 +74,7 @@ export const FilterBar = ({
         {commonQuoteAssets.map(asset => (
           <Button
             key={asset}
-            variant={filterOptions.quoteAsset === asset ? "default" : "outline"}
+            variant={filterOptions.quoteCoin === asset ? "default" : "outline"}
             size="sm"
             onClick={() => onQuoteAssetFilter(asset)}
           >

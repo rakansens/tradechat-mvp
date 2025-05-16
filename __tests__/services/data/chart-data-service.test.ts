@@ -3,6 +3,7 @@
  * ChartDataServiceのテスト
  * 
  * 作成: 2025-05-12 - SRPに基づくリファクタリングの一環として
+ * 更新: 2025-10-09: S-10.2フェーズ: ExchangeType型の一貫性を確保
  */
 
 import { BitgetApiClient } from '../../../services/api/bitget/client';
@@ -11,7 +12,20 @@ import { cacheService } from '../../../services/cache/service';
 import { getSocketService } from '../../../services/socket/index';
 import { logger } from '../../../utils/logger';
 import { OHLCData } from '../../../types/chart';
-import { ExchangeType } from '../../../types/api';
+import { type ExchangeType } from '@/types/constants/enums';
+import { type ExchangeProductType } from '@/types/constants/enums';
+
+// ExchangeType用の定数
+const EXCHANGE_TYPES = {
+  SPOT: 'bitget' as ExchangeType,
+  FUTURES: 'demo' as ExchangeType
+};
+
+// ExchangeProductType用の定数（チャートデータサービスが内部で使用している場合）
+const PRODUCT_TYPES = {
+  SPOT: 'spot' as ExchangeProductType,
+  FUTURES: 'futures' as ExchangeProductType
+};
 
 // モック
 jest.mock('../../../services/api/bitget/client');
@@ -64,22 +78,22 @@ describe('ChartDataService', () => {
   describe('fetchChartData', () => {
     it('spot取引タイプでチャートデータを正常に取得できること', async () => {
       // テスト実行
-      const result = await testChartDataService.fetchChartData('BTC/USDT', '1m', 'spot');
+      const result = await testChartDataService.fetchChartData('BTC/USDT', '1m', EXCHANGE_TYPES.SPOT);
       
       // 検証
       expect(result).toEqual(mockOHLCData);
-      expect(mockBitgetApiClient.fetchCandles).toHaveBeenCalledWith('BTC/USDT', '1m', 100, 'spot');
+      expect(mockBitgetApiClient.fetchCandles).toHaveBeenCalledWith('BTC/USDT', '1m', 100, PRODUCT_TYPES.SPOT);
       expect(cacheService.set).toHaveBeenCalled();
       expect(logger.info).toHaveBeenCalled();
     });
     
     it('futures取引タイプでチャートデータを正常に取得できること', async () => {
       // テスト実行
-      const result = await testChartDataService.fetchChartData('BTC/USDT', '1m', 'futures');
+      const result = await testChartDataService.fetchChartData('BTC/USDT', '1m', EXCHANGE_TYPES.FUTURES);
       
       // 検証
       expect(result).toEqual(mockOHLCData);
-      expect(mockBitgetApiClient.fetchCandles).toHaveBeenCalledWith('BTC/USDT', '1m', 100, 'futures');
+      expect(mockBitgetApiClient.fetchCandles).toHaveBeenCalledWith('BTC/USDT', '1m', 100, PRODUCT_TYPES.FUTURES);
       expect(cacheService.set).toHaveBeenCalled();
       expect(logger.info).toHaveBeenCalled();
     });
@@ -89,7 +103,7 @@ describe('ChartDataService', () => {
       (cacheService.get as jest.Mock).mockReturnValueOnce(mockOHLCData);
       
       // テスト実行
-      const result = await testChartDataService.fetchChartData('BTC/USDT', '1m', 'spot', undefined, true);
+      const result = await testChartDataService.fetchChartData('BTC/USDT', '1m', EXCHANGE_TYPES.SPOT, undefined, true);
       
       // 検証
       expect(result).toEqual(mockOHLCData);
@@ -103,7 +117,7 @@ describe('ChartDataService', () => {
       mockBitgetApiClient.fetchCandles = jest.fn().mockRejectedValue(new Error('API error'));
       
       // テスト実行と検証
-      await expect(testChartDataService.fetchChartData('BTC/USDT', '1m', 'spot')).rejects.toThrow('API error');
+      await expect(testChartDataService.fetchChartData('BTC/USDT', '1m', EXCHANGE_TYPES.SPOT)).rejects.toThrow('API error');
       expect(logger.error).toHaveBeenCalled();
     });
     
@@ -112,7 +126,7 @@ describe('ChartDataService', () => {
       mockBitgetApiClient.fetchCandles = jest.fn().mockRejectedValue(new Error('Futures API error'));
       
       // テスト実行と検証
-      await expect(testChartDataService.fetchChartData('BTC/USDT', '1m', 'futures')).rejects.toThrow('Futures API error');
+      await expect(testChartDataService.fetchChartData('BTC/USDT', '1m', EXCHANGE_TYPES.FUTURES)).rejects.toThrow('Futures API error');
       expect(logger.error).toHaveBeenCalled();
     });
   });
@@ -140,7 +154,7 @@ describe('ChartDataService', () => {
         'BTC/USDT',
         '1m',
         expect.any(Function),
-        'spot'
+        PRODUCT_TYPES.SPOT
       );
       expect(typeof unsubscribe).toBe('function');
       expect(logger.info).toHaveBeenCalled();

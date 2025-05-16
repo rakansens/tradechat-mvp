@@ -5,12 +5,12 @@ import { useRootStore } from '@/store/rootStore';
 
 export const subscribeInstrument = (symbol: string) => {
   const rootStore = useRootStore.getState();
-  return rootStore.setSubscription(symbol, ['instrument']);
+  return rootStore.setSubscription('orderbook', true);
 };
 
 export const subscribeKline = (symbol: string, timeframe: string) => {
   const rootStore = useRootStore.getState();
-  return rootStore.setSubscription(symbol, ['kline', timeframe]);
+  return rootStore.setSubscription('chart', true);
 };
 
 export const unsubscribeAll = () => {

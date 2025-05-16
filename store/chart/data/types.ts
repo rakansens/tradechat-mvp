@@ -1,9 +1,10 @@
 // store/chart/data/types.ts
 // 作成: ChartDataスライスの型定義
 // 役割: State, Actions, Sliceの3つのインターフェースを定義
+// 更新: 2025-10-09 - S-11.2フェーズ: SliceCreator型への移行
 
 import { OHLCData, Timeframe } from "@/types/chart"
-import { type StateCreator } from "zustand"
+import { type SliceCreator } from "@/types/store/core"
 
 /**
  * チャートデータスライスの状態型定義
@@ -56,4 +57,4 @@ export type ChartDataSlice = ChartDataSliceState & ChartDataSliceActions
 /**
  * スライスクリエーター型定義
  */
-export type ChartDataSliceCreator = StateCreator<ChartDataSlice, [], [], ChartDataSlice> 
+export type ChartDataSliceCreator = SliceCreator<ChartDataSlice, ChartDataSliceState> 

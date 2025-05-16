@@ -52,7 +52,7 @@ export class BitgetApiClient implements IBitgetApiClient {
    * @param options クライアントオプション
    * @param exchangeType 取引タイプ（デフォルト: 'spot'）
    */
-  constructor(options: BitgetApiClientOptions = {}, exchangeType: ExchangeType = 'spot') {
+  constructor(options: BitgetApiClientOptions = {}, exchangeType: ExchangeType = 'bitget') {
     // API設定を環境設定から取得
     const apiConfig = getApiConfig('bitget');
     
@@ -155,7 +155,7 @@ export class BitgetApiClient implements IBitgetApiClient {
     symbol: string,
     timeframe: string,
     limit: number = 100,
-    type: ExchangeType = 'spot'
+    type: ExchangeType = 'bitget'
   ): Promise<OHLCData[]> {
     try {
       logger.info(`Fetching candles for ${symbol} with timeframe ${timeframe}`, {
@@ -204,7 +204,7 @@ export class BitgetApiClient implements IBitgetApiClient {
   async fetchOrderBook(
     symbol: string,
     limit: number = 20,
-    type: ExchangeType = 'spot'
+    type: ExchangeType = 'bitget'
   ): Promise<OrderBookData> {
     try {
       logger.info(`Fetching order book for ${symbol}`, {

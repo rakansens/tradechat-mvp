@@ -7,44 +7,99 @@
 // 更新: 2025-06-01 - OrderBookStore統合に伴うセレクターを追加
 // 更新: 2025-06-01 - セレクターの名前衝突を解決
 // 更新: 2025-06-29 - ChatSliceの会話単位セレクターを追加
+// 更新: 2025-10-07 - CH-01実装: バレルの重複export排除
+// 更新: 2025-10-08 - セレクターの名前衝突を解消、単純ワイルドカードエクスポートに変更
+// 更新: 2025-10-13 - S-12: 参照エラーのセレクターを修正
 
-// DataFetchSliceのセレクターを追加
-export * from "./dataFetch/selectors"
+/**
+ * このファイルは各スライスからのセレクターを再エクスポートします。
+ * CH-01実装のため、シンプルかつ明示的なエクスポート構文を使用します。
+ * 
+ * 注意: 名前衝突の可能性があるため、特定のセレクターが必要な場合は
+ * 直接スライスのselectors.tsからインポートすることを推奨します。
+ */
+
+// 各スライスのセレクターをワイルドカードエクスポート
+// 重要: 後のエクスポートは前のエクスポートを上書きするため、
+// 名前の衝突がある場合は最後にインポートしたものが優先されます。
+export * from "./dataFetch/selectors";
+export * from "./socket/selectors";
+export * from "./chart/data/selectors";
+export * from "./chart/config/selectors";
+export * from "./chart/realTime/selectors";
+export * from "./chart/drawingTool/selectors";
+export * from "./chart/indicator/selectors";
+export * from "./market/selectors";
+export * from "./symbol/selectors";
+export * from "./chart/selectors";
+export * from "./entry/selectors";
+export * from "./chat/selectors";
+export * from "./ui/selectors";
+
+// 名前衝突の解決に関する注意事項
+/**
+ * 注: 複数のスライスから同じ名前のセレクターが存在する場合、
+ * 後のimport文が前のものを上書きします。
+ * 特定のセレクターを使用する場合は、直接スライスから
+ * インポートすることを推奨します。
+ * 
+ * 例:
+ * // 非推奨:
+ * import { selectCurrentSymbol } from '@/store/barrel';
+ * 
+ * // 推奨:
+ * import { selectSymbolCurrentSymbol } from '@/store/symbol/selectors';
+ */
+
+// DataFetchSliceのセレクター
+export * from "./dataFetch/selectors";
 
 // SocketSliceのセレクター
-export * from "./socket/selectors"
+export {
+  selectConnected,
+  // useSocketSubscriptionsをセレクターとして直接エクスポートするのは非推奨
+  useSocketSubscriptions,
+  useSocketSubscription
+} from "./socket/selectors";
 
 // ChartDataSliceのセレクター
-export * from "./chart/data/selectors"
+export {
+  selectChartData,
+  selectError,
+  selectCurrentSymbol,
+  selectCurrentTimeFrame,
+  selectIsLoading as selectIsChartDataLoading,
+  selectLatestCandle,
+  selectCurrentPrice as selectChartCurrentPrice
+} from "./chart/data/selectors";
 
-// ChartConfigSliceのセレクターを選択的にエクスポート（名前衝突を回避）
+// ChartConfigSliceのセレクター
 export {
   selectChartType,
-  // selectExchangeTypeはシンボルスライスから取得
-} from "./chart/config/selectors"
+  selectExchangeType,
+  selectIsCandleChart
+} from "./chart/config/selectors";
 
 // RealTimeSliceのセレクター
-export * from "./chart/realTime/selectors"
+export * from "./chart/realTime/selectors";
 
 // DrawingToolSliceのセレクター
-export * from "./chart/drawingTool/selectors"
+export * from "./chart/drawingTool/selectors";
 
 // IndicatorSliceのセレクター
-export * from "./chart/indicator/selectors"
+export * from "./chart/indicator/selectors";
 
-// MarketSliceのセレクターを選択的にエクスポート
+// MarketSliceのセレクター
 export {
   selectMarketCurrentSymbol,
   selectTrades,
   selectMarketStats,
-  selectSymbols,
+  selectSymbols as selectMarketSymbols,
   selectIsDemoMode,
   select24hVolume,
-  select24hPriceChangePercent
-} from './market/selectors';
+  select24hPriceChangePercent,
 
-// OrderBookStore統合: 明示的にセレクターをエクスポート
-export {
+  // OrderBook関連のセレクター
   selectOrderBook,
   selectIsLoadingOrderBook,
   selectOrderBookError,
@@ -60,10 +115,10 @@ export {
   selectSpreadPercent
 } from './market/selectors';
 
-// SymbolSliceのセレクターを明示的にエクスポート
+// SymbolSliceのセレクター
 export {
-  selectSymbolCurrentSymbol as selectCurrentSymbol,
-  selectSymbolExchangeType as selectExchangeType,
+  selectSymbolCurrentSymbol,
+  selectSymbolExchangeType,
   selectSymbolList,
   selectFilteredSymbols,
   selectSymbolFilterOptions,
@@ -74,16 +129,15 @@ export {
   selectQuoteAssets
 } from './symbol/selectors';
 
-// Chart Sliceのセレクターをエクスポート
+// ChartSliceのセレクター
 export {
   selectTimeframe,
-  // selectChartType, // ChartConfigSliceに移行
   selectOHLCData,
   selectCurrentPrice,
   selectPriceChangePercent
-} from './chart/selectors'
+} from './chart/selectors';
 
-// Entry Sliceのセレクターをエクスポート
+// EntrySliceのセレクター
 export {
   selectEntries,
   selectPendingEntry,
@@ -95,9 +149,9 @@ export {
   selectProfitableEntries,
   selectLossEntries,
   selectTotalProfit
-} from './entry/selectors'
+} from './entry/selectors';
 
-// Chat Sliceのセレクターをエクスポート
+// ChatSliceのセレクター
 export {
   // 基本セレクター
   selectMessages,
@@ -125,9 +179,9 @@ export {
   selectMessagesWithStreaming,
   selectActiveStreamingMessage,
   selectStreamingMessage
-} from './chat/selectors'
+} from './chat/selectors';
 
-// UI Sliceのセレクターをエクスポート
+// UISliceのセレクター
 export {
   selectActiveTab,
   selectIsDarkMode,
@@ -145,4 +199,4 @@ export {
   selectLayoutClass,
   selectHasModal,
   selectModalProps
-} from './ui/selectors' 
+} from './ui/selectors'; 

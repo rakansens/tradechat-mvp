@@ -40,7 +40,11 @@ export const selectSymbolsByOrder = createSelector(
   [selectSymbolSettings],
   (symbolSettings): SymbolSettings[] | null => {
     if (!symbolSettings) return null;
-    return [...symbolSettings].sort((a, b) => a.display_order - b.display_order);
+    return [...symbolSettings].sort((a, b) => {
+      const orderA = a.display_order ?? Number.MAX_SAFE_INTEGER;
+      const orderB = b.display_order ?? Number.MAX_SAFE_INTEGER;
+      return orderA - orderB;
+    });
   }
 );
 

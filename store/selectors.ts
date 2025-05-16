@@ -46,9 +46,9 @@ export const selectCurrentSymbol = (state: SymbolSliceState) => state.currentSym
 export const selectExchangeType = (state: SymbolSliceState) => state.exchangeType;
 export const selectSymbols = (state: SymbolSliceState) => state.symbolsList;
 export const selectFilteredSymbols = (state: SymbolSliceState) => state.filteredSymbols;
-export const selectFilterOptions = (state: SymbolSliceState) => state.symbolFilterOptions;
-export const selectIsLoadingSymbols = (state: SymbolSliceState) => state.isLoadingSymbols;
-export const selectSymbolError = (state: SymbolSliceState) => state.symbolError;
+export const selectFilterOptions = (state: SymbolSliceState) => state.filterOptions;
+export const selectIsLoadingSymbols = (state: SymbolSliceState) => state.isLoading;
+export const selectSymbolError = (state: SymbolSliceState) => state.error;
 
 // データフェッチストアセレクタ（後方互換性用）
 export const selectActiveFetches = (state: DataFetchSliceState) => state.activeFetches;

@@ -11,7 +11,9 @@
  * - 2025-06-05: selectSymbolCurrentSymbolをselectCurrentSymbolに変更
  * - 2025-06-05: T-7.7.1フェーズ - 型インポートパスを修正
  * - 2025-06-05: T-7.7.2フェーズ - 内部関数の名前衝突を解消
- * - 2025-06-05: T-7.7.3フェーズ - プロパティ名を統一（quoteCoin→quoteCoin、isFavorite→favorite）
+ * - 2025-06-05: T-7.7.3フェーズ - プロパティ名を統一（quoteCoin→quoteCoin、favorite→favorite）
+ * - 2025-10-09: S-9.2フェーズ - ExchangeType型の参照を統一
+ * - 2025-10-09: S-9.2フェーズ - FilterOptions型のインポートパス修正
  */
 
 "use client";
@@ -29,7 +31,7 @@ import {
   selectSymbolList
 } from '@/store/barrel';
 import type { SymbolInfo } from '@/types/common/symbol';
-import type { FilterOptions } from '@/services/symbol/types';
+import type { FilterOptions } from '@/services/symbol';
 import { logger } from '@/utils/common';
 
 import { ExchangeTabs } from './ui/ExchangeTabs';
@@ -38,10 +40,11 @@ import { SymbolList } from './ui/SymbolList';
 import { FilterBar } from './ui/FilterBar';
 import { PopularList } from './ui/PopularList';
 // アイコンは子コンポーネントで使用されるため、ここでのインポートは不要
-import { ExchangeType } from '@/types/network/api';
+import { type ExchangeType } from '@/types/constants/enums';
 import { validateSymbolSelectorProps } from '@/lib/validations/symbol';
 import type { SymbolSelectorPropsSchema } from '@/lib/validations/symbol';
 import { symbolService } from '@/services/symbol';
+import { safeExchangeType } from '@/utils/exchangeTypeUtils';
 
 interface SymbolSelectorProps {
   onSelect?: (symbol: string) => void;
@@ -121,7 +124,7 @@ export const SymbolSelector: React.FC<SymbolSelectorProps> = ({
 const useSymbolFilterState = () => {
   const [filterOptions, setFilterOptions] = useState<FilterOptions>({
     searchTerm: '',
-    quoteAsset: '',
+    quoteCoin: '',
     favoritesOnly: false
   });
   
@@ -135,7 +138,7 @@ const useSymbolFilterState = () => {
   
   // 基軸通貨フィルターのハンドラー
   const handleQuoteAssetFilter = useCallback((asset: string) => {
-    setFilterOptions((prev: FilterOptions) => ({ ...prev, quoteAsset: asset }));
+    setFilterOptions((prev: FilterOptions) => ({ ...prev, quoteCoin: asset }));
   }, []);
   
   // お気に入りフィルターのトグルハンドラー
@@ -147,7 +150,7 @@ const useSymbolFilterState = () => {
   const resetFilters = useCallback(() => {
     setFilterOptions({
       searchTerm: '',
-      quoteAsset: '',
+      quoteCoin: '',
       favoritesOnly: false
     });
   }, []);
@@ -236,7 +239,7 @@ const usePopularSymbols = (options: {
       const popularByName = symbols.filter(s => 
         !s.favorite && mainSymbols.some(name => 
           s.baseCoin === name && (
-            !filterOptions.quoteAsset || s.quoteCoin === filterOptions.quoteAsset
+            !filterOptions.quoteCoin || s.quoteCoin === filterOptions.quoteCoin
           )
         )
       );
@@ -259,13 +262,13 @@ const usePopularSymbols = (options: {
  * 
  * @param onSelect 銘柄選択時のコールバック
  * @param currentSymbol 現在選択されている銘柄
- * @param defaultExchangeType デフォルトの取引タイプ (spot/futures)
+ * @param defaultExchangeType デフォルトの取引タイプ
  * @param onExchangeTypeChange 取引タイプ変更時のコールバック
  */
 export default function AdvancedSymbolSelector({
   onSelect,
   currentSymbol = 'BTCUSDT',
-  defaultExchangeType = 'spot',
+  defaultExchangeType = 'bitget',
   onExchangeTypeChange,
 }: SymbolSelectorPropsSchema) {
   // プロパティのバリデーション

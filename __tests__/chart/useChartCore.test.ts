@@ -5,13 +5,32 @@
  * 変更履歴:
  * - 2023-06-02: React 19に対応するためにテストを書き換え
  * - 2023-06-03: テスト実装を単純化し、DOM操作を回避
+ * - 2025-10-09: S-10.2フェーズ: lightweight-charts型の明示的定義
  */
 
 // フックの実行ではなく、実装内の関数とモジュールをテスト
 import * as React from 'react';
 import { createChart } from 'lightweight-charts';
-import type { IChartApi, ISeriesApi, Time, SeriesType, CandlestickData } from 'lightweight-charts';
+import type { 
+  IChartApi, 
+  ISeriesApi, 
+  Time, 
+  SeriesType, 
+  CandlestickData,
+  SeriesDefinition,
+  SeriesOptionsMap
+} from 'lightweight-charts';
 import type { OHLCData } from '@/types/chart';
+
+// モック用のSimpleSeriesDefinition型
+type SimpleSeriesDefinition = Pick<SeriesDefinition<keyof SeriesOptionsMap>, 'type'>;
+
+// lightweight-charts用の定数定義
+const SERIES_TYPES: Record<string, SimpleSeriesDefinition> = {
+  CANDLESTICK: { type: 'candlestick' },
+  LINE: { type: 'line' },
+  AREA: { type: 'area' }
+};
 
 // モックを設定
 jest.mock('lightweight-charts', () => ({
@@ -26,9 +45,9 @@ jest.mock('lightweight-charts', () => ({
     removeSeries: jest.fn(),
     remove: jest.fn(),
   }),
-  CandlestickSeries: 'CandlestickSeries',
-  LineSeries: 'LineSeries',
-  AreaSeries: 'AreaSeries',
+  CandlestickSeries: { type: 'candlestick' },
+  LineSeries: { type: 'line' },
+  AreaSeries: { type: 'area' },
   ColorType: {
     Solid: 'solid',
   },
@@ -99,8 +118,8 @@ describe('useChartCore関連機能', () => {
     expect(chart.remove).toBeDefined();
     
     // メソッドを呼び出せることを確認
-    // 型キャストを使用して型エラーを回避
-    chart.addSeries('CandlestickSeries' as unknown as SeriesType, {});
+    // 正しく型定義された定数を使用
+    chart.addSeries(SERIES_TYPES.CANDLESTICK, {});
     expect(chart.addSeries).toHaveBeenCalledTimes(1);
     
     const timeScale = chart.timeScale();
@@ -114,8 +133,8 @@ describe('useChartCore関連機能', () => {
     const chart = createChart(element, {});
     
     // シリーズを追加
-    // 型キャストを使用して型エラーを回避
-    const series = chart.addSeries('CandlestickSeries' as unknown as SeriesType, {});
+    // 正しく型定義された定数を使用
+    const series = chart.addSeries(SERIES_TYPES.CANDLESTICK, {});
     
     // メソッドが正しくモックされているか確認
     expect(series.setData).toBeDefined();

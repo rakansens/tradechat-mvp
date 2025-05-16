@@ -24,8 +24,8 @@ import { normalizeSymbol } from '../lib/utils';
 export interface SymbolInfo {
   symbol: string;
   baseAsset: string;
-  quoteAsset: string;
-  isFavorite: boolean;
+  quoteCoin: string;
+  favorite: boolean;
   // 取引量データ
   volume24h?: string; // 24時間取引量
   priceChangePercent24h?: string; // 24時間価格変動率
@@ -35,7 +35,7 @@ export interface SymbolInfo {
 // フィルターオプションの型定義
 export interface FilterOptions {
   searchTerm: string;
-  quoteAsset: string;
+  quoteCoin: string;
   favoritesOnly: boolean;
 }
 
@@ -77,16 +77,16 @@ export interface SymbolState {
 
 // モックデータ（実際の実装では API から取得）
 const mockSymbols: SymbolInfo[] = [
-  { symbol: 'BTCUSDT', baseAsset: 'BTC', quoteAsset: 'USDT', isFavorite: true },
-  { symbol: 'ETHUSDT', baseAsset: 'ETH', quoteAsset: 'USDT', isFavorite: false },
-  { symbol: 'BNBUSDT', baseAsset: 'BNB', quoteAsset: 'USDT', isFavorite: false },
-  { symbol: 'ADAUSDT', baseAsset: 'ADA', quoteAsset: 'USDT', isFavorite: false },
-  { symbol: 'DOGEUSDT', baseAsset: 'DOGE', quoteAsset: 'USDT', isFavorite: false },
-  { symbol: 'XRPUSDT', baseAsset: 'XRP', quoteAsset: 'USDT', isFavorite: false },
-  { symbol: 'DOTUSDT', baseAsset: 'DOT', quoteAsset: 'USDT', isFavorite: false },
-  { symbol: 'UNIUSDT', baseAsset: 'UNI', quoteAsset: 'USDT', isFavorite: false },
-  { symbol: 'LTCUSDT', baseAsset: 'LTC', quoteAsset: 'USDT', isFavorite: false },
-  { symbol: 'LINKUSDT', baseAsset: 'LINK', quoteAsset: 'USDT', isFavorite: false },
+  { symbol: 'BTCUSDT', baseAsset: 'BTC', quoteCoin: 'USDT', favorite: true },
+  { symbol: 'ETHUSDT', baseAsset: 'ETH', quoteCoin: 'USDT', favorite: false },
+  { symbol: 'BNBUSDT', baseAsset: 'BNB', quoteCoin: 'USDT', favorite: false },
+  { symbol: 'ADAUSDT', baseAsset: 'ADA', quoteCoin: 'USDT', favorite: false },
+  { symbol: 'DOGEUSDT', baseAsset: 'DOGE', quoteCoin: 'USDT', favorite: false },
+  { symbol: 'XRPUSDT', baseAsset: 'XRP', quoteCoin: 'USDT', favorite: false },
+  { symbol: 'DOTUSDT', baseAsset: 'DOT', quoteCoin: 'USDT', favorite: false },
+  { symbol: 'UNIUSDT', baseAsset: 'UNI', quoteCoin: 'USDT', favorite: false },
+  { symbol: 'LTCUSDT', baseAsset: 'LTC', quoteCoin: 'USDT', favorite: false },
+  { symbol: 'LINKUSDT', baseAsset: 'LINK', quoteCoin: 'USDT', favorite: false },
 ];
 
 /**
@@ -117,7 +117,7 @@ export const useSymbolStore = create<SymbolState>()(
       filteredSymbols: [],
       filterOptions: {
         searchTerm: '',
-        quoteAsset: '',
+        quoteCoin: '',
         favoritesOnly: false
       },
       isLoadingSymbols: false,
@@ -264,15 +264,15 @@ export const useSymbolStore = create<SymbolState>()(
           // 銘柄を優先順位でソート
           const sortedSymbols = [...symbols].sort((a, b) => {
             // お気に入りを最優先
-            if (a.isFavorite && !b.isFavorite) return -1;
-            if (!a.isFavorite && b.isFavorite) return 1;
+            if (a.favorite && !b.favorite) return -1;
+            if (!a.favorite && b.favorite) return 1;
             
             // 基軸通貨がUSDTの銘柄を優先
-            if (a.quoteAsset === 'USDT' && b.quoteAsset !== 'USDT') return -1;
-            if (a.quoteAsset !== 'USDT' && b.quoteAsset === 'USDT') return 1;
+            if (a.quoteCoin === 'USDT' && b.quoteCoin !== 'USDT') return -1;
+            if (a.quoteCoin !== 'USDT' && b.quoteCoin === 'USDT') return 1;
             
             // 同じ基軸通貨の場合の並べ替えロジック
-            if (a.quoteAsset === b.quoteAsset) {
+            if (a.quoteCoin === b.quoteCoin) {
               // 優先銘柄リストにある場合
               const aIndex = prioritySymbols.indexOf(a.baseAsset);
               const bIndex = prioritySymbols.indexOf(b.baseAsset);
@@ -370,18 +370,18 @@ export const useSymbolStore = create<SymbolState>()(
           filtered = filtered.filter(
             s => s.symbol.toLowerCase().includes(term) ||
                  s.baseAsset.toLowerCase().includes(term) ||
-                 s.quoteAsset.toLowerCase().includes(term)
+                 s.quoteCoin.toLowerCase().includes(term)
           );
         }
         
         // 基軸通貨でフィルター
-        if (options.quoteAsset) {
-          filtered = filtered.filter(s => s.quoteAsset === options.quoteAsset);
+        if (options.quoteCoin) {
+          filtered = filtered.filter(s => s.quoteCoin === options.quoteCoin);
         }
         
         // お気に入りでフィルター
         if (options.favoritesOnly) {
-          filtered = filtered.filter(s => s.isFavorite);
+          filtered = filtered.filter(s => s.favorite);
         }
         
         set({ filteredSymbols: filtered });
@@ -392,7 +392,7 @@ export const useSymbolStore = create<SymbolState>()(
         const { symbols } = get();
         
         const updatedSymbols = symbols.map(s =>
-          s.symbol === symbol ? { ...s, isFavorite: !s.isFavorite } : s
+          s.symbol === symbol ? { ...s, favorite: !s.favorite } : s
         );
         
         set({ symbols: updatedSymbols });
@@ -405,7 +405,7 @@ export const useSymbolStore = create<SymbolState>()(
       clearFilters: () => {
         const clearOptions = {
           searchTerm: '',
-          quoteAsset: '',
+          quoteCoin: '',
           favoritesOnly: false
         };
         

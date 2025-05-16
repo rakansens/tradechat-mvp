@@ -10,93 +10,60 @@ import type { PriceFormatOptions } from "@/types/common";
  * @returns フォーマットされた価格文字列
  */
 export const formatPrice = (
-  price: number,
+  price: number | string,
   options: PriceFormatOptions = {}
 ): string => {
-  const {
-    currency = "USD",
-    precision = 2,
-    showSymbol = true,
-  } = options;
-
-  // 通貨記号のマッピング
-  const currencySymbols: Record<string, string> = {
-    USD: "$",
-    JPY: "¥",
-    EUR: "€",
-    GBP: "£",
-    BTC: "₿",
-    ETH: "Ξ",
-  };
-
-  // 通貨記号
-  const symbol = currencySymbols[currency] || currency;
-
-  // 価格をフォーマット
-  const formattedPrice = price.toLocaleString("en-US", {
+  const { currency = '¥', precision = 2, showSymbol = true } = options;
+  
+  const num = typeof price === 'string' ? parseFloat(price) : price;
+  if (isNaN(num)) return '0';
+  
+  const formattedNumber = num.toLocaleString(undefined, {
     minimumFractionDigits: precision,
     maximumFractionDigits: precision,
+    useGrouping: true
   });
-
-  // 通貨記号を表示するかどうか
-  return showSymbol ? `${symbol}${formattedPrice}` : formattedPrice;
+  
+  return showSymbol ? `${currency}${formattedNumber}` : formattedNumber;
 };
 
 /**
  * 利益率を計算する
  * @param entryPrice エントリー価格
- * @param exitPrice 決済価格
- * @param side 取引方向（"buy" または "sell"）
- * @returns 利益率（パーセンテージ）
+ * @param currentPrice 現在価格
+ * @returns 利益率（0-1の値）
  */
 export const calculateProfitPercentage = (
   entryPrice: number,
-  exitPrice: number,
-  side: "buy" | "sell"
+  currentPrice: number
 ): number => {
   if (entryPrice === 0) return 0;
-
-  const profitRatio =
-    side === "buy"
-      ? (exitPrice - entryPrice) / entryPrice
-      : (entryPrice - exitPrice) / entryPrice;
-
-  return profitRatio * 100;
+  return (currentPrice - entryPrice) / entryPrice;
 };
 
 /**
- * 価格変化率を計算する
- * @param oldPrice 古い価格
- * @param newPrice 新しい価格
- * @returns 変化率（パーセンテージ）
+ * 価格変動率を計算する
+ * @param previousPrice 前回の価格
+ * @param currentPrice 現在の価格
+ * @returns 価格変動率（0-1の値）
  */
 export const calculatePriceChangePercentage = (
-  oldPrice: number,
-  newPrice: number
+  previousPrice: number,
+  currentPrice: number
 ): number => {
-  if (oldPrice === 0) return 0;
-  return ((newPrice - oldPrice) / oldPrice) * 100;
+  if (previousPrice === 0) return 0;
+  return (currentPrice - previousPrice) / previousPrice;
 };
 
 /**
  * 損益分岐点を計算する
  * @param entryPrice エントリー価格
- * @param side 取引方向（"buy" または "sell"）
- * @param feePercentage 取引手数料率（パーセンテージ）
+ * @param feeRate 手数料率（0-1の値）
  * @returns 損益分岐点の価格
  */
 export const calculateBreakEvenPrice = (
   entryPrice: number,
-  side: "buy" | "sell",
-  feePercentage: number = 0.1
+  feeRate: number
 ): number => {
-  const feeMultiplier = feePercentage / 100;
-  
-  if (side === "buy") {
-    // 買いポジションの場合、エントリー価格 * (1 + 手数料率 * 2)
-    return entryPrice * (1 + feeMultiplier * 2);
-  } else {
-    // 売りポジションの場合、エントリー価格 * (1 - 手数料率 * 2)
-    return entryPrice * (1 - feeMultiplier * 2);
-  }
+  return entryPrice * (1 + feeRate);
 };

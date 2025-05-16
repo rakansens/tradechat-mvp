@@ -5,9 +5,9 @@
     "./eslint-supabase.json"
   ],
   "rules": {
-    "import/no-cycle": "error",
+    "import/no-cycle": ["error", { "maxDepth": 2 }],
     "no-restricted-imports": [
-      "warn",
+      "error",
       {
         "paths": [
           {
@@ -45,6 +45,10 @@
           }
         ],
         "patterns": [
+          {
+            "group": ["@/types", "@/types/index", "@/types/*/index"],
+            "message": "型は具体ファイルから直接 import してください（バレル禁止）"
+          },
           {
             "group": ["types/*.ts"],
             "message": "直接ファイルをインポートするのではなく、バレルファイルを使用してください。例: 'types/chart' など"

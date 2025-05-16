@@ -1,0 +1,44 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "types": [
+      "node",
+      "jest"
+    ],
+    "allowJs": true,
+    "noEmit": true,
+    "module": "esnext",
+    "incremental": true,
+    "skipLibCheck": true,
+    "noImplicitAny": false,  // テスト用に暗黙的anyを許可
+    "strict": false,         // テスト用に厳格な型チェックを無効化
+    "baseUrl": ".",
+    "paths": {
+      "@/*": [
+        "./*"
+      ],
+      "@/supabase/*": [
+        "lib/supabase/*"
+      ],
+      "@/types/*": [
+        "./types/*"
+      ],
+      "@/utils/*": [
+        "./utils/*"
+      ],
+      "@/lib/*": [
+        "./lib/*"
+      ],
+      "@/components/*": [
+        "./components/*"
+      ]
+    }
+  },
+  "include": [
+    "__tests__/**/*.ts",
+    "__tests__/**/*.tsx"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+} 

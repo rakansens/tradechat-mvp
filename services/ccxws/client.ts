@@ -9,7 +9,7 @@
  */
 
 import { BitmexClient } from 'ccxws';
-import { ExchangeType } from '@/types/api';
+import { ExchangeType, ExchangeProductType } from '@/types/constants/enums';
 import { OrderBookData } from '@/types/market';
 import { OHLCData, Timeframe } from '@/types/chart';
 import { logger } from '@/utils/common';
@@ -22,8 +22,8 @@ const EXCHANGE_CLIENTS = {
   bitmex: BitmexClient,
 };
 
-// 取引所タイプのマッピング
-const EXCHANGE_TYPE_MAP: Record<ExchangeType, string> = {
+// 取引所商品タイプのマッピング
+const EXCHANGE_PRODUCT_TYPE_MAP: Record<ExchangeProductType, string> = {
   spot: 'spot',
   futures: 'futures'
 };
@@ -78,15 +78,15 @@ export class CCXWSClient {
    * オーダーブックデータを購読
    * @param symbol シンボル（例: 'BTC/USDT'）
    * @param callback データ受信時のコールバック関数
-   * @param exchangeType 取引タイプ（'spot'または'futures'）
+   * @param exchangeProductType 取引タイプ（'spot'または'futures'）
    * @param exchange 取引所名（デフォルト: 'bitget'）
    * @returns 購読解除用の関数
    */
   subscribeOrderBook(
     symbol: string,
     callback: (data: OrderBookData) => void,
-    exchangeType: ExchangeType = 'spot',
-    exchange: string = 'bitget'
+    exchangeProductType: ExchangeProductType = 'spot',
+    exchange: ExchangeType = 'bitget'
   ): () => void {
     try {
       if (!this.isInitialized) {
@@ -107,15 +107,13 @@ export class CCXWSClient {
       const normalizedSymbol = normalizeSymbol(symbol);
 
       // CCXWSのマーケットフォーマットに変換
-      const market = this.formatMarket(normalizedSymbol, exchangeType, exchange);
-
-      // サブスクリプションキーの生成
-      const subKey = `orderbook:${exchange}:${normalizedSymbol}:${exchangeType}`;
+      const market = this.formatMarket(normalizedSymbol, exchangeProductType, exchange);
+      const subscriptionKey = `orderbook:${exchange}:${normalizedSymbol}:${exchangeProductType}`;
 
       // 既存のサブスクリプションがあれば解除
-      if (this.subscriptions.has(subKey)) {
-        this.subscriptions.get(subKey)?.();
-        this.subscriptions.delete(subKey);
+      if (this.subscriptions.has(subscriptionKey)) {
+        this.subscriptions.get(subscriptionKey)?.();
+        this.subscriptions.delete(subscriptionKey);
       }
 
       // オーダーブックスナップショットのイベントリスナー
@@ -143,7 +141,7 @@ export class CCXWSClient {
             action: 'handleSnapshot',
             symbol: normalizedSymbol,
             exchange,
-            exchangeType
+            exchangeProductType
           });
         }
       };
@@ -173,7 +171,7 @@ export class CCXWSClient {
             action: 'handleUpdate',
             symbol: normalizedSymbol,
             exchange,
-            exchangeType
+            exchangeProductType
           });
         }
       };
@@ -191,7 +189,7 @@ export class CCXWSClient {
         action: 'subscribeOrderBook',
         symbol: normalizedSymbol,
         exchange,
-        exchangeType,
+        exchangeProductType,
         market
       });
 
@@ -208,7 +206,7 @@ export class CCXWSClient {
             action: 'unsubscribeOrderBook',
             symbol: normalizedSymbol,
             exchange,
-            exchangeType
+            exchangeProductType
           });
         } catch (error) {
           logger.error(`オーダーブック購読解除エラー:`, error, {
@@ -216,13 +214,13 @@ export class CCXWSClient {
             action: 'unsubscribeOrderBook',
             symbol: normalizedSymbol,
             exchange,
-            exchangeType
+            exchangeProductType
           });
         }
       };
 
       // サブスクリプションを保存
-      this.subscriptions.set(subKey, unsubscribe);
+      this.subscriptions.set(subscriptionKey, unsubscribe);
 
       return unsubscribe;
     } catch (error) {
@@ -231,7 +229,7 @@ export class CCXWSClient {
         action: 'subscribeOrderBook',
         symbol,
         exchange,
-        exchangeType
+        exchangeProductType
       });
       return () => {};
     }
@@ -241,15 +239,15 @@ export class CCXWSClient {
    * トレードデータを購読
    * @param symbol シンボル（例: 'BTC/USDT'）
    * @param callback データ受信時のコールバック関数
-   * @param exchangeType 取引タイプ（'spot'または'futures'）
+   * @param exchangeProductType 取引タイプ（'spot'または'futures'）
    * @param exchange 取引所名（デフォルト: 'bitget'）
    * @returns 購読解除用の関数
    */
   subscribeTrades(
     symbol: string,
     callback: (trade: any) => void,
-    exchangeType: ExchangeType = 'spot',
-    exchange: string = 'bitget'
+    exchangeProductType: ExchangeProductType = 'spot',
+    exchange: ExchangeType = 'bitget'
   ): () => void {
     try {
       if (!this.isInitialized) {
@@ -270,15 +268,13 @@ export class CCXWSClient {
       const normalizedSymbol = normalizeSymbol(symbol);
 
       // CCXWSのマーケットフォーマットに変換
-      const market = this.formatMarket(normalizedSymbol, exchangeType, exchange);
-
-      // サブスクリプションキーの生成
-      const subKey = `trades:${exchange}:${normalizedSymbol}:${exchangeType}`;
+      const market = this.formatMarket(normalizedSymbol, exchangeProductType, exchange);
+      const subscriptionKey = `trades:${exchange}:${normalizedSymbol}:${exchangeProductType}`;
 
       // 既存のサブスクリプションがあれば解除
-      if (this.subscriptions.has(subKey)) {
-        this.subscriptions.get(subKey)?.();
-        this.subscriptions.delete(subKey);
+      if (this.subscriptions.has(subscriptionKey)) {
+        this.subscriptions.get(subscriptionKey)?.();
+        this.subscriptions.delete(subscriptionKey);
       }
 
       // トレードのイベントリスナー
@@ -292,7 +288,7 @@ export class CCXWSClient {
             action: 'handleTrade',
             symbol: normalizedSymbol,
             exchange,
-            exchangeType
+            exchangeProductType
           });
         }
       };
@@ -308,7 +304,7 @@ export class CCXWSClient {
         action: 'subscribeTrades',
         symbol: normalizedSymbol,
         exchange,
-        exchangeType,
+        exchangeProductType,
         market
       });
 
@@ -323,7 +319,7 @@ export class CCXWSClient {
             action: 'unsubscribeTrades',
             symbol: normalizedSymbol,
             exchange,
-            exchangeType
+            exchangeProductType
           });
         } catch (error) {
           logger.error(`トレード購読解除エラー:`, error, {
@@ -331,13 +327,13 @@ export class CCXWSClient {
             action: 'unsubscribeTrades',
             symbol: normalizedSymbol,
             exchange,
-            exchangeType
+            exchangeProductType
           });
         }
       };
 
       // サブスクリプションを保存
-      this.subscriptions.set(subKey, unsubscribe);
+      this.subscriptions.set(subscriptionKey, unsubscribe);
 
       return unsubscribe;
     } catch (error) {
@@ -346,7 +342,7 @@ export class CCXWSClient {
         action: 'subscribeTrades',
         symbol,
         exchange,
-        exchangeType
+        exchangeProductType
       });
       return () => {};
     }
@@ -357,7 +353,7 @@ export class CCXWSClient {
    * @param symbol シンボル（例: 'BTC/USDT'）
    * @param timeframe タイムフレーム（例: '1m', '5m', '1h', '1d'）
    * @param callback データ受信時のコールバック関数
-   * @param exchangeType 取引タイプ（'spot'または'futures'）
+   * @param exchangeProductType 取引タイプ（'spot'または'futures'）
    * @param exchange 取引所名（デフォルト: 'bitget'）
    * @returns 購読解除用の関数
    */
@@ -365,8 +361,8 @@ export class CCXWSClient {
     symbol: string,
     timeframe: Timeframe,
     callback: (candle: OHLCData) => void,
-    exchangeType: ExchangeType = 'spot',
-    exchange: string = 'bitget'
+    exchangeProductType: ExchangeProductType = 'spot',
+    exchange: ExchangeType = 'bitget'
   ): () => void {
     // トレードデータを購読して、ローソク足データを構築
     // 注意: CCXWSは直接ローソク足データをサポートしていないため、
@@ -436,11 +432,11 @@ export class CCXWSClient {
   /**
    * シンボルをCCXWSのマーケットフォーマットに変換
    * @param symbol シンボル（例: 'BTC/USDT'）
-   * @param exchangeType 取引タイプ（'spot'または'futures'）
+   * @param exchangeProductType 取引タイプ（'spot'または'futures'）
    * @param exchange 取引所名
    * @returns CCXWSマーケットオブジェクト
    */
-  private formatMarket(symbol: string, exchangeType: ExchangeType, exchange: string): any {
+  private formatMarket(symbol: string, exchangeProductType: ExchangeProductType, exchange: ExchangeType): any {
     // シンボルからベースとクォートを抽出
     let base, quote;
     
@@ -472,10 +468,11 @@ export class CCXWSClient {
     
     // CCXWSのマーケットフォーマットに変換
     return {
-      id: symbol.replace('/', '').replace('-', ''), // 取引所固有のID
-      base: base,
-      quote: quote,
-      type: EXCHANGE_TYPE_MAP[exchangeType] || 'spot'
+      id: symbol.replace('/', '').replace('-', ''),
+      exchange: exchange || 'bitget',
+      base: symbol.split('/')[0],
+      quote: symbol.split('/')[1],
+      type: exchangeProductType
     };
   }
 

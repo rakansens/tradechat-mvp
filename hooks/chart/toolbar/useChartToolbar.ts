@@ -10,6 +10,7 @@
  * - 2023-09-05: useUIStoreをuseRootStoreに置き換え、UIセレクターを使用するように修正
  * - 2023-10-20: useChartConfigStoreをuseRootStoreに置き換え、ChartConfigセレクターを使用するように修正
  * - 2025-05-15: フックのリファクタリングに伴いhooks/chart/toolbarディレクトリに移動
+ * - 2025-10-12: S-12フェーズ - インポートパスを修正
  */
 
 import { useCallback } from 'react';
@@ -23,7 +24,7 @@ import {
 } from '@/store/chart/data/selectors';
 import { selectPriceChangePercent } from '@/store/chart/selectors';
 import { selectChartType, selectExchangeType } from '@/store/chart/config/selectors';
-import { TabType } from '@/types/store';
+import { TabType } from '@/types/store/ui';
 import { Timeframe, ChartType } from '@/types/chart';
 import { ExchangeType } from '@/types/api';
 

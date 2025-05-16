@@ -10,6 +10,7 @@
 // 更新: 2025-05-15 - useEntryStoreをuseRootStoreに置き換え
 // 更新: 2025-05-15 - useIndicatorStore, useDrawingToolStore, useRealTimeStoreNewをuseRootStoreに置き換え
 // 更新: 2025-06-05 - selectSymbolCurrentSymbol/selectSymbolExchangeTypeをselectCurrentSymbol/selectExchangeTypeに変更
+// 更新: 2025-10-12 - S-12フェーズ - 型のインポートパスを修正
 
 import {
   // ルートストアとセレクター
@@ -35,18 +36,19 @@ import {
 } from '@/store/barrel';
 // インジケーター関連のセレクターをインポート
 import {
-  selectActiveIndicators
+  selectActiveIndicators,
+  selectIsIndicatorActive
 } from '@/store/chart/indicator/selectors';
 // 描画ツール関連のセレクターをインポート
 import {
-  selectActiveDrawingTools
+  selectActiveDrawingTool as selectActiveDrawingTools
 } from '@/store/chart/drawingTool/selectors';
 // リアルタイム更新関連のセレクターをインポート
 import {
   selectUseRealTimeData
 } from '@/store/chart/realTime/selectors';
 import { Timeframe, ChartType } from '@/types/chart';
-import { IndicatorType, DrawingToolType } from '@/types/store';
+import { IndicatorType, DrawingToolType } from '@/types/store/chart';
 import { EntrySliceState } from '@/store/entry/state';
 // 古いSymbolStateの型インポートを削除
 // import type { SymbolState } from '@/store/useSymbolStore';
@@ -76,10 +78,17 @@ export function useToolbarStores() {
   // IndicatorStoreから状態とアクションを取得（RootStoreを使用）
   const activeIndicators = useRootStore(selectActiveIndicators);
   const toggleIndicator = useRootStore(state => state.toggleIndicator);
-  const clearAllIndicators = useRootStore(state => state.clearAllIndicators);
-  // isIndicatorActive関数を直接ストアから取得せず、自前で実装
+  // clearAllIndicatorsアクションがないため、自前で実装
+  const clearAllIndicators = () => {
+    // すべてのアクティブなインジケーターを無効化
+    activeIndicators.forEach(indicator => {
+      toggleIndicator(indicator);
+    });
+  };
+  
+  // isIndicatorActive関数を実装
   const isIndicatorActive = (indicator: IndicatorType) => {
-    return activeIndicators.some(item => item.type === indicator);
+    return activeIndicators.includes(indicator);
   };
 
   // DrawingToolStoreから状態とアクションを取得（RootStoreを使用）

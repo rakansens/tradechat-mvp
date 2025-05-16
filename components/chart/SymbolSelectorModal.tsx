@@ -3,9 +3,10 @@
 // components/chart/SymbolSelectorModal.tsx
 // 作成: 銘柄選択モーダルコンポーネント
 // 更新: ハイドレーションエラーの修正
+// 更新: 2025-10-09 - S-9.2フェーズ: ExchangeType型の参照を統一し型変換を追加
 
 import { useState, useEffect } from 'react';
-import { ExchangeType } from '@/types/api';
+import { type ExchangeType } from '@/types/constants/enums';
 import {
   Dialog,
   DialogContent,
@@ -16,6 +17,7 @@ import {
 import { Button } from '@/components/ui/button';
 import SymbolSelector from '@/components/SymbolSelector';
 import { CandlestickChart } from 'lucide-react';
+import { safeExchangeType } from '@/utils/exchangeTypeUtils';
 
 interface SymbolSelectorModalProps {
   currentSymbol: string;
@@ -28,7 +30,7 @@ interface SymbolSelectorModalProps {
 export default function SymbolSelectorModal({
   currentSymbol,
   onSymbolSelect,
-  exchangeType = 'spot',
+  exchangeType = 'bitget', // デフォルト値を'spot'から'bitget'に変更
   onExchangeTypeChange,
   trigger
 }: SymbolSelectorModalProps) {
@@ -45,6 +47,14 @@ export default function SymbolSelectorModal({
     onSymbolSelect(symbol);
     setOpen(false);
   };
+  
+  // 型安全な交換タイプ変更ハンドラ
+  const handleExchangeTypeChange = onExchangeTypeChange 
+    ? (newType: any) => {
+        // 型変換して親コンポーネントに渡す
+        onExchangeTypeChange(safeExchangeType(newType));
+      }
+    : undefined;
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -65,7 +75,7 @@ export default function SymbolSelectorModal({
             onSelect={handleSymbolSelect}
             currentSymbol={currentSymbol}
             defaultExchangeType={exchangeType}
-            onExchangeTypeChange={onExchangeTypeChange}
+            onExchangeTypeChange={handleExchangeTypeChange}
           />
         </div>
       </DialogContent>

@@ -9,17 +9,17 @@ import type { FilterOptions, SymbolInfo } from '@/store/useSymbolStore';
 
 // モックシンボルデータ
 const mockSymbols: SymbolInfo[] = [
-  { symbol: 'BTCUSDT', baseAsset: 'BTC', quoteAsset: 'USDT', isFavorite: false },
-  { symbol: 'ETHUSDT', baseAsset: 'ETH', quoteAsset: 'USDT', isFavorite: true },
-  { symbol: 'BNBBTC', baseAsset: 'BNB', quoteAsset: 'BTC', isFavorite: false },
-  { symbol: 'SOLUSDT', baseAsset: 'SOL', quoteAsset: 'USDT', isFavorite: false },
-  { symbol: 'MATICUSDT', baseAsset: 'MATIC', quoteAsset: 'USDT', isFavorite: false },
+  { symbol: 'BTCUSDT', baseAsset: 'BTC', quoteCoin: 'USDT', favorite: false },
+  { symbol: 'ETHUSDT', baseAsset: 'ETH', quoteCoin: 'USDT', favorite: true },
+  { symbol: 'BNBBTC', baseAsset: 'BNB', quoteCoin: 'BTC', favorite: false },
+  { symbol: 'SOLUSDT', baseAsset: 'SOL', quoteCoin: 'USDT', favorite: false },
+  { symbol: 'MATICUSDT', baseAsset: 'MATIC', quoteCoin: 'USDT', favorite: false },
 ];
 
 // デフォルトフィルターオプション
 const defaultFilters: FilterOptions = {
   searchTerm: '',
-  quoteAsset: '',
+  quoteCoin: '',
   favoritesOnly: false,
 };
 
@@ -56,13 +56,13 @@ describe('usePopularSymbols', () => {
     expect(result.current).toHaveLength(0);
   });
   
-  test('quoteAssetが適用されている場合、空配列を返す', () => {
+  test('quoteCoinが適用されている場合、空配列を返す', () => {
     const { result } = renderHook(() => 
       usePopularSymbols({
         symbols: mockSymbols,
         filterOptions: {
           ...defaultFilters,
-          quoteAsset: 'USDT',
+          quoteCoin: 'USDT',
         },
       })
     );
@@ -89,8 +89,8 @@ describe('usePopularSymbols', () => {
   test('シンボルリストがPOPULAR_SYMBOLSに含まれない場合、空配列を返す', () => {
     // POPULAR_SYMBOLSに含まれないシンボルのみのリスト
     const nonPopularSymbols: SymbolInfo[] = [
-      { symbol: 'XRPBTC', baseAsset: 'XRP', quoteAsset: 'BTC', isFavorite: false },
-      { symbol: 'LRCETH', baseAsset: 'LRC', quoteAsset: 'ETH', isFavorite: false },
+      { symbol: 'XRPBTC', baseAsset: 'XRP', quoteCoin: 'BTC', favorite: false },
+      { symbol: 'LRCETH', baseAsset: 'LRC', quoteCoin: 'ETH', favorite: false },
     ];
     
     const { result } = renderHook(() => 

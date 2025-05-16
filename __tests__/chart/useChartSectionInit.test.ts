@@ -4,15 +4,15 @@
  * 
  * 変更履歴:
  * - 2023-06-04: ChartSectionのリファクタリングに伴い作成
+ * - 2025-10-09: S-10.2フェーズ: ExchangeType型の一貫性を確保
  */
 
 import { renderHook } from '@testing-library/react';
 import { useChartSectionInit } from '@/hooks/chart/useChartSectionInit';
 import { useSymbolStore } from '@/store/useSymbolStore';
 import { useChartDataStore } from '@/store/chart';
-
-// 明示的に型を定義
-type ExchangeType = 'spot' | 'futures';
+import { type ExchangeType } from '@/types/constants/enums';
+import { safeExchangeType } from '@/utils/exchangeTypeUtils';
 
 // ストアをモック
 jest.mock('@/store/useSymbolStore', () => ({
@@ -41,6 +41,12 @@ jest.mock('@/utils/logger', () => ({
   }
 }));
 
+// モックされたエクスチェンジタイプ
+const MOCK_EXCHANGE_TYPES = {
+  SPOT: 'bitget' as ExchangeType,
+  FUTURES: 'demo' as ExchangeType
+};
+
 describe('useChartSectionInit', () => {
   // テスト前にモックをリセット
   beforeEach(() => {
@@ -57,7 +63,7 @@ describe('useChartSectionInit', () => {
       useChartSectionInit({
         currentSymbol: 'BTCUSDT',
         currentTimeFrame: '1h',
-        exchangeType: 'spot' as ExchangeType,
+        exchangeType: MOCK_EXCHANGE_TYPES.SPOT,
         initializeApi: initializeApiMock,
         fetchChartData: fetchChartDataMock
       })
@@ -65,7 +71,7 @@ describe('useChartSectionInit', () => {
     
     // 初期化時にinitializeApiが1回呼び出されることを検証
     expect(initializeApiMock).toHaveBeenCalledTimes(2); // 2つのuseEffectがあるため
-    expect(initializeApiMock).toHaveBeenCalledWith('spot');
+    expect(initializeApiMock).toHaveBeenCalledWith(MOCK_EXCHANGE_TYPES.SPOT);
     
     // 初期化時にfetchChartDataが1回呼び出されることを検証
     expect(fetchChartDataMock).toHaveBeenCalledTimes(1);
@@ -86,7 +92,7 @@ describe('useChartSectionInit', () => {
         initializeApi: initializeApiMock,
         fetchChartData: fetchChartDataMock
       }),
-      { initialProps: { exchangeType: 'spot' } }
+      { initialProps: { exchangeType: MOCK_EXCHANGE_TYPES.SPOT } }
     );
     
     // 初期化時の呼び出しをリセット
@@ -94,11 +100,11 @@ describe('useChartSectionInit', () => {
     fetchChartDataMock.mockClear();
     
     // exchangeTypeを変更して再レンダリング
-    rerender({ exchangeType: 'futures' });
+    rerender({ exchangeType: MOCK_EXCHANGE_TYPES.FUTURES });
     
     // exchangeTypeが変更されたときにinitializeApiが再度呼び出されることを検証
     expect(initializeApiMock).toHaveBeenCalledTimes(2); // 2つのuseEffectのうち、exchangeTypeが依存配列にある2つが実行される
-    expect(initializeApiMock).toHaveBeenCalledWith('futures');
+    expect(initializeApiMock).toHaveBeenCalledWith(MOCK_EXCHANGE_TYPES.FUTURES);
   });
   
   test('fetchData関数が正しく動作する', () => {
@@ -111,7 +117,7 @@ describe('useChartSectionInit', () => {
       useChartSectionInit({
         currentSymbol: 'BTCUSDT',
         currentTimeFrame: '1h',
-        exchangeType: 'spot' as ExchangeType,
+        exchangeType: MOCK_EXCHANGE_TYPES.SPOT,
         initializeApi: initializeApiMock,
         fetchChartData: fetchChartDataMock
       })
@@ -139,7 +145,7 @@ describe('useChartSectionInit', () => {
       useChartSectionInit({
         currentSymbol: 'BTCUSDT',
         currentTimeFrame: '1h',
-        exchangeType: 'spot' as ExchangeType,
+        exchangeType: MOCK_EXCHANGE_TYPES.SPOT,
         initializeApi: initializeApiMock,
         fetchChartData: fetchChartDataMock as any
       })

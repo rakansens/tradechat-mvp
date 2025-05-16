@@ -162,6 +162,10 @@ T-7フェーズでは、以下の問題に対処しました：
 | types/common-interfaces.ts | types/common/interfaces.ts | T-8 |
 | types/ui.ts | types/ui/components.ts | T-8 |
 | types/symbol.ts | types/common/symbol.ts | T-8 |
+| types/orderbook.ts | types/common/orderbook.ts | T-8 |
+| types/chart/orderbook.ts | types/common/orderbook.ts | T-8 |
+| types/chart/symbol.ts | types/common/symbol.ts | T-8 |
+| types/market.ts | 該当する型を個別にインポート | T-8 |
 
 ## 型のインポート規則
 

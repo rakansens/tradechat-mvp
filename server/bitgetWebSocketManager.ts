@@ -11,10 +11,11 @@
 
 import WebSocket from 'ws';
 import { EventEmitter } from 'events';
-import { ExchangeType } from '../types/api';
-import { logger } from '@/utils/common';
+import { ExchangeType, ExchangeProductType } from '@/types/constants/enums';
+import { logger } from '@/utils/logger';
 import { getApiConfig } from '../services/api/common/environment';
 import { toBitget, fromBitget } from '../utils/timeframe';
+import { toProductType, safeExchangeType, safeProductType } from '@/utils/exchangeTypeUtils';
 
 // 接続状態の定義
 enum ConnectionState {
@@ -138,24 +139,27 @@ export class BitgetWebSocketManager extends EventEmitter {
    * @param symbol シンボル（例: 'BTC/USDT'）
    * @param type チャンネルタイプ（'orderbook', 'kline', 'trade'）
    * @param timeframe タイムフレーム（klineの場合のみ必要）
-   * @param exchangeType 取引タイプ（'spot'または'futures'）
+   * @param exchangeType 取引タイプ（'bitget', 'binance'等）またはプロダクトタイプ（'spot', 'futures'等）
    * @returns 購読に成功した場合はtrue、失敗した場合はfalse
    */
   public subscribe(
     symbol: string,
     type: string,
     timeframe?: string,
-    exchangeType: ExchangeType = 'spot'
+    exchangeType?: ExchangeType | ExchangeProductType
   ): boolean {
     try {
+      // 取引タイプをプロダクトタイプに変換
+      const productType = safeProductType(exchangeType || 'spot');
+      
       // シンボルの正規化
       const formattedSymbol = symbol.replace('/', '').toUpperCase();
       
       // instType（取引タイプ）の設定
-      const instType = exchangeType === 'spot' ? 'SP' : 'MC';
+      const instType = productType === 'spot' ? 'SP' : 'MC';
       
       // instId（シンボルID）の設定
-      const instId = exchangeType === 'spot'
+      const instId = productType === 'spot'
         ? formattedSymbol
         : `${formattedSymbol}_UMCBL`;
       
@@ -202,7 +206,7 @@ export class BitgetWebSocketManager extends EventEmitter {
         this.sendSubscription(subscription);
       }
       
-      logger.info(`Subscribed to ${type} for ${symbol} (${exchangeType})`, {
+      logger.info(`Subscribed to ${type} for ${symbol} (${productType})`, {
         component: 'BitgetWebSocketManager',
         action: 'subscribe',
         subscription
@@ -224,24 +228,27 @@ export class BitgetWebSocketManager extends EventEmitter {
    * @param symbol シンボル（例: 'BTC/USDT'）
    * @param type チャンネルタイプ（'orderbook', 'kline', 'trade'）
    * @param timeframe タイムフレーム（klineの場合のみ必要）
-   * @param exchangeType 取引タイプ（'spot'または'futures'）
+   * @param exchangeType 取引タイプ（'bitget', 'binance'等）またはプロダクトタイプ（'spot', 'futures'等）
    * @returns 購読解除に成功した場合はtrue、失敗した場合はfalse
    */
   public unsubscribe(
     symbol: string,
     type: string,
     timeframe?: string,
-    exchangeType: ExchangeType = 'spot'
+    exchangeType?: ExchangeType | ExchangeProductType
   ): boolean {
     try {
+      // 取引タイプをプロダクトタイプに変換
+      const productType = safeProductType(exchangeType || 'spot');
+      
       // シンボルの正規化
       const formattedSymbol = symbol.replace('/', '').toUpperCase();
       
       // instType（取引タイプ）の設定
-      const instType = exchangeType === 'spot' ? 'SP' : 'MC';
+      const instType = productType === 'spot' ? 'SP' : 'MC';
       
       // instId（シンボルID）の設定
-      const instId = exchangeType === 'spot'
+      const instId = productType === 'spot'
         ? formattedSymbol
         : `${formattedSymbol}_UMCBL`;
       
@@ -294,7 +301,7 @@ export class BitgetWebSocketManager extends EventEmitter {
         this.sendUnsubscription(subscription);
       }
       
-      logger.info(`Unsubscribed from ${type} for ${symbol} (${exchangeType})`, {
+      logger.info(`Unsubscribed from ${type} for ${symbol} (${productType})`, {
         component: 'BitgetWebSocketManager',
         action: 'unsubscribe',
         subscription
@@ -509,8 +516,10 @@ export class BitgetWebSocketManager extends EventEmitter {
     // シンボルの抽出（_UMCBLサフィックスを削除）
     const symbol = instId.replace('_UMCBL', '');
     
-    // 取引タイプの判定
-    const exchangeType: ExchangeType = instType === 'SP' ? 'spot' : 'futures';
+    // 取引タイプの判定（instTypeからExchangeTypeに変換）
+    // SP -> spot -> bitget, MC -> futures -> demo
+    const productType: ExchangeProductType = instType === 'SP' ? 'spot' : 'futures';
+    const exchangeType = safeExchangeType(productType);
     
     // チャンネルタイプとタイムフレームの抽出
     let type: string;

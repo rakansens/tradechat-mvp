@@ -1,6 +1,7 @@
 // store/chart/data/actions.ts
 // 作成: ChartDataSliceのアクション定義
 // 更新: 2025-10-04 - 型定義を types.ts に移動し、内部で直接使用するように変更
+// 更新: 2025-10-10 - updateDataとupdateLastCandle関数のimmerSet使用を修正
 
 import { OHLCData, Timeframe } from "@/types/chart"
 import { ExchangeType } from "@/types/api"
@@ -201,7 +202,8 @@ export const createChartDataActions = (
         })
       }
     }
-    // ここでは関数を直接渡すのではなく、部分的な状態オブジェクトを返す
+    
+    // 修正: 部分的な状態オブジェクトを直接返す
     const state = get();
     set({
       data: [...state.data, data]
@@ -467,6 +469,7 @@ export const createChartDataActions = (
       }
     }
     
+    // 修正: 直接状態オブジェクトを返す
     set({ data });
   }
 }) 

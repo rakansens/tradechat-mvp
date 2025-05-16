@@ -11,6 +11,7 @@
  */
 
 import { chartDataService } from './services/data';
+import type { ExchangeType } from './types/constants/enums';
 
 // デバッグモード
 const DEBUG = true;
@@ -18,7 +19,7 @@ const DEBUG = true;
 // テスト用のシンボルとタイムフレーム
 const TEST_SYMBOL = 'BTC/USDT';
 const TEST_TIMEFRAME = '1m';
-const TEST_EXCHANGE_TYPE = 'spot';
+const TEST_EXCHANGE_TYPE: ExchangeType = 'bitget';
 
 // ログ出力関数
 function log(message: string, data?: any) {

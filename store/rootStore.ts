@@ -15,6 +15,7 @@
 // 更新: 2025-06-XX - T-7.5フェーズ - ジェネリック型を追加し、unknown型問題を解決
 // 更新: 2025-06-30 - T-7.8フェーズ - 型安全なSlice定義とプロパティアクセスを実装
 // 更新: 2025-10-01 - T-8フェーズ - ジェネリック問題を解消するimmerSetラッパーを追加
+// 更新: 2025-10-09 - S-10.1フェーズ: 暗黙的any型を明示的型に修正
 
 import { create, type StoreApi } from 'zustand'
 import { devtools, persist } from 'zustand/middleware'
@@ -193,8 +194,12 @@ export type RootStore = RootState & RootActions
 
 // Zustandミドルウェア用のロガー関数
 const storeLogger = (storeName: string) => (
-  config: any
-) => (set: any, get: any, api: any) => {
+  config: (set: any, get: any, api: any) => any
+) => (
+  set: (state: any) => void, 
+  get: () => any, 
+  api: StoreApi<any>
+) => {
   const wrappedSet = (args: any) => {
     loggerFn.info(`[${storeName}] state updating`, {
       component: storeName,

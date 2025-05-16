@@ -8,19 +8,19 @@ import { ExchangeType } from "@/types/api"
 export const symbolInfoSchema = z.object({
   symbol: z.string().min(1),
   baseAsset: z.string().min(1),
-  quoteAsset: z.string().min(1),
+  quoteCoin: z.string().min(1),
   displayName: z.string().optional(),
   pricePrecision: z.number().int().nonnegative(),
   quantityPrecision: z.number().int().nonnegative(),
   minNotional: z.union([z.string(), z.number()]),
   status: z.string(),
-  isFavorite: z.boolean().optional()
+  favorite: z.boolean().optional()
 })
 
 // フィルターオプションのバリデーションスキーマ
 export const filterOptionsSchema = z.object({
   searchTerm: z.string().default(""),
-  quoteAsset: z.string().default(""),
+  quoteCoin: z.string().default(""),
   favoritesOnly: z.boolean().default(false)
 })
 

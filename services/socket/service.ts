@@ -33,7 +33,7 @@ class SocketService extends EventEmitter implements ISocketService {
    * @param config 追加の設定オプション
    * @returns BitgetAPIクライアントインスタンス
    */
-  initializeApiClient(exchangeType: ExchangeType = 'spot', config: Record<string, any> = {}): any {
+  initializeApiClient(exchangeType: ExchangeType = 'bitget', config: Record<string, any> = {}): any {
     // 実際の実装では適切なAPIクライアントを返す
     return {};
   }
@@ -139,7 +139,7 @@ class SocketService extends EventEmitter implements ISocketService {
   subscribeOrderBook(
     symbol: string,
     callback: (data: OrderBookData) => void,
-    exchangeType: ExchangeType = 'spot'
+    exchangeType: ExchangeType = 'bitget'
   ): () => void {
     if (!this.connected) {
       logger.warn(`WebSocketが接続されていないため、オーダーブックの購読ができません: ${symbol}`, {
@@ -184,7 +184,7 @@ class SocketService extends EventEmitter implements ISocketService {
     symbol: string,
     timeframe: Timeframe,
     callback: (data: OHLCData) => void,
-    exchangeType: ExchangeType = 'spot'
+    exchangeType: ExchangeType = 'bitget'
   ): () => void {
     if (!this.connected) {
       logger.warn(`WebSocketが接続されていないため、ローソク足データの購読ができません: ${symbol} ${timeframe}`, {

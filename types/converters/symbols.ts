@@ -17,7 +17,7 @@ import { toString, toLowerCase } from './common';
 export interface SymbolInfo {
   symbol: string;
   baseAsset: string;
-  quoteAsset: string;
+  quoteCoin: string;
   exchangeType: ExchangeProductType;
   pricePrecision: number;
   quantityPrecision: number;
@@ -35,7 +35,7 @@ export interface SymbolInfo {
 export interface ApiSymbolResponse {
   symbol?: string;
   baseAsset?: string;
-  quoteAsset?: string;
+  quoteCoin?: string;
   pricePrecision?: number | string;
   quantityPrecision?: number | string;
   status?: string;
@@ -69,10 +69,10 @@ export interface DbSymbolRecord {
 export function isSymbolInfo(data: unknown): data is SymbolInfo {
   if (!isObject(data)) return false;
   
-  return hasAllProperties(data, ['symbol', 'baseAsset', 'quoteAsset', 'exchangeType']) &&
+  return hasAllProperties(data, ['symbol', 'baseAsset', 'quoteCoin', 'exchangeType']) &&
     isString(data.symbol) &&
     isString(data.baseAsset) &&
-    isString(data.quoteAsset);
+    isString(data.quoteCoin);
 }
 
 /**
@@ -85,7 +85,7 @@ export function fromApiSymbol(data: ApiSymbolResponse, exchangeType: ExchangePro
   return {
     symbol: toString(data.symbol || ''),
     baseAsset: toString(data.baseAsset || ''),
-    quoteAsset: toString(data.quoteAsset || ''),
+    quoteCoin: toString(data.quoteCoin || ''),
     exchangeType,
     pricePrecision: toNumber(data.pricePrecision, 8),
     quantityPrecision: toNumber(data.quantityPrecision, 6),
@@ -108,7 +108,7 @@ export function fromDbSymbol(record: DbSymbolRecord): SymbolInfo {
   return {
     symbol: toString(record.symbol, ''),
     baseAsset: toString(record.base_asset, ''),
-    quoteAsset: toString(record.quote_asset, ''),
+    quoteCoin: toString(record.quote_asset, ''),
     exchangeType,
     pricePrecision: toNumber(record.price_precision, 8),
     quantityPrecision: toNumber(record.quantity_precision, 6),
@@ -130,7 +130,7 @@ export function toDbSymbol(symbol: SymbolInfo): DbSymbolRecord {
   return {
     symbol: symbol.symbol,
     base_asset: symbol.baseAsset,
-    quote_asset: symbol.quoteAsset,
+    quote_asset: symbol.quoteCoin,
     exchange_type: symbol.exchangeType,
     price_precision: symbol.pricePrecision,
     quantity_precision: symbol.quantityPrecision,
@@ -146,7 +146,7 @@ export function toDbSymbol(symbol: SymbolInfo): DbSymbolRecord {
 /**
  * シンボル文字列をベースアセットとクォートアセットに分解
  * @param symbol シンボル文字列 (例: "BTCUSDT")
- * @returns [baseAsset, quoteAsset]のタプル
+ * @returns [baseAsset, quoteCoin]のタプル
  */
 export function splitSymbol(symbol: string): [string, string] {
   // 一般的なクォート通貨リスト（長いものから優先的にマッチ）

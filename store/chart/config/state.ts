@@ -1,15 +1,38 @@
 // store/chart/config/state.ts
 // 作成: ChartConfigSliceの状態定義
 // 更新: 2025-10-06 - 型定義をtypes.tsに移動し、状態構造を更新
+// 更新: 2025-10-10 - 状態型を再エクスポートして型参照問題を解消
+// 更新: 2025-10-13 - S-12: 型エラー修正、ChartTypeとExchangeTypeの値を修正
 
+import { ChartType, ExchangeType, ExchangeProductType } from '@/types/constants/enums'
 import { type ChartConfigSliceState } from './types';
 
 /**
  * チャート設定スライスの初期状態
  */
 export const initialChartConfigState: ChartConfigSliceState = {
-  chartType: "candles", // デフォルトはローソク足チャート
-  exchangeType: "spot",  // デフォルトは現物取引
+  // チャートタイプ
+  chartType: 'candlestick',
+  
+  // 取引所タイプ
+  exchangeType: 'bitget' as ExchangeType,
+  
+  // 取引タイプ
+  exchangeProductType: 'spot' as ExchangeProductType,
+  
+  // チャートスケール
+  chartScale: {
+    autoScale: true,
+    percentageScale: false,
+    logScale: false
+  },
+  
+  // チャート表示設定
+  displaySettings: {
+    showVolume: true,
+    showGridLines: true,
+    showLabels: true
+  },
   
   // チャートの色設定
   colors: {
@@ -29,4 +52,7 @@ export const initialChartConfigState: ChartConfigSliceState = {
     horzLines: true,  // 水平線表示
     vertLines: true   // 垂直線表示
   }
-}; 
+};
+
+// チャート設定スライスの状態型を再エクスポート（型参照問題解消のため）
+export type { ChartConfigSliceState }; 

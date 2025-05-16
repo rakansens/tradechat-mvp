@@ -245,7 +245,7 @@ describe('Market Validations', () => {
       const validSymbol = {
         symbol: 'BTCUSDT',
         baseCoin: 'BTC', // baseAsset → baseCoin に修正
-        quoteCoin: 'USDT', // quoteAsset → quoteCoin に修正
+        quoteCoin: 'USDT', // quoteCoin → quoteCoin に修正
         minOrderSize: 0.001, // minNotional → minOrderSize に修正
         pricePrecision: 2,
         quantityPrecision: 6,
@@ -261,7 +261,7 @@ describe('Market Validations', () => {
       const validSymbol = {
         symbol: 'BTCUSDT',
         baseCoin: 'BTC', // baseAsset → baseCoin に修正
-        quoteCoin: 'USDT', // quoteAsset → quoteCoin に修正
+        quoteCoin: 'USDT', // quoteCoin → quoteCoin に修正
         minOrderSize: 0.001, // minNotional → minOrderSize に修正
         pricePrecision: 2,
         quantityPrecision: 6,

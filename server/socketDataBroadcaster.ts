@@ -7,7 +7,8 @@
 import { Server as SocketIOServer, Socket } from 'socket.io';
 import { LRUCache } from './cacheManager';
 import { logger } from '@/utils/common';
-import { ExchangeType } from '../types/api';
+import { ExchangeType, ExchangeProductType } from '@/types/constants/enums';
+import { safeExchangeType, safeProductType } from '@/utils/exchangeTypeUtils';
 import { validateWebSocketMessage } from '../types/websocket';
 import { 
   buildChannelKey, 
@@ -29,7 +30,7 @@ interface ClientSubscription {
   symbol: string;
   type: ChannelName;
   timeframe?: string;
-  exchangeType: ExchangeType;
+  exchangeType: ExchangeType | ExchangeProductType;
 }
 
 // チャンネル統計情報の型定義
@@ -87,9 +88,9 @@ export class SocketDataBroadcaster {
     
     // キャッシュの初期化
     this.cache = {
-      orderBook: new LRUCache<any>(100, 30000), // 30秒TTL
-      kline: new LRUCache<any>(100, 60000),     // 60秒TTL
-      trade: new LRUCache<any>(50, 15000)       // 15秒TTL
+      orderBook: new LRUCache<any>(100, 60 * 1000), // 100アイテム、1分のTTL
+      kline: new LRUCache<any>(200, 10 * 60 * 1000), // 200アイテム、10分のTTL
+      trade: new LRUCache<any>(50, 30 * 1000) // 50アイテム、30秒のTTL
     };
     
     // Socket.IOハンドラの設定
@@ -246,15 +247,18 @@ export class SocketDataBroadcaster {
    * 
    * @param symbol シンボル
    * @param data オーダーブックデータ
-   * @param exchangeType 取引タイプ
+   * @param exchangeType 取引種別('spot', 'futures'等)または取引所タイプ('bitget'等)
    */
-  public broadcastOrderBook(symbol: string, data: any, exchangeType: ExchangeType = 'spot'): void {
+  public broadcastOrderBook(symbol: string, data: any, exchangeType?: ExchangeType | ExchangeProductType): void {
     try {
+      // 取引所タイプに変換
+      const safeExchangeTypeValue = safeExchangeType(exchangeType || 'bitget');
+      
       // データの検証
       const validation = validateWebSocketMessage({
         type: 'orderbook',
         symbol,
-        exchangeType,
+        exchangeType: safeExchangeTypeValue,
         data,
         timestamp: Date.now()
       });
@@ -272,7 +276,7 @@ export class SocketDataBroadcaster {
         ChannelName.ORDERBOOK, 
         symbol, 
         undefined, 
-        exchangeType
+        safeExchangeTypeValue
       );
       
       // チャンネル名の生成
@@ -284,7 +288,7 @@ export class SocketDataBroadcaster {
       // データをブロードキャスト
       this.broadcastToChannel(channelName, 'orderbook', {
         symbol,
-        exchangeType,
+        exchangeType: safeExchangeTypeValue,
         data,
         timestamp: Date.now()
       });
@@ -304,16 +308,19 @@ export class SocketDataBroadcaster {
    * @param symbol シンボル
    * @param timeframe タイムフレーム
    * @param data ローソク足データ
-   * @param exchangeType 取引タイプ
+   * @param exchangeType 取引種別('spot', 'futures'等)または取引所タイプ('bitget'等)
    */
-  public broadcastKline(symbol: string, timeframe: string, data: any, exchangeType: ExchangeType = 'spot'): void {
+  public broadcastKline(symbol: string, timeframe: string, data: any, exchangeType?: ExchangeType | ExchangeProductType): void {
     try {
+      // 取引所タイプに変換
+      const safeExchangeTypeValue = safeExchangeType(exchangeType || 'bitget');
+      
       // データの検証
       const validation = validateWebSocketMessage({
         type: 'kline',
         symbol,
         timeframe,
-        exchangeType,
+        exchangeType: safeExchangeTypeValue,
         data,
         timestamp: Date.now()
       });
@@ -331,7 +338,7 @@ export class SocketDataBroadcaster {
         ChannelName.KLINE, 
         symbol, 
         timeframe, 
-        exchangeType
+        safeExchangeTypeValue
       );
       
       // チャンネル名の生成
@@ -344,7 +351,7 @@ export class SocketDataBroadcaster {
       this.broadcastToChannel(channelName, 'kline', {
         symbol,
         timeframe,
-        exchangeType,
+        exchangeType: safeExchangeTypeValue,
         data,
         timestamp: Date.now()
       });
@@ -364,15 +371,18 @@ export class SocketDataBroadcaster {
    * 
    * @param symbol シンボル
    * @param data 取引データ
-   * @param exchangeType 取引タイプ
+   * @param exchangeType 取引種別('spot', 'futures'等)または取引所タイプ('bitget'等)
    */
-  public broadcastTrade(symbol: string, data: any, exchangeType: ExchangeType = 'spot'): void {
+  public broadcastTrade(symbol: string, data: any, exchangeType?: ExchangeType | ExchangeProductType): void {
     try {
+      // 取引所タイプに変換
+      const safeExchangeTypeValue = safeExchangeType(exchangeType || 'bitget');
+      
       // データの検証
       const validation = validateWebSocketMessage({
         type: 'trade',
         symbol,
-        exchangeType,
+        exchangeType: safeExchangeTypeValue,
         data,
         timestamp: Date.now()
       });
@@ -390,7 +400,7 @@ export class SocketDataBroadcaster {
         ChannelName.TRADE, 
         symbol, 
         undefined, 
-        exchangeType
+        safeExchangeTypeValue
       );
       
       // チャンネル名の生成
@@ -402,7 +412,7 @@ export class SocketDataBroadcaster {
       // データをブロードキャスト
       this.broadcastToChannel(channelName, 'trade', {
         symbol,
-        exchangeType,
+        exchangeType: safeExchangeTypeValue,
         data,
         timestamp: Date.now()
       });
@@ -477,16 +487,17 @@ export class SocketDataBroadcaster {
    * @param type データタイプ
    * @param symbol シンボル
    * @param timeframe タイムフレーム（klineの場合のみ必要）
-   * @param exchangeType 取引タイプ
+   * @param exchangeType 取引種別または取引所タイプ
    * @returns キャッシュされたデータ、存在しない場合はnull
    */
   public getCachedData(
     type: ChannelName,
     symbol: string,
     timeframe?: string,
-    exchangeType: ExchangeType = 'spot'
+    exchangeType?: ExchangeType | ExchangeProductType
   ): any | null {
-    const components = createChannelKeyComponents(type, symbol, timeframe, exchangeType);
+    const safeExchangeTypeValue = safeExchangeType(exchangeType || 'bitget');
+    const components = createChannelKeyComponents(type, symbol, timeframe, safeExchangeTypeValue);
     const cacheKey = utilGetCacheKey(components);
     
     switch (type) {
@@ -507,16 +518,17 @@ export class SocketDataBroadcaster {
    * @param type データタイプ
    * @param symbol シンボル
    * @param timeframe タイムフレーム（klineの場合のみ必要）
-   * @param exchangeType 取引タイプ
+   * @param exchangeType 取引種別または取引所タイプ
    * @returns キャッシュキー
    */
   private getCacheKey(
     type: ChannelName,
     symbol: string,
     timeframe?: string,
-    exchangeType: ExchangeType = 'spot'
+    exchangeType?: ExchangeType | ExchangeProductType
   ): string {
-    const components = createChannelKeyComponents(type, symbol, timeframe, exchangeType);
+    const safeExchangeTypeValue = safeExchangeType(exchangeType || 'bitget');
+    const components = createChannelKeyComponents(type, symbol, timeframe, safeExchangeTypeValue);
     return utilGetCacheKey(components);
   }
 
@@ -526,16 +538,17 @@ export class SocketDataBroadcaster {
    * @param type データタイプ
    * @param symbol シンボル
    * @param timeframe タイムフレーム（klineの場合のみ必要）
-   * @param exchangeType 取引タイプ
+   * @param exchangeType 取引種別または取引所タイプ
    * @returns チャンネル名
    */
   private getChannelName(
     type: ChannelName,
     symbol: string,
     timeframe?: string,
-    exchangeType: ExchangeType = 'spot'
+    exchangeType?: ExchangeType | ExchangeProductType
   ): string {
-    const components = createChannelKeyComponents(type, symbol, timeframe, exchangeType);
+    const safeExchangeTypeValue = safeExchangeType(exchangeType || 'bitget');
+    const components = createChannelKeyComponents(type, symbol, timeframe, safeExchangeTypeValue);
     return utilGetChannelName(components);
   }
 

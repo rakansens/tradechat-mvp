@@ -1,8 +1,8 @@
 // store/chart/config/types.ts
 // 作成: 2025-10-06 - ChartConfigSliceのState, Actions, Slice型を定義
+// 更新: 2025-10-13 - S-12: 型のインポートパスを修正、状態定義を更新
 
-import { ChartType } from "@/types/chart";
-import { ExchangeType } from "@/types/network/api";
+import { ChartType, ExchangeType, ExchangeProductType } from "@/types/constants/enums";
 import { type SliceCreator } from '@/types/store/core';
 
 /**
@@ -12,8 +12,25 @@ export interface ChartConfigSliceState {
   // チャートの種類（ローソク足、線グラフなど）
   chartType: ChartType;
   
-  // 取引種別（現物、先物など）
+  // 取引所タイプ（bitget, binanceなど）
   exchangeType: ExchangeType;
+  
+  // 取引種別（現物、先物など）
+  exchangeProductType: ExchangeProductType;
+  
+  // チャートスケール設定
+  chartScale?: {
+    autoScale: boolean;
+    percentageScale: boolean;
+    logScale: boolean;
+  };
+  
+  // チャート表示設定
+  displaySettings?: {
+    showVolume: boolean;
+    showGridLines: boolean;
+    showLabels: boolean;
+  };
   
   // チャートの色設定
   colors: {
@@ -41,9 +58,8 @@ export interface ChartConfigSliceState {
 export interface ChartConfigSliceActions {
   // チャートタイプを設定するアクション
   setChartType: (chartType: ChartType) => void;
-  
-  // 取引種別を設定するアクション
   setExchangeType: (exchangeType: ExchangeType) => void;
+  setExchangeProductType: (exchangeProductType: ExchangeProductType) => void;
 }
 
 /**

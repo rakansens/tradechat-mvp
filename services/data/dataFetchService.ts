@@ -171,7 +171,7 @@ class DataFetchService extends EventEmitter implements IDataFetchService {
    * @param newTimeframe 新しい時間足
    * @param exchangeType 取引タイプ
    */
-  handleTimeframeChange(symbol: string, newTimeframe: Timeframe, exchangeType: ExchangeType = 'spot'): void {
+  handleTimeframeChange(symbol: string, newTimeframe: Timeframe, exchangeType: ExchangeType = 'bitget'): void {
     // キャッシュから古い時間足のデータをクリア
     const normalizedSymbol = normalizeSymbol(symbol);
     cacheService.clearByPattern(new RegExp(`^chart-${normalizedSymbol}-.*-${exchangeType}$`));
@@ -199,7 +199,7 @@ class DataFetchService extends EventEmitter implements IDataFetchService {
     symbol: string,
     timeFrame: Timeframe,
     callback: (data: OHLCData) => void,
-    exchangeType: ExchangeType = 'spot'
+    exchangeType: ExchangeType = 'bitget'
   ): () => void {
     // シンボルを正規化
     const normalizedSymbol = normalizeSymbol(symbol);

@@ -1,12 +1,11 @@
 // types/chart/symbol.ts
 // チャート用シンボル関連の型定義
-// 更新: 共通モジュールからSymbolInfoをインポートするように変更
-// 更新: T-6フェーズでBitgetSymbolsResponseを共通モジュールに移動
 
-import { SymbolInfo, SymbolListProps, BitgetSymbolsResponse } from '../common/symbol';
-
-// 共通型の再エクスポート
-export type { SymbolInfo, SymbolListProps, BitgetSymbolsResponse };
+import type {
+  SymbolInfo,
+  SymbolListProps,
+  BitgetSymbolsResponse
+} from '@/types/common/symbol';
 
 /**
  * チャート固有の拡張銘柄情報型（固有プロパティがある場合）

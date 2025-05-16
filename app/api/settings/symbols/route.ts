@@ -42,7 +42,7 @@ export async function PUT(request: Request) {
     const supabase = await createRouteHandlerClient();
     
     // リクエストボディを取得
-    const { symbol, isFavorite, displayOrder } = await request.json();
+    const { symbol, favorite, displayOrder } = await request.json();
 
     // リクエスト検証
     if (!symbol) {
@@ -62,7 +62,7 @@ export async function PUT(request: Request) {
     const updatedSetting = await upsertSymbolSettings(
       user.id,
       symbol,
-      isFavorite ?? false,
+      favorite ?? false,
       displayOrder ?? 0,
       supabase
     );

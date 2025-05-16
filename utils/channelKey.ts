@@ -42,7 +42,7 @@ export function createChannelKeyComponents(
   type: ChannelName,
   symbol: string,
   timeframe?: string,
-  exchangeType: ExchangeType = 'spot'
+  exchangeType: ExchangeType = 'bitget'
 ): ChannelKeyComponents {
   return {
     type,

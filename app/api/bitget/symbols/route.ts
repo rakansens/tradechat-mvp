@@ -118,7 +118,7 @@ function generateStubSymbolData(type: string) {
   
   // 主要な通貨ペアのダミーデータ
   const baseAssets = ['BTC', 'ETH', 'XRP', 'SOL', 'DOGE', 'SHIB', 'ADA', 'AVAX', 'DOT', 'MATIC'];
-  const quoteAssets = ['USDT', 'USD', 'BTC', 'ETH'];
+  const quoteCoins = ['USDT', 'USD', 'BTC', 'ETH'];
   
   // シンボルデータの型定義
   type SpotSymbol = {
@@ -149,7 +149,7 @@ function generateStubSymbolData(type: string) {
   
   // ダミーデータの生成
   baseAssets.forEach(base => {
-    quoteAssets.forEach(quote => {
+    quoteCoins.forEach(quote => {
       // 同じ通貨同士のペアは除外
       if (base === quote) return;
       

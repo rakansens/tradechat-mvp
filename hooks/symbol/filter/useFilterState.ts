@@ -19,7 +19,7 @@ import { validateFilterOptions } from '@/lib/validations/symbol';
  * シンボルセレクタのフィルター状態を管理するフック
  * 
  * - searchTerm: 検索語
- * - quoteAsset: 基軸通貨フィルター
+ * - quoteCoin: 基軸通貨フィルター
  * - favoritesOnly: お気に入りのみ表示するかどうか
  * 
  * @returns フィルター状態とハンドラー関数
@@ -51,8 +51,8 @@ export const useFilterState = () => {
   // 基軸通貨フィルター処理
   const handleQuoteAssetFilter = (asset: string) => {
     // 基軸通貨のバリデーション
-    const quoteAsset = asset.trim();
-    setFilterOptions({ quoteAsset });
+    const quoteCoin = asset.trim();
+    setFilterOptions({ quoteCoin });
   };
   
   // お気に入りフィルター処理

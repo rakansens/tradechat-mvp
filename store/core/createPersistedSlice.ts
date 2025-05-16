@@ -1,39 +1,44 @@
 // store/core/createPersistedSlice.ts
 // 初期実装: Zustandスライスのパーシスト機能付きヘルパー
 // T-7.8.0フェーズ: 型定義を修正してStateCreator型の互換性問題を解決
+// S-12フェーズ: 更新 - 完全に新しいアプローチでStateCreator型の互換性問題を解消
 
 import { StateCreator } from 'zustand'
 import { PersistOptions } from 'zustand/middleware'
 import { immer } from 'zustand/middleware/immer'
+import { type SliceCreator } from '@/types/store/core'
 
-// スライス作成ヘルパー関数の型定義（更新）
-export type CreateSliceWithPersist<T> = (
-  set: (fn: (state: T) => void) => void,
-  get: () => T,
-  api: object
-) => T
+// シンプルなセッター型 - スライスに依存しない
+type Setter<T> = (fn: (state: T) => void) => void;
 
-// パーシスト機能付きスライス作成関数（型定義を修正）
-export function createPersistedSlice<T extends object, U extends object>(
+// シンプルなゲッター型 - スライスに依存しない
+type Getter<T> = () => T;
+
+/**
+ * パーシスト機能付きスライス作成関数
+ * スライスクリエーターからStateCreatorに変換します
+ */
+export function createPersistedSlice<T extends object, U extends object = {}>(
   persistKey: string,
-  sliceCreator: CreateSliceWithPersist<T>,
+  sliceCreator: (set: Setter<T>, get: Getter<T>, api?: any) => T & U,
   persistOptions?: Partial<PersistOptions<T & U>>
-): StateCreator<T & U, [], [['zustand/immer', never]]> {
-  return (set, get, api) => {
-    const immerSet = (fn: (state: T) => void) => 
-      set((state) => {
-        // TypeScriptエラーを回避するためのasアサーション
-        const draft = state as T;
-        fn(draft);
-        return state;
-      });
+) {
+  return (
+    set: any, 
+    get: any, 
+    api: any
+  ) => {
+    // シンプルなimmerラッパー関数を作成
+    const immerSetter: Setter<T> = (fn) => {
+      set(immer((state: any) => {
+        fn(state);
+      }));
+    };
     
-    const slice = sliceCreator(
-      immerSet,
-      () => get() as T,
-      api
-    );
+    // 型安全なゲッター
+    const typedGetter: Getter<T> = () => get() as T;
     
-    return slice as T & U
-  }
+    // スライスを生成
+    return sliceCreator(immerSetter, typedGetter, api);
+  };
 } 

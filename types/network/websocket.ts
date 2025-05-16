@@ -8,7 +8,7 @@
  */
 
 import { z } from 'zod';
-import { ExchangeType } from './api';
+import { ExchangeType } from '@/types/api';
 
 // WebSocketメッセージタイプの定義
 export enum WebSocketMessageType {

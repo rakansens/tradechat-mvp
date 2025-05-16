@@ -1,26 +1,28 @@
 // lib/validations/symbol.ts
 // 作成: シンボルセレクター関連のZodバリデーションスキーマ
+// 更新: 2025-10-09 - S-9.2フェーズ: ExchangeType型の参照を統一
 
 import { z } from "zod"
-import { ExchangeType } from "@/types/api"
+import { type ExchangeType, type ExchangeProductType } from "@/types/constants/enums"
+import { safeExchangeType, safeProductType } from "@/utils/exchangeTypeUtils";
 
 // シンボル情報のバリデーションスキーマ
 export const symbolInfoSchema = z.object({
   symbol: z.string().min(1),
   baseAsset: z.string().min(1),
-  quoteAsset: z.string().min(1),
+  quoteCoin: z.string().min(1),
   displayName: z.string().optional(),
   pricePrecision: z.number().int().nonnegative(),
   quantityPrecision: z.number().int().nonnegative(),
   minNotional: z.union([z.string(), z.number()]),
   status: z.string(),
-  isFavorite: z.boolean().optional()
+  favorite: z.boolean().optional()
 })
 
 // フィルターオプションのバリデーションスキーマ
 export const filterOptionsSchema = z.object({
   searchTerm: z.string().default(""),
-  quoteAsset: z.string().default(""),
+  quoteCoin: z.string().default(""),
   favoritesOnly: z.boolean().default(false)
 })
 
@@ -30,9 +32,9 @@ export const symbolSelectorPropsSchema = z.object({
     .args(z.string())
     .returns(z.void()),
   currentSymbol: z.string().default("BTCUSDT"),
-  defaultExchangeType: z.enum(["spot", "futures"]).default("spot"),
+  defaultExchangeType: z.enum(["bitget", "binance", "bybit", "demo"]).default("bitget"),
   onExchangeTypeChange: z.function()
-    .args(z.enum(["spot", "futures"]))
+    .args(z.enum(["bitget", "binance", "bybit", "demo"]))
     .returns(z.void())
     .optional()
 })

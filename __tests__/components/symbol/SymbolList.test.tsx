@@ -10,8 +10,8 @@ import type { SymbolInfo } from '@/store/useSymbolStore';
 
 // モックシンボルデータ
 const mockSymbols: SymbolInfo[] = [
-  { symbol: 'BTCUSDT', baseAsset: 'BTC', quoteAsset: 'USDT', isFavorite: false },
-  { symbol: 'ETHUSDT', baseAsset: 'ETH', quoteAsset: 'USDT', isFavorite: true },
+  { symbol: 'BTCUSDT', baseAsset: 'BTC', quoteCoin: 'USDT', favorite: false },
+  { symbol: 'ETHUSDT', baseAsset: 'ETH', quoteCoin: 'USDT', favorite: true },
 ];
 
 // validateSymbolInfoのモック

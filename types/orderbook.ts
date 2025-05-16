@@ -1,1 +1,4 @@
-export * from './chart/orderbook';
+/**
+ * @deprecated – use `@/types/common/orderbook` instead.
+ */
+export * from './common/orderbook';

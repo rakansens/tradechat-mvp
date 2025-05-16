@@ -1,10 +1,14 @@
 // store/chart/config/actions.ts
 // 作成: ChartConfigSliceのアクション定義
-// 更新: 2025-10-06 - 型定義をtypes.tsに移動し、immerSetを使用するように更新
+// 更新: 2025-10-14 - setExchangeProductType アクションを追加して型と実装を同期
 
-import type { ChartType } from "@/types/chart"
-import { ExchangeType } from "@/types/network/api"
-import { type ChartConfigSliceActions, type ChartConfigSlice, type ChartConfigSliceState } from "./types"
+import type { ChartType } from "@/types/chart";
+import { ExchangeType, ExchangeProductType } from "@/types/constants/enums";
+import {
+  type ChartConfigSliceActions,
+  type ChartConfigSlice,
+  type ChartConfigSliceState
+} from "./types";
 
 /**
  * チャート設定スライスのアクションを作成する関数
@@ -15,19 +19,28 @@ export const createChartConfigActions = (
 ): ChartConfigSliceActions => ({
   // チャートタイプを設定
   setChartType: (chartType) => {
-    set(state => {
+    set((state) => {
       state.chartType = chartType;
     });
   },
-  
-  // 取引タイプを設定
+
+  // 取引所タイプを設定
   setExchangeType: (exchangeType) => {
-    set(state => {
+    set((state) => {
       state.exchangeType = exchangeType;
     });
-    
-    // 注意: 実際の実装では、ここでRealTimeStoreのAPIクライアントを更新するイベントを発行する
-    // 循環参照を避けるために、イベント駆動型のアプローチを使用
-    // 例: eventEmitter.emit('exchangeTypeChanged', exchangeType);
+
+    // 循環参照を避けるため、イベント駆動型のアプローチを推奨
+    // 例: eventEmitter.emit("exchangeTypeChanged", exchangeType);
+  },
+
+  // 取引種別（現物/先物など）を設定
+  setExchangeProductType: (exchangeProductType) => {
+    set((state) => {
+      state.exchangeProductType = exchangeProductType;
+    });
+
+    // ここでも必要に応じてイベントを発行
+    // 例: eventEmitter.emit("exchangeProductTypeChanged", exchangeProductType);
   }
 }); 

@@ -1,8 +1,9 @@
 // store/chart/config/selectors.ts
 // 作成: ChartConfigSliceのセレクター定義
+// 更新: 2025-10-08 - S-5フェーズ: 型参照パスを修正
 
 import { createSelector } from 'reselect'
-import type { ChartConfigSlice } from './actions'
+import type { ChartConfigSlice } from './types'
 
 /**
  * チャートタイプを選択するセレクター
@@ -19,5 +20,5 @@ export const selectExchangeType = (state: ChartConfigSlice) => state.exchangeTyp
  */
 export const selectIsCandleChart = createSelector(
   [selectChartType],
-  (chartType) => chartType === 'candles'
-) 
+  (chartType) => chartType === 'candlestick'
+)

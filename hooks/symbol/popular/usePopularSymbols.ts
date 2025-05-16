@@ -9,7 +9,7 @@
  */
 
 import { useMemo } from 'react';
-import type { SymbolInfo, FilterOptions } from '@/types/symbol';
+import type { SymbolInfo, SymbolFilterOptions } from '@/types/common/symbol';
 
 /**
  * 人気銘柄のリスト
@@ -28,7 +28,7 @@ export const POPULAR_SYMBOLS = [
 
 interface UsePopularSymbolsProps {
   symbols: SymbolInfo[];
-  filterOptions: FilterOptions;
+  filterOptions: SymbolFilterOptions;
 }
 
 /**
@@ -46,7 +46,7 @@ export const usePopularSymbols = ({
 }: UsePopularSymbolsProps) => {
   return useMemo(() => {
     // フィルターが適用されている場合は空配列を返す
-    if (filterOptions.searchTerm || filterOptions.quoteAsset || filterOptions.favoritesOnly) {
+    if (filterOptions.searchTerm || filterOptions.quoteCoin || filterOptions.favoritesOnly) {
       return [];
     }
     

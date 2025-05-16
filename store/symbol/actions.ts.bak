@@ -1,0 +1,275 @@
+// store/symbol/actions.ts
+// 作成: 2025-10-05 - SymbolSliceのアクションを定義
+// 更新: 2025-10-08 - S-3フェーズ: 旧型参照を@/types/store/symbolからの参照に更新
+// 更新: 2025-10-08 - S-9.2フェーズ: ExchangeType型の参照を統一し型エラーを解消
+// 更新: 2025-10-09 - S-9.2フェーズ: createIdGenerator関数のエラーを修正
+
+import { produce } from 'immer';
+import { logger } from '@/utils/common';
+import { ExchangeType } from '@/types/api';
+import { ExchangeProductType } from '@/types/constants/enums';
+import { toExchangeProductType, isValidExchangeType, isValidExchangeProductType } from '@/utils/exchange';
+import { symbolService } from '@/services/symbol';
+import type { FilterOptions, SymbolInfo } from '@/services/symbol';
+import type { SymbolState, SymbolActions, SymbolChangeHistoryEntry } from '@/types/store/symbol';
+
+// 安全なExchangeTypeへの変換関数
+function safeExchangeType(type: string): ExchangeType {
+  return type === 'binance' || type === 'bybit' || type === 'demo' ? type : 'bitget';
+}
+
+// ID生成用ヘルパー関数
+const createIdGenerator = (prefix: string) => {
+  let counter = 0;
+  return () => `${prefix}-${Date.now()}-${counter++}`;
+};
+
+// シンボル変更履歴エントリーID生成関数
+const generateChangeId = createIdGenerator('symbol-change');
+
+/**
+ * SymbolSliceアクション作成関数
+ * @param mutateDraft immer状態更新関数
+ * @param getState 状態取得関数
+ * @returns SymbolSliceActions
+ */
+export const createSymbolActions = (
+  mutateDraft: (fn: (draft: SymbolState) => void) => void,
+  getState: () => SymbolState
+): SymbolActions => ({
+  // 現在選択中のシンボルを設定
+  setCurrentSymbol: (symbol: string, reason?: string) => {
+    mutateDraft((draft) => {
+      // シンボル変更イベントを記録
+      const oldSymbol = draft.currentSymbol;
+      if (oldSymbol !== symbol) {
+        draft.symbolChangeHistory.push({
+          id: generateChangeId(),
+          timestamp: Date.now(),
+          symbol,
+          exchangeType: draft.exchangeType,
+          field: 'currentSymbol',
+          oldValue: oldSymbol,
+          newValue: symbol,
+          source: reason || 'user',
+        });
+
+        // ローカルストレージに保存
+        symbolService.saveLastUsedSymbol(symbol);
+      }
+
+      draft.currentSymbol = symbol;
+    });
+
+    logger.info(`[SymbolSlice] Changed current symbol to: ${symbol}`);
+  },
+
+  // 取引タイプを設定
+  setExchangeType: (type: ExchangeType | ExchangeProductType) => {
+    const oldType = getState().exchangeType;
+    
+    // 型を安全に変換
+    let productType: ExchangeProductType;
+    
+    mutateDraft((draft) => {
+      // ExchangeProductType が渡された場合はそのまま使用
+      if (isValidExchangeProductType(type)) {
+        productType = type;
+      } 
+      // ExchangeType が渡された場合はデフォルトの取引タイプに変換
+      else if (isValidExchangeType(type)) {
+        productType = toExchangeProductType(type);
+        logger.info(`[SymbolSlice] Converted exchange type '${type}' to product type '${productType}'`);
+      } 
+      // 無効な値の場合はデフォルト値を使用
+      else {
+        productType = 'spot';
+        logger.warn(`[SymbolSlice] Invalid exchange type '${type}', using default '${productType}'`);
+      }
+      
+      if (oldType !== productType) {
+        // 変更履歴を記録
+        draft.symbolChangeHistory.push({
+          id: generateChangeId(),
+          timestamp: Date.now(),
+          symbol: draft.currentSymbol,
+          exchangeType: productType,
+          field: 'exchangeType',
+          oldValue: oldType,
+          newValue: productType,
+          source: 'user',
+        });
+        
+        // ローカルストレージに保存
+        symbolService.saveLastUsedExchangeType(productType);
+        
+        // 状態を更新
+        draft.exchangeType = productType;
+        logger.info(`[SymbolSlice] Changed exchange type to: ${productType}`);
+      }
+    });
+  },
+
+  // シンボル一覧を取得
+  fetchSymbols: async (exchangeType: ExchangeType | ExchangeProductType) => {
+    mutateDraft((draft) => {
+      draft.isLoadingSymbols = true;
+      draft.symbolError = null;
+    });
+    
+    try {
+      // 安全な型変換を適用
+      let safeType: ExchangeProductType;
+      
+      // ExchangeProductType が渡された場合はそのまま使用
+      if (isValidExchangeProductType(exchangeType)) {
+        safeType = exchangeType;
+      } 
+      // ExchangeType が渡された場合はデフォルトの取引タイプに変換
+      else if (isValidExchangeType(exchangeType)) {
+        safeType = toExchangeProductType(exchangeType);
+        logger.info(`[SymbolSlice] Converted exchange type '${exchangeType}' to product type '${safeType}' for fetching symbols`);
+      } 
+      // 無効な値の場合はデフォルト値を使用
+      else {
+        safeType = 'spot';
+        logger.warn(`[SymbolSlice] Invalid exchange type '${exchangeType}', using default '${safeType}' for fetching symbols`);
+      }
+      
+      const symbols = await symbolService.fetchSymbols(safeType);
+      
+      mutateDraft((draft) => {
+        draft.symbolsList = symbols;
+        draft.filteredSymbols = applyFilters(symbols, draft.symbolFilterOptions);
+        draft.isLoadingSymbols = false;
+      });
+      
+      logger.info(`[SymbolSlice] Fetched ${symbols.length} symbols for ${safeType}`);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch symbols';
+      
+      mutateDraft((draft) => {
+        draft.symbolError = errorMessage;
+        draft.isLoadingSymbols = false;
+      });
+      
+      logger.error(`[SymbolSlice] Error fetching symbols: ${errorMessage}`, { error });
+      throw error;
+    }
+  },
+
+  // フィルターオプションを設定
+  setFilterOptions: (options: Partial<FilterOptions>) => {
+    mutateDraft((draft) => {
+      // フィルターオプションをマージ
+      draft.symbolFilterOptions = {
+        ...draft.symbolFilterOptions,
+        ...options,
+      };
+      
+      // フィルターを適用
+      draft.filteredSymbols = applyFilters(draft.symbolsList, draft.symbolFilterOptions);
+    });
+  },
+
+  // お気に入り状態の切り替え
+  toggleFavorite: (symbol: string) => {
+    mutateDraft((draft) => {
+      const symbolIndex = draft.symbolsList.findIndex(s => s.symbol === symbol);
+      
+      if (symbolIndex !== -1) {
+        const updatedSymbols = [...draft.symbolsList];
+        const symbolToUpdate = { ...updatedSymbols[symbolIndex] };
+        
+        // お気に入り状態をトグル
+        const newFavoriteState = !symbolToUpdate.favorite;
+        symbolToUpdate.favorite = newFavoriteState;
+        
+        // シンボルを更新
+        updatedSymbols[symbolIndex] = symbolToUpdate;
+        
+        // 状態を更新
+        draft.symbolsList = updatedSymbols;
+        
+        // フィルターを再適用
+        draft.filteredSymbols = applyFilters(updatedSymbols, draft.symbolFilterOptions);
+        
+        // 変更履歴を記録
+        draft.symbolChangeHistory.push({
+          id: generateChangeId(),
+          timestamp: Date.now(),
+          symbol,
+          exchangeType: draft.exchangeType,
+          field: 'favorite',
+          oldValue: !newFavoriteState,
+          newValue: newFavoriteState,
+          source: 'user',
+        });
+        
+        logger.info(`[SymbolSlice] Toggled favorite for ${symbol} to ${newFavoriteState}`);
+      }
+    });
+  },
+
+  // フィルターをクリア
+  clearFilters: () => {
+    mutateDraft((draft) => {
+      // フィルターオプションをリセット
+      draft.symbolFilterOptions = {
+        search: '',
+        quoteAsset: '',
+        showFavoritesOnly: false,
+        hideStablePairs: false,
+      };
+      
+      // フィルターをリセット
+      draft.filteredSymbols = draft.symbolsList;
+    });
+    
+    logger.info('[SymbolSlice] Cleared all filters');
+  },
+
+  // フィルターを適用
+  applyFilters: (options: FilterOptions) => {
+    mutateDraft((draft) => {
+      draft.symbolFilterOptions = options;
+      draft.filteredSymbols = applyFilters(draft.symbolsList, options);
+    });
+    
+    logger.info('[SymbolSlice] Applied filters', { options });
+  },
+
+  // シンボル変更履歴の取得（デバッグ用）
+  getSymbolChangeHistory: () => {
+    return getState().symbolChangeHistory;
+  },
+});
+
+/**
+ * シンボルリストにフィルターを適用する内部ヘルパー関数
+ * @param symbols シンボルリスト
+ * @param options フィルターオプション
+ * @returns フィルター適用後のシンボルリスト
+ */
+function applyFilters(symbols: SymbolInfo[], options: FilterOptions): SymbolInfo[] {
+  const { search, quoteAsset, showFavoritesOnly, hideStablePairs } = options;
+  
+  return symbols.filter(symbol => {
+    // 検索クエリに一致するか
+    const matchesSearch = !search || 
+      symbol.symbol.toLowerCase().includes(search.toLowerCase()) ||
+      symbol.baseCoin.toLowerCase().includes(search.toLowerCase()) ||
+      symbol.quoteCoin.toLowerCase().includes(search.toLowerCase());
+    
+    // クォートアセットでフィルタリング
+    const matchesQuoteAsset = !quoteAsset || symbol.quoteCoin === quoteAsset;
+    
+    // お気に入りのみ表示
+    const matchesFavorites = !showFavoritesOnly || symbol.favorite;
+    
+    // 安定コインペアを非表示
+    const matchesStable = !hideStablePairs || !['USDT', 'USDC', 'BUSD', 'DAI', 'TUSD', 'USDP', 'GUSD', 'HUSD', 'USDK', 'USDS', 'USDN', 'EURS', 'EURT', 'GBP', 'AUD', 'CAD', 'JPY', 'CHF', 'SGD', 'KRW'].includes(symbol.quoteCoin);
+    
+    return matchesSearch && matchesQuoteAsset && matchesFavorites && matchesStable;
+  });
+}

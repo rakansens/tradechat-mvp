@@ -5,11 +5,12 @@
 // 更新: UIスライス構造に合わせたセレクターの修正
 // 更新: 新しいセレクターを追加（モーダル、設定など）
 // 更新: 循環参照を解消するために型定義を修正
+// 更新: 2025-10-13 - S-12フェーズ: TabType型のインポートパスを修正
 //
 // このファイルはZustandストアのパフォーマンスを向上させるためのメモ化されたセレクター関数を提供します。
 
 import { createSelector } from 'reselect';
-import type { TabType } from '@/types/store';
+import type { TabType } from '@/types/store/ui';
 import type { UISliceState } from './state';
 import type { UISliceActions } from './actions';
 

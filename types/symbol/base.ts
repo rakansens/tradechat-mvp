@@ -6,21 +6,15 @@
  * T-6フェーズで重複型定義を解消し、共通モジュールからインポートするように変更しました。
  */
 
-import { ExchangeType } from '../network/api';
-import type { SymbolInfo, SymbolFilterOptions } from '../common/symbol';
+import { ExchangeType, ExchangeProductType } from '../constants/enums';
+import { SymbolInfo, SymbolChangeHistoryEntry, SymbolFilterOptions } from './common';
+import { SymbolState } from './store';
 
 // 共通型を再エクスポート
-export type { SymbolInfo, SymbolFilterOptions };
+export type { SymbolInfo, SymbolChangeHistoryEntry };
 
-/**
- * @deprecated common/symbol.tsのSymbolFilterOptionsを使用してください。
- * このインターフェースは後方互換性のために保持されています。
- */
-export interface FilterOptions {
-  searchTerm: string;
-  quoteAsset: string;
-  favoritesOnly: boolean;
-}
+/** @deprecated – 直接 `SymbolFilterOptions` を使用してください。 */
+export type FilterOptions = SymbolFilterOptions;
 
 /**
  * UI層用のシンボル情報型（レガシー互換性のため）
@@ -32,7 +26,7 @@ export interface LegacySymbolInfo {
   /** 基礎通貨 (例: BTC) */
   baseAsset: string;
   /** 見積通貨 (例: USDT) */
-  quoteAsset: string;
+  quoteCoin: string;
   /** 表示名 (例: BTC/USDT) */
   displayName: string;
   /** 価格の精度 (小数点以下の桁数) */
@@ -44,7 +38,7 @@ export interface LegacySymbolInfo {
   /** 取引ステータス (例: TRADING, BREAK) */
   status: string;
   /** お気に入りフラグ */
-  isFavorite?: boolean;
+  favorite?: boolean;
   /** 24時間取引量 */
   volume24h?: string;
   /** 24時間価格変動率 */
@@ -54,28 +48,10 @@ export interface LegacySymbolInfo {
 }
 
 /**
- * シンボル変更履歴エントリの型定義
- */
-export interface SymbolChangeHistoryEntry {
-  symbol: string;
-  exchangeType: ExchangeType;
-  timestamp: number;
-  source: string;
-}
-
-/**
  * シンボルスライスの状態型定義
+ * @deprecated 代わりに SymbolState を使用してください
  */
-export interface SymbolSliceState {
-  currentSymbol: string;
-  exchangeType: ExchangeType;
-  symbols: SymbolInfo[];
-  filteredSymbols: SymbolInfo[];
-  isLoading: boolean;
-  error: string | null;
-  filterOptions: FilterOptions;
-  changeHistory: SymbolChangeHistoryEntry[];
-}
+export interface SymbolSliceState extends SymbolState {}
 
 /**
  * 共通SymbolInfo型とレガシーSymbolInfo型の変換関数
@@ -84,29 +60,32 @@ export function toUISymbol(commonSymbol: SymbolInfo): LegacySymbolInfo {
   return {
     symbol: commonSymbol.symbol,
     baseAsset: commonSymbol.baseCoin,
-    quoteAsset: commonSymbol.quoteCoin,
+    quoteCoin: commonSymbol.quoteCoin,
     displayName: `${commonSymbol.baseCoin}/${commonSymbol.quoteCoin}`,
     pricePrecision: commonSymbol.pricePrecision,
     quantityPrecision: commonSymbol.quantityPrecision,
-    minNotional: commonSymbol.minOrderSize?.toString(),
+    minNotional: (commonSymbol.minOrderSize || 0).toString(),
     status: commonSymbol.status,
-    isFavorite: commonSymbol.favorite
+    favorite: commonSymbol.favorite || false
   };
 }
 
 /**
  * レガシーSymbolInfo型から共通SymbolInfo型への変換関数
+ * @param uiSymbol 変換対象のレガシーシンボル情報
+ * @param exchangeType 取引タイプ（'spot' または 'futures'）
  */
-export function toCommonSymbol(uiSymbol: LegacySymbolInfo, exchangeType: ExchangeType): SymbolInfo {
+export function toCommonSymbol(uiSymbol: LegacySymbolInfo, exchangeType: ExchangeProductType): SymbolInfo {
   return {
+    id: `${exchangeType}:${uiSymbol.symbol}`,
     symbol: uiSymbol.symbol,
     baseCoin: uiSymbol.baseAsset,
-    quoteCoin: uiSymbol.quoteAsset,
-    minOrderSize: parseFloat(uiSymbol.minNotional || '0'),
+    quoteCoin: uiSymbol.quoteCoin,
+    minOrderSize: uiSymbol.minNotional ? parseFloat(uiSymbol.minNotional) : 0.001, 
     pricePrecision: uiSymbol.pricePrecision,
     quantityPrecision: uiSymbol.quantityPrecision,
     status: uiSymbol.status,
     exchangeType,
-    favorite: uiSymbol.isFavorite
+    favorite: uiSymbol.favorite || false 
   };
 } 

@@ -18,12 +18,12 @@ describe('Symbol Validations', () => {
       const validSymbol = {
         symbol: 'BTCUSDT',
         baseAsset: 'BTC',
-        quoteAsset: 'USDT',
+        quoteCoin: 'USDT',
         pricePrecision: 2,
         quantityPrecision: 6,
         minNotional: '10',
         status: 'TRADING',
-        isFavorite: true
+        favorite: true
       };
 
       const result = symbolInfoSchema.safeParse(validSymbol);
@@ -34,7 +34,7 @@ describe('Symbol Validations', () => {
       const invalidSymbol = {
         symbol: '', // 空文字列は無効
         baseAsset: 'BTC',
-        quoteAsset: 'USDT',
+        quoteCoin: 'USDT',
         pricePrecision: 2,
         quantityPrecision: 6,
         minNotional: '10',
@@ -49,7 +49,7 @@ describe('Symbol Validations', () => {
       const validSymbol = {
         symbol: 'BTCUSDT',
         baseAsset: 'BTC',
-        quoteAsset: 'USDT',
+        quoteCoin: 'USDT',
         pricePrecision: 2,
         quantityPrecision: 6,
         minNotional: '10',
@@ -65,7 +65,7 @@ describe('Symbol Validations', () => {
     it('有効なフィルターオプションを検証できる', () => {
       const validOptions = {
         searchTerm: 'BTC',
-        quoteAsset: 'USDT',
+        quoteCoin: 'USDT',
         favoritesOnly: true
       };
 
@@ -81,7 +81,7 @@ describe('Symbol Validations', () => {
       
       if (result.success) {
         expect(result.data.searchTerm).toBe('');
-        expect(result.data.quoteAsset).toBe('');
+        expect(result.data.quoteCoin).toBe('');
         expect(result.data.favoritesOnly).toBe(false);
       }
     });
@@ -89,7 +89,7 @@ describe('Symbol Validations', () => {
     it('validateFilterOptions関数が正しく動作する', () => {
       const validOptions = {
         searchTerm: 'BTC',
-        quoteAsset: 'USDT',
+        quoteCoin: 'USDT',
         favoritesOnly: true
       };
 

@@ -4,9 +4,14 @@
  * 
  * 作成: 2023-05-12 - リファクタリングされたチャートデータサービスのテスト
  * 更新: 2023-05-20 - getOrderBookメソッドのテストと統合テストを追加
+ * 更新: 2025-10-09: S-10.2フェーズ: ExchangeType型の一貫性を確保
  */
 
 import { OHLCData, OrderBookData } from '../../types/chart';
+import { type ExchangeType } from '@/types/constants/enums';
+
+// テスト用のExchangeType定数
+const TEST_EXCHANGE_TYPE: ExchangeType = 'bitget';
 
 // ユニットテスト用にチャートデータサービスをモック
 jest.mock('../../services/api/chart-data-service');
@@ -41,10 +46,10 @@ describe('ChartDataService - ユニットテスト', () => {
     (chartDataService.getChartData as jest.Mock).mockResolvedValue(mockData);
     
     // チャートデータを取得
-    const result = await chartDataService.getChartData('BTC/USDT', '1m', 'spot', 100);
+    const result = await chartDataService.getChartData('BTC/USDT', '1m', TEST_EXCHANGE_TYPE, 100);
     
     // getChartDataが呼び出されたことを確認
-    expect(chartDataService.getChartData).toHaveBeenCalledWith('BTC/USDT', '1m', 'spot', 100);
+    expect(chartDataService.getChartData).toHaveBeenCalledWith('BTC/USDT', '1m', TEST_EXCHANGE_TYPE, 100);
     
     // 結果が正しいことを確認
     expect(result).toEqual(mockData);
@@ -92,10 +97,10 @@ describe('ChartDataService - ユニットテスト', () => {
     (chartDataService.getOrderBook as jest.Mock).mockResolvedValue(mockOrderBookData);
     
     // オーダーブックデータを取得
-    const result = await chartDataService.getOrderBook('BTC/USDT', 'spot');
+    const result = await chartDataService.getOrderBook('BTC/USDT', TEST_EXCHANGE_TYPE);
     
     // getOrderBookが呼び出されたことを確認
-    expect(chartDataService.getOrderBook).toHaveBeenCalledWith('BTC/USDT', 'spot');
+    expect(chartDataService.getOrderBook).toHaveBeenCalledWith('BTC/USDT', TEST_EXCHANGE_TYPE);
     
     // 結果が正しいことを確認
     expect(result).toEqual(mockOrderBookData);
@@ -112,10 +117,10 @@ describe('ChartDataService - 統合テスト', () => {
     const getChartDataSpy = jest.spyOn(realChartDataService, 'getChartData').mockResolvedValue([]);
     
     // 新しいサービスでチャートデータを取得
-    await realChartDataService.getChartData('BTC/USDT', '1m', 'spot', 10);
+    await realChartDataService.getChartData('BTC/USDT', '1m', TEST_EXCHANGE_TYPE, 10);
     
     // メソッドが呼び出されたことを確認
-    expect(getChartDataSpy).toHaveBeenCalledWith('BTC/USDT', '1m', 'spot', 10);
+    expect(getChartDataSpy).toHaveBeenCalledWith('BTC/USDT', '1m', TEST_EXCHANGE_TYPE, 10);
     
     // スパイを元に戻す
     getChartDataSpy.mockRestore();
@@ -131,10 +136,10 @@ describe('ChartDataService - 統合テスト', () => {
     });
     
     // 新しいサービスでオーダーブックデータを取得
-    await realChartDataService.getOrderBook('BTC/USDT', 'spot');
+    await realChartDataService.getOrderBook('BTC/USDT', TEST_EXCHANGE_TYPE);
     
     // メソッドが呼び出されたことを確認
-    expect(getOrderBookSpy).toHaveBeenCalledWith('BTC/USDT', 'spot');
+    expect(getOrderBookSpy).toHaveBeenCalledWith('BTC/USDT', TEST_EXCHANGE_TYPE);
     
     // スパイを元に戻す
     getOrderBookSpy.mockRestore();

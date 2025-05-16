@@ -8,20 +8,18 @@
  * - 更新: リファクタリングによりhooks/symbol/selector/に移動
  */
 
-// 古いインポートを削除
-// import { useSymbolStore } from '@/store/useSymbolStore';
-import { useState, useEffect } from 'react';
-import type { ExchangeType } from '@/types/api';
+import { useState, useEffect, useCallback } from 'react';
 import { useRootStore } from '@/store/rootStore';
 import { 
   selectFilteredSymbols, 
   selectIsLoadingSymbols, 
   selectSymbolError 
 } from '@/store/barrel';
+import { ExchangeType, ExchangeProductType } from '@/types/constants/enums';
 
 interface UseSelectorStoresProps {
-  defaultExchangeType?: ExchangeType;
-  onExchangeTypeChange?: (type: ExchangeType) => void;
+  defaultExchangeType?: ExchangeProductType;
+  onExchangeTypeChange?: (type: ExchangeProductType) => void;
 }
 
 /**
@@ -47,13 +45,26 @@ export const useSelectorStores = ({
   const toggleFavorite = useRootStore(state => state.toggleFavorite);
   
   // 取引タイプの状態
-  const [exchangeType, setExchangeType] = useState<ExchangeType>(defaultExchangeType);
+  const [exchangeType, setExchangeType] = useState<ExchangeProductType>(defaultExchangeType || 'spot');
   
+  // ExchangeProductTypeをExchangeTypeに変換するヘルパー関数
+  const toExchangeType = useCallback((productType: ExchangeProductType): ExchangeType => {
+    // ここではデフォルトで'bitget'を使用するが、必要に応じてロジックを変更可能
+    return 'bitget';
+  }, []);
+
   // 取引タイプ変更のハンドラー
   const handleExchangeTypeChange = (value: string) => {
-    const newType = value as ExchangeType;
+    if (value !== 'spot' && value !== 'futures') {
+      console.warn(`Invalid exchange product type: ${value}, defaulting to 'spot'`);
+      value = 'spot';
+    }
+    const newType = value as ExchangeProductType;
     setExchangeType(newType);
-    fetchSymbols(newType);
+    
+    // ExchangeProductTypeをExchangeTypeに変換してfetchSymbolsを呼び出す
+    const exchangeTypeForFetch = toExchangeType(newType);
+    fetchSymbols(exchangeTypeForFetch);
     
     // 外部コールバックがあれば呼び出す
     if (onExchangeTypeChange) {
@@ -63,12 +74,14 @@ export const useSelectorStores = ({
   
   // 初回レンダリング時に銘柄を取得
   useEffect(() => {
-    fetchSymbols(exchangeType);
-  }, [fetchSymbols, exchangeType]);
+    const exchangeTypeForFetch = toExchangeType(exchangeType);
+    fetchSymbols(exchangeTypeForFetch);
+  }, [fetchSymbols, exchangeType, toExchangeType]);
   
   // データフェッチを再試行する関数
   const retryFetch = () => {
-    fetchSymbols(exchangeType);
+    const exchangeTypeForFetch = toExchangeType(exchangeType);
+    fetchSymbols(exchangeTypeForFetch);
   };
   
   return {

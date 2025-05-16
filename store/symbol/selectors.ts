@@ -1,119 +1,117 @@
 // store/symbol/selectors.ts
-// u4f5cu6210: SymbolSliceu306eu30bbu30ecu30afu30bfu30fc
-// u66f4u65b0: u578bu30a8u30e9u30fcu3092u4feeu6b63
-// u66f4u65b0: u30bbu30ecu30afu30bfu30fcu540du306eu885du7a81u3092u89e3u6c7a
-// u66f4u65b0: u30d7u30edu30d1u30c6u30a3u540du5909u66f4u306bu5408u308fu305bu305fu4feeu6b63
-// u66f4u65b0: u30b7u30f3u30dcu30ebu30b9u30e9u30a4u30b9u306eu30bbu30ecu30afu30bfu95a2u6570u3092u5b9au7fa9u3059u308b
-// u66f4u65b0: T-7.6u30d5u30a7u30fcu30ba - u578bu30a4u30f3u30ddu30fcu30c8u30d1u30b9u306eu4feeu6b63
-// u66f4u65b0: T-7.7u30d5u30a7u30fcu30ba - u30d7u30edu30d1u30c6u30a3u540du3092u7d71u4e00uff08quoteAssetu2192quoteCoinu3001isFavoriteu2192favoriteuff09
+// 作成: SymbolSliceのセレクター
+// 更新: 型エラーを修正
+// 更新: セレクター名の衝突を解決
+// 更新: プロパティ名変更に合わせた修正
+// 更新: シンボルスライスのセレクタ関数を定義する
+// 更新: T-7.6フェーズ - 型インポートパスの修正
+// 更新: T-7.7フェーズ - プロパティ名を統一（quoteCoin→quoteCoin、favorite→favorite）
+// 更新: CH-02フェーズ - 型安全性を強化し、一貫したプロパティ名に修正
 
 import { createSelector } from 'reselect';
-import type { RootStore } from '../rootStore';
+import type { RootState } from '../rootStore';
 import { logger } from '@/utils/common';
-import { type SymbolInfo, type FilterOptions, type SymbolChangeHistory } from '@/services/symbol';
-import { ExchangeType } from '@/types/network/api';
+import { type SymbolInfo, type SymbolFilterOptions, type SymbolChangeHistoryEntry } from '@/types/symbol/common';
+import { ExchangeProductType } from '@/types/constants/enums';
+import type { SymbolSliceState } from './state';
 
 /**
- * u73feu5728u306eu30b7u30f3u30dcu30ebu3092u9078u629eu3059u308bu30bbu30ecu30afu30bfu30fc
- * u6ce8uff1au4ed6u306eu30bbu30ecu30afu30bfu30fcu3068u306eu540du524du885du7a81u3092u907fu3051u308bu305fu3081u306bsymbolu63a5u982du8f9eu3092u8ffdu52a0
+ * シンボルスライス全体を取得する基本セレクター
  */
-export const selectSymbolCurrentSymbol = (state: RootStore): string => state.currentSymbol;
+export const selectSymbolState = (state: RootState): SymbolSliceState => state as unknown as SymbolSliceState;
 
 /**
- * u53d6u5f15u7a2eu5225u3092u9078u629eu3059u308bu30bbu30ecu30afu30bfu30fc
- * u6ce8uff1au4ed6u306eu30bbu30ecu30afu30bfu30fcu3068u306eu540du524du885du7a81u3092u907fu3051u308bu305fu3081u306bsymbolu63a5u982du8f9eu3092u8ffdu52a0
+ * 現在のシンボルを選択するセレクター
+ * 注：他のセレクターとの名前衝突を避けるためにsymbol接頭辞を追加
  */
-export const selectSymbolExchangeType = (state: RootStore) => state.exchangeType;
+export const selectSymbolCurrentSymbol = (state: RootState): string => selectSymbolState(state).currentSymbol;
 
 /**
- * u3059u3079u3066u306eu30b7u30f3u30dcu30ebu60c5u5831u3092u9078u629eu3059u308bu30bbu30ecu30afu30bfu30fc
- * u6ce8uff1au578bu4e92u63dbu6027u306eu305fu3081u306bu30a2u30b5u30fcu30b7u30e7u30f3u3092u4f7fu7528
+ * 取引種別を選択するセレクター
+ * 注：他のセレクターとの名前衝突を避けるためにsymbol接頭辞を追加
  */
-export const selectSymbolList = (state: RootStore) => {
-  return 'symbolsList' in state 
-    ? (state as any).symbolsList as SymbolInfo[]
-    : [] as SymbolInfo[];
+export const selectSymbolExchangeType = (state: RootState): ExchangeProductType => selectSymbolState(state).exchangeType;
+
+/**
+ * すべてのシンボル情報を選択するセレクター
+ */
+export const selectSymbolList = (state: RootState): SymbolInfo[] => {
+  return selectSymbolState(state).symbolsList;
 };
 
 /**
- * u30d5u30a3u30ebu30bfu30eau30f3u30b0u3055u308cu305fu30b7u30f3u30dcu30ebu60c5u5831u3092u9078u629eu3059u308bu30bbu30ecu30afu30bfu30fc
- * u6ce8uff1aRootStoreu306bu7d71u5408u3055u308cu308bu307eu3067u306eu4e00u6642u7684u306au5bfeu5fdc
+ * フィルタリングされたシンボル情報を選択するセレクター
  */
-export const selectFilteredSymbols = (state: RootStore) => {
-  return 'filteredSymbols' in state 
-    ? (state as any).filteredSymbols as SymbolInfo[]
-    : [] as SymbolInfo[];
+export const selectFilteredSymbols = (state: RootState): SymbolInfo[] => {
+  return selectSymbolState(state).filteredSymbols;
 };
 
 /**
- * u30d5u30a3u30ebu30bfu30fcu30aau30d7u30b7u30e7u30f3u3092u9078u629eu3059u308bu30bbu30ecu30afu30bfu30fc
- * u6ce8uff1aRootStoreu306bu7d71u5408u3055u308cu308bu307eu3067u306eu4e00u6642u7684u306au5bfeu5fdc
+ * フィルターオプションを選択するセレクター
  */
-export const selectSymbolFilterOptions = (state: RootStore) => {
-  return 'symbolFilterOptions' in state
-    ? (state as any).symbolFilterOptions as FilterOptions
-    : { searchTerm: '', quoteAsset: '', favoritesOnly: false } as FilterOptions;
+export const selectSymbolFilterOptions = (state: RootState): SymbolFilterOptions => {
+  return selectSymbolState(state).filterOptions;
 };
 
 /**
- * u30b7u30f3u30dcu30ebu30edu30fcu30c7u30a3u30f3u30b0u72b6u614bu3092u9078u629eu3059u308bu30bbu30ecu30afu30bfu30fc
+ * シンボルローディング状態を選択するセレクター
  */
-export const selectIsLoadingSymbols = (state: RootStore): boolean => {
-  return 'isLoadingSymbols' in state ? (state as any).isLoadingSymbols : false;
+export const selectIsLoadingSymbols = (state: RootState): boolean => {
+  return selectSymbolState(state).isLoading;
 };
 
 /**
- * u30b7u30f3u30dcu30ebu30a8u30e9u30fcu72b6u614bu3092u9078u629eu3059u308bu30bbu30ecu30afu30bfu30fc
+ * シンボルエラー状態を選択するセレクター
  */
-export const selectSymbolError = (state: RootStore): string | null => {
-  return 'symbolError' in state ? (state as any).symbolError : null;
+export const selectSymbolError = (state: RootState): string | null => {
+  return selectSymbolState(state).error;
 };
 
 /**
- * u30b7u30f3u30dcu30ebu5909u66f4u5c65u6b74u3092u9078u629eu3059u308bu30bbu30ecu30afu30bfu30fc
+ * シンボル変更履歴を選択するセレクター
  */
-export const selectSymbolChangeHistory = (state: RootStore): SymbolChangeHistory[] => {
-  return 'symbolChangeHistory' in state ? (state as any).symbolChangeHistory : [];
+export const selectSymbolChangeHistory = (state: RootState): SymbolChangeHistoryEntry[] => {
+  return selectSymbolState(state).changeHistory;
 };
 
 /**
- * u7279u5b9au306eu30b7u30f3u30dcu30ebu306eu8a73u7d30u60c5u5831u3092u9078u629eu3059u308bu30e1u30e2u5316u3055u308cu305fu30bbu30ecu30afu30bfu30fc
+ * 特定のシンボルの詳細情報を選択するメモ化されたセレクター
  */
 export const makeSelectSymbolInfo = () => 
   createSelector(
-    [selectSymbolList, (_: RootStore, symbolId: string) => symbolId],
+    [selectSymbolList, (_: RootState, symbolId: string) => symbolId],
     (symbols: SymbolInfo[], symbolId: string): SymbolInfo | undefined => {
       return symbols.find(s => s.symbol === symbolId);
     }
   );
 
 /**
- * u304au6c17u306bu5165u308au30b7u30f3u30dcu30ebu306eu307fu3092u9078u629eu3059u308bu30e1u30e2u5316u3055u308cu305fu30bbu30ecu30afu30bfu30fc
+ * お気に入りのシンボルのみを選択するセレクター
  */
 export const selectFavoriteSymbols = createSelector(
   [selectSymbolList],
-  (symbols) => symbols.filter(symbol => symbol.favorite)
+  (symbols: SymbolInfo[]): SymbolInfo[] => {
+    return symbols.filter(s => s.favorite);
+  }
 );
 
 /**
- * u6307u5b9au3055u308cu305fu57fau8ef8u901au8ca8u306eu30b7u30f3u30dcu30ebu3092u9078u629eu3059u308bu30e1u30e2u5316u3055u308cu305fu30bbu30ecu30afu30bfu30fc
+ * 指定された基軸通貨のシンボルを選択するメモ化されたセレクター
  */
 export const makeSelectSymbolsByQuoteAsset = () => 
   createSelector(
-    [selectSymbolList, (_: RootStore, quoteAsset: string) => quoteAsset],
-    (symbols: SymbolInfo[], quoteAsset: string): SymbolInfo[] => {
-      return symbols.filter(s => s.quoteCoin === quoteAsset);
+    [selectSymbolList, (_: RootState, quoteCoin: string) => quoteCoin],
+    (symbols: SymbolInfo[], quoteCoin: string): SymbolInfo[] => {
+      return symbols.filter(s => s.quoteCoin === quoteCoin);
     }
   );
 
 /**
- * u57fau8ef8u901au8ca8u306eu4e00u89a7u3092u9078u629eu3059u308bu30e1u30e2u5316u3055u308cu305fu30bbu30ecu30afu30bfu30fc
+ * 利用可能なすべての基軸通貨を選択するセレクター
  */
 export const selectQuoteAssets = createSelector(
   [selectSymbolList],
   (symbols: SymbolInfo[]): string[] => {
-    // u91cdu8907u3092u6392u9664u3057u3066u57fau8ef8u901au8ca8u306eu4e00u89a7u3092u53d6u5f97
-    const quoteAssets = new Set(symbols.map(s => s.quoteCoin));
-    return Array.from(quoteAssets).sort();
+    return [...new Set(symbols.map(s => s.quoteCoin))];
   }
 ); 

@@ -7,36 +7,43 @@
 // コードの再利用性と保守性を向上させます。
 
 import { getApiClient } from '../api/client-factory';
-import { ExchangeType } from '@/types/network/api';
+import { ExchangeProductType } from '@/types/constants/enums';
 import { normalizeSymbol } from '@/lib/utils';
 import { logger } from '@/utils/common';
-import { SymbolInfo } from '@/types/common/symbol'; 
-import { StoreFilterOptions } from '@/types/store';
-import { LegacySymbolInfo, toUISymbol, toCommonSymbol } from '@/types/symbol/base';
+import type { SymbolInfo, SymbolFilterOptions } from '@/types/symbol';
+import { toCommonSymbol, toUISymbol } from '@/types/symbol/base';
 
-// シンボル変更履歴の型定義
-export interface SymbolChangeHistory {
-  from: string;
-  to: string;
-  timestamp: number;
-  reason?: string;
+// レガシーサポートのための型エイリアス
+export type FilterOptions = SymbolFilterOptions;
+
+// レガシー型定義
+interface LegacySymbolInfo {
+  symbol: string;
+  baseAsset: string;
+  quoteCoin: string;
+  favorite: boolean;
+  displayName: string;
+  pricePrecision: number;
+  quantityPrecision: number;
+  status: string;
+  minNotional?: string;
+  volume24h?: string;
+  priceChangePercent24h?: string;
+  lastPrice?: string;
 }
-
-// FilterOptionsの型エイリアス（後方互換性のため）
-export type FilterOptions = StoreFilterOptions;
 
 // モックデータ（実際の実装では API から取得）
 const mockSymbols: LegacySymbolInfo[] = [
-  { symbol: 'BTCUSDT', baseAsset: 'BTC', quoteAsset: 'USDT', isFavorite: true, displayName: 'BTC/USDT', pricePrecision: 8, quantityPrecision: 8, status: 'TRADING' },
-  { symbol: 'ETHUSDT', baseAsset: 'ETH', quoteAsset: 'USDT', isFavorite: false, displayName: 'ETH/USDT', pricePrecision: 8, quantityPrecision: 8, status: 'TRADING' },
-  { symbol: 'BNBUSDT', baseAsset: 'BNB', quoteAsset: 'USDT', isFavorite: false, displayName: 'BNB/USDT', pricePrecision: 8, quantityPrecision: 8, status: 'TRADING' },
-  { symbol: 'ADAUSDT', baseAsset: 'ADA', quoteAsset: 'USDT', isFavorite: false, displayName: 'ADA/USDT', pricePrecision: 8, quantityPrecision: 8, status: 'TRADING' },
-  { symbol: 'DOGEUSDT', baseAsset: 'DOGE', quoteAsset: 'USDT', isFavorite: false, displayName: 'DOGE/USDT', pricePrecision: 8, quantityPrecision: 8, status: 'TRADING' },
-  { symbol: 'XRPUSDT', baseAsset: 'XRP', quoteAsset: 'USDT', isFavorite: false, displayName: 'XRP/USDT', pricePrecision: 8, quantityPrecision: 8, status: 'TRADING' },
-  { symbol: 'DOTUSDT', baseAsset: 'DOT', quoteAsset: 'USDT', isFavorite: false, displayName: 'DOT/USDT', pricePrecision: 8, quantityPrecision: 8, status: 'TRADING' },
-  { symbol: 'UNIUSDT', baseAsset: 'UNI', quoteAsset: 'USDT', isFavorite: false, displayName: 'UNI/USDT', pricePrecision: 8, quantityPrecision: 8, status: 'TRADING' },
-  { symbol: 'LTCUSDT', baseAsset: 'LTC', quoteAsset: 'USDT', isFavorite: false, displayName: 'LTC/USDT', pricePrecision: 8, quantityPrecision: 8, status: 'TRADING' },
-  { symbol: 'LINKUSDT', baseAsset: 'LINK', quoteAsset: 'USDT', isFavorite: false, displayName: 'LINK/USDT', pricePrecision: 8, quantityPrecision: 8, status: 'TRADING' },
+  { symbol: 'BTCUSDT', baseAsset: 'BTC', quoteCoin: 'USDT', favorite: true, displayName: 'BTC/USDT', pricePrecision: 8, quantityPrecision: 8, status: 'TRADING' },
+  { symbol: 'ETHUSDT', baseAsset: 'ETH', quoteCoin: 'USDT', favorite: false, displayName: 'ETH/USDT', pricePrecision: 8, quantityPrecision: 8, status: 'TRADING' },
+  { symbol: 'BNBUSDT', baseAsset: 'BNB', quoteCoin: 'USDT', favorite: false, displayName: 'BNB/USDT', pricePrecision: 8, quantityPrecision: 8, status: 'TRADING' },
+  { symbol: 'ADAUSDT', baseAsset: 'ADA', quoteCoin: 'USDT', favorite: false, displayName: 'ADA/USDT', pricePrecision: 8, quantityPrecision: 8, status: 'TRADING' },
+  { symbol: 'DOGEUSDT', baseAsset: 'DOGE', quoteCoin: 'USDT', favorite: false, displayName: 'DOGE/USDT', pricePrecision: 8, quantityPrecision: 8, status: 'TRADING' },
+  { symbol: 'XRPUSDT', baseAsset: 'XRP', quoteCoin: 'USDT', favorite: false, displayName: 'XRP/USDT', pricePrecision: 8, quantityPrecision: 8, status: 'TRADING' },
+  { symbol: 'DOTUSDT', baseAsset: 'DOT', quoteCoin: 'USDT', favorite: false, displayName: 'DOT/USDT', pricePrecision: 8, quantityPrecision: 8, status: 'TRADING' },
+  { symbol: 'UNIUSDT', baseAsset: 'UNI', quoteCoin: 'USDT', favorite: false, displayName: 'UNI/USDT', pricePrecision: 8, quantityPrecision: 8, status: 'TRADING' },
+  { symbol: 'LTCUSDT', baseAsset: 'LTC', quoteCoin: 'USDT', favorite: false, displayName: 'LTC/USDT', pricePrecision: 8, quantityPrecision: 8, status: 'TRADING' },
+  { symbol: 'LINKUSDT', baseAsset: 'LINK', quoteCoin: 'USDT', favorite: false, displayName: 'LINK/USDT', pricePrecision: 8, quantityPrecision: 8, status: 'TRADING' },
 ];
 
 /**
@@ -55,10 +62,10 @@ class SymbolService {
 
   /**
    * シンボル一覧を取得する
-   * @param exchangeType 取引種別
+   * @param exchangeType 取引タイプ（'spot' または 'futures'）
    * @returns シンボル情報の配列
    */
-  async fetchSymbols(exchangeType: ExchangeType): Promise<SymbolInfo[]> {
+  async fetchSymbols(exchangeType: ExchangeProductType): Promise<SymbolInfo[]> {
     try {
       logger.info(`Fetching symbols for ${exchangeType}`, {
         component: 'SymbolService',
@@ -104,8 +111,8 @@ class SymbolService {
     }
 
     // 基軸通貨でフィルター
-    if (options.quoteAsset) {
-      filtered = filtered.filter((s) => s.quoteCoin === options.quoteAsset);
+    if (options.quoteCoin) {
+      filtered = filtered.filter((s) => s.quoteCoin === options.quoteCoin);
     }
 
     // お気に入りでフィルター
@@ -200,27 +207,19 @@ class SymbolService {
 
   /**
    * 最後に使用した取引種別をローカルストレージから取得する
-   * @returns 最後に使用した取引種別（なければspot）
+   * @returns 最後に使用した取引種別（なければ'spot'）
    */
-  getLastUsedExchangeType(): ExchangeType {
+  getLastUsedExchangeType(): ExchangeProductType {
     if (typeof window === 'undefined') return 'spot';
-    
-    const storedExchangeType =
-      localStorage.getItem('lastUsedExchangeType') ||
-      localStorage.getItem('selectedInstrumentType');
-      
-    if (storedExchangeType && (storedExchangeType === 'spot' || storedExchangeType === 'futures')) {
-      return storedExchangeType as ExchangeType;
-    }
-    
-    return 'spot';
+    const stored = localStorage.getItem('lastUsedExchangeType');
+    return stored && (stored === 'spot' || stored === 'futures') ? stored : 'spot';
   }
 
   /**
-   * 最後に使用した取引種別をローカルストレージに保存する
-   * @param type 保存する取引種別
+   * 最後に使用した取引タイプをローカルストレージに保存する
+   * @param type 保存する取引タイプ（'spot' または 'futures'）
    */
-  saveLastUsedExchangeType(type: ExchangeType): void {
+  saveLastUsedExchangeType(type: ExchangeProductType): void {
     if (typeof window !== 'undefined') {
       localStorage.setItem('lastUsedExchangeType', type);
       localStorage.setItem('selectedInstrumentType', type); // 互換性のため

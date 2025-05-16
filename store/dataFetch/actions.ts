@@ -1,9 +1,11 @@
 // store/dataFetch/actions.ts
 // 作成: 2025-05-30 - dataFetchのスライス化に伴うアクション定義
 // 役割: DataFetchスライスのアクション（状態更新関数）を提供する
+// 更新: 2025-10-08 - CH-07実装: 共通MutateDraft型を使用
 
 import { logger } from '@/utils/common';
 import { ActiveFetch, DataFetchSliceState } from './state';
+import { MutateDraft } from '@/types/store/core';
 
 export interface DataFetchSliceActions {
   // データフェッチ関連のアクション
@@ -17,12 +19,12 @@ export interface DataFetchSliceActions {
 }
 
 export const createDataFetchActions = (
-  set: (fn: (state: DataFetchSliceState) => void) => void,
-  get: () => DataFetchSliceState
+  immerSet: (fn: MutateDraft<DataFetchSliceState>) => void,
+  getState: () => DataFetchSliceState
 ): DataFetchSliceActions => ({
   // 特定タイプのデータ取得をキャンセル
   cancelFetch: (type: 'orderbook' | 'chart' | 'trades', symbol?: string) => {
-    const activeFetches = get().activeFetches;
+    const activeFetches = getState().activeFetches;
     
     // キャンセル対象のフェッチを特定
     const fetchesToCancel = symbol
@@ -39,8 +41,8 @@ export const createDataFetchActions = (
     });
     
     // アクティブフェッチリストから削除
-    set(state => {
-      state.activeFetches = state.activeFetches.filter(fetch => 
+    immerSet(draft => {
+      draft.activeFetches = draft.activeFetches.filter(fetch => 
         !fetchesToCancel.some(f => f.type === fetch.type && f.symbol === fetch.symbol)
       );
     });
@@ -48,7 +50,7 @@ export const createDataFetchActions = (
   
   // すべてのデータ取得をキャンセル
   cancelAllFetches: () => {
-    const activeFetches = get().activeFetches;
+    const activeFetches = getState().activeFetches;
     
     // 各フェッチをキャンセル
     activeFetches.forEach(fetch => {
@@ -60,8 +62,8 @@ export const createDataFetchActions = (
     });
     
     // アクティブフェッチリストをクリア
-    set(state => {
-      state.activeFetches = [];
+    immerSet(draft => {
+      draft.activeFetches = [];
     });
   },
   
@@ -74,7 +76,7 @@ export const createDataFetchActions = (
     
     // 同じタイプと銘柄の既存のフェッチをキャンセル
     // まず現在のアクティブフェッチを取得
-    const activeFetches = get().activeFetches;
+    const activeFetches = getState().activeFetches;
     
     // キャンセル対象のフェッチを特定
     const fetchesToCancel = activeFetches.filter(
@@ -91,9 +93,9 @@ export const createDataFetchActions = (
     });
     
     // 新しいフェッチを追加（既存の同タイプ・同シンボルのフェッチを除去した後）
-    set(state => {
-      state.activeFetches = [
-        ...state.activeFetches.filter(
+    immerSet(draft => {
+      draft.activeFetches = [
+        ...draft.activeFetches.filter(
           existingFetch => !(existingFetch.type === fetch.type && existingFetch.symbol === fetch.symbol)
         ),
         newFetch
@@ -108,8 +110,8 @@ export const createDataFetchActions = (
   
   // フェッチを削除
   removeFetch: (type: 'orderbook' | 'chart' | 'trades', symbol: string) => {
-    set(state => {
-      state.activeFetches = state.activeFetches.filter(
+    immerSet(draft => {
+      draft.activeFetches = draft.activeFetches.filter(
         fetch => !(fetch.type === type && fetch.symbol === symbol)
       );
     });
@@ -122,7 +124,7 @@ export const createDataFetchActions = (
   
   // アクティブなフェッチリクエストの情報を取得
   getActiveFetchesInfo: () => {
-    const activeFetches = get().activeFetches;
+    const activeFetches = getState().activeFetches;
     const now = Date.now();
     
     // 実行時間を計算して返す

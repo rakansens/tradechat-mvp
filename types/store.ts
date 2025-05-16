@@ -10,7 +10,7 @@
 // 循環参照を避けるために最小限のみここで定義
 export interface StoreFilterOptions {
   searchTerm: string;
-  quoteAsset: string;
+  quoteCoin: string;
   favoritesOnly: boolean;
 }
 

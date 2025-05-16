@@ -74,7 +74,7 @@ export class ChartDataService extends EventEmitter implements IChartDataService 
   public async getChartData(
     symbol: string,
     timeframe: Timeframe,
-    exchangeType: ExchangeType = 'spot',
+    exchangeType: ExchangeType = 'bitget',
     limit: number = 100
   ): Promise<OHLCData[]> {
     const normalizedSymbol = normalizeSymbol(symbol);

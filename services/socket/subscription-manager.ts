@@ -65,7 +65,7 @@ export class SubscriptionManager implements ISubscriptionManager {
   subscribeOrderBook(
     symbol: string,
     callback: (data: OrderBookData) => void,
-    exchangeType: ExchangeType = 'spot'
+    exchangeType: ExchangeType = 'bitget'
   ): () => void {
     try {
       const socket = this.webSocketClient.getSocket();
@@ -176,7 +176,7 @@ export class SubscriptionManager implements ISubscriptionManager {
     symbol: string,
     timeframe: Timeframe,
     callback: (data: OHLCData) => void,
-    exchangeType: ExchangeType = 'spot'
+    exchangeType: ExchangeType = 'bitget'
   ): () => void {
     try {
       const socket = this.webSocketClient.getSocket();
@@ -275,7 +275,7 @@ export class SubscriptionManager implements ISubscriptionManager {
   subscribeTrades(
     symbol: string,
     callback: (data: any) => void,
-    exchangeType: ExchangeType = 'spot'
+    exchangeType: ExchangeType = 'bitget'
   ): () => void {
     try {
       const socket = this.webSocketClient.getSocket();

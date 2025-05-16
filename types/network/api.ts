@@ -6,16 +6,34 @@
  * - APIリクエスト設定
  * - エラーハンドリング関連の型
  * - 取引所関連の型
+ * 
+ * 更新: 2025-10-08 - S-9.1: ExchangeType定義を統一
  */
 
 import { AxiosRequestConfig, AxiosResponse } from 'axios';
-import { ExchangeProductType } from '@/types/constants/enums';
+import { ExchangeType, ExchangeProductType } from '@/types/constants/enums';
 
 /**
- * 取引所タイプ
- * @deprecated constants/enumsからExchangeProductTypeを使用してください
+ * 取引所タイプから取引プロダクトタイプへの変換マッピング
+ * 中間移行のために使用
  */
-export type ExchangeType = ExchangeProductType;
+export const EXCHANGE_TO_PRODUCT_TYPE: Record<ExchangeType, ExchangeProductType> = {
+  'bitget': 'spot',
+  'binance': 'spot',
+  'bybit': 'spot',
+  'demo': 'futures'
+};
+
+/**
+ * 取引プロダクトタイプから取引所タイプへのデフォルト変換（後方互換性）
+ */
+export const PRODUCT_TO_EXCHANGE_TYPE: Record<ExchangeProductType, ExchangeType> = {
+  'spot': 'bitget',
+  'futures': 'demo'
+};
+
+// ExchangeType型を再エクスポート
+export type { ExchangeType, ExchangeProductType };
 
 /**
  * Bitget API認証情報

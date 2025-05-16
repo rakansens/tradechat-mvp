@@ -100,7 +100,7 @@ export class BitgetRestClient implements IRestApiClient {
     symbol: string,
     timeframe: string,
     limit: number = 100,
-    exchangeType: ExchangeType = 'spot',
+    exchangeType: ExchangeType = 'bitget',
     endTime?: number
   ): Promise<OHLCData[]> {
     try {
@@ -198,7 +198,7 @@ export class BitgetRestClient implements IRestApiClient {
   public async fetchOrderBook(
     symbol: string,
     depth: number = 100,
-    exchangeType: ExchangeType = 'spot'
+    exchangeType: ExchangeType = 'bitget'
   ): Promise<OrderBookData> {
     try {
       let endpoint = '';

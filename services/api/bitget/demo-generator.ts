@@ -195,7 +195,7 @@ export class BitgetDemoGenerator {
       return {
         symbol: `${base}${quote}`,
         baseAsset: base,
-        quoteAsset: quote,
+        quoteCoin: quote,
         displayName: `${base}/${quote}`,
         pricePrecision: 8,
         quantityPrecision: 8,
@@ -204,7 +204,7 @@ export class BitgetDemoGenerator {
         volume24h,
         priceChangePercent,
         lastPrice,
-        isFavorite: false
+        favorite: false
       } as LegacySymbolInfo;
     });
     

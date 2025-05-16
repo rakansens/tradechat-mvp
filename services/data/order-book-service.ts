@@ -137,7 +137,7 @@ class OrderBookService extends EventEmitter implements IOrderBookService {
   subscribeOrderBookRealtime(
     symbol: string,
     callback: (data: OrderBookData) => void,
-    exchangeType: ExchangeType = 'spot'
+    exchangeType: ExchangeType = 'bitget'
   ): () => void {
     // シンボルを正規化
     const normalizedSymbol = normalizeSymbol(symbol);

@@ -96,6 +96,39 @@
   - 完了条件「grep 'from "types/.*\\.ts"' 0 件」はすでに達成されています
   - これにより、型定義リファクタリングプロジェクト（T-0〜T-6）のすべてのフェーズが完了しました
 
+### TypeScriptエラー解消プロジェクト計画（TS-P）
+
+TypeScriptコンパイルエラーをゼロにするプロジェクトを計画しました。主な問題と対策は以下の通りです：
+
+- **TS-P1**（計画）: エラー分析と修正計画立案
+  - 主要なエラータイプの特定と分類（export-missing, prop-missing, sig-mismatch, implicit-any, module-not-found, duplicate-exports）
+  - 各タイプのエラー件数集計とプライオリティ設定
+  - 10の修正計画（CH-01〜CH-10）策定と実装順序の決定
+  - テスト対応方針の決定（最小限のスタブ作成）
+
+- **TS-P2**（計画）: 基盤となる型定義の整備（CH-06, CH-07）
+  - ExchangeType import統一（@/types/apiからのインポート）
+  - 共通MutateDraft/SliceCreator型の導入（types/store/core.ts）
+  - immerSet関数の型安全なラッパー実装
+
+- **TS-P3**（計画）: コアストア構造の修正（CH-01, CH-04）
+  - バレルファイルの重複export排除
+  - RootActionsへの不足アクション追加
+  - store/barrel.tsの標準化
+
+詳細な実施タスクは以下の変更IDごとに分けられています：
+
+1. **CH-01**: バレルの重複export排除
+2. **CH-02**: Symbolセレクター型安全化
+3. **CH-03**: 旧socketActions整理／ラッパー化
+4. **CH-04**: RootActionsに不足アクション追加
+5. **CH-05**: レガシーStub削除or隔離
+6. **CH-06**: ExchangeType import統一
+7. **CH-07**: 共通MutateDraft/SliceCreator導入
+8. **CH-08**: prop名統一（favorite/quoteCoin）
+9. **CH-09**: テスト用alias & vitest型追加
+10. **CH-10**: implicit-any箇所の型注入
+
 ### マルチスレッドチャット実装プロジェクト
 
 現在、マルチスレッドチャット機能を実装するプロジェクトを開始しました。この機能は、ユーザーが複数の会話を別々に管理できるようにするものです。各会話は固有のコンテキストとメモリを持ち、ChatGPTのようなUIでスレッドを切り替えることができます。
@@ -172,6 +205,11 @@
 
 ## 進行中の作業
 
+- **TypeScriptエラー解消プロジェクト実装（TS-I）**
+  - CH-06, CH-07の実装から開始（型定義の基盤整備）
+  - スライス構造の標準化と型安全なアクセサの実装
+  - テスト環境整備とスタブファイル作成
+
 - マルチスレッドチャット実装プロジェクト
   - データベース拡張（Supabase migrations）
   - API実装（conversations, messages）
@@ -196,24 +234,29 @@
 
 ## 今後の作業
 
-1. **Supabase連携の完了**
+1. **TypeScriptエラー解消プロジェクトの完了**
+   - 残りのCH-01〜CH-10タスクの実装
+   - 型エラーの体系的解消
+   - テスト環境の整備と検証
+
+2. **Supabase連携の完了**
    - 型の不一致の解決
    - 統合テストの実装
    - E2Eテストでの検証
 
-2. **未使用型の整理**
+3. **未使用型の整理**
    - ts-pruneで検出された未使用型の精査と削除
    - 優先順: validations > chart > network > store
 
-3. **TypeScriptの型厳格化**
+4. **TypeScriptの型厳格化**
    - 厳格モードを段階的に有効化
    - null/undefinedの厳格なチェック対応
 
-4. **CI/CDパイプラインの強化**
+5. **CI/CDパイプラインの強化**
    - GitHub Actionsに型チェックを追加
    - PR時の自動レビュー依頼の設定
 
-5. **コードベースの最適化**
+6. **コードベースの最適化**
    - バレルファイルの効率化
    - インポートパスの標準化
 
