@@ -9,6 +9,8 @@
  * - 2023-07-10: 新しいrootStoreからのチャートデータを追加
  * - 更新: 古いuseSymbolStoreを新しいrootStoreのSymbolSliceに置き換え
  * - 更新: 2025-06-05 - selectSymbolCurrentSymbol/selectSymbolExchangeTypeをselectCurrentSymbol/selectExchangeTypeに変更
+ * - 更新: 2025-06-15: 非推奨マークを追加
+ * - 更新: 2025-06-30: 型インポートパスを修正
  */
 
 // 古いインポートを削除
@@ -22,11 +24,14 @@ import {
   selectCurrentSymbol,
   selectExchangeType
 } from '@/store/barrel';
-import type { IndicatorType, DrawingToolType } from '@/types/store';
+import type { IndicatorType } from '@/types/store/chart';
+import type { DrawingToolType } from '@/types/store/chart';
 
 /**
  * チャート関連のストアを一元管理するフック
  * rootStoreからチャートデータとタイプを取得するように実装
+ * 
+ * @deprecated hooks/chart/canvas/useChartStores.ts に移動しました
  */
 export const useChartStores = () => {
   // シンボルストアからデータ取得（rootStoreのSymbolSliceから）

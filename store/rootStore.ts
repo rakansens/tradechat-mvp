@@ -13,8 +13,9 @@
 // 更新: 2025-05-30 - DataFetchSliceを統合
 // 更新: 2025-06-X - SettingsSliceを統合
 // 更新: 2025-06-XX - T-7.5フェーズ - ジェネリック型を追加し、unknown型問題を解決
+// 更新: 2025-06-30 - T-7.8フェーズ - 型安全なSlice定義とプロパティアクセスを実装
 
-import { create } from 'zustand'
+import { create, type StoreApi } from 'zustand'
 import { devtools, persist } from 'zustand/middleware'
 import { immer } from 'zustand/middleware/immer'
 import { logger as loggerFn } from '@/utils/common'
@@ -187,12 +188,6 @@ export interface RootActions {
 // 完全なストア型
 export type RootStore = RootState & RootActions
 
-// TypeScriptの型循環参照エラーを回避するための型アサーション
-type StateCreator<T> = (
-  set: (partial: ((draft: T) => void) | Partial<T>) => void,
-  get: () => T
-) => T;
-
 // Zustandミドルウェア用のロガー関数
 const storeLogger = (storeName: string) => (
   config: any
@@ -213,128 +208,94 @@ export const useRootStore = create<RootStore>()(
     devtools(
       persist(
         immer((set, get, api) => {
+          // 型付きset/get関数を定義
+          // 型安全なSetState関数
+          const typedSet = <T>(fn: (state: T) => void) => 
+            set((state) => {
+              fn(state as unknown as T);
+              return state;
+            });
+          
+          // 型安全なGetState関数
+          const typedGet = <T>() => get() as unknown as T;
+          
           // スライスの作成結果を変数に入れて型安全性を確保
           const dataFetchSlice = createDataFetchSlice(
-            (fn) => set(fn),
-            get as () => DataFetchSliceState & Record<string, unknown>,
-            api
-          ) as DataFetchSlice;
+            set as StoreApi<DataFetchSlice>['setState'],
+            get as StoreApi<DataFetchSlice>['getState'],
+            api as unknown as StoreApi<DataFetchSlice>
+          );
           
           const socketSlice = createSocketSlice(
-            set as any, 
-            get as () => SocketSliceState, 
-            {} as any
-          ) as SocketSlice;
+            set as StoreApi<SocketSlice>['setState'],
+            get as StoreApi<SocketSlice>['getState'],
+            api as unknown as StoreApi<SocketSlice>
+          );
           
           const symbolSlice = createSymbolSlice(
-            set as any,
-            get as () => SymbolSliceState
-          ) as SymbolSlice;
+            set as StoreApi<SymbolSlice>['setState'],
+            get as StoreApi<SymbolSlice>['getState']
+          );
 
           const chartDataSlice = createChartDataSlice(
-            (fn) => set(fn),
-            get as () => ChartDataSlice
-          ) as ChartDataSlice;
+            set as StoreApi<ChartDataSlice>['setState'],
+            get as StoreApi<ChartDataSlice>['getState']
+          );
 
           const realTimeSlice = createRealTimeSlice(
-            (fn) => set(fn),
-            get as () => RealTimeSlice
-          ) as RealTimeSlice;
+            set as StoreApi<RealTimeSlice>['setState'],
+            get as StoreApi<RealTimeSlice>['getState']
+          );
           
           const indicatorSlice = createIndicatorSlice(
-            (fn) => set(fn),
-            get as () => IndicatorSlice
-          ) as IndicatorSlice;
+            set as StoreApi<IndicatorSlice>['setState'],
+            get as StoreApi<IndicatorSlice>['getState']
+          );
           
           const drawingToolSlice = createDrawingToolSlice(
-            (fn) => set(fn),
-            get as () => DrawingToolSlice
-          ) as DrawingToolSlice;
+            set as StoreApi<DrawingToolSlice>['setState'],
+            get as StoreApi<DrawingToolSlice>['getState']
+          );
           
           const chartConfigSlice = createChartConfigSlice(
-            (fn) => set(fn),
-            get as () => ChartConfigSlice
-          ) as ChartConfigSlice;
+            set as StoreApi<ChartConfigSlice>['setState'],
+            get as StoreApi<ChartConfigSlice>['getState']
+          );
           
           const chartSlice = createChartSlice(
-            (fn) => set(fn),
-            () => ({
-              timeframe: get().timeframe,
-              ohlcData: get().ohlcData
-            } as ChartSliceState)
-          ) as ChartSlice;
+            set as StoreApi<ChartSlice>['setState'],
+            get as StoreApi<ChartSlice>['getState']
+          );
           
           const entrySlice = createEntrySlice(
-            (fn) => set(fn),
-            () => ({
-              entries: get().entries,
-              pendingEntry: get().pendingEntry
-            } as EntrySliceState)
-          ) as EntrySlice;
+            set as StoreApi<EntrySlice>['setState'],
+            get as StoreApi<EntrySlice>['getState']
+          );
           
           const chatSlice = createChatSlice(
-            (fn) => set(fn),
-            () => ({
-              messages: get().messages,
-              isSearching: get().isSearching,
-              input: get().input
-            } as ChatSliceState)
-          ) as ChatSlice;
+            set as StoreApi<ChatSlice>['setState'],
+            get as StoreApi<ChatSlice>['getState']
+          );
           
           const uiSlice = createUISlice(
-            (fn) => set(fn),
-            () => ({
-              activeTab: get().activeTab,
-              isDarkMode: get().isDarkMode,
-              isSidebarOpen: get().isSidebarOpen,
-              isSettingsOpen: get().isSettingsOpen,
-              isModalOpen: get().isModalOpen,
-              modalType: get().modalType,
-              modalData: get().modalData
-            } as UISliceState)
-          ) as UISlice;
+            set as StoreApi<UISlice>['setState'],
+            get as StoreApi<UISlice>['getState']
+          );
           
           const marketSlice = createMarketSlice(
-            (fn) => set(fn),
-            () => ({
-              currentSymbol: get().currentSymbol,
-              exchangeType: get().exchangeType,
-              orderBook: get().orderBook,
-              isLoadingOrderBook: get().isLoadingOrderBook,
-              orderBookError: get().orderBookError,
-              trades: get().trades,
-              isLoadingTrades: get().isLoadingTrades,
-              tradesError: get().tradesError,
-              marketStats: get().marketStats,
-              isLoadingMarketStats: get().isLoadingMarketStats,
-              marketStatsError: get().marketStatsError,
-              symbols: get().symbols,
-              isLoadingSymbols: get().isLoadingSymbols,
-              symbolsError: get().symbolsError,
-              pollingInfo: get().pollingInfo,
-              isPolling: get().isPolling,
-              pollingInterval: get().pollingInterval,
-              isDemoMode: get().isDemoMode
-            } as MarketSliceState)
-          ) as MarketSlice;
+            set as StoreApi<MarketSlice>['setState'],
+            get as StoreApi<MarketSlice>['getState']
+          );
           
           const debugSlice = createDebugSlice(
-            (fn) => set(fn),
-            () => ({
-              isDebugMode: get().isDebugMode
-            } as DebugSliceState)
-          ) as DebugSlice;
+            set as StoreApi<DebugSlice>['setState'],
+            get as StoreApi<DebugSlice>['getState']
+          );
           
           const settingsSlice = createSettingsSlice(
-            (fn) => set(fn),
-            () => ({
-              userSettings: get().userSettings,
-              chartSettings: get().chartSettings,
-              symbolSettings: get().symbolSettings,
-              isLoading: get().isLoading,
-              error: get().error
-            } as SettingsState)
-          ) as SettingsSlice;
+            set as StoreApi<SettingsSlice>['setState'],
+            get as StoreApi<SettingsSlice>['getState']
+          );
 
           // すべてのスライスを合成して返す
           return {

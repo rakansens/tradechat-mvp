@@ -297,3 +297,52 @@
 1. 残りのTypeScript型エラーを解消する
 2. Jestテストを修正してパスさせる
 3. Chartリファクタリングの詳細計画を立てる 
+
+## TypeScript エラー修正作業
+
+**完了した修正**:
+
+1. **types バレルの最終調整**:
+   - types/store/chart.ts と ui.ts にそれぞれ IndicatorType/DrawingToolType と TabType の型エクスポートを追加
+   - index.ts でこれらの型を再エクスポート
+
+2. **SymbolInfo & SymbolChangeHistory 型の正規化**:
+   - services/symbol/types.ts を新規作成し、型定義を集約
+   - types/common/symbol.ts を再エクスポート型に変更
+   - 関連コンポーネントのプロパティ名変更（quoteAsset→quoteCoin、isFavorite→favorite）
+
+3. **Supabase 型と API レイヤーの修正**:
+   - lib/supabase/features/settings.ts の関数を修正
+   - getUserSettings と updateUserSettings 関数を profiles テーブル使用に変更
+
+4. **Entry 型のエラー修正**:
+   - OpenEntry, ClosedEntry, CanceledEntry 型に userId プロパティを追加
+   - hooks/chat/useChatInteraction.ts の関数で userId プロパティを設定
+
+5. **その他の型エラー修正**:
+   - createPersistedSlice 関数の型定義を修正
+   - createSymbolSlice 関数の正しい型定義に更新
+   - rootStore.ts のスライス作成時の型キャストを改善
+
+**残っているエラー**:
+
+1. **テスト関連のエラー**:
+   - 存在しないモジュールの参照（例: '@/lib/supabase/supabase' など）
+   - Mock オブジェクトの型互換性の問題
+
+2. **rootStore.ts の型キャスト問題**:
+   - set と get 関数の型定義に関する複雑な問題
+
+3. **存在しないファイルや移動されたファイルへの参照**:
+   - 一部のパスが古いままになっているファイルへの参照
+   - './supabase' などの存在しないモジュールへの参照
+
+**次のステップ**:
+
+1. テスト用のモックファイルを作成または修正
+2. rootStore.ts の型定義をより深く修正
+3. 存在しないファイルへの参照を修正するまたは必要なファイルを作成
+
+## 以前の作業
+
+[ここに以前の作業の進捗を記載] 

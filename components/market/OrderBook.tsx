@@ -21,13 +21,13 @@
 // - データフェッチロジックを新しいストア構造に合わせて更新
 // 更新: useSymbolStoreからrootStore経由のセレクタに移行
 // 更新: 2025-06-05 - useOrderBookStoreをuseRootStoreに統合
+// 更新: 2025-06-30 - インポートパスを修正
 
 'use client';
 
 import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
-import { OrderBookEntry } from '../../types/market';
+import { OrderBookEntry } from '@/types/chart/orderbook';
 import { cn, normalizeSymbol } from '../../lib/utils';
-import { theme } from '../../styles/colors';
 import { orderBookPropsSchema, validateOrderBookProps } from '@/lib/validations/market';
 import { useRootStore } from '../../store/rootStore';
 import { 
@@ -39,8 +39,8 @@ import {
 import { getPrice, getAmount, normalizeOrderBookData } from '@/utils/market/orderbook-utils';
 import { useSocketConnected } from '@/store/barrel';
 import Decimal from 'decimal.js';
-import { BookEntry, OrderBookData } from '../../types/orderbook';
-import { Spinner } from '../ui/spinner';
+import { OrderBookData } from '@/types/chart/orderbook';
+import { Spinner } from '@/components/ui/spinner';
 
 // 価格を表示するためのフォーマット関数
 const formatPrice = (price: number): string => {

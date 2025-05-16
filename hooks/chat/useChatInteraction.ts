@@ -15,6 +15,7 @@
  * - 2024-05-15: useEntryStoreを削除し、すべてのエントリー処理をpropsから受け取るように変更
  * - 2025-05-14: フックのリファクタリングに伴いhooks/chatディレクトリに移動
  * - 2025-05-20: 会話ID(conversationId)とシステムプロンプト(system_prompt)のサポートを追加
+ * - 2025-06-01: OpenEntry型にuserIdプロパティを追加して型エラーを解消
  */
 
 "use client"
@@ -26,6 +27,7 @@ import type { Entry, OpenEntry, TradeSide } from "@/types/entry"
 import type { ExtendedMessage, ProposalType } from "@/types/chat/base"
 import type { ChangeEvent, FormEvent } from "react"
 import type { Message } from "ai"
+import { v4 } from "uuid"
 
 interface UseChatInteractionProps {
   ohlcData?: any[]

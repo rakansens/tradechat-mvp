@@ -383,10 +383,11 @@ export const getUserSettings = async (
   supabaseClient?: SupabaseClient
 ): Promise<Json | null> => {
   const supabase = supabaseClient ?? createClient();
+  // profilesテーブルのsettingsカラムからデータを取得
   const { data, error } = await supabase
-    .from('user_settings')
-    .select('value')
-    .eq('user_id', userId)
+    .from('profiles')
+    .select('settings')
+    .eq('id', userId)
     .single();
 
   if (error) {
@@ -397,7 +398,7 @@ export const getUserSettings = async (
     throw error;
   }
 
-  return data?.value || null;
+  return data?.settings || null;
 };
 
 /**
@@ -413,15 +414,16 @@ export const updateUserSettings = async (
   supabaseClient?: SupabaseClient
 ): Promise<boolean> => {
   const supabase = supabaseClient ?? createClient();
+  // profilesテーブルのsettingsカラムを更新
   const { error } = await supabase
-    .from('user_settings')
+    .from('profiles')
     .upsert(
       {
-        user_id: userId,
-        value: settings,
+        id: userId,
+        settings: settings,
       },
       {
-        onConflict: 'user_id',
+        onConflict: 'id',
       }
     )
     .select()

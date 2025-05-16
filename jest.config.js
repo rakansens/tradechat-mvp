@@ -9,7 +9,9 @@ module.exports = {
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/$1',
     '^@/supabase/(.*)$': '<rootDir>/lib/supabase/$1',
-    '^lightweight-charts$': '<rootDir>/__tests__/lightweight-charts.js'
+    '^lightweight-charts$': '<rootDir>/__tests__/lightweight-charts.js',
+    '^@/lib/supabase/supabase$': '<rootDir>/lib/supabase/client',
+    '^@/store/useSymbolStore$': '<rootDir>/store/symbol'
   },
   transform: {
     '^.+\\.(ts|tsx)$': ['babel-jest', {
