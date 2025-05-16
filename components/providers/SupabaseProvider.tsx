@@ -7,6 +7,7 @@
  * 更新日: 2025/6/23 - named exportに変更
  * 更新日: 2025/6/25 - signInとsignUp関数を追加
  * 更新日: 2025/8/27 - getSession()からgetUser()に移行し、セキュリティ警告を解消
+ * 更新日: 2025/9/30 - resetPassword関数を追加（テスト対応）
  */
 
 import { createContext, useContext, useEffect, useState } from 'react'
@@ -14,7 +15,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { Session, User } from '@supabase/supabase-js'
 import { AuthUser } from '@/types/supabase'
-import { signInWithPassword, signUp as supabaseSignUp } from '@/lib/supabase/features/auth'
+import { signInWithPassword, signUp as supabaseSignUp, resetPassword as supabaseResetPassword } from '@/lib/supabase/features/auth'
 
 // 認証コンテキストの型定義
 interface AuthContextType {
@@ -24,6 +25,7 @@ interface AuthContextType {
   isAuthenticated: boolean
   signIn: (email: string, password: string) => Promise<any>
   signUp: (email: string, password: string) => Promise<any>
+  resetPassword: (email: string) => Promise<any>
   signOut: () => Promise<void>
   refreshSession: () => Promise<void>
 }
@@ -36,6 +38,7 @@ const AuthContext = createContext<AuthContextType>({
   isAuthenticated: false,
   signIn: async () => ({}),
   signUp: async () => ({}),
+  resetPassword: async () => ({}),
   signOut: async () => {},
   refreshSession: async () => {},
 })
@@ -129,6 +132,17 @@ export function SupabaseProvider({
     }
   }
 
+  // パスワードリセットメール送信
+  const resetPassword = async (email: string) => {
+    try {
+      await supabaseResetPassword(email);
+      return { error: null };
+    } catch (error) {
+      console.error('パスワードリセットエラー:', error);
+      return { error };
+    }
+  };
+
   // 初期化時にセッションを取得
   useEffect(() => {
     const initializeAuth = async () => {
@@ -185,6 +199,7 @@ export function SupabaseProvider({
     isAuthenticated,
     signIn,
     signUp,
+    resetPassword,
     signOut,
     refreshSession,
   }

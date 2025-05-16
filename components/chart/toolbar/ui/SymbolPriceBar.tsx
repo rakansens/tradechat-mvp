@@ -7,6 +7,7 @@
 // 2. 現在価格と変化率のバッジ表示
 // 更新: 2025-06-28 - Tailwindクラスに変更
 // 更新: T-7.5フェーズ - currentPriceをnullableに変更
+// 更新: T-7.8フェーズ - formatters.tsへの不要なインポートを削除
 
 import React, { memo } from 'react';
 import { Button } from '@/components/ui/button';
@@ -16,7 +17,6 @@ import { cn } from '@/lib/utils';
 import SymbolSelectorModal from '../../SymbolSelectorModal';
 import { ExchangeType } from '@/types/api';
 import { SymbolSelector } from '@/components/symbol/Selector';
-import { formatPrice, formatPercentage } from '@/utils/market/formatters';
 import { ExchangeSelector } from '@/components/symbol/ExchangeSelector';
 
 interface SymbolPriceBarProps {
