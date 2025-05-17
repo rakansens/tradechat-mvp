@@ -94,6 +94,7 @@
     "react-dom": "^19",
     "react-hook-form": "^7.54.1",
     "react-markdown": "^10.1.0",
+    "react-window": "^1.8.8",
     "react-resizable-panels": "^2.1.9",
     "recharts": "latest",
     "reselect": "^5.1.1",
