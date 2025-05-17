@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "description": "TradeChat Exchange - Trading Platform Component",
   "private": true,
+  "config": {
+    "onnxruntime_skip_download": "true"
+  },
   "scripts": {
     "dev": "node server.js",
     "dev:full": "concurrently \"node server.js\" \"MASTRA_PORT=4112 mastra dev\"",
@@ -148,5 +151,10 @@
     "ts-prune": "^0.10.3",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5"
+  },
+  "overrides": {
+    "@testing-library/react-hooks": {
+      "@types/react": "^19"
+    }
   }
 }
