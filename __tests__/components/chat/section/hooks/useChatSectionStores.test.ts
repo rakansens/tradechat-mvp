@@ -9,49 +9,54 @@ import { useChatSectionStores } from '@/components/chat/section/hooks/useChatSec
 const mockMessages = ['message1', 'message2'];
 const mockIsLoading = false;
 const mockInput = 'test input';
+const mockConnection = { status: 'CONNECTED', error: null };
 const mockSetInput = jest.fn();
 const mockSendMessage = jest.fn();
 const mockPendingEntry = { id: 'entry1' };
 const mockHasPendingEntry = true;
 
+// セレクター関数のダミー
+const selectActiveMessages = jest.fn();
+const selectActiveIsSearching = jest.fn();
+const selectActiveInput = jest.fn();
+const selectConversationConnection = jest.fn();
+const selectPendingEntry = jest.fn();
+const selectHasPendingEntry = jest.fn();
+
+// useRootStoreのモック実装
+const useRootStoreMock = jest.fn((selector?: any) => {
+  switch (selector) {
+    case selectActiveMessages:
+      return mockMessages;
+    case selectActiveIsSearching:
+      return mockIsLoading;
+    case selectActiveInput:
+      return mockInput;
+    case selectConversationConnection:
+      return mockConnection;
+    case selectPendingEntry:
+      return mockPendingEntry;
+    case selectHasPendingEntry:
+      return mockHasPendingEntry;
+    case undefined:
+      return {
+        setInput: mockSetInput,
+        sendMessage: mockSendMessage,
+      };
+    default:
+      return null;
+  }
+});
+
 // ストアをモック
-jest.mock("@/store", () => ({
-  useChatStore: (selector: any) => {
-    // セレクターの名前を使ってモックの戻り値を返す
-    switch (selector) {
-      case 'selectMessages':
-        return mockMessages;
-      case 'selectIsSearching':
-        return mockIsLoading;
-      case 'selectInput':
-        return mockInput;
-      case 'selectSetInput':
-        return mockSetInput;
-      case 'selectSendMessage':
-        return mockSendMessage;
-      default:
-        return null;
-    }
-  },
-  useEntryStore: (selector: any) => {
-    // セレクターの名前を使ってモックの戻り値を返す
-    switch (selector) {
-      case 'selectPendingEntry':
-        return mockPendingEntry;
-      case 'selectHasPendingEntry':
-        return mockHasPendingEntry;
-      default:
-        return null;
-    }
-  },
-  // セレクター関数自体もモック
-  selectMessages: 'selectMessages',
-  selectIsSearching: 'selectIsSearching',
-  selectInput: 'selectInput',
-  selectSetInput: 'selectSetInput',
-  selectSendMessage: 'selectSendMessage',
-  selectPendingEntry: 'selectPendingEntry',
-  selectHasPendingEntry: 'selectHasPendingEntry'
+jest.mock('@/store', () => ({
+  useRootStore: (...args: any[]) => useRootStoreMock(...args),
+  selectActiveMessages,
+  selectActiveIsSearching,
+  selectActiveInput,
+  selectConversationConnection,
+  selectPendingEntry,
+  selectHasPendingEntry,
 }));
 
 // renderHookモックを回避
