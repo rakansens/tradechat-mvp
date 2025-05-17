@@ -41,7 +41,8 @@ import { createIndicatorSlice, type IndicatorSlice } from './chart/indicator'
 import type { IndicatorSliceState } from './chart/indicator/state'
 import { createChartDataSlice, type ChartDataSlice } from './chart/data'
 import type { ChartDataSliceState } from './chart/data/state'
-import { createSymbolSlice, type SymbolSlice } from './symbol'
+import { createSymbolSlice } from './symbol'
+import type { SymbolSlice } from '@/types/symbol/store'
 import type { SymbolSliceState } from './symbol/state'
 import type { SymbolState } from '@/types/symbol/store';
 import type { ExchangeType, ProductType } from '@/types/constants/enums';
@@ -90,12 +91,18 @@ export interface RootActions {
   setProductType: SymbolSlice['setProductType']
   // 後方互換性のために古いメソッドも保持
   // 更新: 2025-05-17 - ExchangeTypeとProductTypeの両方をサポートするように型定義を拡張
-  setExchangeType: (type: ExchangeType | ProductType) => void
+  setExchangeType: SymbolSlice['setExchangeType']
   fetchSymbols: SymbolSlice['fetchSymbols']
   setFilterOptions: SymbolSlice['setFilterOptions']
   toggleFavorite: SymbolSlice['toggleFavorite']
   clearFilters: SymbolSlice['clearFilters']
   applyFilters: SymbolSlice['applyFilters']
+<<<<<<< ours
+  addToHistory: SymbolSlice['addToHistory']
+=======
+  addToHistory: SymbolSlice['addToHistory'],
+>>>>>>> theirs
+  clearHistory: SymbolSlice['clearHistory']
   getSymbolChangeHistory: SymbolSlice['getSymbolChangeHistory']
 
   // ChartDataSliceActions
@@ -329,7 +336,7 @@ export const useRootStore = create<RootStore>()(
           );
 
           // すべてのスライスを合成して返す
-          const combined: RootStore = {
+          const combined = {
             ...dataFetchSlice,
             ...socketSlice,
             ...symbolSlice,
@@ -344,8 +351,8 @@ export const useRootStore = create<RootStore>()(
             ...uiSlice,
             ...marketSlice,
             ...debugSlice,
-            ...settingsSlice
-          };
+            ...settingsSlice,
+          } satisfies RootStore;
           return combined;
         }),
         {

@@ -2,9 +2,11 @@
 // 作成: 2025-05-10 - ソケット接続状態を管理するスライスのAction定義
 // 更新: 2025-05-10 - StateCreator型の修正
 
-import { type StoreApi, type StateCreator } from 'zustand';
+import { type StoreApi } from 'zustand';
 import { SocketSliceState } from './state';
 import { logger } from '@/utils/common';
+import type { MutateDraft } from '@/types/store/core';
+import type { RootStore } from '../rootStore';
 
 export interface SocketSliceActions {
   /**
@@ -36,10 +38,10 @@ export interface SocketSliceActions {
 
 export type SocketSlice = SocketSliceState & SocketSliceActions;
 
-export const createSocketSliceActions = <T extends SocketSliceState>(
-  set: (fn: (state: T) => void) => void,
-  get: () => T,
-  _store: StoreApi<T>
+export const createSocketSliceActions = (
+  immerSet: (fn: MutateDraft<SocketSliceState>) => void,
+  getState: () => SocketSliceState,
+  _store: StoreApi<RootStore>
 ): SocketSliceActions => ({
   setConnected: (connected: boolean, source: string = 'socket-event') => {
     logger.info(`SocketSlice: 接続状態を${connected}に更新します`, {
@@ -49,8 +51,8 @@ export const createSocketSliceActions = <T extends SocketSliceState>(
       source
     });
     try {
-      set((state) => {
-        state.connected = connected
+      immerSet(draft => {
+        draft.connected = connected
       })
       logger.info(`SocketSlice: 接続状態を${connected}に更新しました`, {
         component: 'SocketSlice',
@@ -77,8 +79,8 @@ export const createSocketSliceActions = <T extends SocketSliceState>(
       source
     });
     try {
-      set((state) => {
-        state.socketId = socketId
+      immerSet(draft => {
+        draft.socketId = socketId
       })
       logger.info(`SocketSlice: Socket ID ${socketId} を設定しました`, {
         component: 'SocketSlice',
@@ -102,18 +104,18 @@ export const createSocketSliceActions = <T extends SocketSliceState>(
    */
   setSubscription: (type: 'orderbook' | 'chart', on: boolean, fn?: () => void) => {
     // 購読状態を更新
-    set((state) => {
-      state.subscriptions = {
-        ...state.subscriptions,
+    immerSet(draft => {
+      draft.subscriptions = {
+        ...draft.subscriptions,
         [type]: on
       }
     })
     
     // 購読解除関数を保存または削除
     if (on && fn) {
-      set((state) => {
-        state._unsubscribeFns = {
-          ...state._unsubscribeFns,
+      immerSet(draft => {
+        draft._unsubscribeFns = {
+          ...draft._unsubscribeFns,
           [type]: fn
         }
       })
@@ -126,7 +128,7 @@ export const createSocketSliceActions = <T extends SocketSliceState>(
       });
     } else if (!on) {
       // 購読解除関数を実行
-      const { _unsubscribeFns } = get();
+      const { _unsubscribeFns } = getState();
       const unsubscribe = _unsubscribeFns[type];
       
       if (unsubscribe && typeof unsubscribe === 'function') {
@@ -143,10 +145,10 @@ export const createSocketSliceActions = <T extends SocketSliceState>(
       }
       
       // 購読解除関数を削除
-      set((state) => {
-        const newUnsubscribeFns = { ...state._unsubscribeFns }
+      immerSet(draft => {
+        const newUnsubscribeFns = { ...draft._unsubscribeFns }
         delete newUnsubscribeFns[type]
-        state._unsubscribeFns = newUnsubscribeFns
+        draft._unsubscribeFns = newUnsubscribeFns
       })
       
       logger.info(`${type}の購読を解除しました`, {
@@ -162,7 +164,7 @@ export const createSocketSliceActions = <T extends SocketSliceState>(
    * WebSocketの全ての購読を解除
    */
   unsubscribeAll: () => {
-    const { _unsubscribeFns } = get();
+    const { _unsubscribeFns } = getState();
     
     // _unsubscribeFnsが存在する場合のみ処理を実行
     if (_unsubscribeFns && typeof _unsubscribeFns === 'object') {
@@ -174,9 +176,9 @@ export const createSocketSliceActions = <T extends SocketSliceState>(
       });
       
       // 購読解除関数をクリア
-      set((state) => {
-        state._unsubscribeFns = {}
-        state.subscriptions = {
+      immerSet(draft => {
+        draft._unsubscribeFns = {}
+        draft.subscriptions = {
           orderbook: false,
           chart: false
         }
@@ -194,9 +196,9 @@ export const createSocketSliceActions = <T extends SocketSliceState>(
         unsubscribeFns: _unsubscribeFns
       });
       
-      set((state) => {
-        state._unsubscribeFns = {}
-        state.subscriptions = {
+      immerSet(draft => {
+        draft._unsubscribeFns = {}
+        draft.subscriptions = {
           orderbook: false,
           chart: false
         }
@@ -208,7 +210,7 @@ export const createSocketSliceActions = <T extends SocketSliceState>(
    * WebSocketの接続状態を取得
    */
   getWebSocketStatus: () => {
-    const { connected, subscriptions } = get();
+    const { connected, subscriptions } = getState();
     return { connected, subscriptions };
   }
 }); 

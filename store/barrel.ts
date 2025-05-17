@@ -67,6 +67,11 @@ export {
   selectExchangeType,
   selectIsCandleChart
 } from "./chart/config/selectors";
+// RootStore版のセレクター
+export {
+  selectChartTypeFromRoot,
+  selectExchangeTypeFromRoot
+} from "./chart/config/rootSelectors";
 
 // RealTimeSliceのセレクター
 export {

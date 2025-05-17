@@ -1,6 +1,7 @@
 import { useRootStore } from '@/store/rootStore'
 import { symbolService } from '@/services/symbol'
 import type { SymbolInfo } from '@/types/symbol/common'
+import type { ExchangeType } from '@/types/constants/enums'
 
 jest.mock('@/services/symbol', () => ({
   symbolService: {
@@ -12,6 +13,8 @@ jest.mock('@/services/symbol', () => ({
   }
 }))
 
+const TEST_EXCHANGE_TYPE: ExchangeType = 'bitget'
+
 const mockSymbols: SymbolInfo[] = [
   {
     id: '1',
@@ -22,7 +25,7 @@ const mockSymbols: SymbolInfo[] = [
     pricePrecision: 2,
     quantityPrecision: 6,
     status: 'TRADING',
-    exchangeType: 'spot',
+    exchangeType: TEST_EXCHANGE_TYPE as unknown as any,
     favorite: false
   },
   {
@@ -34,7 +37,7 @@ const mockSymbols: SymbolInfo[] = [
     pricePrecision: 2,
     quantityPrecision: 6,
     status: 'TRADING',
-    exchangeType: 'spot',
+    exchangeType: TEST_EXCHANGE_TYPE as unknown as any,
     favorite: true
   },
   {
@@ -46,7 +49,7 @@ const mockSymbols: SymbolInfo[] = [
     pricePrecision: 2,
     quantityPrecision: 6,
     status: 'TRADING',
-    exchangeType: 'spot',
+    exchangeType: TEST_EXCHANGE_TYPE as unknown as any,
     favorite: false
   }
 ]
@@ -54,7 +57,7 @@ const mockSymbols: SymbolInfo[] = [
 const setupStore = () => {
   useRootStore.setState({
     currentSymbol: '',
-    exchangeType: 'spot',
+    exchangeType: TEST_EXCHANGE_TYPE as unknown as any,
     symbolsList: mockSymbols,
     filteredSymbols: mockSymbols,
     filterOptions: {
@@ -75,6 +78,12 @@ describe('Symbol Slice Actions', () => {
     jest.clearAllMocks()
   })
 
+  it('exposes history actions', () => {
+    const state = useRootStore.getState()
+    expect(typeof state.addToHistory).toBe('function')
+    expect(typeof state.clearHistory).toBe('function')
+  })
+
   it('setFilterOptions updates filter options and filtered symbols', () => {
     useRootStore.getState().setFilterOptions({ quoteAsset: 'USDT' })
 
@@ -86,10 +95,10 @@ describe('Symbol Slice Actions', () => {
   it('fetchSymbols populates symbols list and filtered list', async () => {
     ;(symbolService.fetchSymbols as jest.Mock).mockResolvedValue(mockSymbols)
 
-    await useRootStore.getState().fetchSymbols('spot')
+    await useRootStore.getState().fetchSymbols(TEST_EXCHANGE_TYPE as any)
 
     const state = useRootStore.getState()
-    expect(symbolService.fetchSymbols).toHaveBeenCalledWith('spot')
+    expect(symbolService.fetchSymbols).toHaveBeenCalledWith(TEST_EXCHANGE_TYPE)
     expect(state.symbolsList.length).toBe(mockSymbols.length)
     expect(state.filteredSymbols.length).toBe(mockSymbols.length)
     expect(state.isLoading).toBe(false)
@@ -99,7 +108,7 @@ describe('Symbol Slice Actions', () => {
   it('clearHistory removes all history entries', () => {
     useRootStore.getState().addToHistory({
       symbol: 'BTCUSDT',
-      exchangeType: 'spot',
+      exchangeType: TEST_EXCHANGE_TYPE as unknown as any,
       field: 'favorite',
       oldValue: false,
       newValue: true,

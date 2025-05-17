@@ -17,12 +17,12 @@
 // import { useSymbolStore } from '@/store/useSymbolStore';
 // 既存のフックをインポート
 import { useRootStore } from '@/store/rootStore';
-import { 
-  selectTimeframe, 
-  selectChartType, 
+import {
+  selectTimeframe,
+  selectChartTypeFromRoot,
+  selectExchangeTypeFromRoot,
   selectOHLCData,
-  selectCurrentSymbol,
-  selectExchangeType
+  selectCurrentSymbol
 } from '@/store/barrel';
 import type { IndicatorType } from '@/types/store/chart';
 import type { DrawingToolType } from '@/types/store/chart';
@@ -36,13 +36,13 @@ import type { DrawingToolType } from '@/types/store/chart';
 export const useChartStores = () => {
   // シンボルストアからデータ取得（rootStoreのSymbolSliceから）
   const currentSymbol = useRootStore(selectCurrentSymbol);
-  const exchangeType = useRootStore(selectExchangeType);
+  const exchangeType = useRootStore(selectExchangeTypeFromRoot);
   const setCurrentSymbol = useRootStore(state => state.setCurrentSymbol);
   const setProductType = useRootStore(state => state.setProductType);
   
   // rootStoreから直接取得
   const timeframe = useRootStore(selectTimeframe);
-  const chartType = useRootStore(selectChartType);
+  const chartType = useRootStore(selectChartTypeFromRoot);
   const ohlcData = useRootStore(selectOHLCData);
   
   // rootStoreのアクションを取得

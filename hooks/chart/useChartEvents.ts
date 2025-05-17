@@ -10,15 +10,16 @@
 
 import { useEffect } from 'react';
 import { logger } from '@/utils/common';
-import type { ExchangeType } from '@/types/constants/enums';
+import type { ProductType } from '@/types/constants/enums';
 import type { Timeframe } from '@/types/chart';
+import { toProductType } from '@/utils/exchangeTypeUtils';
 
 interface ChartEventProps {
   // 銘柄関連
   currentSymbol: string;
-  exchangeType: ExchangeType;
+  productType: ProductType;
   setCurrentSymbol: (symbol: string, reason?: string) => void;
-  setProductType: (type: ExchangeType) => void;
+  setProductType: (type: ProductType) => void;
   
   // チャートデータ関連
   currentTimeFrame: Timeframe;
@@ -33,7 +34,7 @@ interface ChartEventProps {
  */
 export const useChartEvents = ({
   currentSymbol,
-  exchangeType,
+  productType,
   setCurrentSymbol,
   setProductType,
   currentTimeFrame,
@@ -46,17 +47,24 @@ export const useChartEvents = ({
   useEffect(() => {
     const handleInstrumentTypeChange = (event: CustomEvent) => {
       const { type, fromType, symbol } = event.detail;
+      const normalizedType = toProductType(type);
+      const normalizedFromType = toProductType(fromType);
+      const currentProductType = toProductType(exchangeType);
       logger.info(`WebSocketから取引タイプ変更イベントを受信: ${type}`, {
         component: 'useChartEvents',
         action: 'handleInstrumentTypeChange',
         data: event.detail,
         timestamp: Date.now(),
-        currentExchangeType: exchangeType,
+        currentProductType: productType,
         currentSymbol: symbol,
-        fromFuturesToSpot: type === 'spot' && (fromType === 'futures' || exchangeType === 'futures') ? '先物→現物の切り替え検出' : '他の切り替えパターン'
+<<<<<<< ours
+        fromFuturesToSpot: normalizedType === 'spot' && (normalizedFromType === 'futures' || currentProductType === 'futures') ? '先物→現物の切り替え検出' : '他の切り替えパターン'
+=======
+        fromFuturesToSpot: type === 'spot' && (fromType === 'futures' || productType === 'futures') ? '先物→現物の切り替え検出' : '他の切り替えパターン'
+>>>>>>> theirs
       });
-      
-      if (type === 'spot' || type === 'futures') {
+
+      if (normalizedType === 'spot' || normalizedType === 'futures') {
         // イベントから銘柄を取得、なければ現在の銘柄を使用
         const targetSymbol = symbol || currentSymbol || 'BTCUSDT';
         
@@ -69,7 +77,11 @@ export const useChartEvents = ({
         });
         
         // 先物から現物への切り替えの場合、明示的に銘柄を先に設定
-        if (type === 'spot' && (fromType === 'futures' || exchangeType === 'futures')) {
+<<<<<<< ours
+        if (normalizedType === 'spot' && (normalizedFromType === 'futures' || currentProductType === 'futures')) {
+=======
+        if (type === 'spot' && (fromType === 'futures' || productType === 'futures')) {
+>>>>>>> theirs
           logger.info(`先物から現物への切り替えを検出、銘柄を先に設定: ${targetSymbol}`, {
             component: 'useChartEvents',
             action: 'handleInstrumentTypeChange',
@@ -81,10 +93,10 @@ export const useChartEvents = ({
         }
         
         // 取引タイプを更新（銘柄を明示的に指定）
-        logger.info(`取引タイプを${exchangeType}から${type}に変更します`, {
+        logger.info(`取引タイプを${productType}から${type}に変更します`, {
           component: 'useChartEvents',
           action: 'handleInstrumentTypeChange',
-          fromType: exchangeType,
+          fromType: productType,
           toType: type,
           symbol: targetSymbol
         });
@@ -93,7 +105,7 @@ export const useChartEvents = ({
         setProductType(type);
         
         // 現物から先物への切り替えの場合、または銘柄が変更された場合は、取引タイプ変更後に銘柄を再設定
-        if ((type === 'futures' && fromType === 'spot') || targetSymbol !== currentSymbol) {
+        if ((normalizedType === 'futures' && normalizedFromType === 'spot') || targetSymbol !== currentSymbol) {
           logger.info(`取引タイプ変更後に銘柄を再設定: ${targetSymbol}`, {
             component: 'useChartEvents',
             action: 'handleInstrumentTypeChange',
@@ -115,7 +127,7 @@ export const useChartEvents = ({
     return () => {
       window.removeEventListener('instrumentTypeChanged', handleInstrumentTypeChange as EventListener);
     };
-  }, [exchangeType, currentSymbol, setProductType, setCurrentSymbol]);
+  }, [productType, currentSymbol, setProductType, setCurrentSymbol]);
   
   // 銘柄変更イベントのリスナー
   useEffect(() => {

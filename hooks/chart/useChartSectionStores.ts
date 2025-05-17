@@ -19,16 +19,16 @@ import {
 } from '@/store';
 
 // セレクターをインポート
-import { 
-  selectChartData, 
-  selectCurrentTimeFrame, 
-  selectIsLoading, 
-  selectError 
-} from '@/store/chart/data/selectors';
-import { selectChartType } from '@/store/chart/config/selectors';
 import {
-  selectCurrentSymbol,
-  selectExchangeType
+  selectChartData,
+  selectCurrentTimeFrame,
+  selectIsLoading,
+  selectError
+} from '@/store/chart/data/selectors';
+import {
+  selectChartTypeFromRoot,
+  selectExchangeTypeFromRoot,
+  selectCurrentSymbol
 } from '@/store/barrel';
 
 import type { Timeframe, ChartType } from '@/types/chart';
@@ -47,7 +47,7 @@ import { formatTimestamp } from '@/utils/chart/chartUtils';
 export const useChartSectionStores = () => {
   // SymbolSliceをrootStoreから取得
   const currentSymbol = useRootStore(selectCurrentSymbol);
-  const exchangeType = useRootStore(selectExchangeType);
+  const exchangeType = useRootStore(selectExchangeTypeFromRoot);
   const setCurrentSymbol = useRootStore(state => state.setCurrentSymbol);
   const setProductType = useRootStore(state => state.setProductType);
   
@@ -58,7 +58,7 @@ export const useChartSectionStores = () => {
   const error = useRootStore(selectError);
   
   // ChartConfigStore (RootStoreから取得)
-  const chartType = useRootStore(selectChartType);
+  const chartType = useRootStore(selectChartTypeFromRoot);
   
   // RootStoreからアクションを取得
   const rootStore = useRootStore();

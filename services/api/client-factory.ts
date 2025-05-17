@@ -4,7 +4,7 @@
 
 import { BitgetApiClient } from './bitget/client.new';
 import { ExchangeType, ProductType } from '@/types/exchange';
-import { safeExchangeType } from '@/utils/exchangeTypeUtils';
+import { safeExchangeType, toProductType } from '@/utils/exchangeTypeUtils';
 
 // APIクライアントのインスタンスをキャッシュ
 const apiClients: Record<string, BitgetApiClient> = {};
@@ -24,10 +24,11 @@ export function getApiClient(exchangeType: ExchangeType | ProductType): BitgetAp
     return apiClients[cacheKey];
   }
   
-  // 新しいインスタンスを作成 (credentials は空オブジェクト、exchangeType を第2引数に)
-  // exchangeTypeを安全に変換してBitgetApiClientに渡す
+  // 新しいインスタンスを作成 (credentials は空オブジェクト、productType を第2引数に)
+  // exchangeTypeを安全に変換してProductTypeに変換
   const normalizedExchangeType = safeExchangeType(exchangeType);
-  const client = new BitgetApiClient({}, normalizedExchangeType);
+  const productType = toProductType(normalizedExchangeType);
+  const client = new BitgetApiClient({}, productType);
   apiClients[cacheKey] = client;
   
   return client;

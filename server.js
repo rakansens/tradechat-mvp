@@ -162,7 +162,11 @@ let socketDataBroadcaster;
 
 // 画像保存用のディレクトリとマップ
 const CHART_IMAGES_DIR = path.join(__dirname, 'public', 'chart-images');
-const chartImagesMap = new Map(); // メモリ内の画像マップ（ID -> データ）
+// TTL(有効期限)を1時間に設定
+// これを過ぎたエントリは自動削除される
+const CHART_IMAGE_TTL_MS = 60 * 60 * 1000;
+// メモリ内の画像マップ（ID -> { data, timestamp }）
+const chartImagesMap = new Map();
 
 // 画像保存ディレクトリの作成（存在しない場合）
 if (!fs.existsSync(CHART_IMAGES_DIR)) {
@@ -191,17 +195,22 @@ app.prepare().then(() => {
         
         // メモリ内の画像マップから取得を試みる
         if (chartImagesMap.has(imageId)) {
-          const imageData = chartImagesMap.get(imageId);
-          const base64Data = imageData.replace(/^data:image\/\w+;base64,/, '');
-          const buffer = Buffer.from(base64Data, 'base64');
-          
-          res.writeHead(200, {
-            'Content-Type': 'image/png',
-            'Content-Length': buffer.length,
-            'Cache-Control': 'public, max-age=86400'
-          });
-          res.end(buffer);
-          return;
+          const entry = chartImagesMap.get(imageId);
+          // 期限切れの場合は削除してファイルから取得を続行
+          if (Date.now() - entry.timestamp <= CHART_IMAGE_TTL_MS) {
+            const base64Data = entry.data.replace(/^data:image\/\w+;base64,/, '');
+            const buffer = Buffer.from(base64Data, 'base64');
+
+            res.writeHead(200, {
+              'Content-Type': 'image/png',
+              'Content-Length': buffer.length,
+              'Cache-Control': 'public, max-age=86400'
+            });
+            res.end(buffer);
+            return;
+          }
+
+          chartImagesMap.delete(imageId);
         }
         
         // ファイルシステムから取得を試みる
@@ -469,6 +478,21 @@ app.prepare().then(() => {
 
   // タイムアウト後もレスポンスを処理するためのマップ
   const expiredCaptureRequests = new Map();
+
+  // 期限切れリクエストのクリーンアップ（30秒ごと）
+  setInterval(() => {
+    try {
+      const now = Date.now();
+      for (const [requestId, request] of expiredCaptureRequests.entries()) {
+        if (now > request.expiryTime) {
+          expiredCaptureRequests.delete(requestId);
+          logger.info(`期限切れリクエストを削除: ${requestId}`);
+        }
+      }
+    } catch (error) {
+      console.error('期限切れリクエストのクリーンアップ処理エラー:', error);
+    }
+  }, 30 * 1000);
   
   // グローバルに関数をエクスポート - キャプチャリクエスト
   global.requestCapture = (timeoutMs = 15000) => {
@@ -531,9 +555,13 @@ app.prepare().then(() => {
       
       // 画像IDの生成
       const imageId = `chart-${uuidv4()}`;
-      
-      // メモリ内のマップに保存
-      chartImagesMap.set(imageId, imageData);
+
+      // メモリ内のマップに保存（データと保存時刻）
+      // timestampはTTL管理に使用
+      chartImagesMap.set(imageId, {
+        data: imageData,
+        timestamp: Date.now(),
+      });
       
       // ファイルとしても保存（非同期で行い、処理を待たない）
       try {
@@ -560,6 +588,16 @@ app.prepare().then(() => {
       return null;
     }
   };
+
+  // 定期的に期限切れ画像を削除
+  setInterval(() => {
+    const now = Date.now();
+    for (const [id, entry] of chartImagesMap.entries()) {
+      if (now - entry.timestamp > CHART_IMAGE_TTL_MS) {
+        chartImagesMap.delete(id);
+      }
+    }
+  }, 10 * 60 * 1000); // 10分ごとにチェック
   
   // サーバー起動のエラーハンドリング
   let portAttempts = 0;

@@ -19,20 +19,17 @@ import {
   selectEntries
 } from '@/store';
 // 各スライスのセレクターをインポート
-import { 
-  selectChartType
-  // selectExchangeTypeは削除し、barrelから統一してインポート
-} from '@/store/chart/config/selectors';
 import {
   selectChartData,
   selectError,
   selectCurrentTimeFrame
 } from '@/store/chart/data/selectors';
 import { selectActiveTab } from '@/store/ui/selectors';
-// シンボル関連のセレクターをインポート
-import { 
+// シンボル関連およびチャート設定のセレクターをインポート
+import {
   selectCurrentSymbol,
-  selectExchangeType
+  selectExchangeTypeFromRoot,
+  selectChartTypeFromRoot
 } from '@/store/barrel';
 // インジケーター関連のセレクターをインポート
 import {
@@ -60,7 +57,7 @@ import { EntrySliceState } from '@/store/entry/state';
 export function useToolbarStores() {
   // SymbolStoreからSymbolSliceに移行
   const currentSymbol = useRootStore(selectCurrentSymbol);
-  const exchangeType = useRootStore(selectExchangeType);
+  const exchangeType = useRootStore(selectExchangeTypeFromRoot);
   const setCurrentSymbol = useRootStore(state => state.setCurrentSymbol);
   const setProductType = useRootStore(state => state.setProductType);
   
@@ -72,7 +69,7 @@ export function useToolbarStores() {
   const fetchChartData = useRootStore((state) => state.fetchData);
   
   // ChartConfigSliceから状態とアクションを取得（RootStoreを使用）
-  const chartType = useRootStore(selectChartType);
+  const chartType = useRootStore(selectChartTypeFromRoot);
   const setChartType = useRootStore((state) => state.setChartType);
 
   // IndicatorStoreから状態とアクションを取得（RootStoreを使用）

@@ -8,16 +8,15 @@ import { create } from 'zustand'
 import { devtools, persist } from 'zustand/middleware'
 import { immer } from 'zustand/middleware/immer'
 import { type RealTimeSlice, type RealTimeSliceState, type RealTimeSliceActions, type RealTimeSliceCreator } from './types'
+import { createSlice } from '@/store/core/createSlice'
 import { createImmerSetter } from '@/store/core/immerSet'
 
 /**
  * RealTimeSliceを作成する関数
  * 状態とアクションを統合してスライスを作成します
  */
-export const createRealTimeSlice: RealTimeSliceCreator = (
-  set,
-  get
-) => {
+export const createRealTimeSlice: RealTimeSliceCreator =
+  createSlice<RealTimeSlice, RealTimeSliceState>((set, get, api) => {
   // immerSetラッパーを作成
   const immerSet = createImmerSetter<RealTimeSliceState>(set)
   
@@ -38,7 +37,7 @@ export const createRealTimeSlice: RealTimeSliceCreator = (
     // アクション
     ...actions
   }
-}
+})
 
 /**
  * RealTimeSliceを使用したスタンドアロンストア

@@ -51,12 +51,12 @@ export interface SymbolActions {
    * 取引種別を設定
    * @param type ExchangeTypeもしくはProductType
    */
-  setProductType: (type: ExchangeType | ProductType) => void;
+  setProductType: (type: ExchangeType | ProductType) => ProductType;
   
   /**
    * @deprecated setProductTypeを使用してください
    */
-  setExchangeType: (type: ExchangeProductType) => void;
+  setExchangeType: (type: ExchangeType | ProductType) => ProductType;
   setSymbols: (symbols: SymbolInfo[]) => void;
   addSymbol: (symbol: SymbolInfo) => void;
   updateSymbol: (symbol: Partial<SymbolInfo> & { id: string }) => void;
@@ -74,7 +74,7 @@ export interface SymbolActions {
   clearFilters: () => void;
   
   // 非同期アクション
-  fetchSymbols: (exchangeType?: ExchangeProductType) => Promise<void>;
+  fetchSymbols: (exchangeType?: ProductType) => Promise<void>;
   saveSymbol: (symbol: SymbolInfo) => Promise<void>;
   deleteSymbol: (symbolId: string) => Promise<void>;
   

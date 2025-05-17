@@ -20,12 +20,15 @@ jest.mock('@/store/symbol', () => ({
   useSymbolStore: jest.fn()
 }));
 
-jest.mock('@/store/chart', () => ({
+jest.mock('@/store/chart/data', () => ({
   useChartDataStore: jest.fn(() => ({
     currentTimeFrame: '1h',
     fetchData: jest.fn(),
     updateTimeFrame: jest.fn()
-  })),
+  }))
+}));
+
+jest.mock('@/store/chart', () => ({
   useChartConfigStore: jest.fn(() => ({
     chartType: 'candles',
     setChartType: jest.fn()

@@ -9,9 +9,11 @@ import {
   selectFilteredSymbols,
   selectSymbolList,
   selectIsLoadingSymbols,
-  selectSymbolError
+  selectSymbolError,
+  selectSymbolExchangeType
 } from '@/store/barrel';
 import type { ProductType } from '@/types/constants/enums';
+import { toProductType } from '@/utils/exchangeTypeUtils';
 
 interface UseSymbolSelectorLogicOptions {
   defaultProductType?: ProductType;
@@ -35,7 +37,8 @@ export const useSymbolSelectorLogic = ({
   const toggleFavorite = useRootStore(state => state.toggleFavorite);
   const fetchSymbols = useRootStore(state => state.fetchSymbols);
   const setProductType = useRootStore(state => state.setProductType);
-  const currentProductType = useRootStore(state => state.exchangeType);
+  // Product type is stored under exchangeProductType in the store
+  const currentProductType = useRootStore(selectSymbolExchangeType);
 
   // 取引タイプの変更ハンドラー
   const handleProductTypeChange = useCallback(
@@ -55,8 +58,10 @@ export const useSymbolSelectorLogic = ({
 
   // デフォルトの取引タイプが指定されていれば設定
   useEffect(() => {
-    if (defaultProductType && defaultProductType !== currentProductType) {
-      setProductType(defaultProductType);
+    const normalizedDefault = defaultProductType ? toProductType(defaultProductType) : undefined;
+    const normalizedCurrent = toProductType(currentProductType);
+    if (normalizedDefault && normalizedDefault !== normalizedCurrent) {
+      setProductType(normalizedDefault);
     }
   }, [defaultProductType, currentProductType, setProductType]);
 

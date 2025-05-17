@@ -65,13 +65,13 @@ export interface SymbolActions {
    * 取引種別を設定
    * @param type ExchangeTypeもしくはProductType
    */
-  setProductType: (type: ExchangeType | ProductType) => void;
+  setProductType: (type: ExchangeType | ProductType) => ProductType;
   
   /**
    * @deprecated setProductTypeを使用してください
    */
-  setExchangeType: (type: ExchangeType | ExchangeProductType) => void;
-  fetchSymbols: (exchangeType: ExchangeType | ExchangeProductType) => Promise<void>;
+  setExchangeType: (type: ExchangeType | ProductType) => ProductType;
+  fetchSymbols: (exchangeType?: ProductType) => Promise<void>;
   setFilterOptions: (options: Partial<StoreFilterOptions>) => void;
   toggleFavorite: (symbol: string) => void;
   clearFilters: () => void;

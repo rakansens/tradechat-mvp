@@ -15,7 +15,7 @@ import { createSlice } from '@/store/core/createSlice'
  * 状態とアクションを統合してスライスを作成します
  */
 export const createChartDataSlice: SliceCreator<ChartDataSlice, ChartDataSliceState> =
-  createSlice((set, get, api) => {
+  createSlice<ChartDataSlice, ChartDataSliceState>((set, get, api) => {
     const setPartial = (partial: Partial<ChartDataSliceState>) => {
       set(state => {
         Object.assign(state, partial)

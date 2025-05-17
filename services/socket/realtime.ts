@@ -5,6 +5,7 @@ import SocketService from "./socket-service";
 import { WebSocketClient } from "./websocket-client";
 import { SubscriptionManager } from "./subscription-manager";
 import { BitgetIntegration } from "./bitget-integration";
+import { toProductType } from "@/utils/exchangeTypeUtils";
 
 // SocketServiceのインスタンスを作成
 const webSocketClient = new WebSocketClient();
@@ -38,7 +39,7 @@ export function subscribeKline(s: string, tf: Timeframe, cb: (d: OHLCData) => vo
   
   // WebSocketでKlineを購読
   if (typeof socketService.subscribeKline === 'function') {
-    socketService.subscribeKline(s, tf, cb, 'bitget');
+    socketService.subscribeKline(s, tf, cb, toProductType('bitget'));
   } else {
     console.error('subscribeKline method not available');
   }

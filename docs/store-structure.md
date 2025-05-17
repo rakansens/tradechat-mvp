@@ -22,7 +22,7 @@
 チャートのデータと取得状態を管理します。
 
 ```typescript
-import { useChartDataStore } from '@/store';
+import { useChartDataStore } from '@/store/chart/data';
 
 // 使用例
 const { 

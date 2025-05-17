@@ -14,6 +14,7 @@ import { ExchangeType } from '@/types/api';
 import { logger } from '@/utils/common';
 import { normalizeSymbol } from '../../utils/formatters';
 import { getSocketService } from '../socket/service';
+import { toProductType } from '@/utils/exchangeTypeUtils';
 import { cacheService } from '../cache/service';
 
 // 環境検出
@@ -219,11 +220,11 @@ class OrderBookService extends EventEmitter implements IOrderBookService {
         // データをキャッシュに保存
         const requestKey = `orderbook-${normalizedSymbol}-${exchangeType}`;
         cacheService.set(requestKey, data, 'websocket');
-        
+
         // コールバック関数を呼び出し
         callback(data);
       },
-      exchangeType
+      toProductType(exchangeType)
     );
     
     logger.info(`WebSocketでオーダーブックのリアルタイム購読を開始: ${normalizedSymbol}`, {

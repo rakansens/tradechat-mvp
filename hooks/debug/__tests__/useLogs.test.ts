@@ -1,5 +1,6 @@
 import { renderHook, act } from '@testing-library/react';
 import { useLogs } from '../logs/useLogs';
+import { LogLevel } from '../logs/useLogs';
 import { getStoredLogs, clearStoredLogs, StoredLog } from '@/utils/logStorage';
 
 // モックの設定

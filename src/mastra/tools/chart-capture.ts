@@ -5,6 +5,7 @@ import { createTool } from "@mastra/core/tools";
 import { z } from "zod";
 import { v4 as uuidv4 } from "uuid";
 import { analyzeChartWithAI } from "@/utils/aiUtils";
+import * as fsPromises from "fs/promises";
 
 export interface ChartCaptureDependencies {
   requestCapture: (timeoutMs?: number) => Promise<string | null>;
@@ -122,12 +123,12 @@ export function createChartCaptureAnalysisTool({
             
             // フルページとして保存
             const fullPagePath = path.join(appCapturesDir, 'app-full-page.png');
-            fs.writeFileSync(fullPagePath, buffer);
+            await fsPromises.writeFile(fullPagePath, buffer);
             console.log(`フルページ画像を保存しました: ${fullPagePath}`);
             
             // チャート要素としても保存
             const chartElementPath = path.join(appCapturesDir, `element-1-radix--Rl3ql7--content-chart.png`);
-            fs.writeFileSync(chartElementPath, buffer);
+            await fsPromises.writeFile(chartElementPath, buffer);
             console.log(`チャート要素画像を保存しました: ${chartElementPath}`);
           } catch (saveError) {
             console.error('指定形式での画像保存に失敗しました:', saveError);
