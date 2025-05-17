@@ -33,3 +33,4 @@ next-env.d.ts
 /public/hybrid-analysis/
 /public/*-analysis/
 coverage/
+services/socket/backup/
