@@ -4,7 +4,7 @@
 // Cascade: Added explicit return type to mockApiResponse.
 
 import { changeInstrumentTypeTool } from '../../../src/mastra/tools/instrument-type-tools';
-import { socketStoreActions } from '../../../store/socketActions';
+import { useRootStore } from '../../../store/rootStore';
 import { logger } from '../../../utils/common';
 
 // モジュールをモック化
@@ -14,9 +14,13 @@ jest.mock('../../../src/mastra/tools/instrument-type-tools', () => ({
   },
 }));
 
-jest.mock('../../../store/socketActions', () => ({
-  socketStoreActions: {
-    setProductType: jest.fn(),
+const mockSetProductType = jest.fn();
+
+jest.mock('../../../store/rootStore', () => ({
+  useRootStore: {
+    getState: jest.fn(() => ({
+      setProductType: mockSetProductType,
+    })),
   },
 }));
 
@@ -93,7 +97,7 @@ const mockedSocketClient = {
     socketEventHandlers['instrument-type-change'] = jest.fn((data) => {
       const { type, symbol = 'BTCUSDT' } = data;
       // 実際にテストしたい処理をモックとして実行
-      socketStoreActions.setProductType(type, symbol, 'socket-instrument-type-change');
+      useRootStore.getState().setProductType(type);
       
       // CustomEventもイベントとして発行
       const event = new CustomEvent('instrumentTypeChanged', { 
@@ -173,11 +177,7 @@ describe('取引タイプ変更フロー', () => {
       });
       
       // 実装に合わせて引数を修正
-      expect(socketStoreActions.setProductType).toHaveBeenCalledWith(
-        'futures',
-        'BTCUSDT',
-        'socket-instrument-type-change'
-      );
+      expect(mockSetProductType).toHaveBeenCalledWith('futures');
     }
     
     expect(global.CustomEvent).toHaveBeenCalledWith(
@@ -233,11 +233,7 @@ describe('取引タイプ変更フロー', () => {
       });
       
       // 実装に合わせて引数を修正
-      expect(socketStoreActions.setProductType).toHaveBeenCalledWith(
-        'spot',
-        'BTCUSDT',
-        'socket-instrument-type-change'
-      );
+      expect(mockSetProductType).toHaveBeenCalledWith('spot');
     }
   });
 

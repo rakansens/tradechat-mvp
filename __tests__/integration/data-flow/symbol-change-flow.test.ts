@@ -2,7 +2,7 @@
 // 銘柄変更フローの統合テスト
 
 import { changeSymbolTool } from '../../../src/mastra/tools/symbol-tools';
-import { socketStoreActions } from '../../../store/socketActions';
+import { useRootStore } from '../../../store/rootStore';
 import { logger } from '../../../utils/logger';
 
 // モジュールをモック化
@@ -12,10 +12,15 @@ jest.mock('../../../src/mastra/tools/symbol-tools', () => ({
   },
 }));
 
-jest.mock('../../../store/socketActions', () => ({
-  socketStoreActions: {
-    setSymbol: jest.fn(),
-    setProductType: jest.fn(),
+const mockSetCurrentSymbol = jest.fn();
+const mockSetProductType = jest.fn();
+
+jest.mock('../../../store/rootStore', () => ({
+  useRootStore: {
+    getState: jest.fn(() => ({
+      setCurrentSymbol: mockSetCurrentSymbol,
+      setProductType: mockSetProductType,
+    })),
   },
 }));
 
@@ -66,10 +71,10 @@ const mockedSocketClient = {
       
       // 実際にテストしたい処理をモックとして実行
       if (exchangeType) {
-        socketStoreActions.setProductType(exchangeType, symbol, 'socket-changeSymbol');
+        useRootStore.getState().setProductType(exchangeType);
       }
-      
-      socketStoreActions.setSymbol(symbol, 'socket-changeSymbol');
+
+      useRootStore.getState().setCurrentSymbol(symbol);
       
       // カスタムイベントも発行
       const event = new CustomEvent('symbolChanged', { detail: data });
@@ -170,16 +175,8 @@ describe('銘柄変更フロー', () => {
       });
       
       // AppStoreが更新されたか検証
-      expect(socketStoreActions.setSymbol).toHaveBeenCalledWith(
-        'ETHUSDT',
-        'socket-changeSymbol'
-      );
-      
-      expect(socketStoreActions.setProductType).toHaveBeenCalledWith(
-        'spot',
-        'ETHUSDT',
-        'socket-changeSymbol'
-      );
+      expect(mockSetCurrentSymbol).toHaveBeenCalledWith('ETHUSDT');
+      expect(mockSetProductType).toHaveBeenCalledWith('spot');
     }
     
     // ブラウザイベントが発行されたか検証
@@ -214,13 +211,10 @@ describe('銘柄変更フロー', () => {
       changeSymbolHandler({ symbol: 'ETHUSDT' });
       
       // 銘柄のみが更新されることを確認
-      expect(socketStoreActions.setSymbol).toHaveBeenCalledWith(
-        'ETHUSDT',
-        'socket-changeSymbol'
-      );
+      expect(mockSetCurrentSymbol).toHaveBeenCalledWith('ETHUSDT');
       
       // 取引タイプは更新されないことを確認
-      expect(socketStoreActions.setProductType).not.toHaveBeenCalled();
+      expect(mockSetProductType).not.toHaveBeenCalled();
     }
   });
 
