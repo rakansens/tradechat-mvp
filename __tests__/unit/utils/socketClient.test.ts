@@ -13,13 +13,23 @@ jest.mock('../../../utils/logger', () => ({
   },
 }));
 
-// socketActions のモック
-jest.mock('../../../store/socketActions', () => ({
-  setConnected: jest.fn(),
-  setSocketId: jest.fn(),
-  setSymbol: jest.fn(),
-  setTimeframe: jest.fn(),
-  setProductType: jest.fn(),
+// Root store actions のモック
+const mockSetConnected = jest.fn();
+const mockSetSocketId = jest.fn();
+const mockSetCurrentSymbol = jest.fn();
+const mockUpdateTimeFrame = jest.fn();
+const mockSetProductType = jest.fn();
+
+jest.mock('../../../store/rootStore', () => ({
+  useRootStore: {
+    getState: jest.fn(() => ({
+      setConnected: mockSetConnected,
+      setSocketId: mockSetSocketId,
+      setCurrentSymbol: mockSetCurrentSymbol,
+      updateTimeFrame: mockUpdateTimeFrame,
+      setProductType: mockSetProductType,
+    }))
+  }
 }));
 
 // socket.io-client のモック定義
@@ -127,7 +137,7 @@ describe('socketClient', () => {
   let initializeSocketClient: any, getSocket: any, getClientId: any, emitEvent: any;
   let io: jest.Mock; // io のモック自体も取得して確認できるようにする
   let logger: any; // logger を describe スコープで宣言
-  let socketActions: any; // socketActions を describe スコープで宣言
+  let rootStoreActions: any; // root store actions を参照
 
   beforeEach(() => {
     jest.resetModules();
@@ -140,9 +150,9 @@ describe('socketClient', () => {
     jest.spyOn(loggerModule.logger, 'warn').mockImplementation(jest.fn());
     jest.spyOn(loggerModule.logger, 'error').mockImplementation(jest.fn());
 
-    // socketActions のモック参照取得
-    const socketActionsModule = require('../../../store/socketActions');
-    socketActions = socketActionsModule; // describe スコープの socketActions に代入
+    // root store のモック参照取得
+    const rootStoreModule = require('../../../store/rootStore');
+    rootStoreActions = rootStoreModule.useRootStore.getState();
 
     // socketClient モジュールの読み込み（resetModules後なので毎回新しいインスタンス）
     const socketClientModule = require('../../../utils/socketClient');
@@ -214,8 +224,8 @@ describe('socketClient', () => {
       // 3. console.logに変更
       // Note: 実際のコードではconsole.logが使用されているため、loggerモックの検証は行わない
       expect(getClientId()).toBe(testData.clientId);
-      expect(socketActions.setConnected).toHaveBeenCalledWith(true, expect.any(String));
-      expect(socketActions.setSocketId).toHaveBeenCalledWith(testData.clientId, expect.any(String));
+      expect(rootStoreActions.setConnected).toHaveBeenCalledWith(true);
+      expect(rootStoreActions.setSocketId).toHaveBeenCalledWith(testData.clientId);
     });
 
     it('disconnect イベントを処理するべき', () => {
@@ -227,7 +237,7 @@ describe('socketClient', () => {
       
       // 3. ログ検証を構造化ログに対応
       // ログ検証は実装と合わせて変更
-      expect(socketActions.setConnected).toHaveBeenCalledWith(false, 'disconnect-event');
+      expect(rootStoreActions.setConnected).toHaveBeenCalledWith(false);
     });
 
     it('reconnect_attempt イベントを処理するべき', () => {
@@ -256,8 +266,8 @@ describe('socketClient', () => {
 
       // 3. ログ検証を構造化ログに対応
       expect(logger.info).toHaveBeenCalledWith('銘柄変更イベント受信:', expect.objectContaining({ data: eventData }));
-      expect(socketActions.setSymbol).toHaveBeenCalledWith(eventData.symbol, expect.any(String));
-      expect(socketActions.setTimeframe).toHaveBeenCalledWith(eventData.timeframe, expect.any(String));
+      expect(rootStoreActions.setCurrentSymbol).toHaveBeenCalledWith(eventData.symbol);
+      expect(rootStoreActions.updateTimeFrame).toHaveBeenCalledWith(eventData.timeframe);
       expect(localStorageMock.setItem).toHaveBeenCalledWith('selectedSymbol', eventData.symbol);
       // timeframe設定のテストは別途行うため、ここではスキップ
       expect(dispatchEventSpy).toHaveBeenCalledWith(expect.any(CustomEvent));
@@ -286,7 +296,7 @@ describe('socketClient', () => {
         // timestamp: expect.any(Number)
       });
       expect(logger.info).toHaveBeenCalledWith('取引タイプ変更イベント受信:', expectedLog);
-      expect(socketActions.setProductType).toHaveBeenCalledWith(eventData.type, expect.any(String), expect.any(String));
+      expect(rootStoreActions.setProductType).toHaveBeenCalledWith(eventData.type);
       expect(localStorageMock.setItem).toHaveBeenCalledWith('lastUsedExchangeType', eventData.type);
       expect(localStorageMock.setItem).toHaveBeenCalledWith('selectedInstrumentType', eventData.type);
       expect(dispatchEventSpy).toHaveBeenCalledWith(expect.any(CustomEvent));
@@ -334,7 +344,7 @@ describe('socketClient', () => {
 
       // 3. ログ検証を構造化ログに対応
       expect(logger.info).toHaveBeenCalledWith('時間足変更イベント受信:', expect.objectContaining({ data: eventData }));
-      expect(socketActions.setTimeframe).toHaveBeenCalledWith(eventData.timeframe, expect.any(String));
+      expect(rootStoreActions.updateTimeFrame).toHaveBeenCalledWith(eventData.timeframe);
       // timeframe設定のテストは別途行うため、ここではスキップ
       expect(dispatchEventSpy).toHaveBeenCalledWith(expect.any(CustomEvent));
       const customEvent = dispatchEventSpy.mock.calls[0][0] as CustomEvent;
@@ -412,7 +422,7 @@ describe('socketClient', () => {
       // Note: このテストは実装の変更により動作が異なるためスキップ
       // 実際の実装では接続されていない場合もイベント発行を試みることがある
       // expect(mockSocketInstance.emit).not.toHaveBeenCalled();
-      // expect(socketActions.setConnected).toHaveBeenCalledWith(false);
+      // expect(rootStoreActions.setConnected).toHaveBeenCalledWith(false);
       // テストは後で実装に合わせて書き直す
     });
 
