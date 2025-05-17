@@ -19,9 +19,9 @@ export const symbolInfoSchema = z.object({
 
 // フィルターオプションのバリデーションスキーマ
 export const filterOptionsSchema = z.object({
-  searchTerm: z.string().default(""),
-  quoteCoin: z.string().default(""),
-  favoritesOnly: z.boolean().default(false)
+  search: z.string().default(""),
+  quoteAsset: z.string().default(""),
+  showFavoritesOnly: z.boolean().default(false)
 })
 
 // シンボルセレクターのプロパティのバリデーションスキーマ

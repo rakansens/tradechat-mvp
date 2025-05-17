@@ -64,9 +64,9 @@ describe('Symbol Validations', () => {
   describe('filterOptionsSchema', () => {
     it('有効なフィルターオプションを検証できる', () => {
       const validOptions = {
-        searchTerm: 'BTC',
-        quoteCoin: 'USDT',
-        favoritesOnly: true
+        search: 'BTC',
+        quoteAsset: 'USDT',
+        showFavoritesOnly: true
       };
 
       const result = filterOptionsSchema.safeParse(validOptions);
@@ -78,19 +78,19 @@ describe('Symbol Validations', () => {
 
       const result = filterOptionsSchema.safeParse(emptyOptions);
       expect(result.success).toBe(true);
-      
+
       if (result.success) {
-        expect(result.data.searchTerm).toBe('');
-        expect(result.data.quoteCoin).toBe('');
-        expect(result.data.favoritesOnly).toBe(false);
+        expect(result.data.search).toBe('');
+        expect(result.data.quoteAsset).toBe('');
+        expect(result.data.showFavoritesOnly).toBe(false);
       }
     });
 
     it('validateFilterOptions関数が正しく動作する', () => {
       const validOptions = {
-        searchTerm: 'BTC',
-        quoteCoin: 'USDT',
-        favoritesOnly: true
+        search: 'BTC',
+        quoteAsset: 'USDT',
+        showFavoritesOnly: true
       };
 
       const result = validateFilterOptions(validOptions);

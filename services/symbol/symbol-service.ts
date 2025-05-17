@@ -101,8 +101,8 @@ class SymbolService {
     let filtered = [...symbols];
 
     // 検索語でフィルター
-    if (options.searchTerm) {
-      const term = options.searchTerm.toLowerCase();
+    if (options.search) {
+      const term = options.search.toLowerCase();
       filtered = filtered.filter(
         (s) =>
           s.symbol.toLowerCase().includes(term) ||
@@ -112,12 +112,12 @@ class SymbolService {
     }
 
     // 基軸通貨でフィルター
-    if (options.quoteCoin) {
-      filtered = filtered.filter((s) => s.quoteCoin === options.quoteCoin);
+    if (options.quoteAsset) {
+      filtered = filtered.filter((s) => s.quoteCoin === options.quoteAsset);
     }
 
     // お気に入りでフィルター
-    if (options.favoritesOnly) {
+    if (options.showFavoritesOnly) {
       filtered = filtered.filter((s) => s.favorite);
     }
 

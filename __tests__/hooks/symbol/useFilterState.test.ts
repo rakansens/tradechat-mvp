@@ -29,9 +29,9 @@ describe('useFilterState', () => {
       setFilterOptions: jest.fn(),
       clearFilters: jest.fn(),
       filterOptions: {
-        searchTerm: '',
-        quoteCoin: '',
-        favoritesOnly: false,
+        search: '',
+        quoteAsset: '',
+        showFavoritesOnly: false,
       },
     });
     
@@ -49,9 +49,9 @@ describe('useFilterState', () => {
     
     // フックが正しく初期化されていることを確認
     expect(result.current.filterOptions).toEqual({
-      searchTerm: '',
-      quoteCoin: '',
-      favoritesOnly: false,
+      search: '',
+      quoteAsset: '',
+      showFavoritesOnly: false,
     });
     
     // コモン基軸通貨が正しいことを確認
@@ -64,9 +64,9 @@ describe('useFilterState', () => {
       setFilterOptions: mockSetFilterOptions,
       clearFilters: jest.fn(),
       filterOptions: {
-        searchTerm: '',
-        quoteCoin: '',
-        favoritesOnly: false,
+        search: '',
+        quoteAsset: '',
+        showFavoritesOnly: false,
       },
     });
     
@@ -78,7 +78,7 @@ describe('useFilterState', () => {
     });
     
     // setFilterOptionsが正しい引数で呼ばれていることを確認
-    expect(mockSetFilterOptions).toHaveBeenCalledWith({ searchTerm: 'BTC' });
+    expect(mockSetFilterOptions).toHaveBeenCalledWith({ search: 'BTC' });
   });
   
   test('基軸通貨フィルターが正しく動作する', () => {
@@ -87,9 +87,9 @@ describe('useFilterState', () => {
       setFilterOptions: mockSetFilterOptions,
       clearFilters: jest.fn(),
       filterOptions: {
-        searchTerm: '',
-        quoteCoin: '',
-        favoritesOnly: false,
+        search: '',
+        quoteAsset: '',
+        showFavoritesOnly: false,
       },
     });
     
@@ -101,7 +101,7 @@ describe('useFilterState', () => {
     });
     
     // setFilterOptionsが正しい引数で呼ばれていることを確認
-    expect(mockSetFilterOptions).toHaveBeenCalledWith({ quoteCoin: 'USDT' });
+    expect(mockSetFilterOptions).toHaveBeenCalledWith({ quoteAsset: 'USDT' });
   });
   
   test('お気に入りトグルが正しく動作する', () => {
@@ -110,9 +110,9 @@ describe('useFilterState', () => {
       setFilterOptions: mockSetFilterOptions,
       clearFilters: jest.fn(),
       filterOptions: {
-        searchTerm: '',
-        quoteCoin: '',
-        favoritesOnly: false,
+        search: '',
+        quoteAsset: '',
+        showFavoritesOnly: false,
       },
     });
     
@@ -124,7 +124,7 @@ describe('useFilterState', () => {
     });
     
     // setFilterOptionsが正しい引数で呼ばれていることを確認
-    expect(mockSetFilterOptions).toHaveBeenCalledWith({ favoritesOnly: true });
+    expect(mockSetFilterOptions).toHaveBeenCalledWith({ showFavoritesOnly: true });
   });
   
   test('フィルターリセットが正しく動作する', () => {
@@ -133,9 +133,9 @@ describe('useFilterState', () => {
       setFilterOptions: jest.fn(),
       clearFilters: mockClearFilters,
       filterOptions: {
-        searchTerm: 'BTC',
-        quoteCoin: 'USDT',
-        favoritesOnly: true,
+        search: 'BTC',
+        quoteAsset: 'USDT',
+        showFavoritesOnly: true,
       },
     });
     

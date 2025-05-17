@@ -73,9 +73,9 @@ const mockSymbols: SymbolInfo[] = [
 
 // デフォルトフィルターオプション
 const defaultFilters: FilterOptions = {
-  searchTerm: '',
-  quoteCoin: '',
-  favoritesOnly: false,
+  search: '',
+  quoteAsset: '',
+  showFavoritesOnly: false,
 };
 
 describe('usePopularSymbols', () => {
@@ -96,13 +96,13 @@ describe('usePopularSymbols', () => {
     );
   });
   
-  test('searchTermが適用されている場合、空配列を返す', () => {
+  test('searchが適用されている場合、空配列を返す', () => {
     const { result } = renderHook(() => 
       usePopularSymbols({
         symbols: mockSymbols,
         filterOptions: {
           ...defaultFilters,
-          searchTerm: 'BTC',
+          search: 'BTC',
         },
       })
     );
@@ -111,13 +111,13 @@ describe('usePopularSymbols', () => {
     expect(result.current).toHaveLength(0);
   });
   
-  test('quoteCoinが適用されている場合、空配列を返す', () => {
+  test('quoteAssetが適用されている場合、空配列を返す', () => {
     const { result } = renderHook(() => 
       usePopularSymbols({
         symbols: mockSymbols,
         filterOptions: {
           ...defaultFilters,
-          quoteCoin: 'USDT',
+          quoteAsset: 'USDT',
         },
       })
     );
@@ -126,13 +126,13 @@ describe('usePopularSymbols', () => {
     expect(result.current).toHaveLength(0);
   });
   
-  test('favoritesOnlyが適用されている場合、空配列を返す', () => {
+  test('showFavoritesOnlyが適用されている場合、空配列を返す', () => {
     const { result } = renderHook(() => 
       usePopularSymbols({
         symbols: mockSymbols,
         filterOptions: {
           ...defaultFilters,
-          favoritesOnly: true,
+          showFavoritesOnly: true,
         },
       })
     );
