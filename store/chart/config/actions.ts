@@ -18,14 +18,14 @@ export const createChartConfigActions = (
   get: () => ChartConfigSlice
 ): ChartConfigSliceActions => ({
   // チャートタイプを設定
-  setChartType: (chartType) => {
+  setChartType: (chartType: ChartType) => {
     set((state) => {
       state.chartType = chartType;
     });
   },
 
   // 取引所タイプを設定
-  setExchangeType: (exchangeType) => {
+  setExchangeType: (exchangeType: ExchangeType) => {
     set((state) => {
       state.exchangeType = exchangeType;
     });
@@ -35,7 +35,7 @@ export const createChartConfigActions = (
   },
 
   // 取引種別（現物/先物など）を設定
-  setExchangeProductType: (exchangeProductType) => {
+  setExchangeProductType: (exchangeProductType: ExchangeProductType) => {
     set((state) => {
       state.exchangeProductType = exchangeProductType;
     });

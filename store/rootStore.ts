@@ -312,7 +312,7 @@ export const useRootStore = create<RootStore>()(
           );
 
           // すべてのスライスを合成して返す
-          return {
+          const combined: RootStore = {
             ...dataFetchSlice,
             ...socketSlice,
             ...symbolSlice,
@@ -328,7 +328,8 @@ export const useRootStore = create<RootStore>()(
             ...marketSlice,
             ...debugSlice,
             ...settingsSlice
-          } as RootStore;
+          };
+          return combined;
         }),
         {
           name: 'tradechat-root-v2', // パーシスト用のキー

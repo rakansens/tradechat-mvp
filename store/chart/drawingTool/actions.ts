@@ -14,7 +14,7 @@ export const createDrawingToolActions = (
   get: () => DrawingToolSlice
 ): DrawingToolSliceActions => ({
   // 描画ツールの有効/無効を切り替え
-  toggleDrawingTool: (toolType) => {
+  toggleDrawingTool: (toolType: DrawingToolType) => {
     const currentTool = get().activeDrawingTool;
     
     // 同じツールが選択された場合は、描画モードのON/OFFを切り替え

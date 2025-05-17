@@ -82,7 +82,7 @@ export const createChatActions = (
   get: () => ChatSliceState
 ): ChatSliceActions => ({
   // 基本アクション - 後方互換性のために残す
-  setMessages: (messages) => {
+  setMessages: (messages: ExtendedMessage[]) => {
     set((state) => {
       // メインのメッセージを更新
       state.messages = messages
@@ -97,7 +97,7 @@ export const createChatActions = (
     })
   },
   
-  addMessage: (message) => {
+  addMessage: (message: ExtendedMessage) => {
     set((state) => {
       // メインのメッセージに追加
       state.messages = [...state.messages, message]
@@ -115,7 +115,7 @@ export const createChatActions = (
     })
   },
   
-  setIsSearching: (isSearching) => {
+  setIsSearching: (isSearching: boolean) => {
     set((state) => {
       // メインの検索状態を更新
       state.isSearching = isSearching
@@ -133,7 +133,7 @@ export const createChatActions = (
     })
   },
   
-  setInput: (input) => {
+  setInput: (input: string) => {
     set((state) => {
       // メインの入力を更新
       state.input = input
@@ -152,7 +152,7 @@ export const createChatActions = (
   },
   
   // メッセージ操作
-  sendMessage: async (message, conversationId) => {
+  sendMessage: async (message: string, conversationId?: string) => {
     const { messages, activeConversationId } = get()
 
     // 使用する会話IDを決定
@@ -369,7 +369,7 @@ export const createChatActions = (
     })
   },
   
-  updateMessage: (id, updatedMessage) => {
+  updateMessage: (id: string, updatedMessage: Partial<ExtendedMessage>) => {
     set((state) => {
       // メインのメッセージを更新
       state.messages = state.messages.map(msg =>
@@ -395,7 +395,7 @@ export const createChatActions = (
     })
   },
   
-  deleteMessage: (id) => {
+  deleteMessage: (id: string) => {
     set((state) => {
       // メインのメッセージから削除
       state.messages = state.messages.filter(msg => msg.id !== id)
@@ -414,7 +414,7 @@ export const createChatActions = (
   },
   
   // 会話管理アクション
-  setActiveConversation: (conversationId) => {
+  setActiveConversation: (conversationId: string) => {
     const { messageSubscription, activeConversationId } = get();
     
     // 既存の購読を解除
@@ -446,7 +446,11 @@ export const createChatActions = (
     }, 0);
   },
   
-  createConversation: async (title, systemPrompt, initialMessages = []) => {
+  createConversation: async (
+    title: string,
+    systemPrompt?: string,
+    initialMessages: ExtendedMessage[] = []
+  ) => {
     try {
       // APIを使用して会話を作成
       const response = await fetch('/api/conversations', {
@@ -499,7 +503,10 @@ export const createChatActions = (
     }
   },
   
-  setConversationMessages: (conversationId, messages) => {
+  setConversationMessages: (
+    conversationId: string,
+    messages: ExtendedMessage[]
+  ) => {
     set((state) => {
       // 会話が存在しない場合は作成
       if (!state.byConversation[conversationId]) {
@@ -525,7 +532,11 @@ export const createChatActions = (
     })
   },
   
-  updateConversationMessage: (conversationId, messageId, updatedMessage) => {
+  updateConversationMessage: (
+    conversationId: string,
+    messageId: string,
+    updatedMessage: Partial<ExtendedMessage>
+  ) => {
     set((state) => {
       // 会話が存在しない場合はスキップ
       if (!state.byConversation[conversationId]) return
@@ -663,7 +674,11 @@ export const createChatActions = (
   },
   
   // 会話設定の更新アクション
-  updateConversationSettings: async (conversationId, title, systemPrompt) => {
+  updateConversationSettings: async (
+    conversationId: string,
+    title: string,
+    systemPrompt?: string | null
+  ) => {
     try {
       // APIを使用して会話を更新
       const response = await fetch(`/api/conversations/${conversationId}`, {
@@ -706,7 +721,7 @@ export const createChatActions = (
   },
   
   // リアルタイム購読アクション
-  startMessageSubscription: (conversationId) => {
+  startMessageSubscription: (conversationId: string) => {
     const { messageSubscription } = get();
     
     // 既存の購読を解除
@@ -897,14 +912,18 @@ export const createChatActions = (
     }
   },
   
-  setConnectionStatus: (status, error = null) => {
+  setConnectionStatus: (status: ConnectionStatus, error: string | null = null) => {
     set((state) => {
       state.connectionStatus = status;
       state.connectionError = error;
     });
   },
   
-  setConversationConnectionStatus: (conversationId, status, error = null) => {
+  setConversationConnectionStatus: (
+    conversationId: string,
+    status: ConnectionStatus,
+    error: string | null = null
+  ) => {
     set((state) => {
       // 会話が存在する場合のみ更新
       if (state.byConversation[conversationId]) {

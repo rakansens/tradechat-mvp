@@ -24,7 +24,7 @@ export const createChartActions = (
 ): ChartSliceActions => ({
   
   // タイムフレーム変更アクション
-  setTimeframe: (timeframe) => {
+  setTimeframe: (timeframe: Timeframe) => {
     const dataPoints = getDataPointsForTimeframe(timeframe)
     set((state) => {
       state.timeframe = timeframe
@@ -33,7 +33,7 @@ export const createChartActions = (
   },
   
   // チャートタイプ変更アクション
-  setChartType: (chartType) => {
+  setChartType: (chartType: ChartType) => {
     set((state) => {
       state.chartType = chartType
     })
