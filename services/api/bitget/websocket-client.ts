@@ -9,7 +9,7 @@
  */
 
 import { EventEmitter } from 'events';
-import { Timeframe } from '../../../types/chart';
+import { Timeframe } from '@/types/chart';
 import { IWebSocketClient } from '../interfaces';
 import { logger } from '../../../utils/logger';
 

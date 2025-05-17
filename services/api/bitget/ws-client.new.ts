@@ -9,8 +9,8 @@
  */
 
 import { ProductType, BitgetCredentials } from '@/types/api';
-import { OHLCData, Timeframe } from '../../../types/chart';
-import { OrderBookData } from '../../../types/market';
+import { OHLCData, Timeframe } from '@/types/chart';
+import { OrderBookData } from '@/types/market';
 import { logger } from '@/utils/common';
 import { IS_DEV, getApiConfig } from '@/config/environment';
 import { BitgetApiClientOptions } from './interfaces';
