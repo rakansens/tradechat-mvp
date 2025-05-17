@@ -2,7 +2,7 @@
 // 作成: シンボルセレクター関連のZodバリデーションスキーマ
 
 import { z } from "zod"
-import { ExchangeType } from "@/types/constants/enums"
+import { ProductType } from "@/types/constants/enums"
 
 // シンボル情報のバリデーションスキーマ
 export const symbolInfoSchema = z.object({
@@ -30,8 +30,8 @@ export const symbolSelectorPropsSchema = z.object({
     .args(z.string())
     .returns(z.void()),
   currentSymbol: z.string().default("BTCUSDT"),
-  defaultExchangeType: z.enum(["spot", "futures"]).default("spot"),
-  onExchangeTypeChange: z.function()
+  defaultProductType: z.enum(["spot", "futures"]).default("spot"),
+  onProductTypeChange: z.function()
     .args(z.enum(["spot", "futures"]))
     .returns(z.void())
     .optional()

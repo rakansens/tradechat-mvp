@@ -11,19 +11,19 @@ import {
   selectIsLoadingSymbols,
   selectSymbolError
 } from '@/store/barrel';
-import type { ExchangeType } from '@/types/constants/enums';
+import type { ProductType } from '@/types/constants/enums';
 
 interface UseSymbolSelectorLogicOptions {
-  defaultExchangeType?: ExchangeType;
-  onExchangeTypeChange?: (type: ExchangeType) => void;
+  defaultProductType?: ProductType;
+  onProductTypeChange?: (type: ProductType) => void;
 }
 
 /**
  * セレクターで使用するストアのロジックを管理するフック
  */
 export const useSymbolSelectorLogic = ({
-  defaultExchangeType,
-  onExchangeTypeChange
+  defaultProductType,
+  onProductTypeChange
 }: UseSymbolSelectorLogicOptions = {}) => {
   // RootStoreから状態を取得
   const symbols = useRootStore(selectFilteredSymbols);
@@ -39,13 +39,13 @@ export const useSymbolSelectorLogic = ({
 
   // 取引タイプの変更ハンドラー
   const handleProductTypeChange = useCallback(
-    (type: ExchangeType) => {
+    (type: ProductType) => {
       setProductType(type);
-      if (onExchangeTypeChange) {
-        onExchangeTypeChange(type);
+      if (onProductTypeChange) {
+        onProductTypeChange(type);
       }
     },
-    [setProductType, onExchangeTypeChange]
+    [setProductType, onProductTypeChange]
   );
 
   // 再試行ハンドラー
@@ -55,10 +55,10 @@ export const useSymbolSelectorLogic = ({
 
   // デフォルトの取引タイプが指定されていれば設定
   useEffect(() => {
-    if (defaultExchangeType && defaultExchangeType !== currentProductType) {
-      setProductType(defaultExchangeType);
+    if (defaultProductType && defaultProductType !== currentProductType) {
+      setProductType(defaultProductType);
     }
-  }, [defaultExchangeType, currentProductType, setProductType]);
+  }, [defaultProductType, currentProductType, setProductType]);
 
   return {
     symbols: { filteredSymbols: symbols, isLoading, error },

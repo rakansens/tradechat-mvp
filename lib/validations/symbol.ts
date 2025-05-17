@@ -3,8 +3,8 @@
 // 更新: 2025-10-09 - S-9.2フェーズ: ExchangeType型の参照を統一
 
 import { z } from "zod"
-import { type ExchangeType, type ExchangeProductType } from "@/types/constants/enums"
-import { safeExchangeType, safeProductType } from "@/utils/exchangeTypeUtils";
+import { type ProductType } from '@/types/constants/enums'
+
 
 // シンボル情報のバリデーションスキーマ
 export const symbolInfoSchema = z.object({
@@ -32,9 +32,9 @@ export const symbolSelectorPropsSchema = z.object({
     .args(z.string())
     .returns(z.void()),
   currentSymbol: z.string().default("BTCUSDT"),
-  defaultExchangeType: z.enum(["bitget", "binance", "bybit", "demo"]).default("bitget"),
-  onExchangeTypeChange: z.function()
-    .args(z.enum(["bitget", "binance", "bybit", "demo"]))
+  defaultProductType: z.enum(["spot", "futures"]).default("spot"),
+  onProductTypeChange: z.function()
+    .args(z.enum(["spot", "futures"]))
     .returns(z.void())
     .optional()
 })
