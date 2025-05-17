@@ -98,3 +98,11 @@ export function getBitgetIntegration(): BitgetIntegration {
   }
   return bitgetIntegrationInstance;
 }
+
+/**
+ * テスト用にシングルトンをリセット
+ */
+export function resetBitgetIntegrationForTesting(): void {
+  bitgetIntegrationInstance?.disconnectApiClient();
+  bitgetIntegrationInstance = null;
+}

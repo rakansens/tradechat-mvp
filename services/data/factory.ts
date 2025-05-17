@@ -7,8 +7,15 @@
 
 import { IOrderBookService, IChartDataService } from './interfaces';
 import { getChartDataService, resetChartDataServiceForTesting } from './chart-data-service';
-import { orderBookService } from './order-book-service';
+import { orderBookService, resetOrderBookService } from './order-book-service';
 import { dataFetchService } from './dataFetchService';
+import { resetCacheService } from '../cache/service';
+import { resetDataSourceFactory } from '../api/data-source-factory';
+import { resetCCXWSClient } from '../ccxws/client';
+import { resetWebSocketClientForTesting } from '../socket/websocket-client';
+import { resetSubscriptionManagerForTesting } from '../socket/subscription-manager';
+import { resetBitgetIntegrationForTesting } from '../socket/bitget-integration';
+import { resetInstances as resetSocketInstances } from '../socket/factory';
 
 // モックモード判定
 const isMockMode = process.env.MOCK_MODE === 'true';
@@ -42,5 +49,12 @@ export function getDataFetchServiceFactory() {
  */
 export function resetAllServicesForTesting(): void {
   resetChartDataServiceForTesting();
-  // 他のサービスのリセット関数があれば追加
+  resetOrderBookService();
+  resetCacheService();
+  resetDataSourceFactory();
+  resetCCXWSClient();
+  resetSubscriptionManagerForTesting();
+  resetBitgetIntegrationForTesting();
+  resetWebSocketClientForTesting();
+  resetSocketInstances();
 }

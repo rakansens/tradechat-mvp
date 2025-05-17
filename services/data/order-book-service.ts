@@ -255,7 +255,15 @@ class OrderBookService extends EventEmitter implements IOrderBookService {
     // 購読リストをクリア
     this.subscriptions.clear();
   }
-  
+
+  /**
+   * サービス状態をリセット
+   */
+  reset(): void {
+    this.unsubscribeAllOrderBooks();
+    this.bitgetApiClient = null;
+  }
+
   /**
    * すべての購読を解除
    * @deprecated 代わりにunsubscribeAllOrderBooksを使用してください
@@ -268,3 +276,10 @@ class OrderBookService extends EventEmitter implements IOrderBookService {
 
 // シングルトンインスタンスをエクスポート
 export const orderBookService = new OrderBookService();
+
+/**
+ * サービスインスタンスをリセット
+ */
+export function resetOrderBookService(): void {
+  orderBookService.reset();
+}

@@ -26,5 +26,6 @@ export * from './api/common/environment';
 export * from './cache';
 export * from './history';
 export * from './data';
+export * from './reset';
 
 // 古いdataFetchServiceのエクスポートは削除されました

@@ -524,3 +524,10 @@ export function getSubscriptionManager(webSocketClient?: IWebSocketClient): Subs
   }
   return subscriptionManagerInstance;
 }
+
+/**
+ * テスト用にシングルトンをリセット
+ */
+export function resetSubscriptionManagerForTesting(): void {
+  subscriptionManagerInstance = null;
+}

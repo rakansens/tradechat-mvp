@@ -223,6 +223,15 @@ class ChartDataService extends EventEmitter implements IChartDataService {
     // キャッシュからチャートデータのキャッシュを削除
     cacheService.clearByPattern(/^chart_/);
   }
+
+  /**
+   * サービス状態をリセット
+   * すべての購読を解除し、内部クライアントを破棄します
+   */
+  reset(): void {
+    this.unsubscribeAllKlines();
+    this.bitgetApiClient = null;
+  }
 }
 
 /**
@@ -264,6 +273,9 @@ export function getChartDataService(): ChartDataService {
 
 // テスト用にシングルトンインスタンスをリセットする関数
 export function resetChartDataServiceForTesting(): void {
+  if (chartDataServiceInstance) {
+    chartDataServiceInstance.reset();
+  }
   chartDataServiceInstance = null;
 }
 
