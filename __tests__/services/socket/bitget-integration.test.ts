@@ -55,7 +55,7 @@ describe('BitgetIntegration', () => {
         expect.objectContaining({
           component: 'BitgetIntegration',
           action: 'initializeApiClient',
-          exchangeType: 'spot'
+          productType: 'spot'
         })
       );
     });
@@ -92,7 +92,7 @@ describe('BitgetIntegration', () => {
         expect.objectContaining({
           component: 'BitgetIntegration',
           action: 'initializeApiClient',
-          exchangeType: 'spot',
+          productType: 'spot',
           error: expect.any(Error)
         })
       );
