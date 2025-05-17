@@ -1,11 +1,15 @@
 // instrument-type-tools.test.ts
-// Cascade: Mocked node-fetch, updated error case assertions to expect resolved objects.
+// Cascade: Uses global fetch, updated error case assertions to expect resolved objects.
 // Cascade: Corrected import path for ExchangeType.
 
 import { changeInstrumentTypeTool } from '../../../src/mastra/tools/instrument-type-tools';
 import { logger } from '@/utils/common';
+<<<<<<< ours
+import { ProductType } from '@/types/api';
+=======
 import fetch from 'node-fetch'; // Import to mock
 import { ExchangeType, ProductType } from '@/types/api';
+>>>>>>> theirs
 
 // Mock logger
 jest.mock('@/utils/common', () => ({
@@ -17,35 +21,32 @@ jest.mock('@/utils/common', () => ({
   },
 }));
 
-// Mock node-fetch
-const { Response: NodeFetchResponse } = jest.requireActual('node-fetch');
-jest.mock('node-fetch', () => jest.fn());
+// Mock fetch - global.fetch is set up in jest.setup.js
 
 const mockRuntimeContext: any = {
   invocationId: 'test-invocation-id',
   userId: 'test-user-id',
 };
 
-// Helper to create a mock Response object compatible with node-fetch
-const createMockNodeFetchResponse = (body: any, options: { ok: boolean; status: number; statusText: string; }) => {
-  const response = new NodeFetchResponse(JSON.stringify(body), {
+// Helper to create a mock Response object
+const createMockResponse = (body: any, options: { ok: boolean; status: number; statusText: string; }) => {
+  const response = new Response(JSON.stringify(body), {
     status: options.status,
     statusText: options.statusText,
     headers: { 'Content-Type': 'application/json' },
   });
-  // Manually set 'ok' as it's a getter in the actual Response class
   Object.defineProperty(response, 'ok', { value: options.ok });
   return response;
 };
 
 const mockApiResponse = (type: ProductType, success = true) =>
-  createMockNodeFetchResponse(
+  createMockResponse(
     { success, type }, 
     { ok: success, status: success ? 200 : 500, statusText: success ? 'OK' : 'Internal Server Error' }
   );
 
 const mockApiErrorResponseText = (errorMessage: string, type: ProductType) =>
-  createMockNodeFetchResponse(
+  createMockResponse(
     { success: false, error: errorMessage, type },
     { ok: false, status: 500, statusText: 'Internal Server Error' }
   );
@@ -133,7 +134,7 @@ describe('changeInstrumentTypeTool', () => {
   });
 
   it('JSONパースエラー時に適切にエラーを処理すること', async () => {
-    const mockInvalidJsonResponse = new NodeFetchResponse('Invalid JSON', {
+    const mockInvalidJsonResponse = new Response('Invalid JSON', {
       status: 200,
       statusText: 'OK',
       headers: { 'Content-Type': 'application/json' }, // Lies about content type

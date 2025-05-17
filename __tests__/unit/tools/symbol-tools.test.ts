@@ -1,11 +1,15 @@
 // symbol-tools.test.ts
 // 銘柄変更ツールのテスト
-// Cascade: Mocked node-fetch, updated error case assertions, adapted mock responses.
+// Cascade: Uses global fetch; updated error case assertions and mock responses.
 
 import { changeSymbolTool } from '../../../src/mastra/tools/symbol-tools';
 import { logger } from '@/utils/common';
+<<<<<<< ours
+import { ProductType } from '@/types/api';
+=======
 import fetch from 'node-fetch'; // Import to mock
 import { ExchangeType, ProductType } from '@/types/api';
+>>>>>>> theirs
 
 // Mock logger
 jest.mock('@/utils/common', () => ({
@@ -17,9 +21,7 @@ jest.mock('@/utils/common', () => ({
   },
 }));
 
-// Mock node-fetch
-const { Response: NodeFetchResponse } = jest.requireActual('node-fetch');
-jest.mock('node-fetch', () => jest.fn());
+// Mock fetch - global.fetch is configured in jest.setup.js
 
 const mockRuntimeContext: any = {
   invocationId: 'test-invocation-id',
@@ -27,25 +29,25 @@ const mockRuntimeContext: any = {
   // 必要に応じて他のプロパティを追加
 };
 
-// Helper to create a mock Response object compatible with node-fetch
-const createMockNodeFetchResponse = (body: any, options: { ok: boolean; status: number; statusText: string; headers?: Record<string, string> }) => {
-  const response = new NodeFetchResponse(JSON.stringify(body), {
+// Helper to create a mock Response object
+const createMockResponse = (body: any, options: { ok: boolean; status: number; statusText: string; headers?: Record<string, string> }) => {
+  const response = new Response(JSON.stringify(body), {
     status: options.status,
     statusText: options.statusText,
-    headers: { 'Content-Type': 'application/json', ...options.headers }, 
+    headers: { 'Content-Type': 'application/json', ...options.headers },
   });
   Object.defineProperty(response, 'ok', { value: options.ok });
   return response;
 };
 
 const mockSymbolApiResponse = (symbol: string, success = true, exchangeType?: ProductType) =>
-  createMockNodeFetchResponse(
+  createMockResponse(
     { success, symbol, exchangeType }, 
     { ok: success, status: success ? 200 : 500, statusText: success ? 'OK' : 'Internal Server Error' }
   );
 
 const mockSymbolApiErrorResponse = (symbol: string, errorMessage: string, exchangeType?: ProductType) =>
-  createMockNodeFetchResponse(
+  createMockResponse(
     { success: false, symbol, error: errorMessage, exchangeType },
     { ok: false, status: 500, statusText: 'Internal Server Error' }
   );
@@ -123,7 +125,7 @@ describe('changeSymbolTool', () => {
 
   it('JSONパースエラー時に適切にエラーを処理すること', async () => {
     const inputSymbol = 'DOTUSDT';
-    const mockInvalidJsonResponse = new NodeFetchResponse('Not a valid JSON', {
+    const mockInvalidJsonResponse = new Response('Not a valid JSON', {
         status: 200, statusText: 'OK', headers: { 'Content-Type': 'text/plain' }
     });
     Object.defineProperty(mockInvalidJsonResponse, 'ok', { value: true });

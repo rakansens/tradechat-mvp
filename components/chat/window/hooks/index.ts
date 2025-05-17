@@ -4,7 +4,7 @@
  * 更新: 2025-06-28 - useScrollManagerをuseAutoScrollに置き換え
  */
 
-import useAutoScroll from '@/hooks/ui';
+import { useAutoScroll } from '@/hooks/ui';
 
 export { default as useChatWindowStores } from './useChatWindowStores';
 export { useAutoScroll }; 

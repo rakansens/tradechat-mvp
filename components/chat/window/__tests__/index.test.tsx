@@ -16,11 +16,13 @@ jest.mock('../hooks/useChatWindowStores', () => () => ({
   streamingMessage: null
 }));
 
-jest.mock('@/hooks/ui', () => () => ({
-  containerRef: { current: null },
-  showScrollButton: true,
-  handleScroll: jest.fn(),
-  scrollToBottom: jest.fn()
+jest.mock('@/hooks/ui', () => ({
+  useAutoScroll: () => ({
+    containerRef: { current: null },
+    showScrollButton: true,
+    handleScroll: jest.fn(),
+    scrollToBottom: jest.fn()
+  })
 }));
 
 jest.mock('../ui/MessageListWrapper', () => {

@@ -5,7 +5,6 @@
 import { createTool } from "@mastra/core/tools";
 import { z } from "zod";
 import { logger } from "@/utils/common";
-import fetch from "node-fetch";
 
 /**
  * チャートの時間足を変更するツール

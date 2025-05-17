@@ -18,7 +18,7 @@ export { useQuickCommands } from "@/components/chat/section/hooks/useQuickComman
 export type { QuickCommand } from "@/components/chat/section/hooks/useQuickCommands";
 
 export { default as useChatWindowStores } from '@/components/chat/window/hooks/useChatWindowStores';
-export { default as useAutoScroll } from '@/hooks/ui';
+
 
 // useChatInteractionフックのエクスポート
 export { useChatInteraction } from './useChatInteraction';

@@ -95,4 +95,8 @@ export interface SymbolFilterOptions {
   quoteCoin?: string;                // クォート通貨でフィルタリング
   favoritesOnly?: boolean;           // favoriteのエイリアス
   hideStablePairs?: boolean;         // stableの反対の意味
+  /** @deprecated quoteCoin のエイリアス */
+  quoteAsset?: string;
+  /** @deprecated favoritesOnly のエイリアス */
+  showFavoritesOnly?: boolean;
 }
