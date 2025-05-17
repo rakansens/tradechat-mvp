@@ -6,7 +6,7 @@
  * 各サービスのインターフェースを明確に定義
  */
 
-import { ExchangeType } from '@/types/api';
+import { ExchangeType, ProductType } from '@/types/api';
 import { OHLCData, Timeframe, OrderBookData } from '../../types/chart';
 
 /**
@@ -80,7 +80,7 @@ export interface IChartDataService {
     symbol: string,
     timeFrame: Timeframe,
     callback: (data: OHLCData) => void,
-    exchangeType?: ExchangeType
+    productType?: ProductType
   ): () => void;
   
   /**

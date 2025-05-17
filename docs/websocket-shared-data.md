@@ -260,7 +260,7 @@ fetchChartData(
 subscribeOrderBookRealtime(
   symbol: string,
   callback: (data: OrderBookData) => void,
-  exchangeType: ExchangeType = 'spot'
+  productType: ProductType = 'spot'
 ): () => void
 
 // ローソク足データをリアルタイム購読
@@ -268,7 +268,7 @@ subscribeKlineRealtime(
   symbol: string,
   timeFrame: Timeframe,
   callback: (data: OHLCData) => void,
-  exchangeType: ExchangeType = 'spot'
+  productType: ProductType = 'spot'
 ): () => void
 ```
 

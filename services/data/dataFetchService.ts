@@ -17,7 +17,9 @@ import { EventEmitter } from 'events';
 import { BitgetApiClient } from '../api/bitget/client.new';
 import { IDataFetchService } from './dataFetchTypes';
 import { OHLCData, Timeframe } from '../../types/chart';
-import { ExchangeType } from '@/types/api';
+import { ExchangeType, ProductType } from '@/types/api';
+import { useRootStore } from '../../store/rootStore';
+import { toExchangeType } from '@/utils/exchangeTypeUtils';
 import { logger } from '../../utils/logger';
 import { normalizeSymbol } from '../../utils/formatters';
 import { getSocketService } from '../socket/service';
@@ -199,10 +201,13 @@ class DataFetchService extends EventEmitter implements IDataFetchService {
     symbol: string,
     timeFrame: Timeframe,
     callback: (data: OHLCData) => void,
-    exchangeType: ExchangeType = 'bitget'
+    productType?: ProductType
   ): () => void {
     // シンボルを正規化
     const normalizedSymbol = normalizeSymbol(symbol);
+    const storeType = useRootStore.getState().exchangeProductType;
+    const finalType = productType || storeType;
+    const exchangeType = toExchangeType(finalType);
     
     // ブラウザ環境ではポーリングで対応
     if (isBrowser) {
@@ -211,7 +216,7 @@ class DataFetchService extends EventEmitter implements IDataFetchService {
         action: 'subscribeKlineRealtime',
         symbol: normalizedSymbol,
         timeFrame,
-        exchangeType,
+        exchangeType: finalType,
         client: 'polling'
       });
       
@@ -243,7 +248,7 @@ class DataFetchService extends EventEmitter implements IDataFetchService {
             action: 'subscribeKlineRealtime',
             symbol: normalizedSymbol,
             timeFrame,
-            exchangeType,
+            exchangeType: finalType,
             error
           });
         }
@@ -265,7 +270,7 @@ class DataFetchService extends EventEmitter implements IDataFetchService {
         action: 'subscribeKlineRealtime',
         symbol: normalizedSymbol,
         timeFrame,
-        exchangeType
+        exchangeType: finalType
       });
       return () => {};
     }
@@ -276,7 +281,7 @@ class DataFetchService extends EventEmitter implements IDataFetchService {
       timeFrame,
       (data: OHLCData) => {
         // データをキャッシュに保存（既存のキャッシュがあれば更新）
-        const requestKey = `chart-${normalizedSymbol}-${timeFrame}-${exchangeType}`;
+        const requestKey = `chart-${normalizedSymbol}-${timeFrame}-${finalType}`;
         const cachedData = cacheService.get<OHLCData[]>(requestKey);
         
         if (cachedData && Array.isArray(cachedData)) {
@@ -301,7 +306,7 @@ class DataFetchService extends EventEmitter implements IDataFetchService {
         // コールバック関数を呼び出し
         callback(data);
       },
-      exchangeType
+      finalType
     );
     
     logger.info(`WebSocketでローソク足データのリアルタイム購読を開始: ${normalizedSymbol} ${timeFrame}`, {
@@ -309,7 +314,7 @@ class DataFetchService extends EventEmitter implements IDataFetchService {
       action: 'subscribeKlineRealtime',
       symbol: normalizedSymbol,
       timeFrame,
-      exchangeType,
+      exchangeType: finalType,
       client: 'socket-service'
     });
     

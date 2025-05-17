@@ -10,7 +10,8 @@ import { EventEmitter } from 'events';
 import { BitgetApiClient } from '../api/bitget/client.new';
 import { IChartDataService } from './interfaces';
 import { OHLCData, Timeframe } from '../../types/chart';
-import { ExchangeType } from '@/types/api';
+import { ExchangeType, ProductType } from '@/types/api';
+import { useRootStore } from '../../store/rootStore';
 import { logger } from '../../utils/logger';
 import { normalizeSymbol } from '../../utils/formatters';
 import { getSocketService } from '../socket/index';
@@ -126,11 +127,13 @@ class ChartDataService extends EventEmitter implements IChartDataService {
     symbol: string,
     timeFrame: Timeframe,
     callback: (data: OHLCData) => void,
-    exchangeType: ExchangeType = 'bitget'
+    productType?: ProductType
   ): () => void {
     try {
       const normalizedSymbol = normalizeSymbol(symbol);
-      const subscriptionKey = `kline_${normalizedSymbol}_${timeFrame}_${exchangeType}`;
+      const storeType = useRootStore.getState().exchangeProductType;
+      const finalType = productType || storeType;
+      const subscriptionKey = `kline_${normalizedSymbol}_${timeFrame}_${finalType}`;
       
       // 既存の購読があれば解除
       if (this.subscriptions.has(subscriptionKey)) {
@@ -146,9 +149,9 @@ class ChartDataService extends EventEmitter implements IChartDataService {
           action: 'subscribeKlineRealtime',
           symbol: normalizedSymbol,
           timeFrame,
-          exchangeType
+          exchangeType: finalType
         });
-        
+
         const socketService = getSocketService();
         const unsubscribe = socketService.subscribeKline(
           normalizedSymbol,
@@ -164,7 +167,7 @@ class ChartDataService extends EventEmitter implements IChartDataService {
               data
             });
           },
-          exchangeType
+          finalType
         );
         
         // 購読を保存
