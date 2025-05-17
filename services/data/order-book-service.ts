@@ -11,7 +11,7 @@ import { BitgetApiClient } from '../api/bitget/client';
 import { IOrderBookService } from '../api/interfaces';
 import { OrderBookData } from '../../types/chart';
 import { ExchangeType } from '@/types/api';
-import { logger } from '../../utils/logger';
+import { logger } from '../../utils/common';
 import { normalizeSymbol } from '../../utils/formatters';
 import { getSocketService } from '../socket/service';
 import { cacheService } from '../cache/service';

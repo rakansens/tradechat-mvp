@@ -19,7 +19,7 @@ jest.mock('../../../services/socket/websocket-client', () => ({
   resetWebSocketClientForTesting: jest.fn()
 }));
 
-jest.mock('../../../utils/logger', () => ({
+jest.mock('../../../utils/common', () => ({
   logger: {
     info: jest.fn(),
     warn: jest.fn(),
@@ -29,7 +29,7 @@ jest.mock('../../../utils/logger', () => ({
 }));
 
 // モックをインポート
-const { logger } = require('../../../utils/logger');
+const { logger } = require('../../../utils/common');
 
 // モック
 const mockSocket = {
@@ -48,7 +48,7 @@ const mockWebSocketClient: IWebSocketClient = {
   scheduleReconnect: jest.fn()
 };
 
-jest.mock('../../../utils/logger', () => ({
+jest.mock('../../../utils/common', () => ({
   logger: {
     info: jest.fn(),
     warn: jest.fn(),

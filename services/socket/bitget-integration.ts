@@ -8,7 +8,7 @@
 
 import { ProductType } from '@/types/api';
 import { BitgetApiClient } from '../api/bitget/client';
-import { logger } from '../../utils/logger';
+import { logger } from '../../utils/common';
 import { IBitgetIntegration } from './interfaces';
 
 /**

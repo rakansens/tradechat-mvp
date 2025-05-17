@@ -3,12 +3,12 @@
 // Cascade: Mocked node-fetch, updated error case assertions, adapted mock responses.
 
 import { changeSymbolTool } from '../../../src/mastra/tools/symbol-tools';
-import { logger } from '../../../utils/logger';
+import { logger } from '../../../utils/common';
 import fetch from 'node-fetch'; // Import to mock
 import { ExchangeType, ProductType } from '@/types/api';
 
 // Mock logger
-jest.mock('../../../utils/logger', () => ({
+jest.mock('../../../utils/common', () => ({
   logger: {
     info: jest.fn(),
     error: jest.fn(),
