@@ -8,7 +8,7 @@
 import { orderBookService } from '../../services/data/order-book-service';
 import { BitgetApiClient } from '../../services/api/bitget/client.new';
 import { getSocketService } from '../../services/socket/service';
-import { OrderBookData } from '../../types/chart';
+import { OrderBookData } from '@/types/chart';
 
 // ブラウザ環境のモック
 Object.defineProperty(global, 'window', {

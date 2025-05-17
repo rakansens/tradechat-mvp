@@ -4,7 +4,7 @@
 import { z } from "zod";
 import { chartCaptureAnalysisTool } from "../tools/chart-capture";
 import { changeTimeframeTool } from "../tools/timeframe-tools";
-import { logger } from "../../../utils/common";
+import { logger } from "@/utils/common";
 
 // 入力パラメータの型定義
 export interface TimeframeAnalysisParams {

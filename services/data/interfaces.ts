@@ -7,7 +7,7 @@
  */
 
 import { ExchangeType, ProductType } from '@/types/api';
-import { OHLCData, Timeframe, OrderBookData } from '../../types/chart';
+import { OHLCData, Timeframe, OrderBookData } from '@/types/chart';
 
 /**
  * オーダーブックサービスのインターフェース

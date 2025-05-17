@@ -6,7 +6,7 @@
 // 更新: 2025/6/30 - インポートパスを修正（/types/chat → /types/chat/base）
 // 更新: 2025/6/30 - インポートパスを相対パスに変更
 
-import type { ExtendedMessage } from '../../types/chat/base'
+import type { ExtendedMessage } from '@/types/chat'
 
 // リアルタイム接続状態タイプ
 export type ConnectionStatus = 

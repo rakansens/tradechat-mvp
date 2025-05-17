@@ -15,7 +15,7 @@ import {
   generateDefaultChartData
 } from '../../utils/chart/sanitizers';
 
-import { OHLCData } from '../../types/chart';
+import { OHLCData } from '@/types/chart';
 import { jest } from '@jest/globals';
 
 // loggerをモック

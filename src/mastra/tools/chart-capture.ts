@@ -4,7 +4,7 @@
 import { createTool } from "@mastra/core/tools";
 import { z } from "zod";
 import { v4 as uuidv4 } from "uuid";
-import { analyzeChartWithAI } from "../../../utils/aiUtils";
+import { analyzeChartWithAI } from "@/utils/aiUtils";
 
 // グローバル関数の型定義
 declare global {

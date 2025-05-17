@@ -7,7 +7,7 @@
 
 import { createTool } from "@mastra/core/tools";
 import { z } from "zod";
-import { logger } from "../../../utils/common";
+import { logger } from "@/utils/common";
 import fetch from "node-fetch";
 import { ExchangeType } from "../../../types/api";
 

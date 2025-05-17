@@ -16,7 +16,7 @@
 import { EventEmitter } from 'events';
 import { BitgetApiClient } from '../api/bitget/client.new';
 import { IDataFetchService } from './dataFetchTypes';
-import { OHLCData, Timeframe } from '../../types/chart';
+import { OHLCData, Timeframe } from '@/types/chart';
 import { ExchangeType, ProductType } from '@/types/api';
 import { useRootStore } from '../../store/rootStore';
 import { toExchangeType } from '@/utils/exchangeTypeUtils';

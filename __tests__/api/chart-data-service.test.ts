@@ -7,7 +7,7 @@
  * 更新: 2025-10-09: S-10.2フェーズ: ExchangeType型の一貫性を確保
  */
 
-import { OHLCData, OrderBookData } from '../../types/chart';
+import { OHLCData, OrderBookData } from '@/types/chart';
 import { type ExchangeType } from '@/types/constants/enums';
 
 // テスト用のExchangeType定数
