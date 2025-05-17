@@ -89,9 +89,9 @@ const ChartToolbar = memo(function ChartToolbar({
       <div className="flex justify-between items-center py-2 px-3 border-b border-border-light bg-background-secondary">
         <SymbolPriceBar
           currentSymbol={symbolStore.currentSymbol}
-          exchangeType={symbolStore.exchangeType as ExchangeProductType}
+          productType={symbolStore.exchangeType as ExchangeProductType}
           onSymbolChange={symbolStore.handleSymbolChange}
-          onExchangeTypeChange={symbolStore.setProductType}
+          onProductTypeChange={(type) => symbolStore.setProductType(type as ExchangeProductType)}
           currentPrice={currentPrice}
           priceChangePercent={priceChangePercent}
           mounted={mounted}

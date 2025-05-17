@@ -6,7 +6,7 @@
 // 更新: 2025-10-09 - S-9.2フェーズ: ExchangeType型の参照を統一し型変換を追加
 
 import { useState, useEffect } from 'react';
-import { type ExchangeType, type ExchangeProductType } from '@/types/constants/enums';
+import { type ProductType } from '@/types/constants/enums';
 import {
   Dialog,
   DialogContent,
@@ -17,21 +17,21 @@ import {
 import { Button } from '@/components/ui/button';
 import SymbolSelector from '@/components/SymbolSelector';
 import { CandlestickChart } from 'lucide-react';
-import { safeExchangeType } from '@/utils/exchangeTypeUtils';
+import { safeProductType } from '@/utils/exchangeTypeUtils';
 
 interface SymbolSelectorModalProps {
   currentSymbol: string;
   onSymbolSelect: (symbol: string) => void;
-  exchangeType?: ExchangeType | ExchangeProductType;
-  onExchangeTypeChange?: (exchangeType: ExchangeType | ExchangeProductType) => void;
+  productType?: ProductType;
+  onProductTypeChange?: (productType: ProductType) => void;
   trigger?: React.ReactNode;
 }
 
 export default function SymbolSelectorModal({
   currentSymbol,
   onSymbolSelect,
-  exchangeType = 'bitget', // デフォルト値を'spot'から'bitget'に変更
-  onExchangeTypeChange,
+  productType = 'spot',
+  onProductTypeChange,
   trigger
 }: SymbolSelectorModalProps) {
   const [open, setOpen] = useState(false);
@@ -48,11 +48,11 @@ export default function SymbolSelectorModal({
     setOpen(false);
   };
   
-  // 型安全な交換タイプ変更ハンドラ
-  const handleExchangeTypeChange = onExchangeTypeChange 
+  // 型安全な取引タイプ変更ハンドラ
+  const handleProductTypeChange = onProductTypeChange
     ? (newType: any) => {
         // 型変換して親コンポーネントに渡す
-        onExchangeTypeChange(safeExchangeType(newType));
+        onProductTypeChange(safeProductType(newType));
       }
     : undefined;
 
@@ -74,8 +74,8 @@ export default function SymbolSelectorModal({
           <SymbolSelector
             onSelect={handleSymbolSelect}
             currentSymbol={currentSymbol}
-            defaultExchangeType={safeExchangeType(exchangeType)}
-            onExchangeTypeChange={handleExchangeTypeChange}
+            defaultProductType={safeProductType(productType)}
+            onProductTypeChange={handleProductTypeChange}
           />
         </div>
       </DialogContent>

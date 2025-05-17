@@ -15,17 +15,17 @@ import { Badge } from '@/components/ui/badge';
 import { CandlestickChart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import SymbolSelectorModal from '../../SymbolSelectorModal';
-import { ExchangeType, ExchangeProductType } from '@/types/constants/enums';
+import { ProductType } from '@/types/constants/enums';
 import { SymbolSelector } from '@/components/symbol/Selector';
 import { ExchangeSelector } from '@/components/symbol/ExchangeSelector';
-import { safeExchangeType } from '@/utils/exchangeTypeUtils';
+import { safeProductType } from '@/utils/exchangeTypeUtils';
 
 interface SymbolPriceBarProps {
   // シンボル関連
   currentSymbol: string;
-  exchangeType: ExchangeType | ExchangeProductType;
+  productType: ProductType;
   onSymbolChange: (symbol: string) => void;
-  onExchangeTypeChange: (type: ExchangeType | ExchangeProductType) => void;
+  onProductTypeChange: (type: ProductType) => void;
   
   // 価格関連
   currentPrice: number | null;
@@ -39,9 +39,9 @@ interface SymbolPriceBarProps {
 const SymbolPriceBar = memo(function SymbolPriceBar({
   // シンボル関連props
   currentSymbol,
-  exchangeType,
+  productType,
   onSymbolChange,
-  onExchangeTypeChange,
+  onProductTypeChange,
   
   // 価格関連props
   currentPrice,
@@ -53,9 +53,9 @@ const SymbolPriceBar = memo(function SymbolPriceBar({
       {/* 銘柄選択モーダル */}
       <SymbolSelectorModal
         currentSymbol={currentSymbol}
-        exchangeType={safeExchangeType(exchangeType)}
+        productType={safeProductType(productType)}
         onSymbolSelect={onSymbolChange}
-        onExchangeTypeChange={onExchangeTypeChange}
+        onProductTypeChange={onProductTypeChange}
         trigger={
           <Button variant="outline" size="sm" className="gap-1">
             <CandlestickChart className="h-4 w-4" />

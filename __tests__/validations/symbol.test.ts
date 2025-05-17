@@ -103,8 +103,8 @@ describe('Symbol Validations', () => {
       const validProps = {
         onSelect: (symbol: string) => {},
         currentSymbol: 'BTCUSDT',
-        defaultExchangeType: 'spot' as ProductType,
-        onExchangeTypeChange: (type: ProductType) => {}
+        defaultProductType: 'spot' as ProductType,
+        onProductTypeChange: (type: ProductType) => {}
       };
 
       const result = symbolSelectorPropsSchema.safeParse(validProps);
@@ -115,7 +115,7 @@ describe('Symbol Validations', () => {
       const invalidProps = {
         // onSelectが欠けている
         currentSymbol: 'BTCUSDT',
-        defaultExchangeType: 'spot' as ProductType
+        defaultProductType: 'spot' as ProductType
       };
 
       const result = symbolSelectorPropsSchema.safeParse(invalidProps);
@@ -126,7 +126,7 @@ describe('Symbol Validations', () => {
       const validProps = {
         onSelect: (symbol: string) => {},
         currentSymbol: 'BTCUSDT',
-        defaultExchangeType: 'spot' as ProductType
+        defaultProductType: 'spot' as ProductType
       };
 
       const result = validateSymbolSelectorProps(validProps);

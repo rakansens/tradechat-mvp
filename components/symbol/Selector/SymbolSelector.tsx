@@ -12,7 +12,7 @@
  * - 2025-06-05: T-7.7.1フェーズ - 型インポートパスを修正
  * - 2025-06-05: T-7.7.2フェーズ - 内部関数の名前衝突を解消
  * - 2025-06-05: T-7.7.3フェーズ - プロパティ名を統一（quoteCoin→quoteCoin、favorite→favorite）
- * - 2025-10-09: S-9.2フェーズ - ExchangeType型の参照を統一
+ * - 2025-10-09: S-9.2フェーズ - ProductType型の参照を統一
  * - 2025-10-09: S-9.2フェーズ - FilterOptions型のインポートパス修正
  */
 
@@ -33,7 +33,7 @@ import { logger } from '@/utils/common';
 
 import { AdvancedSelectorView } from './ui/AdvancedSelectorView';
 // アイコンは子コンポーネントで使用されるため、ここでのインポートは不要
-import { type ExchangeType } from '@/types/constants/enums';
+import { type ProductType } from '@/types/constants/enums';
 import { validateSymbolSelectorProps } from '@/lib/validations/symbol';
 import type { SymbolSelectorPropsSchema } from '@/lib/validations/symbol';
 import {
@@ -121,21 +121,21 @@ export const SymbolSelector: React.FC<SymbolSelectorProps> = ({
  * 
  * @param onSelect 銘柄選択時のコールバック
  * @param currentSymbol 現在選択されている銘柄
- * @param defaultExchangeType デフォルトの取引タイプ
- * @param onExchangeTypeChange 取引タイプ変更時のコールバック
- */
+ * @param defaultProductType デフォルトの取引タイプ
+ * @param onProductTypeChange 取引タイプ変更時のコールバック
+*/
 export default function AdvancedSymbolSelector({
   onSelect,
   currentSymbol = 'BTCUSDT',
-  defaultExchangeType = 'bitget',
-  onExchangeTypeChange,
+  defaultProductType = 'spot',
+  onProductTypeChange,
 }: SymbolSelectorPropsSchema) {
   // プロパティのバリデーション
   const propsValidation = validateSymbolSelectorProps({
     onSelect,
     currentSymbol,
-    defaultExchangeType,
-    onExchangeTypeChange
+    defaultProductType,
+    onProductTypeChange
   });
   
   if (!propsValidation.success) {
@@ -151,8 +151,8 @@ export default function AdvancedSymbolSelector({
     actions: { toggleFavorite, retryFetch },
     productType: { current: productType, handleChange: handleProductTypeChange }
   } = useSymbolSelectorLogic({
-    defaultExchangeType,
-    onExchangeTypeChange
+    defaultProductType,
+    onProductTypeChange
   });
   
   // フィルター状態を管理するフックを使用
