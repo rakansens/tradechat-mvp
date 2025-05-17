@@ -10,29 +10,29 @@
 "use client";
 
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import type { ExchangeType } from '@/types/constants/enums';
+import type { ProductType } from '@/types/constants/enums';
 
 interface ExchangeTabsProps {
-  currentExchangeType: ExchangeType;
-  onExchangeTypeChange: (value: ExchangeType) => void;
+  currentProductType: ProductType;
+  onProductTypeChange: (value: ProductType) => void;
 }
 
 /**
  * 取引タイプ選択タブ（現物/先物）
  */
 export const ExchangeTabs = ({
-  currentExchangeType,
-  onExchangeTypeChange
+  currentProductType,
+  onProductTypeChange
 }: ExchangeTabsProps) => {
   const handleValueChange = (value: string) => {
     // 型安全に処理
     if (value === 'spot' || value === 'futures') {
-      onExchangeTypeChange(value);
+      onProductTypeChange(value);
     }
   };
 
   return (
-    <Tabs defaultValue={currentExchangeType} onValueChange={handleValueChange}>
+    <Tabs defaultValue={currentProductType} onValueChange={handleValueChange}>
       <TabsList className="grid grid-cols-2">
         <TabsTrigger value="spot">現物</TabsTrigger>
         <TabsTrigger value="futures">先物</TabsTrigger>

@@ -18,8 +18,8 @@ import {
 import { ExchangeType, ExchangeProductType } from '@/types/constants/enums';
 
 interface UseSelectorStoresProps {
-  defaultExchangeType?: ExchangeProductType;
-  onExchangeTypeChange?: (type: ExchangeProductType) => void;
+  defaultProductType?: ExchangeProductType;
+  onProductTypeChange?: (type: ExchangeProductType) => void;
 }
 
 /**
@@ -34,8 +34,8 @@ interface UseSelectorStoresProps {
  * @returns ストアのデータとアクション、取引タイプの状態と制御関数
  */
 export const useSelectorStores = ({
-  defaultExchangeType = 'spot',
-  onExchangeTypeChange
+  defaultProductType = 'spot',
+  onProductTypeChange
 }: UseSelectorStoresProps = {}) => {
   // SymbolSliceから状態とアクションを取得
   const filteredSymbols = useRootStore(selectFilteredSymbols);
@@ -45,42 +45,42 @@ export const useSelectorStores = ({
   const toggleFavorite = useRootStore(state => state.toggleFavorite);
   
   // 取引タイプの状態
-  const [exchangeType, setExchangeType] = useState<ExchangeProductType>(defaultExchangeType || 'spot');
+  const [productType, setProductType] = useState<ExchangeProductType>(defaultProductType || 'spot');
   
   // ExchangeProductTypeをExchangeTypeに変換するヘルパー関数
-  const toExchangeType = useCallback((productType: ExchangeProductType): ExchangeType => {
+  const toExchangeType = useCallback((pType: ExchangeProductType): ExchangeType => {
     // ここではデフォルトで'bitget'を使用するが、必要に応じてロジックを変更可能
     return 'bitget';
   }, []);
 
   // 取引タイプ変更のハンドラー
-  const handleExchangeTypeChange = (value: string) => {
+  const handleProductTypeChange = (value: string) => {
     if (value !== 'spot' && value !== 'futures') {
       console.warn(`Invalid exchange product type: ${value}, defaulting to 'spot'`);
       value = 'spot';
     }
     const newType = value as ExchangeProductType;
-    setExchangeType(newType);
+    setProductType(newType);
     
     // ExchangeProductTypeをExchangeTypeに変換してfetchSymbolsを呼び出す
     const exchangeTypeForFetch = toExchangeType(newType);
     fetchSymbols(exchangeTypeForFetch);
     
     // 外部コールバックがあれば呼び出す
-    if (onExchangeTypeChange) {
-      onExchangeTypeChange(newType);
+    if (onProductTypeChange) {
+      onProductTypeChange(newType);
     }
   };
   
   // 初回レンダリング時に銘柄を取得
   useEffect(() => {
-    const exchangeTypeForFetch = toExchangeType(exchangeType);
+    const exchangeTypeForFetch = toExchangeType(productType);
     fetchSymbols(exchangeTypeForFetch);
-  }, [fetchSymbols, exchangeType, toExchangeType]);
+  }, [fetchSymbols, productType, toExchangeType]);
   
   // データフェッチを再試行する関数
   const retryFetch = () => {
-    const exchangeTypeForFetch = toExchangeType(exchangeType);
+    const exchangeTypeForFetch = toExchangeType(productType);
     fetchSymbols(exchangeTypeForFetch);
   };
   
@@ -99,9 +99,9 @@ export const useSelectorStores = ({
     },
     
     // 取引タイプ関連
-    exchangeType: {
-      current: exchangeType,
-      handleChange: handleExchangeTypeChange
+    productType: {
+      current: productType,
+      handleChange: handleProductTypeChange
     }
   };
 };
