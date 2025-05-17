@@ -236,80 +236,95 @@ export const useRootStore = create<RootStore>()(
 
           // スライスの作成 - 全て同じパターンを使用
           const dataFetchSlice = createDataFetchSlice(
-            (fn) => immerSet<DataFetchSliceState>(fn),
+            (fn: (draft: Draft<DataFetchSliceState>) => void) =>
+              immerSet<DataFetchSliceState>(fn),
             () => getState<DataFetchSliceState>(),
             api
           );
           
           const socketSlice = createSocketSlice(
-            (fn) => immerSet<SocketSliceState>(fn),
+            (fn: (draft: Draft<SocketSliceState>) => void) =>
+              immerSet<SocketSliceState>(fn),
             () => getState<SocketSliceState>(),
             api
           );
           
           const symbolSlice = createSymbolSlice(
-            (fn) => immerSet<SymbolState>(fn),
+            (fn: (draft: Draft<SymbolState>) => void) =>
+              immerSet<SymbolState>(fn),
             () => getState<SymbolSlice>()
           );
 
           const chartDataSlice = createChartDataSlice(
-            (fn) => immerSet<ChartDataSliceState>(fn),
+            (fn: (draft: Draft<ChartDataSliceState>) => void) =>
+              immerSet<ChartDataSliceState>(fn),
             () => getState<ChartDataSlice>()
           );
 
           const realTimeSlice = createRealTimeSlice(
-            (fn) => immerSet<RealTimeSliceState>(fn),
+            (fn: (draft: Draft<RealTimeSliceState>) => void) =>
+              immerSet<RealTimeSliceState>(fn),
             () => getState<RealTimeSlice>()
           );
           
           const indicatorSlice = createIndicatorSlice(
-            (fn) => immerSet<IndicatorSliceState>(fn),
+            (fn: (draft: Draft<IndicatorSliceState>) => void) =>
+              immerSet<IndicatorSliceState>(fn),
             () => getState<IndicatorSlice>()
           );
           
           const drawingToolSlice = createDrawingToolSlice(
-            (fn) => immerSet<DrawingToolSliceState>(fn),
+            (fn: (draft: Draft<DrawingToolSliceState>) => void) =>
+              immerSet<DrawingToolSliceState>(fn),
             () => getState<DrawingToolSlice>()
           );
           
           const chartConfigSlice = createChartConfigSlice(
-            (fn) => immerSet<ChartConfigSliceState>(fn),
+            (fn: (draft: Draft<ChartConfigSliceState>) => void) =>
+              immerSet<ChartConfigSliceState>(fn),
             () => getState<ChartConfigSlice>()
           );
           
           const chartSlice = createChartSlice(
-            (fn) => immerSet<ChartSliceState>(fn),
+            (fn: (draft: Draft<ChartSliceState>) => void) =>
+              immerSet<ChartSliceState>(fn),
             () => getState<ChartSliceState>()
           );
           
           const entrySlice = createEntrySlice(
-            (fn) => immerSet<EntrySliceState>(fn),
+            (fn: (draft: Draft<EntrySliceState>) => void) =>
+              immerSet<EntrySliceState>(fn),
             () => getState<EntrySliceState>()
           );
           
           const chatSlice = createChatSlice(
-            (fn) => immerSet<ChatSliceState>(fn),
+            (fn: (draft: Draft<ChatSliceState>) => void) =>
+              immerSet<ChatSliceState>(fn),
             () => getState<ChatSliceState>(),
             api
           );
           
           const uiSlice = createUISlice(
-            (fn) => immerSet<UISliceState>(fn),
+            (fn: (draft: Draft<UISliceState>) => void) =>
+              immerSet<UISliceState>(fn),
             () => getState<UISliceState>()
           );
           
           const marketSlice = createMarketSlice(
-            (fn) => immerSet<MarketSliceState>(fn),
+            (fn: (draft: Draft<MarketSliceState>) => void) =>
+              immerSet<MarketSliceState>(fn),
             () => getState<MarketSliceState>()
           );
           
           const debugSlice = createDebugSlice(
-            (fn) => immerSet<DebugSliceState>(fn),
+            (fn: (draft: Draft<DebugSliceState>) => void) =>
+              immerSet<DebugSliceState>(fn),
             () => getState<DebugSliceState>()
           );
           
           const settingsSlice = createSettingsSlice(
-            (fn) => immerSet<SettingsState>(fn),
+            (fn: (draft: Draft<SettingsState>) => void) =>
+              immerSet<SettingsState>(fn),
             () => getState<SettingsState>()
           );
 
