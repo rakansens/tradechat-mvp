@@ -6,12 +6,12 @@
 
 import { renderHook, act } from '@testing-library/react';
 import { useAuth } from '@/hooks/auth/useAuth';
-import { supabase } from '@/lib/supabase/supabase';
+import { createClient } from '@/lib/supabase/client';
 import { getProfile, updateProfile } from '@/lib/supabase/features/auth';
 
 // モック
-jest.mock('@/lib/supabase/supabase', () => ({
-  supabase: {
+jest.mock('@/lib/supabase/client', () => ({
+  createClient: jest.fn(() => ({
     auth: {
       getSession: jest.fn(),
       onAuthStateChange: jest.fn(() => ({
@@ -26,7 +26,7 @@ jest.mock('@/lib/supabase/supabase', () => ({
       signOut: jest.fn(),
       resetPasswordForEmail: jest.fn(),
     }
-  }
+  }))
 }));
 
 jest.mock('next/navigation', () => ({
@@ -39,6 +39,8 @@ jest.mock('@/lib/supabase/features/auth', () => ({
   getProfile: jest.fn(),
   updateProfile: jest.fn()
 }));
+
+const supabase = createClient();
 
 describe('useAuth Hook', () => {
   beforeEach(() => {

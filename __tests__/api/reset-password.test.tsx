@@ -7,7 +7,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { act } from 'react-dom/test-utils';
 import { useSearchParams } from 'next/navigation';
 import ResetPasswordPage from '@/app/reset-password/page';
-import { supabase } from '@/lib/supabase/supabase';
+import { createClient } from '@/lib/supabase/client';
 
 // モック
 jest.mock('next/navigation', () => ({
@@ -15,13 +15,15 @@ jest.mock('next/navigation', () => ({
   useSearchParams: jest.fn(),
 }));
 
-jest.mock('@/lib/supabase/supabase', () => ({
-  supabase: {
+jest.mock('@/lib/supabase/client', () => ({
+  createClient: jest.fn(() => ({
     auth: {
       updateUser: jest.fn(),
     },
-  },
+  }))
 }));
+
+const supabase = createClient();
 
 describe('ResetPasswordPage', () => {
   const mockUpdateUser = jest.fn();
