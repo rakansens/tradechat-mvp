@@ -14,6 +14,7 @@ import React, { forwardRef, useEffect } from "react";
 import type { TradeActionProps } from "@/types/common/interfaces";
 import type { OpenEntry } from "@/types/entry";
 import type { ConnectionInfo } from "@/types/chat/base";
+import { useRootStore } from "@/store";
 
 // カスタムフック
 import useChatWindowStores from "./hooks/useChatWindowStores";
@@ -85,9 +86,7 @@ const ChatWindow = forwardRef<HTMLDivElement, ChatWindowProps>(
             // useRootStore.getState().setMessagesを直接使用することになる
             try {
               // ストアのセッター関数を使用
-              import('@/store').then(({ useRootStore }) => {
-                useRootStore.getState().setMessages(formattedMessages);
-              });
+              useRootStore.getState().setMessages(formattedMessages);
             } catch (error) {
               console.error('Failed to update messages:', error);
             }
