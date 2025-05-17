@@ -55,5 +55,6 @@ export type TimeframeSchema = z.infer<typeof timeframeSchema>;
 
 /**
  * チャートの表示タイプ
+ * 更新: 2025-05-17 - 'bar'を'bars'に統一
  */
-export type ChartType = "candles" | "line" | "bar" | "area"; 
+export type ChartType = "candles" | "line" | "bars" | "area"; 

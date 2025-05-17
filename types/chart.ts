@@ -50,8 +50,9 @@ export type ChartTimeCompatible = Time | number;
 
 /**
  * チャートの表示タイプ
+ * 更新: 2025-05-17 - 'bar'を'bars'に統一
  */
-export type ChartType = "candles" | "line" | "bar" | "area";
+export type ChartType = "candles" | "line" | "bars" | "area";
 
 /**
  * OHLC（始値・高値・安値・終値）データの型

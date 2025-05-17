@@ -46,18 +46,18 @@ import { formatTimestamp } from '@/utils/chart/chartUtils';
 export const useChartSectionStores = () => {
   // SymbolSliceをrootStoreから取得
   const currentSymbol = useRootStore(selectCurrentSymbol);
-  const exchangeType = useRootStore(selectExchangeType);
+  const exchangeType = useRootStore((state) => selectExchangeType(state as any));
   const setCurrentSymbol = useRootStore(state => state.setCurrentSymbol);
   const setExchangeType = useRootStore(state => state.setExchangeType);
   
   // ChartDataStore (RootStoreから取得)
-  const chartData = useRootStore(selectChartData);
-  const currentTimeFrame = useRootStore(selectCurrentTimeFrame);
-  const isLoading = useRootStore(selectIsLoading);
-  const error = useRootStore(selectError);
+  const chartData = useRootStore((state) => selectChartData(state as any));
+  const currentTimeFrame = useRootStore((state) => selectCurrentTimeFrame(state as any));
+  const isLoading = useRootStore((state) => selectIsLoading(state as any));
+  const error = useRootStore((state) => selectError(state as any));
   
   // ChartConfigStore (RootStoreから取得)
-  const chartType = useRootStore(selectChartType);
+  const chartType = useRootStore((state) => selectChartType(state as any));
   
   // RootStoreからアクションを取得
   const rootStore = useRootStore();
@@ -103,7 +103,7 @@ export const useChartSectionStores = () => {
   };
 
   const isValidChartType = (type: string): type is ChartType => {
-    return ['candles', 'line', 'bar', 'area'].includes(type);
+    return ['candles', 'line', 'bars', 'area'].includes(type);
   };
 
   // ハンドラー関数

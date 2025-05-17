@@ -18,9 +18,18 @@ import { ChartBody } from './ChartBody';
 import { ChartFooter } from './ChartFooter';
 import { useChartGlobalEvents, useRealTimeCleanup } from '@/hooks/chart';
 import { useChartStores } from '@/hooks/chart';
-import type { Timeframe, ChartType } from '@/types/chart';
-import type { ExchangeType } from '@/types/constants/enums';
+import type { Timeframe, ChartType } from '@/types/constants/enums';
+import type { ActiveIndicator } from '@/types/store/chart';
+import type { ExchangeType, ProductType } from '@/types/constants/enums';
 import type { IndicatorType, DrawingToolType } from '@/types/store/chart';
+
+// ヘルパー関数: IndicatorType[]をActiveIndicator[]に変換
+const convertToActiveIndicators = (indicators: IndicatorType[]): ActiveIndicator[] => {
+  return indicators.map(type => ({
+    type: type as IndicatorType,
+    params: {}
+  }));
+};
 
 /**
  * リファクタリングされたチャートコンテナ
@@ -86,8 +95,10 @@ export default function ChartContainer() {
     setCurrentSymbol(newSymbol);
   }, [setCurrentSymbol]);
   
-  const handleExchangeTypeChange = useCallback((newType: ExchangeType) => {
-    setExchangeType(newType);
+  const handleExchangeTypeChange = useCallback((newType: ProductType) => {
+    // ProductTypeをExchangeTypeに変換する必要がある場合、ここで変換ロジックを実装
+    // 現時点ではそのまま使用
+    setExchangeType(newType as unknown as ExchangeType);
   }, [setExchangeType]);
   
   const handleChartTypeChange = useCallback((newType: ChartType) => {
@@ -144,12 +155,12 @@ export default function ChartContainer() {
         chartType={chartType}
         exchangeType={exchangeType}
         chartData={chartData}
-        activeIndicators={activeIndicators}
+        activeIndicators={convertToActiveIndicators(activeIndicators)}
         activeDrawingTools={activeDrawingTools}
       />
       
       <ChartFooter
-        activeIndicators={activeIndicators}
+        activeIndicators={convertToActiveIndicators(activeIndicators)}
         activeDrawingTools={activeDrawingTools}
         handleToggleIndicator={handleToggleIndicator}
         handleToggleDrawingTool={handleToggleDrawingTool}

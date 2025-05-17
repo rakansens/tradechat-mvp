@@ -33,7 +33,7 @@ export type ExchangeProductType = typeof EXCHANGE_PRODUCT_TYPES[number];
 
 // リファクタリング途中の互換性エイリアス
 // 後方互換性のための一時的な型定義
-export type ExchangeType = OriginalExchangeType | ExchangeProductType;
+export type ExchangeType = OriginalExchangeType;
 // ProductTypeへのエイリアスも提供して後方互換性を確保
 export type ProductType = ExchangeProductType;
 
@@ -53,7 +53,19 @@ export type LegacyChartType = 'candlestick';
 // barをbarsにマッピングするエイリアス
 export type LegacyBarType = 'bar';
 // 拡張されたChartType型（全ての互換性を含む）
-export type ExtendedChartType = ChartType | LegacyChartType | LegacyBarType;
+export type ExtendedChartType = 'candlestick' | 'candles' | 'line' | 'bar' | 'bars' | 'area';
+
+// インジケーターの種類の定義
+// UI層で必要な型定義を再エクスポート
+export type IndicatorType = string;
+
+/**
+ * アクティブなインジケーターの設定
+ */
+export interface ActiveIndicator {
+  type: IndicatorType;
+  params: Record<string, any>;
+}
 
 // タブの種類
 export const TAB_TYPES = ['chart', 'market', 'trades', 'orders', 'analysis', 'chat'] as const;

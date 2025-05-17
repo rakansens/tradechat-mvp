@@ -7,7 +7,8 @@
  */
 
 // 直接サブモジュールの型定義をエクスポート
-export type { OHLCData, ChartState, Timeframe } from './data';
+export type { OHLCData, ChartState } from './data';
+export type { Timeframe } from '../constants/enums';
 // バンドルに必要な時間関連型のエクスポート
 export type { Nominal, UTCTimestamp, BusinessDay, Time, ChartTimeCompatible } from './time';
 // インジケーター関連の型

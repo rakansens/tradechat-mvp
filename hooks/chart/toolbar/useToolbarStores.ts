@@ -58,7 +58,7 @@ import {
 import {
   selectUseRealTimeData
 } from '@/store/chart/realTime/selectors';
-import { Timeframe, ChartType } from '@/types/chart';
+import { Timeframe, ChartType, ActiveIndicator } from '@/types/constants/enums';
 import { IndicatorType, DrawingToolType } from '@/types/store/chart';
 import { EntrySliceState } from '@/store/entry/state';
 // 古いSymbolStateの型インポートを削除

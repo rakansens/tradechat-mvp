@@ -104,7 +104,7 @@ export const useChartSectionStores = () => {
   };
 
   const isValidChartType = (type: string): type is ChartType => {
-    return ['candles', 'line', 'bar', 'area'].includes(type);
+    return ['candles', 'line', 'bars', 'area'].includes(type);
   };
 
   // ハンドラー関数

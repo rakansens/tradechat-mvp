@@ -6,7 +6,7 @@
 
 import { produce } from 'immer';
 import { logger } from '@/utils/logger';
-import { type ExchangeType, type ProductType } from '@/types/exchange';
+import { type ExchangeType, type ProductType } from '@/types/constants/enums';
 import { toExchangeProductType, isValidExchangeType, isValidProductType } from '@/utils/exchange';
 import { symbolService } from '@/services/symbol';
 import type { SymbolInfo } from '@/types/symbol';
@@ -168,23 +168,21 @@ export const createSymbolActions = (
   },
 
   // シンボル一覧を取得
-  fetchSymbols: async (exchangeType: ExchangeProductType = 'spot') => {
+  fetchSymbols: async (exchangeType: ProductType = 'spot') => {
     mutateDraft((draft) => {
       draft.isLoading = true;
       draft.error = null;
     });
     
     try {
-      // 安全な型変換を適用
-      let safeType: ExchangeProductType;
+      // 型安全性のためのチェック
+      let safeType: ProductType;
       
-      if (isValidExchangeProductType(exchangeType)) {
+      if (isValidProductType(exchangeType)) {
         safeType = exchangeType;
-      } else if (isValidExchangeType(exchangeType)) {
-        safeType = toExchangeProductType(exchangeType);
       } else {
         safeType = 'spot';
-        logger.warn(`[SymbolSlice] Invalid exchange type '${exchangeType}', using default 'spot'`);
+        logger.warn(`[SymbolSlice] Invalid product type: ${exchangeType}, using default: ${safeType}`);
       }
       
       const symbols = await symbolService.fetchSymbols(safeType);

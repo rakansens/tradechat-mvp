@@ -3,6 +3,7 @@
 // 更新: 2025-10-06 - 型定義をtypes.tsに移動し、状態構造を更新
 // 更新: 2025-10-10 - 状態型を再エクスポートして型参照問題を解消
 // 更新: 2025-10-13 - S-12: 型エラー修正、ChartTypeとExchangeTypeの値を修正
+// 更新: 2025-05-17 - chartTypeの初期値を'candlestick'から'candles'に統一
 
 import { ChartType, ExchangeType, ExchangeProductType } from '@/types/constants/enums'
 import { type ChartConfigSliceState } from './types';
@@ -12,7 +13,7 @@ import { type ChartConfigSliceState } from './types';
  */
 export const initialChartConfigState: ChartConfigSliceState = {
   // チャートタイプ
-  chartType: 'candlestick',
+  chartType: 'candles',
   
   // 取引所タイプ
   exchangeType: 'bitget' as ExchangeType,

@@ -3,6 +3,7 @@
  * 
  * シンボルサービス関連の型定義を集約して再エクスポートするファイル
  * 作成: T-7.6フェーズ - シンボル関連型を明示的に再エクスポートしてインポート問題を解決
+ * 更新: 2025-05-17 - SymbolChangeHistory型を再エクスポートするように追加
  */
 
 // 共通型のエクスポート
@@ -10,3 +11,6 @@ export type { SymbolInfo } from '@/types/common/symbol';
 
 // symbol-serviceからの型エクスポート
 export type { FilterOptions } from './symbol-service';
+
+// storeからの型エクスポート
+export type { SymbolChangeHistory } from '@/types/store/symbol';

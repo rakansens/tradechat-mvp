@@ -49,8 +49,8 @@ export function useChartToolbar() {
   const error = useRootStore(selectError);
 
   // チャート設定ストアから状態とアクションを取得（RootStoreから取得するように変更）
-  const chartType = useRootStore(selectChartType);
-  const exchangeType = useRootStore(selectExchangeType);
+  const chartType = useRootStore((state) => selectChartType(state as any));
+  const exchangeType = useRootStore((state) => selectExchangeType(state as any));
   const setChartType = useRootStore((state) => state.setChartType);
   const setExchangeType = useRootStore((state) => state.setExchangeType);
 
@@ -97,7 +97,7 @@ export function useChartToolbar() {
 
   // 型安全性を確保するためのヘルパー関数
   const isValidChartType = (type: string): type is ChartType => {
-    return ['candles', 'line', 'bar', 'area'].includes(type);
+    return ['candles', 'line', 'bars', 'area'].includes(type);
   };
 
   return {

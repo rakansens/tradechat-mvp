@@ -85,3 +85,6 @@ export const setNestedProperty = <TState, Value>(
 }
 
 export default createImmerSetter 
+
+// createImmerSetter のエイリアス（呼び出し元の互換用）
+export const createImmerSetterWithReturn = createImmerSetter;

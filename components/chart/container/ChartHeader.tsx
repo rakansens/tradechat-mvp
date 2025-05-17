@@ -9,7 +9,7 @@
 "use client";
 
 import React from 'react';
-import type { ExchangeType } from '@/types/constants/enums';
+import type { ExchangeType, ProductType } from '@/types/constants/enums';
 import type { Timeframe, ChartType } from '@/types/chart';
 
 interface ChartHeaderProps {
@@ -20,10 +20,10 @@ interface ChartHeaderProps {
   exchangeType: ExchangeType;
   useRealTimeData: boolean;
   
-  // 操作関数
+  // イベントハンドラ
   handleTimeFrameChange: (newTimeFrame: Timeframe) => void;
   handleChartTypeChange: (newType: ChartType) => void;
-  handleExchangeTypeChange: (newType: ExchangeType) => void;
+  handleExchangeTypeChange: (newType: ProductType) => void;
   handleToggleRealTimeData: () => void;
 }
 
@@ -109,8 +109,8 @@ export const ChartHeader: React.FC<ChartHeaderProps> = ({
             Area
           </button>
           <button 
-            className={chartType === 'bar' ? 'active' : ''} 
-            onClick={() => handleChartTypeChange('bar')}
+            className={chartType === 'bars' ? 'active' : ''} 
+            onClick={() => handleChartTypeChange('bars')}
           >
             Bar
           </button>
@@ -120,13 +120,13 @@ export const ChartHeader: React.FC<ChartHeaderProps> = ({
         <div className="exchange-type-selector">
           <button 
             className={exchangeType === 'spot' ? 'active' : ''} 
-            onClick={() => handleExchangeTypeChange('spot')}
+            onClick={() => handleExchangeTypeChange('spot' as ProductType)}
           >
             Spot
           </button>
           <button 
             className={exchangeType === 'futures' ? 'active' : ''} 
-            onClick={() => handleExchangeTypeChange('futures')}
+            onClick={() => handleExchangeTypeChange('futures' as ProductType)}
           >
             Futures
           </button>
