@@ -20,12 +20,14 @@ export * from './network/api';
 import { 
   ExchangeType, 
   ExchangeProductType,
+  ProductType,
   EXCHANGE_TYPES,
-  EXCHANGE_PRODUCT_TYPES 
+  EXCHANGE_PRODUCT_TYPES,
+  PRODUCT_TYPES
 } from './constants/enums';
 
 // 型を再エクスポート
-export type { ExchangeType, ExchangeProductType };
+export type { ExchangeType, ExchangeProductType, ProductType };
 
 // 定数も再エクスポート
-export { EXCHANGE_TYPES, EXCHANGE_PRODUCT_TYPES };
+export { EXCHANGE_TYPES, EXCHANGE_PRODUCT_TYPES, PRODUCT_TYPES };

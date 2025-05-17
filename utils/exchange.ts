@@ -1,8 +1,9 @@
 /**
  * 取引所関連のユーティリティ関数
+ * 更新: 2025-05-17 - インポートパスを統一し、関数名を整理
  */
 
-import { ExchangeType, ProductType } from '@/types/exchange';
+import { ExchangeType, ProductType } from '@/types/constants/enums';
 
 // 全ての取引所タイプを含む配列 (exchangeTypeUtils.tsで定義されているものと同一)
 const EXCHANGE_TYPES = ['bitget', 'binance', 'bybit', 'demo'] as const;
@@ -22,7 +23,7 @@ const EXCHANGE_TO_PRODUCT_MAP = {
  * @param exchangeType 取引所タイプ
  * @returns 取引種別（'spot' または 'futures'）
  */
-export function toExchangeProductType(exchangeType: ExchangeType): ProductType {
+export function toProductType(exchangeType: ExchangeType): ProductType {
   // ExchangeType型の値を文字列として扱い、安全にデータ取得
   const key = String(exchangeType);
   
@@ -49,4 +50,14 @@ export function isValidExchangeType(value: string): value is ExchangeType {
  */
 export function isValidProductType(value: string): value is ProductType {
   return value === 'spot' || value === 'futures';
+}
+
+/**
+ * ExchangeTypeとProductTypeの組み合わせが有効かどうかをチェックする
+ * @param exchangeProductType チェックする値
+ * @returns 有効な ExchangeProductType かどうか
+ * @deprecated isValidProductTypeを使用してください
+ */
+export function isValidExchangeProductType(exchangeProductType: string): exchangeProductType is ProductType {
+  return isValidProductType(exchangeProductType);
 }

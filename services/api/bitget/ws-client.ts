@@ -11,7 +11,7 @@
 import { BitgetCredentials } from '../../../types/api';
 import { OHLCData, Timeframe } from '../../../types/chart';
 import { OrderBookData } from '@/types/common/orderbook';
-import { ExchangeType, ExchangeProductType, LegacyExchangeType } from '@/types/constants/enums';
+import { ExchangeType, ProductType } from '@/types/constants/enums';
 import { logger } from '@/utils/common';
 import { IS_DEV } from '../common/environment';
 import { getApiConfig } from '../common/environment';
@@ -22,6 +22,7 @@ import EventEmitter from 'events';
 
 /**
  * WebSocketクライアントのオプション
+ * 更新: 2025-05-17 - ProductTypeとExchangeTypeを明確に分離
  */
 export interface WebSocketClientOptions {
   /**
@@ -35,9 +36,14 @@ export interface WebSocketClientOptions {
   credentials?: BitgetCredentials;
   
   /**
+   * 製品タイプ
+   */
+  productType?: ProductType;
+  
+  /**
    * 取引タイプ
    */
-  exchangeType?: ExchangeProductType;
+  exchangeType?: ExchangeType;
 }
 
 /**
@@ -47,7 +53,8 @@ export interface WebSocketClientOptions {
 export class BitgetWebSocketClient extends EventEmitter {
   private wsUrl: string;
   private credentials: BitgetCredentials;
-  private exchangeType: ExchangeProductType;
+  private productType: ProductType;
+  private exchangeType: ExchangeType;
   private ws: WebSocket | null = null;
   private pingInterval: ReturnType<typeof setInterval> | null = null;
   private reconnectInterval: ReturnType<typeof setTimeout> | null = null;
@@ -74,7 +81,8 @@ export class BitgetWebSocketClient extends EventEmitter {
     
     this.wsUrl = options.wsUrl || apiConfig.wsUrl;
     this.credentials = options.credentials || {};
-    this.exchangeType = options.exchangeType || 'spot'; // ExchangeProductType ('spot' | 'futures')
+    this.productType = options.productType || 'spot';
+    this.exchangeType = options.exchangeType || 'bitget';
     this.dataTransformer = new BitgetDataTransformer();
     
     // 送信キューを初期化
@@ -235,13 +243,13 @@ export class BitgetWebSocketClient extends EventEmitter {
     this.onOrderBookUpdateCallbacks.set(symbol, callbacks);
     
     // 購読情報を作成
-    const instId = this.exchangeType === 'spot' ? 
+    const instId = this.productType === 'spot' ? 
       `${formattedSymbol}_SPBL` : 
       `${formattedSymbol}_UMCBL`;
     
     // 購読リクエストを送信
     const subscription = {
-      instType: this.exchangeType.toUpperCase(),
+      instType: this.productType.toUpperCase(),
       channel: 'books',
       instId
     };
@@ -287,13 +295,13 @@ export class BitgetWebSocketClient extends EventEmitter {
     this.onKlineUpdateCallbacks.set(key, callbacks);
     
     // 購読情報を作成
-    const instId = this.exchangeType === 'spot' ? 
+    const instId = this.productType === 'spot' ? 
       `${formattedSymbol}_SPBL` : 
       `${formattedSymbol}_UMCBL`;
     
     // 購読リクエストを送信
     const subscription = {
-      instType: this.exchangeType.toUpperCase(),
+      instType: this.productType.toUpperCase(),
       channel: `candle${timeframe}`,
       instId
     };

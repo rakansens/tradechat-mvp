@@ -2,9 +2,11 @@
  * シンボル関連のストア型定義
  * 
  * このファイルはシンボル関連のストア状態とアクションの型を定義します。
+ * 
+ * 更新: 2025-05-17 - ExchangeTypeとProductTypeの分離に伴いsetProductTypeメソッドを追加
  */
 
-import { ExchangeProductType } from '../constants/enums';
+import { ExchangeProductType, ProductType, ExchangeType } from '../constants/enums';
 import { SymbolInfo, SymbolChangeHistoryEntry } from './common';
 
 /**
@@ -44,6 +46,16 @@ export interface SymbolFilterOptions {
 export interface SymbolActions {
   // シンボル関連
   setCurrentSymbol: (symbol: string) => void;
+  
+  /**
+   * 取引種別を設定
+   * @param type ExchangeTypeもしくはProductType
+   */
+  setProductType: (type: ExchangeType | ProductType) => void;
+  
+  /**
+   * @deprecated setProductTypeを使用してください
+   */
   setExchangeType: (type: ExchangeProductType) => void;
   setSymbols: (symbols: SymbolInfo[]) => void;
   addSymbol: (symbol: SymbolInfo) => void;

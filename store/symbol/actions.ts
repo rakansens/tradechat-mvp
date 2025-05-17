@@ -7,7 +7,7 @@
 import { produce } from 'immer';
 import { logger } from '@/utils/logger';
 import { type ExchangeType, type ProductType } from '@/types/constants/enums';
-import { toExchangeProductType, isValidExchangeType, isValidProductType } from '@/utils/exchange';
+import { toProductType, isValidExchangeType, isValidProductType } from '@/utils/exchange';
 import { symbolService } from '@/services/symbol';
 import type { SymbolInfo } from '@/types/symbol';
 import { 
@@ -19,6 +19,7 @@ import type {
   SymbolChangeHistoryEntry,
   SymbolChangeValue 
 } from '@/types/symbol/common';
+import type { StateCreator } from 'zustand';
 
 /**
  * シンボルリストにフィルターを適用する内部ヘルパー関数
@@ -121,29 +122,30 @@ export const createSymbolActions = (
     logger.info(`[SymbolSlice] Changed current symbol to: ${symbol}`);
   },
 
-  // 取引タイプを設定
-  setExchangeType: (type: ExchangeType | ProductType) => {
+  // 取引種別を設定
+  // 更新: 2025-05-17 - setExchangeTypeからsetProductTypeにリネーム
+  setProductType: (type: ExchangeType | ProductType) => {
     const oldType = getState().exchangeType;
     
     // 型を安全に変換
     let productType: ProductType;
     
+    // ProductType が渡された場合はそのまま使用
+    if (isValidProductType(type)) {
+      productType = type;
+    } 
+    // ExchangeType が渡された場合はデフォルトの取引タイプに変換
+    else if (isValidExchangeType(type)) {
+      productType = toProductType(type);
+      logger.info(`[SymbolSlice] Converted exchange type '${type}' to product type '${productType}'`);
+    } 
+    // 無効な値の場合はデフォルト値を使用
+    else {
+      productType = 'spot';
+      logger.warn(`[SymbolSlice] Invalid exchange type '${type}', using default '${productType}'`);
+    }
+    
     mutateDraft((draft) => {
-      // ProductType が渡された場合はそのまま使用
-      if (isValidProductType(type)) {
-        productType = type;
-      } 
-      // ExchangeType が渡された場合はデフォルトの取引タイプに変換
-      else if (isValidExchangeType(type)) {
-        productType = toExchangeProductType(type);
-        logger.info(`[SymbolSlice] Converted exchange type '${type}' to product type '${productType}'`);
-      } 
-      // 無効な値の場合はデフォルト値を使用
-      else {
-        productType = 'spot';
-        logger.warn(`[SymbolSlice] Invalid exchange type '${type}', using default '${productType}'`);
-      }
-      
       if (oldType !== productType) {
         // 変更履歴を記録
         draft.changeHistory.push({
@@ -151,20 +153,72 @@ export const createSymbolActions = (
           timestamp: Date.now(),
           symbol: draft.currentSymbol,
           exchangeType: productType,
-          field: 'exchangeType',
+          field: 'productType',
           oldValue: oldType,
           newValue: productType,
           source: 'user',
         });
         
-        // ローカルストレージに保存
-        symbolService.saveLastUsedExchangeType(productType);
+        // 状態を更新
+        draft.exchangeType = productType;
+        logger.info(`[SymbolSlice] Changed product type to: ${productType}`);
+      }
+    });
+    
+    // ローカルストレージに保存
+    symbolService.saveLastUsedExchangeType(productType);
+    
+    return productType;
+  },
+
+  // 後方互換性のためにsetExchangeTypeを維持
+  // @deprecated setProductTypeを使用してください
+  setExchangeType: (type: ExchangeType | ProductType) => {
+    // setProductTypeと同じロジックを実装
+    const oldType = getState().exchangeType;
+    
+    // 型を安全に変換
+    let productType: ProductType;
+    
+    // ProductType が渡された場合はそのまま使用
+    if (isValidProductType(type)) {
+      productType = type;
+    } 
+    // ExchangeType が渡された場合はデフォルトの取引タイプに変換
+    else if (isValidExchangeType(type)) {
+      productType = toProductType(type);
+      logger.info(`[SymbolSlice] Converted exchange type '${type}' to product type '${productType}'`);
+    } 
+    // 無効な値の場合はデフォルト値を使用
+    else {
+      productType = 'spot';
+      logger.warn(`[SymbolSlice] Invalid exchange type '${type}', using default '${productType}'`);
+    }
+    
+    mutateDraft((draft) => {
+      if (oldType !== productType) {
+        // 変更履歴を記録
+        draft.changeHistory.push({
+          id: generateChangeId(),
+          timestamp: Date.now(),
+          symbol: draft.currentSymbol,
+          exchangeType: productType,
+          field: 'exchangeType', // レガシー互換性のためにexchangeTypeとして記録
+          oldValue: oldType,
+          newValue: productType,
+          source: 'user',
+        });
         
         // 状態を更新
         draft.exchangeType = productType;
         logger.info(`[SymbolSlice] Changed exchange type to: ${productType}`);
       }
     });
+    
+    // ローカルストレージに保存
+    symbolService.saveLastUsedExchangeType(productType);
+    
+    return productType;
   },
 
   // シンボル一覧を取得

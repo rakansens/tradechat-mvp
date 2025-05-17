@@ -21,21 +21,32 @@ import { ExchangeType as NewExchangeType, ProductType as NewProductType } from '
 export const TRADE_SIDES = ['buy', 'sell'] as const;
 export type TradeSide = typeof TRADE_SIDES[number];
 
-// 取引所の種類
+// 取引所タイプの定数（bitget / binance）
 export const EXCHANGE_TYPES = ['bitget', 'binance', 'bybit', 'demo'] as const;
-// 元の型定義を保存しておく
-export type OriginalExchangeType = typeof EXCHANGE_TYPES[number];
+export type ExchangeType = typeof EXCHANGE_TYPES[number];
 
-// 取引タイプの定数（現物/先物） 
-// 今後ProductTypeを使用するようになります
-export const EXCHANGE_PRODUCT_TYPES = ['spot', 'futures'] as const;
-export type ExchangeProductType = typeof EXCHANGE_PRODUCT_TYPES[number];
+// 取引商品タイプの定数（現物/先物）
+export const PRODUCT_TYPES = ['spot', 'futures'] as const;
+export type ProductType = typeof PRODUCT_TYPES[number];
 
-// リファクタリング途中の互換性エイリアス
-// 後方互換性のための一時的な型定義
-export type ExchangeType = OriginalExchangeType;
-// ProductTypeへのエイリアスも提供して後方互換性を確保
-export type ProductType = ExchangeProductType;
+// ------------------------------------------------------------------
+// LEGACY TYPES - 後方互換性のための型定義
+// ------------------------------------------------------------------
+
+/**
+ * @deprecated ExchangeTypeを使用してください
+ */
+export type OriginalExchangeType = ExchangeType;
+
+/**
+ * @deprecated PRODUCT_TYPESを使用してください
+ */
+export const EXCHANGE_PRODUCT_TYPES = PRODUCT_TYPES;
+
+/**
+ * @deprecated ProductTypeを使用してください
+ */
+export type ExchangeProductType = ProductType;
 
 // チャートの時間枠
 export const TIMEFRAMES = ['1m', '3m', '5m', '15m', '30m', '1h', '2h', '4h', '6h', '8h', '12h', '1d', '3d', '1w', '1M'] as const;

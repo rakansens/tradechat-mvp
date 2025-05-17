@@ -9,7 +9,7 @@
  * 既存の実装との互換性を保ちながら、段階的なリファクタリングを可能にします。
  */
 
-import { ExchangeType, BitgetCredentials } from '../../../types/api';
+import { ExchangeType, ProductType, BitgetCredentials } from '../../../types/api';
 import { OHLCData } from '../../../types/chart';
 import { OrderBookData } from '../../../types/market';
 import { IRestApiClient, IWebSocketClient } from '../interfaces';
@@ -38,6 +38,7 @@ export class BitgetApiClient implements IBitgetApiClient {
   private baseUrl: string;
   private wsUrl: string;
   private enableDemoMode: boolean;
+  private productType: ProductType = 'spot';
   private exchangeType: ExchangeType;
   private isInDemoMode: boolean = false;
   
@@ -50,9 +51,10 @@ export class BitgetApiClient implements IBitgetApiClient {
   /**
    * BitgetApiClientのコンストラクタ
    * @param options クライアントオプション
-   * @param exchangeType 取引タイプ（デフォルト: 'spot'）
+   * @param productType 取引種別（'spot'または'futures'、デフォルト: 'spot'）
+   * @param exchangeType 取引所タイプ（デフォルト: 'bitget'）
    */
-  constructor(options: BitgetApiClientOptions = {}, exchangeType: ExchangeType = 'bitget') {
+  constructor(options: BitgetApiClientOptions = {}, productType: ProductType = 'spot', exchangeType: ExchangeType = 'bitget') {
     // API設定を環境設定から取得
     const apiConfig = getApiConfig('bitget');
     
@@ -60,6 +62,7 @@ export class BitgetApiClient implements IBitgetApiClient {
     this.baseUrl = options.baseUrl || apiConfig.baseUrl;
     this.wsUrl = options.wsUrl || apiConfig.wsUrl;
     this.enableDemoMode = options.enableDemoMode !== undefined ? options.enableDemoMode : apiConfig.enableDemoMode;
+    this.productType = productType;
     this.exchangeType = exchangeType;
     
     // コンポーネントの初期化
@@ -67,6 +70,7 @@ export class BitgetApiClient implements IBitgetApiClient {
     this.wsClient = new BitgetWebSocketClient({
       wsUrl: this.wsUrl,
       credentials: this.credentials,
+      productType: this.productType,
       exchangeType: this.exchangeType
     });
     this.dataTransformer = new BitgetDataTransformer();

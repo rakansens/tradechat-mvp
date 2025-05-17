@@ -10,7 +10,8 @@
 
 import { OHLCData } from '../../../types/chart';
 import { OrderBookData } from '../../../types/market';
-import { ExchangeType } from '../../../types/network/api';
+import { ExchangeType, ProductType } from '../../../types/network/api';
+import { toProductType } from '../../../utils/exchange';
 import { SymbolInfo } from '../../../types/common/symbol';
 import { LegacySymbolInfo, toCommonSymbol } from '../../../types/symbol/base';
 import { logger } from '@/utils/common';
@@ -208,7 +209,8 @@ export class BitgetDemoGenerator {
       } as LegacySymbolInfo;
     });
     
-    // レガシータイプから共通タイプに変換
-    return legacySymbols.map(symbol => toCommonSymbol(symbol, exchangeType));
+    // ExchangeTypeをProductTypeに変換してから共通タイプに変換
+    const productType = toProductType(exchangeType);
+    return legacySymbols.map(symbol => toCommonSymbol(symbol, productType));
   }
 }

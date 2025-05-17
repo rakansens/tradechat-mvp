@@ -4,7 +4,7 @@
 // 更新: 2025-10-08 - S-9.2フェーズ: ExchangeType型を統一しSymbolChangeHistory型を修正
 // 更新: 2025-10-09 - S-10.3フェーズ: symbolChangeHistory型のany型を明示的な型に変更
 
-import { ExchangeType, ExchangeProductType } from '@/types/constants/enums';
+import { ExchangeType, ExchangeProductType, ProductType } from '@/types/constants/enums';
 import { type SliceCreator } from '@/types/store/core';
 import type { 
   SymbolInfo
@@ -60,6 +60,16 @@ export interface SymbolState {
 export interface SymbolActions {
   // シンボル関連のアクション
   setCurrentSymbol: (symbol: string, reason?: string) => void;
+  
+  /**
+   * 取引種別を設定
+   * @param type ExchangeTypeもしくはProductType
+   */
+  setProductType: (type: ExchangeType | ProductType) => void;
+  
+  /**
+   * @deprecated setProductTypeを使用してください
+   */
   setExchangeType: (type: ExchangeType | ExchangeProductType) => void;
   fetchSymbols: (exchangeType: ExchangeType | ExchangeProductType) => Promise<void>;
   setFilterOptions: (options: Partial<StoreFilterOptions>) => void;
