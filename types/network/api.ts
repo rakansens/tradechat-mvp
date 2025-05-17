@@ -84,6 +84,11 @@ export interface ApiRequestConfig {
 }
 
 /**
+ * browserApiRequest/serverApiRequest の追加オプション
+ */
+export interface ApiRequestOptions extends Omit<ApiRequestConfig, 'url' | 'params'> {}
+
+/**
  * APIエラーハンドラー設定
  */
 export interface ApiErrorHandlerOptions {
@@ -127,5 +132,5 @@ export interface AdaptiveApiRequestConfig<T = any> {
   serverBaseUrl: string;
   serverEndpoint: string;
   params: Record<string, any>;
-  options?: Omit<ApiRequestConfig, 'url' | 'params'>;
-} 
+  options?: ApiRequestOptions;
+}
