@@ -20,6 +20,7 @@
     "typecheck:all": "pnpm typecheck && pnpm typecheck:test",
     "test": "jest",
     "pretest": "pnpm typecheck:test",
+    "test:skip-typecheck": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "circular": "madge --circular store",
