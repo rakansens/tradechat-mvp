@@ -11,7 +11,7 @@ import {
   ApiRequestOptions,
   CancellableRequest
 } from '@/types/api';
-import { IS_DEV, IS_BROWSER, getApiConfig } from './environment';
+import { IS_DEV, IS_BROWSER, getApiConfig } from '@/config/environment';
 
 /**
  * 共通APIリクエスト関数
