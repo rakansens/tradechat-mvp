@@ -53,7 +53,7 @@ export function useDrawingTools(): UseDrawingToolsReturn {
     if (!chartInstance || !mainSeries || !data || data.length === 0) return;
     
     // フィボナッチリトレースメントの表示切替
-    if (activeDrawingTools.includes('fibonacci')) {
+    if (activeDrawingTools?.includes('fibonacci')) {
       // データから高値と安値を取得
       const sortedData = [...data].sort((a, b) => a.time - b.time);
       const last30Data = sortedData.slice(-30); // 直近30本のデータを使用
