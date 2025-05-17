@@ -12,7 +12,7 @@ const path = require('path');
 const logger = require("./utils/serverLogger");
 const { EventEmitter } = require('events');
 
-// WebSocketマネージャーとSocketDataブロードキャスターの代わりにモック実装を使用
+// WebSocketマネージャーのモック実装
 class MockBitgetWebSocketManager extends EventEmitter {
   constructor() {
     super();
@@ -60,74 +60,8 @@ class MockBitgetWebSocketManager extends EventEmitter {
   }
 }
 
-class MockSocketDataBroadcaster {
-  constructor(io, maxQueueSize = 100) {
-    this.io = io;
-    this.maxQueueSize = maxQueueSize;
-    this.cache = {
-      orderBook: new Map(),
-      kline: new Map(),
-      trade: new Map()
-    };
-    logger.info('MockSocketDataBroadcaster: 初期化しました');
-  }
-
-  broadcastOrderBook(symbol, data, exchangeType = 'spot') {
-    const key = `orderbook:${symbol}:${exchangeType}`;
-    this.cache.orderBook.set(key, data);
-    logger.info(`MockSocketDataBroadcaster: オーダーブックをブロードキャストしました - ${key}`);
-    this.io.emit('orderbook', {
-      symbol,
-      exchangeType,
-      data,
-      timestamp: Date.now()
-    });
-  }
-
-  broadcastKline(symbol, timeframe, data, exchangeType = 'spot') {
-    const key = `kline:${symbol}:${timeframe}:${exchangeType}`;
-    this.cache.kline.set(key, data);
-    logger.info(`MockSocketDataBroadcaster: ローソク足をブロードキャストしました - ${key}`);
-    this.io.emit('kline', {
-      symbol,
-      timeframe,
-      exchangeType,
-      data,
-      timestamp: Date.now()
-    });
-  }
-
-  broadcastTrade(symbol, data, exchangeType = 'spot') {
-    const key = `trade:${symbol}:${exchangeType}`;
-    this.cache.trade.set(key, data);
-    logger.info(`MockSocketDataBroadcaster: 取引データをブロードキャストしました - ${key}`);
-    this.io.emit('trade', {
-      symbol,
-      exchangeType,
-      data,
-      timestamp: Date.now()
-    });
-  }
-
-  getChannelStats() {
-    return [];
-  }
-
-  getClientStats() {
-    return [];
-  }
-
-  getCacheStats() {
-    return {
-      orderBook: { size: this.cache.orderBook.size },
-      kline: { size: this.cache.kline.size },
-      trade: { size: this.cache.trade.size }
-    };
-  }
-}
-
 const BitgetWebSocketManager = MockBitgetWebSocketManager;
-const SocketDataBroadcaster = MockSocketDataBroadcaster;
+const { default: SocketDataBroadcaster } = require('./server/socketDataBroadcaster');
 
 // Socket.IOイベント発行用のグローバル関数を定義
 // TypeScriptの実装を直接参照するのではなく、サーバー自体に実装
@@ -141,28 +75,28 @@ const SocketDataBroadcaster = MockSocketDataBroadcaster;
  */
 global.emitSocketEvent = async (eventName, data) => {
   try {
-    if (!global.io) {
-      console.warn(`Socket.IOサーバーが初期化されていません。イベント ${eventName} を送信できません。`);
-      return { success: false, error: 'Socket.IOサーバーが初期化されていません' };
+    if (!socketDataBroadcaster) {
+      console.warn(`SocketDataBroadcasterが初期化されていません。イベント ${eventName} を送信できません。`);
+      return { success: false, error: 'SocketDataBroadcasterが初期化されていません' };
     }
 
-    const connectedClients = global.io.sockets.sockets.size;
-    
+    const connectedClients = socketDataBroadcaster.io.sockets.sockets.size;
+
     if (connectedClients === 0) {
       console.warn(`接続中のクライアントがありません。イベント ${eventName} を送信できません。`);
       return { success: false, error: '接続中のクライアントがありません', clientCount: 0 };
     }
 
     // 全クライアントにイベントを送信
-    global.io.emit(eventName, data);
+    socketDataBroadcaster.io.emit(eventName, data);
 
     logger.info(`イベント ${eventName} を ${connectedClients} クライアントに送信しました`);
 
     return { success: true, clientCount: connectedClients };
   } catch (error) {
     console.error(`イベント ${eventName} の送信中にエラーが発生しました:`, error);
-    return { 
-      success: false, 
+    return {
+      success: false,
       error: error instanceof Error ? error.message : '不明なエラー'
     };
   }
@@ -357,7 +291,7 @@ app.prepare().then(() => {
         const actualRequestId = requestId || uuidv4();
         
         // 全クライアントにキャプチャリクエストをブロードキャスト
-        io.emit('capture_request', { requestId: actualRequestId });
+        socketDataBroadcaster.io.emit('capture_request', { requestId: actualRequestId });
       } catch (error) {
         console.error('キャプチャリクエスト処理エラー:', error);
       }
@@ -405,7 +339,7 @@ app.prepare().then(() => {
             logger.info(`タイムアウト後の画像を保存: ${requestId} -> ${imageId}`);
             
             // クライアントに通知
-            io.emit('delayed_capture_success', { 
+            socketDataBroadcaster.io.emit('delayed_capture_success', {
               requestId, 
               imageId,
               message: 'タイムアウト後に画像を受信しました'
@@ -526,7 +460,7 @@ app.prepare().then(() => {
         
         // タイムアウト後に再度リクエストを送信
         logger.info(`タイムアウト後に再度リクエストを送信: ${requestId}`);
-        io.emit('capture_request', { requestId });
+        socketDataBroadcaster.io.emit('capture_request', { requestId });
       }, timeoutMs);
       
       // リクエストとPromiseを関連付けて保存
@@ -538,7 +472,7 @@ app.prepare().then(() => {
       });
       
       // リクエストを全クライアントに直接ブロードキャスト
-      io.emit('capture_request', { requestId });
+      socketDataBroadcaster.io.emit('capture_request', { requestId });
       logger.info(`キャプチャリクエストをブロードキャスト: ${requestId}`);
     });
   };
