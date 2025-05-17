@@ -383,11 +383,11 @@ export const getUserSettings = async (
   supabaseClient?: SupabaseClient
 ): Promise<Json | null> => {
   const supabase = supabaseClient ?? createClient();
-  // profilesテーブルのsettingsカラムからデータを取得
+  // profilesテーブルのmetadataカラムからsettingsを取得
   const { data, error } = await supabase
     .from('profiles')
-    .select('settings')
-    .eq('id', userId)
+    .select('metadata')
+    .eq('user_id', userId)
     .single();
 
   if (error) {
@@ -398,7 +398,8 @@ export const getUserSettings = async (
     throw error;
   }
 
-  return data?.settings || null;
+  const metadata = data?.metadata as Record<string, any> | null;
+  return metadata?.settings ?? null;
 };
 
 /**
@@ -414,16 +415,30 @@ export const updateUserSettings = async (
   supabaseClient?: SupabaseClient
 ): Promise<boolean> => {
   const supabase = supabaseClient ?? createClient();
-  // profilesテーブルのsettingsカラムを更新
+
+  // 現在のmetadataを取得してsettingsをマージ
+  const { data: current, error: fetchError } = await supabase
+    .from('profiles')
+    .select('metadata')
+    .eq('user_id', userId)
+    .single();
+
+  if (fetchError && fetchError.code !== 'PGRST116') {
+    throw fetchError;
+  }
+
+  const currentMetadata = (current?.metadata as Record<string, any>) || {};
+  const newMetadata = { ...currentMetadata, settings };
+
   const { error } = await supabase
     .from('profiles')
     .upsert(
       {
-        id: userId,
-        settings: settings,
+        user_id: userId,
+        metadata: newMetadata,
       },
       {
-        onConflict: 'id',
+        onConflict: 'user_id',
       }
     )
     .select()
