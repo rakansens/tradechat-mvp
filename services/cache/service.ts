@@ -157,6 +157,14 @@ class CacheService {
       count: size
     });
   }
+
+  /**
+   * サービスをリセット
+   * 全キャッシュを削除します
+   */
+  reset(): void {
+    this.clear();
+  }
   
   /**
    * キャッシュのサイズを取得
@@ -196,3 +204,10 @@ class CacheService {
 
 // シングルトンインスタンスをエクスポート
 export const cacheService = new CacheService();
+
+/**
+ * サービスインスタンスをリセット
+ */
+export function resetCacheService(): void {
+  cacheService.reset();
+}

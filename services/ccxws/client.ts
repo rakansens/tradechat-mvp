@@ -517,3 +517,10 @@ export function getCCXWSClient(): CCXWSClient {
   }
   return ccxwsClientInstance;
 }
+
+/**
+ * シングルトンインスタンスをリセット
+ */
+export function resetCCXWSClient(): void {
+  ccxwsClientInstance = null;
+}

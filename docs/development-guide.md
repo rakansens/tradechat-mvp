@@ -532,6 +532,20 @@ export function subscribeKline(
 }
 ```
 
+### 8.2 サービスリセット
+
+テストを実行する際はシングルトンで保持しているサービス状態を初期化する必要があり
+ます。`services/reset.ts` で提供される `resetAllServices` ヘルパーを利用すると、
+キャッシュやWebSocket接続をまとめてクリアできます。
+
+```typescript
+import { resetAllServices } from '@/services/reset'
+
+beforeEach(() => {
+  resetAllServices()
+})
+```
+
 #### 5.3.2 WebSocketとRESTAPIのハイブリッド機能
 
 `dataFetchService.ts`は、WebSocketとRESTAPIを組み合わせたハイブリッドアプローチを提供します：

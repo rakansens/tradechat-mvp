@@ -82,10 +82,32 @@ export class DataSourceFactory implements IDataSourceFactory {
     
     // クライアントをキャッシュに保存
     this.restClients.set(exchange, client);
-    
+
     return client;
+  }
+
+  /**
+   * 保持しているクライアントをすべて破棄
+   */
+  public reset(): void {
+    this.wsClients.forEach((client) => {
+      try {
+        client.disconnect();
+      } catch (error) {
+        logger.warn('WebSocket client disconnect failed', { error });
+      }
+    });
+    this.wsClients.clear();
+    this.restClients.clear();
   }
 }
 
 // シングルトンインスタンスをエクスポート
 export const dataSourceFactory = new DataSourceFactory();
+
+/**
+ * DataSourceFactoryインスタンスをリセット
+ */
+export function resetDataSourceFactory(): void {
+  dataSourceFactory.reset();
+}
