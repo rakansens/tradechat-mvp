@@ -19,7 +19,16 @@ import type { SymbolSliceState } from './state';
 /**
  * シンボルスライス全体を取得する基本セレクター
  */
-export const selectSymbolState = (state: RootState): SymbolSliceState => state as SymbolSliceState;
+export const selectSymbolState = (state: RootState): SymbolSliceState => ({
+  currentSymbol: state.currentSymbol,
+  exchangeType: state.exchangeProductType,
+  symbolsList: state.symbolsList,
+  filteredSymbols: state.filteredSymbols,
+  filterOptions: state.filterOptions,
+  isLoading: state.isLoading,
+  error: state.error,
+  changeHistory: state.changeHistory
+});
 
 /**
  * 現在のシンボルを選択するセレクター
