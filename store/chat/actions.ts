@@ -154,9 +154,9 @@ export const createChatActions = (
   // メッセージ操作
   sendMessage: async (message, conversationId) => {
     const { messages, activeConversationId } = get()
-    
+
     // 使用する会話IDを決定
-    const targetConversationId = conversationId || activeConversationId || 'default'
+    const targetConversationId: string = conversationId || activeConversationId || 'default'
     
     // 会話の状態を取得
     let conversationState = get().byConversation[targetConversationId]
@@ -551,7 +551,7 @@ export const createChatActions = (
   handleEntryPointQuery: () => {
     // アクティブな会話IDを取得（必ずstring型に）
     const { activeConversationId } = get();
-    const conversationId = activeConversationId || DEFAULT_CONVERSATION_ID;
+    const conversationId: string = activeConversationId || DEFAULT_CONVERSATION_ID;
     
     // OHLCデータを取得
     const { ohlcData } = getChartData() || { ohlcData: [] }

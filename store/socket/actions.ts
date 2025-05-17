@@ -2,10 +2,9 @@
 // 作成: 2025-05-10 - ソケット接続状態を管理するスライスのAction定義
 // 更新: 2025-05-10 - StateCreator型の修正
 
-import { StateCreator } from 'zustand';
+import { type StoreApi, type StateCreator } from 'zustand';
 import { SocketSliceState } from './state';
 import { logger } from '@/utils/common';
-import { type StoreApi } from 'zustand';
 
 export interface SocketSliceActions {
   /**
@@ -37,12 +36,11 @@ export interface SocketSliceActions {
 
 export type SocketSlice = SocketSliceState & SocketSliceActions;
 
-export const createSocketSliceActions: StateCreator<
-  SocketSlice,
-  [],
-  [],
-  SocketSliceActions
-> = (set, get, _store) => ({
+export const createSocketSliceActions = <T extends SocketSliceState>(
+  set: (fn: (state: T) => void) => void,
+  get: () => T,
+  _store: StoreApi<T>
+): SocketSliceActions => ({
   setConnected: (connected: boolean, source: string = 'socket-event') => {
     logger.info(`SocketSlice: 接続状態を${connected}に更新します`, {
       component: 'SocketSlice',

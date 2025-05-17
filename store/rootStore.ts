@@ -20,7 +20,7 @@
 import { create, StateCreator, StoreApi, useStore } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
-import { produce } from 'immer';
+import { produce, type Draft } from 'immer';
 import { devtools } from 'zustand/middleware';
 import { logger as loggerFn } from '@/utils/common'
 import { ChartSlice, createChartSlice } from './chart'
@@ -221,40 +221,28 @@ export const useRootStore = create<RootStore>()(
       persist(
         immer((set, get, api) => {
           // immerSetラッパー - ジェネリックな型パラメータを持つヘルパー関数
-          const immerSet = <TState>(
-            fn: ((state: TState) => void | TState | Partial<TState>) | TState | Partial<TState>
-          ) => {
-            return set((state: RootState) => {
-              // Immerのproduceを使用して不変更新を実行
-              return produce(state, (draft: TState) => {
-                if (typeof fn === 'function') {
-                  const result = (fn as (state: TState) => void | TState | Partial<TState>)(draft);
-                  // 関数がオブジェクトを返した場合はマージ
-                  if (result && typeof result === 'object') {
-                    Object.assign(draft as Record<string, any>, result);
-                  }
-                } else if (fn && typeof fn === 'object') {
-                  // オブジェクトが渡された場合はそのままマージ
-                  Object.assign(draft as Record<string, any>, fn);
-                }
-              });
-            });
+          const immerSet = <TState>(fn: (draft: Draft<TState>) => void) => {
+            return set((state: RootState) =>
+              produce(state, draft => {
+                fn(draft as Draft<TState>);
+              })
+            );
           };
 
           // 型安全なGetState関数
-          const getState = <TState>() => get() as unknown as TState;
+          const getState = <TState>() => get() as TState;
 
           // スライスの作成 - 全て同じパターンを使用
           const dataFetchSlice = createDataFetchSlice(
             (fn) => immerSet<DataFetchSliceState>(fn),
             () => getState<DataFetchSliceState>(),
-            api as unknown as StoreApi<DataFetchSlice>
+            api
           );
           
           const socketSlice = createSocketSlice(
             (fn) => immerSet<SocketSliceState>(fn),
             () => getState<SocketSliceState>(),
-            api as unknown as StoreApi<SocketSlice>
+            api
           );
           
           const symbolSlice = createSymbolSlice(

@@ -2,10 +2,11 @@
 // SocketSliceのエントリーポイント - 2025-05-13
 // 更新: 2025-05-15 - SocketSlice型をエクスポート追加
 
-import { StoreApi } from 'zustand';
+import { type StoreApi } from 'zustand';
 import { initialSocketState } from './state';
 import { createSocketSliceActions, SocketSlice } from './actions';
 import { logger } from '@/utils/common';
+import type { RootStore } from '../rootStore';
 
 // 型のリエクスポート
 export type { SocketSliceState } from './state';
@@ -18,10 +19,10 @@ export { initializeSocketMonitoring, cleanupSocketMonitoring } from './dispatche
  * SocketSliceを作成する関数
  * rootStoreに統合するためのファクトリ関数
  */
-export const createSocketSlice = <T extends object>(
-  set: StoreApi<T>['setState'],
-  get: StoreApi<T>['getState'],
-  store: StoreApi<T>
+export const createSocketSlice = (
+  set: StoreApi<RootStore>['setState'],
+  get: StoreApi<RootStore>['getState'],
+  store: StoreApi<RootStore>
 ) => {
   // スライスの初期化ログ
   logger.info('SocketSliceを初期化します', {
@@ -32,6 +33,6 @@ export const createSocketSlice = <T extends object>(
   // 状態とアクションを結合して返す
   return {
     ...initialSocketState,
-    ...createSocketSliceActions(set as any, get as any, store as any)
+    ...createSocketSliceActions(set, get, store)
   };
-}; 
+};
