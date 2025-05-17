@@ -539,7 +539,8 @@ export function subscribeKline(
 ```typescript
 // services/dataFetchService.ts
 import { socketService } from './socket';
-import { bitgetApi } from './bitgetApi';
+import { BitgetApiClient } from './api/bitget/client';
+const bitgetApi = new BitgetApiClient();
 import type { OrderBookData, OHLCData, ExchangeType, Timeframe } from '@/types';
 
 // WebSocketサブスクリプション管理
