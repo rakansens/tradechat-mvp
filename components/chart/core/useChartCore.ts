@@ -17,7 +17,8 @@ import {
   AreaSeries,
   UTCTimestamp
 } from 'lightweight-charts';
-import { ChartType, OHLCData, Timeframe } from '@/types/chart';
+import { OHLCData, Timeframe } from '@/types/chart';
+import { ChartType, ExtendedChartType } from '@/types/constants/enums';
 import { logger } from '@/utils/common';
 
 // utils/chart からユーティリティ関数をインポート
@@ -50,7 +51,7 @@ export interface UseChartCoreReturn {
   chartInstanceRef: React.RefObject<IChartApi | null>;
   seriesRefs: ChartSeriesRefs;
   resizeChart: () => void;
-  updateChartData: (data: OHLCData[], chartType: ChartType) => void;
+  updateChartData: (data: OHLCData[], chartType: ExtendedChartType) => void;
 }
 
 /**
@@ -107,7 +108,7 @@ export function useChartCore(): UseChartCoreReturn {
   }, []);
   
   // チャートデータの更新
-  const updateChartData = useCallback((data: OHLCData[], chartType: ChartType) => {
+  const updateChartData = useCallback((data: OHLCData[], chartType: ExtendedChartType) => {
     if (!chartInstanceRef.current) return;
     if (!data || data.length === 0) return;
     
@@ -115,16 +116,26 @@ export function useChartCore(): UseChartCoreReturn {
       // データの正規化・検証
       const sanitizedData = sanitizeOHLCData(data);
       
+      // チャートタイプの正規化（互換性対応）
+      const normalizedChartType = 
+        chartType === 'candlestick' ? 'candles' :
+        chartType === 'bar' ? 'bars' :
+        chartType;
+      
       // シリーズタイプに応じたデータ更新
-      if (chartType === 'candles' && candleSeries.current) {
+      if ((normalizedChartType === 'candles') && candleSeries.current) {
         const formattedData = formatCandlestickData(sanitizedData);
         candleSeries.current.setData(formattedData);
-      } else if (chartType === 'line' && lineSeries.current) {
+      } else if (normalizedChartType === 'line' && lineSeries.current) {
         const formattedData = formatLineData(sanitizedData);
         lineSeries.current.setData(formattedData);
-      } else if (chartType === 'area' && areaSeries.current) {
+      } else if (normalizedChartType === 'area' && areaSeries.current) {
         const formattedData = formatLineData(sanitizedData);
         areaSeries.current.setData(formattedData);
+      } else if (normalizedChartType === 'bars' && candleSeries.current) {
+        // barsはローソク足シリーズで表示する
+        const formattedData = formatCandlestickData(sanitizedData);
+        candleSeries.current.setData(formattedData);
       }
       
       // タイムスケールをフィット

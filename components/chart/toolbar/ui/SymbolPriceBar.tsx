@@ -15,16 +15,17 @@ import { Badge } from '@/components/ui/badge';
 import { CandlestickChart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import SymbolSelectorModal from '../../SymbolSelectorModal';
-import { ExchangeType } from '@/types/constants/enums';
+import { ExchangeType, ExchangeProductType } from '@/types/constants/enums';
 import { SymbolSelector } from '@/components/symbol/Selector';
 import { ExchangeSelector } from '@/components/symbol/ExchangeSelector';
+import { safeExchangeType } from '@/utils/exchangeTypeUtils';
 
 interface SymbolPriceBarProps {
   // シンボル関連
   currentSymbol: string;
-  exchangeType: ExchangeType;
+  exchangeType: ExchangeType | ExchangeProductType;
   onSymbolChange: (symbol: string) => void;
-  onExchangeTypeChange: (type: ExchangeType) => void;
+  onExchangeTypeChange: (type: ExchangeType | ExchangeProductType) => void;
   
   // 価格関連
   currentPrice: number | null;
@@ -52,7 +53,7 @@ const SymbolPriceBar = memo(function SymbolPriceBar({
       {/* 銘柄選択モーダル */}
       <SymbolSelectorModal
         currentSymbol={currentSymbol}
-        exchangeType={exchangeType}
+        exchangeType={safeExchangeType(exchangeType)}
         onSymbolSelect={onSymbolChange}
         onExchangeTypeChange={onExchangeTypeChange}
         trigger={

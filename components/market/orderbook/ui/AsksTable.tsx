@@ -4,7 +4,7 @@
  */
 
 import React, { memo } from 'react';
-import { OrderBookEntry } from '@/types/market';
+import { OrderBookEntry } from '@/types/common/orderbook';
 import PriceRow from './PriceRow';
 
 interface AsksTableProps {

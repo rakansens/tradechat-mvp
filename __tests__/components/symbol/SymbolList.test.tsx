@@ -6,7 +6,7 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { SymbolList } from '@/components/symbol/Selector/ui/SymbolList';
 import { validateSymbolInfo } from '@/lib/validations/symbol';
-import type { SymbolInfo } from '@/store/useSymbolStore';
+import type { SymbolInfo } from '@/types/common/symbol';
 
 // モックシンボルデータ
 const mockSymbols: SymbolInfo[] = [

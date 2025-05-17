@@ -12,7 +12,7 @@ import { IChartApi, ISeriesApi } from 'lightweight-charts';
 import { OHLCData } from '@/types/chart';
 import { logger } from '@/utils/common';
 import { useRootStore } from '@/store';
-import { selectActiveDrawingTools } from '@/store/chart/drawingTool/selectors';
+import { selectActiveDrawingTool } from '@/store/chart/drawingTool/selectors';
 import { 
   FibonacciLineHandles, 
   drawFibonacciRetracement, 
@@ -42,7 +42,7 @@ export function useDrawingTools(): UseDrawingToolsReturn {
   const [fibonacciLines, setFibonacciLines] = useState<FibonacciLineHandles>({});
   
   // 描画ツールストアから状態を取得
-  const activeDrawingTools = useRootStore(selectActiveDrawingTools);
+  const activeDrawingTools = useRootStore(selectActiveDrawingTool);
   
   // 描画ツールの更新
   const updateDrawings = useCallback((

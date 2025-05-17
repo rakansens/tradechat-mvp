@@ -17,6 +17,7 @@ export { SubscriptionManager, getSubscriptionManager } from './subscription-mana
 export { BitgetIntegration, getBitgetIntegration } from './bitget-integration';
 export { MockSocketService, getMockSocketService } from './mock-service';
 export { SocketService } from './socket-service';
+export { default as default } from './socket-service';
 
 // ファクトリー関数
 export { 

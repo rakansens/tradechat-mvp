@@ -11,12 +11,12 @@
 import React from 'react';
 import { render, act } from '@testing-library/react';
 import { ChartContainer } from '../../components/chart/ChartContainer';
-import { useSymbolStore } from '../../store/useSymbolStore';
-import { useChartDataStore } from '../../store/chart';
+import { useSymbolStore } from '../../store/symbol';
+import { useChartDataStore } from '../../store/chart/data';
 import { logger } from '../../utils/common';
 
 // モック
-jest.mock('../../store/useSymbolStore', () => ({
+jest.mock('../../store/symbol', () => ({
   useSymbolStore: jest.fn()
 }));
 

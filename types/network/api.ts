@@ -11,13 +11,13 @@
  */
 
 import { AxiosRequestConfig, AxiosResponse } from 'axios';
-import { ExchangeType, ExchangeProductType } from '@/types/constants/enums';
+import { ExchangeType, ProductType } from '@/types/exchange';
 
 /**
  * 取引所タイプから取引プロダクトタイプへの変換マッピング
  * 中間移行のために使用
  */
-export const EXCHANGE_TO_PRODUCT_TYPE: Record<ExchangeType, ExchangeProductType> = {
+export const EXCHANGE_TO_PRODUCT_TYPE: Record<string, ProductType> = {
   'bitget': 'spot',
   'binance': 'spot',
   'bybit': 'spot',
@@ -27,13 +27,13 @@ export const EXCHANGE_TO_PRODUCT_TYPE: Record<ExchangeType, ExchangeProductType>
 /**
  * 取引プロダクトタイプから取引所タイプへのデフォルト変換（後方互換性）
  */
-export const PRODUCT_TO_EXCHANGE_TYPE: Record<ExchangeProductType, ExchangeType> = {
+export const PRODUCT_TO_EXCHANGE_TYPE: Record<ProductType, ExchangeType> = {
   'spot': 'bitget',
   'futures': 'demo'
 };
 
-// ExchangeType型を再エクスポート
-export type { ExchangeType, ExchangeProductType };
+// 型を再エクスポート
+export type { ExchangeType, ProductType };
 
 /**
  * Bitget API認証情報

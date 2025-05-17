@@ -1,7 +1,17 @@
 // services/socket/realtime.ts
 // 作成: リアルタイム更新のためのWebSocket関連機能を提供するサービス層
 
-import { socketService } from "./socket-service";
+import SocketService from "./socket-service";
+import { WebSocketClient } from "./websocket-client";
+import { SubscriptionManager } from "./subscription-manager";
+import { BitgetIntegration } from "./bitget-integration";
+
+// SocketServiceのインスタンスを作成
+const webSocketClient = new WebSocketClient();
+const subscriptionManager = new SubscriptionManager();
+const bitgetIntegration = new BitgetIntegration();
+const socketService = new SocketService(webSocketClient, subscriptionManager, bitgetIntegration);
+
 import type { Timeframe, OHLCData } from "@/types/chart";
 
 /**
@@ -21,26 +31,16 @@ export const key = (s: string, tf: Timeframe): SubscriptionKey => `${s}:${tf}`;
  * @param cb データ受信時のコールバック関数
  */
 export function subscribeKline(s: string, tf: Timeframe, cb: (d: OHLCData) => void) {
-  const api = socketService.current();
-  
-  if (!api) {
-    console.error('Socket API client not initialized');
+  if (!socketService) {
+    console.error('SocketService not initialized');
     return;
   }
   
   // WebSocketでKlineを購読
-  if (typeof api.subscribeToKline === 'function') {
-    api.subscribeToKline(s, tf);
+  if (typeof socketService.subscribeKline === 'function') {
+    socketService.subscribeKline(s, tf, cb, 'bitget');
   } else {
-    console.error('subscribeToKline method not available');
-    return;
-  }
-  
-  // データ受信時のコールバックを設定
-  if (typeof api.onKlineUpdate === 'function') {
-    api.onKlineUpdate(cb);
-  } else {
-    console.error('onKlineUpdate method not available');
+    console.error('subscribeKline method not available');
   }
 }
 
@@ -48,8 +48,7 @@ export function subscribeKline(s: string, tf: Timeframe, cb: (d: OHLCData) => vo
  * すべての購読を解除する関数
  */
 export const unsubscribeAll = () => {
-  const api = socketService.current();
-  if (api && typeof api.disconnectWebSocket === 'function') {
-    api.disconnectWebSocket();
+  if (socketService && typeof socketService.disconnectAll === 'function') {
+    socketService.disconnectAll();
   }
-}; 
+};

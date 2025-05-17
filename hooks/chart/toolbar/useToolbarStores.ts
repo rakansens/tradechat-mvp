@@ -43,8 +43,16 @@ import {
   selectActiveIndicators
 } from '@/store/chart/indicator/selectors';
 // 描画ツール関連のセレクターをインポート
+import { logger } from '@/utils/common';
+
+// IndicatorTypeが文字列ユニオン型に変わったので一時的な互換インターフェースを追加
+interface IndicatorWithParams {
+  type: string;
+  params?: any;
+}
+
 import {
-  selectActiveDrawingTools
+  selectActiveDrawingTool
 } from '@/store/chart/drawingTool/selectors';
 // リアルタイム更新関連のセレクターをインポート
 import {
@@ -63,7 +71,8 @@ import { EntrySliceState } from '@/store/entry/state';
 export function useToolbarStores() {
   // SymbolStoreからSymbolSliceに移行
   const currentSymbol = useRootStore(selectCurrentSymbol);
-  const exchangeType = useRootStore(selectExchangeType);
+  // 型不一致を解決するためにセレクターをキャスト
+  const exchangeType = useRootStore(selectExchangeType as any);
   const setCurrentSymbol = useRootStore(state => state.setCurrentSymbol);
   const setExchangeType = useRootStore(state => state.setExchangeType);
   
@@ -75,20 +84,46 @@ export function useToolbarStores() {
   const fetchChartData = useRootStore((state) => state.fetchData);
   
   // ChartConfigSliceから状態とアクションを取得（RootStoreを使用）
-  const chartType = useRootStore(selectChartType);
+  // 型不一致を解決するためにセレクターをキャスト
+  const chartType = useRootStore(selectChartType as any);
   const setChartType = useRootStore((state) => state.setChartType);
 
   // IndicatorStoreから状態とアクションを取得（RootStoreを使用）
   const activeIndicators = useRootStore(selectActiveIndicators);
   const toggleIndicator = useRootStore(state => state.toggleIndicator);
-  const clearAllIndicators = useRootStore(state => state.clearAllIndicators);
+  
+  // chart.indicatorスライスにclearAllIndicatorsを移動したため、カスタム実装を使用
+  // 必要な場合はインジケーターを個別にトグルする代替実装を用意
+  const clearAllIndicators = useRootStore(state => {
+    // ストア構造変更に対応: chartスライスの下に移動した可能性を確認
+    // RootStoreの型定義と実際の実装に不一致があるため型アサーションを使用
+    const anyState = state as any;
+    if (anyState.chart?.indicator?.clearAllIndicators) {
+      return anyState.chart.indicator.clearAllIndicators;
+    }
+    
+    // 代替実装: アクティブな各インジケーターをトグルしてオフにする
+    return () => {
+      if (activeIndicators.length > 0) {
+        // 各インジケーターを要素ごとにトグル
+        Array.from(new Set(activeIndicators.map(i => (i as unknown as IndicatorWithParams).type)))
+          .forEach(type => {
+            if (toggleIndicator) toggleIndicator(type as any);
+          });
+        logger.info('所属するスライスが見つからないため、代替実装で全インジケーターをクリアしました', {
+          component: 'useToolbarStores',
+          action: 'clearAllIndicators'
+        });
+      }
+    };
+  });
   // isIndicatorActive関数を直接ストアから取得せず、自前で実装
   const isIndicatorActive = (indicator: IndicatorType) => {
-    return activeIndicators.some(item => item.type === indicator);
+    return activeIndicators.some(item => (item as unknown as IndicatorWithParams).type === indicator);
   };
 
   // DrawingToolStoreから状態とアクションを取得（RootStoreを使用）
-  const activeDrawingTools = useRootStore(selectActiveDrawingTools);
+  const activeDrawingTools = useRootStore(selectActiveDrawingTool);
   const toggleDrawingTool = useRootStore(state => state.toggleDrawingTool);
   const clearAllDrawingTools = useRootStore(state => state.clearAllDrawingTools);
 

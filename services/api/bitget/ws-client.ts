@@ -8,9 +8,10 @@
  * 接続管理、メッセージ送受信、Ping/Pong処理、再接続ロジックを実装します。
  */
 
-import { ExchangeType, BitgetCredentials } from '../../../types/api';
+import { BitgetCredentials } from '../../../types/api';
 import { OHLCData, Timeframe } from '../../../types/chart';
-import { OrderBookData } from '../../../types/market';
+import { OrderBookData } from '@/types/common/orderbook';
+import { ExchangeType, ExchangeProductType, LegacyExchangeType } from '@/types/constants/enums';
 import { logger } from '@/utils/common';
 import { IS_DEV } from '../common/environment';
 import { getApiConfig } from '../common/environment';
@@ -36,7 +37,7 @@ export interface WebSocketClientOptions {
   /**
    * 取引タイプ
    */
-  exchangeType?: ExchangeType;
+  exchangeType?: ExchangeProductType;
 }
 
 /**
@@ -46,7 +47,7 @@ export interface WebSocketClientOptions {
 export class BitgetWebSocketClient extends EventEmitter {
   private wsUrl: string;
   private credentials: BitgetCredentials;
-  private exchangeType: ExchangeType;
+  private exchangeType: ExchangeProductType;
   private ws: WebSocket | null = null;
   private pingInterval: ReturnType<typeof setInterval> | null = null;
   private reconnectInterval: ReturnType<typeof setTimeout> | null = null;
@@ -73,7 +74,7 @@ export class BitgetWebSocketClient extends EventEmitter {
     
     this.wsUrl = options.wsUrl || apiConfig.wsUrl;
     this.credentials = options.credentials || {};
-    this.exchangeType = options.exchangeType || 'spot';
+    this.exchangeType = options.exchangeType || 'spot'; // ExchangeProductType ('spot' | 'futures')
     this.dataTransformer = new BitgetDataTransformer();
     
     // 送信キューを初期化

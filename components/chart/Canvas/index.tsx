@@ -11,13 +11,19 @@
 "use client"
 
 import { useEffect } from "react"
-import { OHLCData, ChartType } from "@/types/chart"
+import { OHLCData } from "@/types/chart"
+import { ChartType, ExtendedChartType } from "@/types/constants/enums"
 import { logger } from '@/utils/common'
 import { useRootStore } from "@/store"
 import { selectChartData, selectCurrentSymbol, selectCurrentTimeFrame } from "@/store/chart/data/selectors"
 import { selectChartType } from "@/store/chart/config/selectors"
 import { selectActiveIndicators } from "@/store/chart/indicator/selectors"
-import { selectActiveDrawingTools } from "@/store/chart/drawingTool/selectors"
+import { selectActiveDrawingTool } from "@/store/chart/drawingTool/selectors"
+// 一時的なインターフェースを追加して型互換性を確保
+interface IndicatorWithParams {
+  type: string;
+  params?: any;
+}
 import { CandlestickSeries, LineSeries, AreaSeries } from "lightweight-charts";
 
 // リファクタリングした各Hookをインポート
@@ -60,9 +66,10 @@ export default function ChartCanvas() {
   const data = useRootStore(selectChartData);
   const currentSymbol = useRootStore(selectCurrentSymbol);
   const currentTimeFrame = useRootStore(selectCurrentTimeFrame);
-  const chartType = useRootStore(selectChartType);
+  // 型の互換性を確保するために拡張型定義を使用
+  const chartType = useRootStore(selectChartType as any) as ExtendedChartType;
   const activeIndicators = useRootStore(selectActiveIndicators);
-  const activeDrawingTools = useRootStore(selectActiveDrawingTools);
+  const activeDrawingTools = useRootStore(selectActiveDrawingTool);
   
   // チャートタイプが変更されたときにシリーズを切り替え
   useEffect(() => {
@@ -174,7 +181,7 @@ export default function ChartCanvas() {
     logger.debug('インジケーターを更新しました', {
       component: 'ChartCanvas',
       action: 'updateIndicators',
-      activeIndicators: activeIndicators.map(i => i.type)
+      activeIndicators: activeIndicators.map(i => (i as unknown as IndicatorWithParams).type || String(i))
     });
   }, [data, activeIndicators, chartInstanceRef, seriesRefs, updateIndicators]);
   

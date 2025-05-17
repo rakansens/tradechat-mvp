@@ -13,6 +13,12 @@ import { OHLCData } from '@/types/chart';
 import { logger } from '@/utils/common';
 import { useRootStore } from '@/store';
 import { selectActiveIndicators } from '@/store/chart/indicator/selectors';
+
+// IndicatorTypeが文字列ユニオン型に変わったので一時的な互換インターフェースを追加
+interface IndicatorWithParams {
+  type: string;
+  params?: any;
+}
 import { 
   RSI, 
   MACD, 
@@ -94,9 +100,10 @@ export function useIndicators(): UseIndicatorsReturn {
     const sortedData = [...data].sort((a, b) => a.time - b.time);
     
     // RSIインジケーターの表示切替
-    if (activeIndicators.some(indicator => indicator.type === 'rsi')) {
+    // IndicatorTypeを互換型にキャストして使用
+    if (activeIndicators.some(indicator => (indicator as unknown as IndicatorWithParams).type === 'rsi')) {
       // RSIパラメータを取得
-      const activeRSI = activeIndicators.find(indicator => indicator.type === 'rsi');
+      const activeRSI = activeIndicators.find(indicator => (indicator as unknown as IndicatorWithParams).type === 'rsi') as unknown as IndicatorWithParams;
       const rsiParams = {
         visible: true,
         period: activeRSI?.params?.period || 14,
@@ -113,9 +120,10 @@ export function useIndicators(): UseIndicatorsReturn {
     }
     
     // MACDインジケーターの表示切替
-    if (activeIndicators.some(indicator => indicator.type === 'macd')) {
+    // IndicatorTypeを互換型にキャストして使用
+    if (activeIndicators.some(indicator => (indicator as unknown as IndicatorWithParams).type === 'macd')) {
       // MACDパラメータを取得
-      const activeMacd = activeIndicators.find(indicator => indicator.type === 'macd');
+      const activeMacd = activeIndicators.find(indicator => (indicator as unknown as IndicatorWithParams).type === 'macd') as unknown as IndicatorWithParams;
       const macdParams = {
         fastPeriod: activeMacd?.params?.fastPeriod || 12,
         slowPeriod: activeMacd?.params?.slowPeriod || 26,
@@ -156,9 +164,10 @@ export function useIndicators(): UseIndicatorsReturn {
     }
     
     // 一目均衡表インジケーターの表示切替
-    if (activeIndicators.some(indicator => indicator.type === 'ichimoku')) {
+    // IndicatorTypeを互換型にキャストして使用
+    if (activeIndicators.some(indicator => (indicator as unknown as IndicatorWithParams).type === 'ichimoku')) {
       // 一目均衡表パラメータを取得
-      const activeIchimoku = activeIndicators.find(indicator => indicator.type === 'ichimoku');
+      const activeIchimoku = activeIndicators.find(indicator => (indicator as unknown as IndicatorWithParams).type === 'ichimoku') as unknown as IndicatorWithParams;
       
       // 一目均衡表を表示
       addOrUpdateIchimokuSeries(

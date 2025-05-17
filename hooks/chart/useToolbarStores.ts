@@ -41,7 +41,7 @@ import {
 } from '@/store/chart/indicator/selectors';
 // 描画ツール関連のセレクターをインポート
 import {
-  selectActiveDrawingTool as selectActiveDrawingTools
+  selectActiveDrawingTool
 } from '@/store/chart/drawingTool/selectors';
 // リアルタイム更新関連のセレクターをインポート
 import {
@@ -92,7 +92,7 @@ export function useToolbarStores() {
   };
 
   // DrawingToolStoreから状態とアクションを取得（RootStoreを使用）
-  const activeDrawingTools = useRootStore(selectActiveDrawingTools);
+  const activeDrawingTools = useRootStore(selectActiveDrawingTool);
   const toggleDrawingTool = useRootStore(state => state.toggleDrawingTool);
   const clearAllDrawingTools = useRootStore(state => state.clearAllDrawingTools);
 

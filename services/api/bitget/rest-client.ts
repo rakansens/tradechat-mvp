@@ -11,10 +11,11 @@
  */
 
 import axios, { AxiosError } from 'axios';
-import { ExchangeType } from '../../../types/api';
+import { ExchangeType, ExchangeProductType } from '../../../types/api';
 import { OHLCData, Timeframe, OrderBookData } from '../../../types/chart';
 import { IRestApiClient } from '../interfaces';
 import { logger } from '../../../utils/logger';
+import { safeExchangeType, safeProductType } from '../../../utils/exchangeTypeUtils';
 
 /* --- ① symbol を API 仕様に合わせて正規化 --- */
 const normalizeSymbol = (raw: string) => {
@@ -51,8 +52,10 @@ const TIMEFRAME_MAP_FUTURES: Record<string, string> = {
 };
 
 // 時間足のマッピング関数
-const toGranularity = (tf: string, ex: ExchangeType): string => {
-  const map = ex === 'futures' ? TIMEFRAME_MAP_FUTURES : TIMEFRAME_MAP_SPOT;
+const toGranularity = (tf: string, ex: ExchangeType | ExchangeProductType): string => {
+  // ExchangeProductTypeの場合はマッピングを行う
+  const isFutures = ex === 'futures' || safeExchangeType(ex) === 'bitget';
+  const map = isFutures ? TIMEFRAME_MAP_FUTURES : TIMEFRAME_MAP_SPOT;
   return map[tf] || tf;
 };
 
@@ -65,10 +68,10 @@ export class BitgetRestClient implements IRestApiClient {
   /**
    * オーダーブックデータを取得（インターフェース互換性用）
    * @param symbol シンボル
-   * @param exchangeType 取引タイプ
+   * @param exchangeType 取引タイプまたは取引種別
    * @returns オーダーブックデータ
    */
-  public async getOrderBook(symbol: string, exchangeType: ExchangeType): Promise<OrderBookData> {
+  public async getOrderBook(symbol: string, exchangeType: ExchangeType | ExchangeProductType): Promise<OrderBookData> {
     return this.fetchOrderBook(symbol, 100, exchangeType);
   }
 
@@ -92,7 +95,7 @@ export class BitgetRestClient implements IRestApiClient {
    * @param symbol シンボル
    * @param timeframe タイムフレーム
    * @param limit 取得件数
-   * @param exchangeType 取引タイプ
+   * @param exchangeType 取引タイプまたは取引種別
    * @param endTime 終了時間（オプション）
    * @returns ローソク足データの配列
    */
@@ -100,7 +103,7 @@ export class BitgetRestClient implements IRestApiClient {
     symbol: string,
     timeframe: string,
     limit: number = 100,
-    exchangeType: ExchangeType = 'bitget',
+    exchangeType: ExchangeType | ExchangeProductType = 'bitget',
     endTime?: number
   ): Promise<OHLCData[]> {
     try {
@@ -118,7 +121,8 @@ export class BitgetRestClient implements IRestApiClient {
       params.granularity = granularity;
       
       // エンドポイントとパラメータ設定
-      if (exchangeType === 'futures') {
+      // exchangeTypeがExchangeProductTypeやエイリアスの場合も対応
+      if (safeProductType(exchangeType) === 'futures') {
         endpoint = '/api/v2/mix/market/candles';
         // ② 正しい productType を設定
         params.productType = FUTURES_PRODUCT_TYPES.USDT;
@@ -198,7 +202,7 @@ export class BitgetRestClient implements IRestApiClient {
   public async fetchOrderBook(
     symbol: string,
     depth: number = 100,
-    exchangeType: ExchangeType = 'bitget'
+    exchangeType: ExchangeType | ExchangeProductType = 'bitget'
   ): Promise<OrderBookData> {
     try {
       let endpoint = '';
@@ -211,7 +215,8 @@ export class BitgetRestClient implements IRestApiClient {
       params.symbol = normalizedSymbol;
 
       // エンドポイント設定
-      if (exchangeType === 'futures') {
+      // ExchangeProductTypeとExchangeTypeの両方をサポート
+      if (safeProductType(exchangeType) === 'futures') {
         endpoint = '/api/v2/mix/market/orderbook';
         // ② 正しい productType を設定
         params.productType = FUTURES_PRODUCT_TYPES.USDT;

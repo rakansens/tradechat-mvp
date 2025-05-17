@@ -3,7 +3,7 @@
 // 作成日: 2025/6/10
 // 更新日: 2025/9/17 - DI対応に更新
 
-import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { jest, describe, it, expect, beforeEach, afterEach } from '@jest/globals';
 import { 
   getEntries,
   getUserEntries,
@@ -35,20 +35,20 @@ const mockSupabaseResponse = (data: any = null, error: any = null) => ({
 
 // モックのSupabaseクライアント
 const mockClient = {
-  from: vi.fn().mockReturnValue(mockSupabaseResponse()),
-  channel: vi.fn().mockReturnValue({
-    on: vi.fn().mockReturnThis(),
-    subscribe: vi.fn(() => ({
-      unsubscribe: vi.fn()
+  from: jest.fn().mockReturnValue(mockSupabaseResponse()),
+  channel: jest.fn().mockReturnValue({
+    on: jest.fn().mockReturnThis(),
+    subscribe: jest.fn(() => ({
+      unsubscribe: jest.fn()
     })),
   }),
-  removeChannel: vi.fn(),
+  removeChannel: jest.fn(),
 };
 
 // Supabaseクライアントのモック
-vi.mock('@/lib/supabase/client', () => {
+jest.mock('@/lib/supabase/client', () => {
   return {
-    createClient: vi.fn(() => mockClient)
+    createClient: jest.fn(() => mockClient)
   };
 });
 
@@ -72,7 +72,7 @@ const testEntry = {
 describe('エントリー管理機能のテスト', () => {
   beforeEach(() => {
     // 各テスト前に実行
-    vi.clearAllMocks();
+    jest.clearAllMocks();
     
     // デフォルトで成功レスポンスを設定
     mockClient.from.mockImplementation(() => 
@@ -82,7 +82,7 @@ describe('エントリー管理機能のテスト', () => {
 
   afterEach(() => {
     // 各テスト後に実行
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   describe('getEntries', () => {
@@ -175,7 +175,7 @@ describe('エントリー管理機能のテスト', () => {
 
   describe('subscribeToEntries', () => {
     it('エントリーのリアルタイム購読が正常に機能すること', () => {
-      const callback = vi.fn();
+      const callback = jest.fn();
       const unsubscribe = subscribeToEntries(callback, false, mockClient as any);
       
       expect(unsubscribe).toBeInstanceOf(Function);

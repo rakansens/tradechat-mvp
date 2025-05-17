@@ -6,9 +6,8 @@
 
 import { produce } from 'immer';
 import { logger } from '@/utils/logger';
-import { type ExchangeType } from '@/types/constants/enums';
-import type { ExchangeProductType } from '@/types/constants/enums';
-import { toExchangeProductType, isValidExchangeType, isValidExchangeProductType } from '@/utils/exchange';
+import { type ExchangeType, type ProductType } from '@/types/exchange';
+import { toExchangeProductType, isValidExchangeType, isValidProductType } from '@/utils/exchange';
 import { symbolService } from '@/services/symbol';
 import type { SymbolInfo } from '@/types/symbol';
 import { 
@@ -123,15 +122,15 @@ export const createSymbolActions = (
   },
 
   // 取引タイプを設定
-  setExchangeType: (type: ExchangeType | ExchangeProductType) => {
+  setExchangeType: (type: ExchangeType | ProductType) => {
     const oldType = getState().exchangeType;
     
     // 型を安全に変換
-    let productType: ExchangeProductType;
+    let productType: ProductType;
     
     mutateDraft((draft) => {
-      // ExchangeProductType が渡された場合はそのまま使用
-      if (isValidExchangeProductType(type)) {
+      // ProductType が渡された場合はそのまま使用
+      if (isValidProductType(type)) {
         productType = type;
       } 
       // ExchangeType が渡された場合はデフォルトの取引タイプに変換

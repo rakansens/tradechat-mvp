@@ -6,7 +6,7 @@
 // 更新: 2025-10-09 - S-9.2フェーズ: ExchangeType型の参照を統一し型変換を追加
 
 import { useState, useEffect } from 'react';
-import { type ExchangeType } from '@/types/constants/enums';
+import { type ExchangeType, type ExchangeProductType } from '@/types/constants/enums';
 import {
   Dialog,
   DialogContent,
@@ -22,8 +22,8 @@ import { safeExchangeType } from '@/utils/exchangeTypeUtils';
 interface SymbolSelectorModalProps {
   currentSymbol: string;
   onSymbolSelect: (symbol: string) => void;
-  exchangeType?: ExchangeType;
-  onExchangeTypeChange?: (exchangeType: ExchangeType) => void;
+  exchangeType?: ExchangeType | ExchangeProductType;
+  onExchangeTypeChange?: (exchangeType: ExchangeType | ExchangeProductType) => void;
   trigger?: React.ReactNode;
 }
 
@@ -74,7 +74,7 @@ export default function SymbolSelectorModal({
           <SymbolSelector
             onSelect={handleSymbolSelect}
             currentSymbol={currentSymbol}
-            defaultExchangeType={exchangeType}
+            defaultExchangeType={safeExchangeType(exchangeType)}
             onExchangeTypeChange={handleExchangeTypeChange}
           />
         </div>

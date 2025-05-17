@@ -25,32 +25,14 @@ interface TradeTypeSwitchProps {
 const TradeTypeSwitch = memo(function TradeTypeSwitch({
   productType,
   onProductTypeChange,
-  fetchChartData,
-  currentSymbol,
-  currentTimeFrame,
-  isClient
+  disabled = false,
 }: TradeTypeSwitchProps) {
-  // 取引種別を切り替えるハンドラー
-  const handleProductTypeChange = useCallback((newType: ExchangeProductType) => {
-    if (productType === newType) return; // 同じタイプの場合は何もしない
-    
-    // 取引種別を更新
-    onProductTypeChange(newType);
-    
-    // データを再取得
-    if (typeof fetchChartData === 'function') {
-      fetchChartData(currentSymbol, currentTimeFrame);
-    } else {
-      console.error('fetchChartData is not a function', fetchChartData);
-    }
-  }, [productType, onProductTypeChange, fetchChartData, currentSymbol, currentTimeFrame]);
-  
   return (
     <div className="flex items-center">
       <button
-        onClick={() => handleProductTypeChange('spot')}
+        onClick={() => onProductTypeChange('spot')}
+        disabled={disabled}
         className={`flex items-center px-2 py-1 text-xs rounded-l ${
-          !isClient ? 'bg-dark-800 text-gray-300' : // 初期レンダリング時はデフォルトスタイル
           productType === 'spot'
             ? 'bg-blue-600 text-white'
             : 'bg-dark-800 text-gray-300 hover:bg-dark-700'
@@ -59,9 +41,9 @@ const TradeTypeSwitch = memo(function TradeTypeSwitch({
         現物
       </button>
       <button
-        onClick={() => handleProductTypeChange('futures')}
+        onClick={() => onProductTypeChange('futures')}
+        disabled={disabled}
         className={`flex items-center px-2 py-1 text-xs rounded-r ${
-          !isClient ? 'bg-dark-800 text-gray-300' : // 初期レンダリング時はデフォルトスタイル
           productType === 'futures'
             ? 'bg-blue-600 text-white'
             : 'bg-dark-800 text-gray-300 hover:bg-dark-700'

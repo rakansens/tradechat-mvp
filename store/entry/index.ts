@@ -136,7 +136,7 @@ export const useEntryStore = create<EntrySlice>()(
 );
 
 // エントリースライスの完全な型
-type EntrySlice = EntrySliceState & EntrySliceActions
+export type EntrySlice = EntrySliceState & EntrySliceActions
 
 // エントリースライスの作成関数
 type SetState = (fn: (state: EntrySliceState) => void) => void

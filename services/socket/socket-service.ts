@@ -153,3 +153,5 @@ export class SocketService implements ISocketService {
     this.subscriptionManager.resubscribeAll();
   }
 }
+
+export default SocketService;

@@ -2,25 +2,35 @@
  * 取引所関連のユーティリティ関数
  */
 
-import { ExchangeType, ExchangeProductType, EXCHANGE_TYPES } from '@/types/constants/enums';
+import { ExchangeType, ProductType } from '@/types/exchange';
+
+// 全ての取引所タイプを含む配列 (exchangeTypeUtils.tsで定義されているものと同一)
+const EXCHANGE_TYPES = ['bitget', 'binance', 'bybit', 'demo'] as const;
 
 /**
  * 取引所タイプ (bitget, binance) から取引種別 (spot, futures) へのマッピング
  */
-const EXCHANGE_TO_PRODUCT_MAP: Record<ExchangeType, ExchangeProductType> = {
-  'bitget': 'spot',
-  'binance': 'spot',
-  'bybit': 'spot',
-  'demo': 'futures'
-};
+const EXCHANGE_TO_PRODUCT_MAP = {
+  'bitget': 'spot' as ProductType,
+  'binance': 'spot' as ProductType,
+  'bybit': 'spot' as ProductType,
+  'demo': 'futures' as ProductType
+} as const;
 
 /**
- * ExchangeType を ExchangeProductType に変換する
+ * ExchangeType を ProductType に変換する
  * @param exchangeType 取引所タイプ
- * @returns 取引タイプ（'spot' または 'futures'）
+ * @returns 取引種別（'spot' または 'futures'）
  */
-export function toExchangeProductType(exchangeType: ExchangeType): ExchangeProductType {
-  return EXCHANGE_TO_PRODUCT_MAP[exchangeType] || 'spot';
+export function toExchangeProductType(exchangeType: ExchangeType): ProductType {
+  // ExchangeType型の値を文字列として扱い、安全にデータ取得
+  const key = String(exchangeType);
+  
+  if (key === 'bitget' || key === 'binance' || key === 'bybit') return 'spot';
+  if (key === 'demo') return 'futures';
+  
+  // デフォルト値
+  return 'spot';
 }
 
 /**
@@ -29,14 +39,14 @@ export function toExchangeProductType(exchangeType: ExchangeType): ExchangeProdu
  * @returns 有効な ExchangeType かどうか
  */
 export function isValidExchangeType(value: string): value is ExchangeType {
-  return ['bitget', 'binance', 'bybit', 'demo'].includes(value);
+  return value === 'bitget' || value === 'binance' || value === 'bybit' || value === 'demo';
 }
 
 /**
- * ExchangeProductType が有効かどうかをチェックする
+ * ProductType が有効かどうかをチェックする
  * @param value チェックする値
- * @returns 有効な ExchangeProductType かどうか
+ * @returns 有効な ProductType かどうか
  */
-export function isValidExchangeProductType(value: string): value is ExchangeProductType {
+export function isValidProductType(value: string): value is ProductType {
   return value === 'spot' || value === 'futures';
 }

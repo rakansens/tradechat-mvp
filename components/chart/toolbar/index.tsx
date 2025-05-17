@@ -28,6 +28,7 @@ import TradeTypeSwitch from './ui/TradeTypeSwitch';
 
 // 利用可能な時間足とチャートタイプ
 import { CHART_TYPES, type ChartType, type Timeframe } from '@/types/constants/enums';
+import type { ExchangeProductType } from '@/types/constants/enums';
 
 // Define available timeframes
 const availableTimeframes: Timeframe[] = ['1m', '5m', '15m', '30m', '1h', '4h', '1d', '1w'];
@@ -87,7 +88,7 @@ const ChartToolbar = memo(function ChartToolbar({
       <div className="flex justify-between items-center py-2 px-3 border-b border-border-light bg-background-secondary">
         <SymbolPriceBar
           currentSymbol={symbolStore.currentSymbol}
-          exchangeType={symbolStore.exchangeType}
+          exchangeType={symbolStore.exchangeType as ExchangeProductType}
           onSymbolChange={symbolStore.handleSymbolChange}
           onExchangeTypeChange={symbolStore.setExchangeType}
           currentPrice={currentPrice}
@@ -126,7 +127,7 @@ const ChartToolbar = memo(function ChartToolbar({
           {/* チャートタイプ選択 */}
           <ChartTypeSelector
             chartTypes={chartTypes}
-            currentChartType={chartConfigStore.chartType}
+            currentChartType={chartConfigStore.chartType as ChartType}
             onChartTypeChange={(type: ChartType) => chartConfigStore.setChartType(type)}
           />
 
@@ -149,14 +150,8 @@ const ChartToolbar = memo(function ChartToolbar({
         <div className="flex items-center">
           {/* 取引種別切り替えボタン */}
           <TradeTypeSwitch
-            productType={symbolStore.exchangeType as 'spot' | 'futures'}
-            onProductTypeChange={symbolStore.setExchangeType}
-            fetchChartData={(symbol, timeFrame, signal, useCache) => {
-              return chartDataStore.fetchChartData(symbol, timeFrame as Timeframe, signal, useCache);
-            }}
-            currentSymbol={symbolStore.currentSymbol}
-            currentTimeFrame={chartDataStore.currentTimeFrame}
-            isClient={isClient}
+            productType={symbolStore.exchangeType as ExchangeProductType}
+            onProductTypeChange={(type) => symbolStore.setExchangeType(type as ExchangeProductType)}
           />
         </div>
       </div>

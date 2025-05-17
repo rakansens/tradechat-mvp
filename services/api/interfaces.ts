@@ -9,7 +9,7 @@
  * 単一責任の原則（SRP）に基づき、各インターフェースは明確に分離された責任を持ちます。
  */
 
-import { ExchangeType } from '../../types/api';
+import { ExchangeType, ProductType } from '../../types/exchange';
 import { OHLCData, OrderBookData, Timeframe } from '../../types/chart';
 
 /**
@@ -102,7 +102,7 @@ export interface IChartDataService {
   getChartData(
     symbol: string,
     timeframe: Timeframe,
-    exchangeType?: ExchangeType,
+    exchangeType?: ExchangeType | ProductType,
     limit?: number
   ): Promise<OHLCData[]>;
   
@@ -167,7 +167,7 @@ export interface IOrderBookService {
    */
   getOrderBook(
     symbol: string,
-    exchangeType: ExchangeType,
+    exchangeType: ExchangeType | ProductType,
     signal?: AbortSignal
   ): Promise<OrderBookData>;
   
@@ -181,7 +181,7 @@ export interface IOrderBookService {
   subscribeOrderBookRealtime(
     symbol: string,
     callback: (data: OrderBookData) => void,
-    exchangeType?: ExchangeType
+    exchangeType?: ExchangeType | ProductType
   ): () => void;
   
   /**
