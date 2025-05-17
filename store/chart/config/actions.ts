@@ -35,12 +35,23 @@ export const createChartConfigActions = (
   },
 
   // 取引種別（現物/先物など）を設定
-  setExchangeProductType: (exchangeProductType) => {
+  setProductType: (productType) => {
     set((state) => {
-      state.exchangeProductType = exchangeProductType;
+      state.productType = productType;
+      state.exchangeProductType = productType;
     });
 
     // ここでも必要に応じてイベントを発行
-    // 例: eventEmitter.emit("exchangeProductTypeChanged", exchangeProductType);
+    // 例: eventEmitter.emit("productTypeChanged", productType);
+  },
+
+  /**
+   * @deprecated setProductType を使用してください
+   */
+  setExchangeProductType: (exchangeProductType) => {
+    set((state) => {
+      state.productType = exchangeProductType;
+      state.exchangeProductType = exchangeProductType;
+    });
   }
-}); 
+});

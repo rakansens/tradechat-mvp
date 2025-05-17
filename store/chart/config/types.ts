@@ -16,7 +16,11 @@ export interface ChartConfigSliceState {
   exchangeType: ExchangeType;
   
   // 取引種別（現物、先物など）
-  exchangeProductType: ExchangeProductType;
+  productType: ExchangeProductType;
+  /**
+   * @deprecated productType を使用してください
+   */
+  exchangeProductType?: ExchangeProductType;
   
   // チャートスケール設定
   chartScale?: {
@@ -59,7 +63,11 @@ export interface ChartConfigSliceActions {
   // チャートタイプを設定するアクション
   setChartType: (chartType: ChartType) => void;
   setExchangeType: (exchangeType: ExchangeType) => void;
-  setExchangeProductType: (exchangeProductType: ExchangeProductType) => void;
+  setProductType: (productType: ExchangeProductType) => void;
+  /**
+   * @deprecated setProductType を使用してください
+   */
+  setExchangeProductType?: (exchangeProductType: ExchangeProductType) => void;
 }
 
 /**

@@ -23,7 +23,7 @@ import {
   selectError 
 } from '@/store/chart/data/selectors';
 import { selectPriceChangePercent } from '@/store/chart/selectors';
-import { selectChartType, selectExchangeType } from '@/store/chart/config/selectors';
+import { selectChartType, selectProductType } from '@/store/chart/config/selectors';
 import { TabType } from '@/types/store/ui';
 import { Timeframe, ChartType } from '@/types/chart';
 import { ExchangeType } from '@/types/constants/enums';
@@ -50,9 +50,9 @@ export function useChartToolbar() {
 
   // チャート設定ストアから状態とアクションを取得（RootStoreから取得するように変更）
   const chartType = useRootStore((state) => selectChartType(state as any));
-  const exchangeType = useRootStore((state) => selectExchangeType(state as any));
+  const exchangeType = useRootStore((state) => selectProductType(state as any));
   const setChartType = useRootStore((state) => state.setChartType);
-  const setExchangeType = useRootStore((state) => state.setExchangeType);
+  const setExchangeType = useRootStore((state) => state.setProductType ?? state.setExchangeType);
 
   // リアルタイム更新の状態とアクションをrootStoreから取得
   const useRealTimeData = useRootStore((state) => state.useRealTimeData);

@@ -77,6 +77,7 @@ export {
 export {
   selectChartType,
   selectExchangeType,
+  selectProductType,
   selectIsCandleChart
 } from "./chart/config/selectors";
 
