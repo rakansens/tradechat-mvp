@@ -71,9 +71,6 @@ __tests__/services/socket/socket-service.test.ts(161,62): error TS2345: Argument
 __tests__/services/socket/socket-service.test.ts(195,64): error TS2345: Argument of type '"futures"' is not assignable to parameter of type '"bitget" | "binance" | "bybit" | "demo" | undefined'.
 __tests__/services/socket/subscription-manager.test.ts(114,75): error TS2345: Argument of type '"spot"' is not assignable to parameter of type '"bitget" | "binance" | "bybit" | "demo" | undefined'.
 __tests__/services/socket/subscription-manager.test.ts(221,82): error TS2345: Argument of type '"spot"' is not assignable to parameter of type '"bitget" | "binance" | "bybit" | "demo" | undefined'.
-__tests__/services/test-bitget-api.ts(15,41): error TS2322: Type '"spot"' is not assignable to type '"bitget" | "binance" | "bybit" | "demo"'.
-__tests__/services/test-bitget-api.ts(15,49): error TS2322: Type '"futures"' is not assignable to type '"bitget" | "binance" | "bybit" | "demo"'.
-__tests__/services/test-bitget-api.ts(59,39): error TS2345: Argument of type '"spot"' is not assignable to parameter of type '"bitget" | "binance" | "bybit" | "demo" | undefined'.
 __tests__/unit/store/socketActions.test.ts(64,21): error TS2339: Property 'setSymbol' does not exist on type 'typeof import("/Users/hirosato/Downloads/tradechat-mvp-exchange/store/socketActions/index")'.
 __tests__/unit/store/socketActions.test.ts(100,21): error TS2339: Property 'setSymbol' does not exist on type 'typeof import("/Users/hirosato/Downloads/tradechat-mvp-exchange/store/socketActions/index")'.
 __tests__/unit/store/socketActions.test.ts(119,21): error TS2339: Property 'setExchangeType' does not exist on type 'typeof import("/Users/hirosato/Downloads/tradechat-mvp-exchange/store/socketActions/index")'.
@@ -520,8 +517,6 @@ store/symbol/state.ts(49,3): error TS2322: Type '"spot" | "futures"' is not assi
   Type '"spot"' is not assignable to type '"bitget" | "binance" | "bybit" | "demo" | undefined'.
 store/symbol/state.ts(59,3): error TS2739: Type 'never[]' is missing the following properties from type 'SymbolChangeHistory': from, to, timestamp
 store/ui/selectors.ts(12,15): error TS2305: Module '"@/types/store"' has no exported member 'TabType'.
-test-data-flow.ts(44,7): error TS2345: Argument of type '"spot"' is not assignable to parameter of type '"bitget" | "binance" | "bybit" | "demo" | undefined'.
-test-data-flow.ts(62,7): error TS2345: Argument of type '"spot"' is not assignable to parameter of type '"bitget" | "binance" | "bybit" | "demo" | undefined'.
 types/common/symbol.ts(13,27): error TS2724: '"@/services/symbol/types"' has no exported member named 'SymbolChangeHistory'. Did you mean 'SymbolChangeHistoryEntry'?
 types/common/symbol.ts(13,48): error TS2305: Module '"@/services/symbol/types"' has no exported member 'FilterOptions'.
 types/symbol.ts(14,3): error TS2724: '"./common/symbol"' has no exported member named 'SymbolFilterOptions'. Did you mean 'FilterOptions'?
