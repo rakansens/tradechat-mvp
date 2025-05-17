@@ -17,6 +17,11 @@ export const selectChartType = (state: ChartConfigSlice) => state.chartType
 export const selectExchangeType = (state: ChartConfigSlice) => state.exchangeType
 
 /**
+ * 取引種別を選択するセレクター
+ */
+export const selectProductType = (state: ChartConfigSlice) => state.productType
+
+/**
  * キャンドルチャートかどうかを判定するメモ化セレクター
  */
 export const selectIsCandleChart = createSelector(

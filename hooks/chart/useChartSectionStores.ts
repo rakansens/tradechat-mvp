@@ -28,7 +28,7 @@ import {
 import { selectChartType } from '@/store/chart/config/selectors';
 import {
   selectCurrentSymbol,
-  selectExchangeType
+  selectProductType
 } from '@/store/barrel';
 
 import type { Timeframe, ChartType } from '@/types/chart';
@@ -47,9 +47,9 @@ import { formatTimestamp } from '@/utils/chart/chartUtils';
 export const useChartSectionStores = () => {
   // SymbolSliceをrootStoreから取得
   const currentSymbol = useRootStore(selectCurrentSymbol);
-  const exchangeType = useRootStore(selectExchangeType);
+  const exchangeType = useRootStore(selectProductType);
   const setCurrentSymbol = useRootStore(state => state.setCurrentSymbol);
-  const setExchangeType = useRootStore(state => state.setExchangeType);
+  const setExchangeType = useRootStore(state => state.setProductType ?? state.setExchangeType);
   
   // ChartDataStore (RootStoreから取得)
   const chartData = useRootStore(selectChartData);

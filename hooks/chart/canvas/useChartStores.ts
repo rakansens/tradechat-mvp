@@ -20,7 +20,7 @@ import {
   selectChartType, 
   selectOHLCData,
   selectCurrentSymbol,
-  selectExchangeType
+  selectProductType
 } from '@/store/barrel';
 import type { IndicatorType } from '@/types/store/chart';
 import type { DrawingToolType } from '@/types/store/chart';
@@ -36,13 +36,13 @@ export const useChartStores = () => {
   // シンボルストアからデータ取得（rootStoreのSymbolSliceから）
   // リファクタリング中の型エラーを回避するために型アサーションを使用
   const currentSymbol = useRootStore(selectCurrentSymbol as any);
-  const exchangeType = useRootStore(selectExchangeType as any);
+  const exchangeType = useRootStore(selectProductType as any);
   const setCurrentSymbol = useRootStore(state => state.setCurrentSymbol);
   
   // 注: 今後のフェーズでsetProductTypeを追加予定
   
   // 取引種別を設定するメソッド
-  const setExchangeType = useRootStore(state => state.setExchangeType);
+  const setExchangeType = useRootStore(state => state.setProductType ?? state.setExchangeType);
   
   // rootStoreから直接取得 (型不一致を回避するために型アサーションを使用)
   const timeframe = useRootStore(selectTimeframe as any);

@@ -19,6 +19,10 @@ export const initialChartConfigState: ChartConfigSliceState = {
   exchangeType: 'bitget' as ExchangeType,
   
   // 取引タイプ
+  productType: 'spot' as ExchangeProductType,
+  /**
+   * @deprecated productType を使用してください
+   */
   exchangeProductType: 'spot' as ExchangeProductType,
   
   // チャートスケール

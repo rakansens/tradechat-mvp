@@ -34,9 +34,9 @@ import {
 } from '@/store/chart/data/selectors';
 import { selectActiveTab } from '@/store/ui/selectors';
 // シンボル関連のセレクターをインポート
-import { 
+import {
   selectCurrentSymbol,
-  selectExchangeType
+  selectProductType
 } from '@/store/barrel';
 // インジケーター関連のセレクターをインポート
 import {
@@ -72,9 +72,9 @@ export function useToolbarStores() {
   // SymbolStoreからSymbolSliceに移行
   const currentSymbol = useRootStore(selectCurrentSymbol);
   // 型不一致を解決するためにセレクターをキャスト
-  const exchangeType = useRootStore(selectExchangeType as any);
+  const exchangeType = useRootStore(selectProductType as any);
   const setCurrentSymbol = useRootStore(state => state.setCurrentSymbol);
-  const setExchangeType = useRootStore(state => state.setExchangeType);
+  const setExchangeType = useRootStore(state => state.setProductType ?? state.setExchangeType);
   
   // ChartDataSliceから状態とアクションを取得（RootStoreを使用）
   const chartData = useRootStore(selectChartData);

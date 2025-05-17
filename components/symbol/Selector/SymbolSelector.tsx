@@ -21,8 +21,8 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useRootStore } from '@/store';
 import { 
-  selectCurrentSymbol, 
-  selectExchangeType,
+  selectCurrentSymbol,
+  selectProductType,
   selectFilteredSymbols,
   selectIsLoadingSymbols,
   selectSymbolError,
