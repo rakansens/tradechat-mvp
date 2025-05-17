@@ -1,2 +1,0 @@
-types/README.md
-types/store/index.ts

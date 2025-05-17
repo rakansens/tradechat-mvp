@@ -39,3 +39,10 @@ memory.db*
 
 # log files
 *.log
+
+# Additional ignores
+/memory.db*
+/supabase.tar.gz
+*.log
+/tmp/
+**/.DS_Store
