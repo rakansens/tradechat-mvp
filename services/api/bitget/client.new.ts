@@ -14,7 +14,7 @@ import { OHLCData } from '../../../types/chart';
 import { OrderBookData } from '../../../types/market';
 import { IRestApiClient, IWebSocketClient } from '../interfaces';
 import { BitgetApiClientOptions, IBitgetApiClient } from './interfaces';
-import { getApiConfig, IS_DEV } from '../common/environment';
+import { getApiConfig, IS_DEV } from '@/config/environment';
 import { logger } from '../../../utils/logger';
 import { formatSymbol } from './utils';
 import { BitgetRestClient } from './rest-client';

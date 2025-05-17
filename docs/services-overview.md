@@ -14,7 +14,7 @@ Key files and methods:
 - `services/api/common/request.ts` – generic request helpers including
   `apiRequest`, `browserApiRequest`, `serverApiRequest`, `adaptiveApiRequest`
   and `createCancellableRequest`.
-- `services/api/common/environment.ts` – environment helpers such as
+- `config/environment.ts` – environment helpers such as
   `getEnvironment` and `getApiConfig`.
 - `services/api/client-factory.ts` – exposes `getApiClient` for creating a
   cached `BitgetApiClient` instance.

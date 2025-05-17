@@ -10,7 +10,7 @@ import * as Api from '../../services/api/common/request';
 import { getApiClient } from '@/services/api/client-factory';
 import { ProductType } from '@/types/constants/enums';
 import { handleApiError, handleWebSocketError, handleChartError } from '../../services/errors/handler';
-import { getApiConfig, IS_DEV, IS_BROWSER } from '../../services/api/common/environment';
+import { getApiConfig, IS_DEV, IS_BROWSER } from '@/config/environment';
 
 // モック設定
 const mock = new MockAdapter(axios);

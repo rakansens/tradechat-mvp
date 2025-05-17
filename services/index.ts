@@ -20,7 +20,7 @@ export * from './api/bitget/data-transformer';
 export * from './api/common/request';
 export * from './api/client-factory';
 export * from './errors/handler';
-export * from './api/common/environment';
+export * from '@/config/environment';
 
 // リファクタリングされたサービス
 export * from './cache';
