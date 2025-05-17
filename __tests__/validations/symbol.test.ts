@@ -10,7 +10,7 @@ import {
   filterOptionsSchema,
   symbolSelectorPropsSchema
 } from '@/types/validations/symbol';
-import { ExchangeProductType } from '@/types/constants/enums';
+import { type ProductType } from '@/types/constants/enums';
 
 describe('Symbol Validations', () => {
   describe('symbolInfoSchema', () => {
@@ -103,8 +103,8 @@ describe('Symbol Validations', () => {
       const validProps = {
         onSelect: (symbol: string) => {},
         currentSymbol: 'BTCUSDT',
-        defaultExchangeType: 'spot' as ExchangeProductType,
-        onExchangeTypeChange: (type: ExchangeProductType) => {}
+        defaultExchangeType: 'spot' as ProductType,
+        onExchangeTypeChange: (type: ProductType) => {}
       };
 
       const result = symbolSelectorPropsSchema.safeParse(validProps);
@@ -115,7 +115,7 @@ describe('Symbol Validations', () => {
       const invalidProps = {
         // onSelectが欠けている
         currentSymbol: 'BTCUSDT',
-        defaultExchangeType: 'spot' as ExchangeProductType
+        defaultExchangeType: 'spot' as ProductType
       };
 
       const result = symbolSelectorPropsSchema.safeParse(invalidProps);
@@ -126,7 +126,7 @@ describe('Symbol Validations', () => {
       const validProps = {
         onSelect: (symbol: string) => {},
         currentSymbol: 'BTCUSDT',
-        defaultExchangeType: 'spot' as ExchangeProductType
+        defaultExchangeType: 'spot' as ProductType
       };
 
       const result = validateSymbolSelectorProps(validProps);

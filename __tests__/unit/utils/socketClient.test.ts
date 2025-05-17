@@ -1,5 +1,5 @@
 // 型のみをトップレベルでインポート
-import { ExchangeType } from '../../../types/api';
+import { ExchangeType, ProductType } from '../../../types/api';
 import { Timeframe } from '../../../types/chart';
 import type { Socket } from 'socket.io-client'; // Socket 型をインポート (DisconnectReason を削除)
 
@@ -272,7 +272,7 @@ describe('socketClient', () => {
       initializeSocketClient();
       const handler = getEventHandler('instrument-type-change'); // ユーザー指示ではこのイベント名は変更なし
       expect(handler).toBeDefined();
-      const eventData = { type: 'futures' as ExchangeType };
+      const eventData = { type: 'futures' as ProductType };
       if (handler) handler(eventData);
 
       // 3. ログ検証を構造化ログに対応
@@ -304,7 +304,7 @@ describe('socketClient', () => {
       initializeSocketClient();
       const handler = getEventHandler('instrument-type-change');
       expect(handler).toBeDefined();
-      const eventData = { type: 'spot' as ExchangeType };
+      const eventData = { type: 'spot' as ProductType };
       if (handler) handler(eventData);
 
       // 5. 例外系メッセージの修正

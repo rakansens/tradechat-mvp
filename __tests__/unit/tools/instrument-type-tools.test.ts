@@ -5,7 +5,7 @@
 import { changeInstrumentTypeTool } from '../../../src/mastra/tools/instrument-type-tools';
 import { logger } from '../../../utils/logger';
 import fetch from 'node-fetch'; // Import to mock
-import { ExchangeType } from '../../../types/api';
+import { ExchangeType, ProductType } from '../../../types/api';
 
 // Mock logger
 jest.mock('../../../utils/logger', () => ({
@@ -59,7 +59,7 @@ describe('changeInstrumentTypeTool', () => {
   });
 
   it('取引タイプ変更ツールが正しくAPIを呼び出すこと (spot)', async () => {
-    const input = { context: { type: 'spot' as ExchangeType }, runtimeContext: mockRuntimeContext };
+    const input = { context: { type: 'spot' as ProductType }, runtimeContext: mockRuntimeContext };
     await changeInstrumentTypeTool.execute(input);
 
     expect(fetch).toHaveBeenCalledWith(
@@ -74,7 +74,7 @@ describe('changeInstrumentTypeTool', () => {
 
   it('取引タイプ変更ツールが正しくAPIを呼び出すこと (futures)', async () => {
     (fetch as jest.MockedFunction<typeof fetch>).mockResolvedValue(mockApiResponse('futures'));
-    const input = { context: { type: 'futures' as ExchangeType, symbol: 'BTCUSDT' }, runtimeContext: mockRuntimeContext };
+    const input = { context: { type: 'futures' as ProductType, symbol: 'BTCUSDT' }, runtimeContext: mockRuntimeContext };
     await changeInstrumentTypeTool.execute(input);
 
     expect(fetch).toHaveBeenCalledWith(
