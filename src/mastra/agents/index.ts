@@ -146,7 +146,10 @@ export function createChatAgent(memory?: Memory): Agent {
  * メモリなしでエージェントを直接作成（Next.js API Routes 用）
  */
 export function createDirectAgent(): Agent {
-  logger.debug("Inside createDirectAgent - Checking OPENAI_API_KEY:", process.env.OPENAI_API_KEY ? 'Exists' : 'MISSING'); // Debug log
+  logger.debug(
+    "Inside createDirectAgent - Checking OPENAI_API_KEY",
+    { exists: Boolean(process.env.OPENAI_API_KEY) }
+  );
   
   // Explicitly configure Memory 
   const memory = new Memory(memoryOptions);
