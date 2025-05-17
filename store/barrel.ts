@@ -44,6 +44,7 @@ export {
 // SocketSliceのセレクター
 export {
   selectConnected,
+  useSocketConnected,
   // useSocketSubscriptionsをセレクターとして直接エクスポートするのは非推奨
   useSocketSubscriptions,
   useSocketSubscription
