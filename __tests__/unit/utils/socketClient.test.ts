@@ -35,7 +35,10 @@ jest.mock('../../../store/rootStore', () => ({
 // socket.io-client のモック定義
 // mockSocketInstance をモジュールスコープで一度だけ定義する
 // TODO: ts (ID: 611e411b-83d0-472f-8adb-b2d1a596964e) - 型互換性のLintエラー。現時点では主要なテスト失敗に集中するため、解決を保留。
-const mockSocketInstance: Socket & { _eventHandlers?: Record<string, (...args: any[]) => void>; _emitBuffer?: Array<{ event: string, args: any[] }> } = {
+const mockSocketInstance: Socket & {
+  _eventHandlers?: Record<string, (...args: any[]) => void>;
+  _emitBuffer?: Array<{ event: string; args: any[] }>;
+} = {
   on: jest.fn((event, handler) => {
     if (!mockSocketInstance._eventHandlers) {
       mockSocketInstance._eventHandlers = {};
@@ -85,7 +88,10 @@ const mockSocketInstance: Socket & { _eventHandlers?: Record<string, (...args: a
   disconnecting: false, // disconnectingプロパティ
   recovered: false, // recoveredプロパティ
   pid: '', // pidプロパティ
-} as Socket & { _eventHandlers?: Record<string, (...args: any[]) => void>; _emitBuffer?: Array<{ event: string, args: any[] }> };
+} as unknown as Socket & {
+  _eventHandlers?: Record<string, (...args: any[]) => void>;
+  _emitBuffer?: Array<{ event: string; args: any[] }>;
+};
 
 const getEventHandler = (eventName: string) => {
   console.log(`[getEventHandler] Called for event: ${eventName}`);
