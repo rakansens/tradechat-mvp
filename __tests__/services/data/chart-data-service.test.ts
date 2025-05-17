@@ -10,7 +10,7 @@ import { BitgetApiClient } from '../../../services/api/bitget/client.new';
 import { chartDataService, getChartDataService, resetChartDataServiceForTesting } from '../../../services/data/chart-data-service';
 import { cacheService } from '../../../services/cache/service';
 import { getSocketService } from '../../../services/socket/index';
-import { logger } from '../../../utils/logger';
+import { logger } from '@/utils/common';
 import { OHLCData } from '../../../types/chart';
 import { type ExchangeType, type ProductType } from '@/types/constants/enums';
 
@@ -30,7 +30,7 @@ const PRODUCT_TYPES = {
 jest.mock('../../../services/api/bitget/client.new');
 jest.mock('../../../services/cache/service');
 jest.mock('../../../services/socket/index');
-jest.mock('../../../utils/logger');
+jest.mock('@/utils/common');
 
 // テスト用のモックデータ
 const mockOHLCData: OHLCData[] = [

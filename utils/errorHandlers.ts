@@ -2,7 +2,7 @@
 // 作成: グローバルエラーハンドリング機能の実装
 // このファイルは未処理のPromise rejectionやJavaScriptエラーをキャッチする機能を提供します
 
-import { logger } from './logger';
+import { logger } from '@/utils/common';
 import { saveLogToStorage, LOG_LEVEL } from './logStorage';
 
 /**

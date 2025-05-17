@@ -31,7 +31,7 @@ const mockQuickCommands = [
 ];
 
 // ロガーのモック
-jest.mock('@/utils/logger', () => ({
+jest.mock('@/utils/common', () => ({
   logger: {
     info: jest.fn(),
   },

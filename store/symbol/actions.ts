@@ -5,7 +5,7 @@
 // 更新: 2025-10-09 - S-9.2フェーズ: createIdGenerator関数のエラーを修正
 
 import { produce } from 'immer';
-import { logger } from '@/utils/logger';
+import { logger } from '@/utils/common';
 import { type ExchangeType, type ProductType } from '@/types/constants/enums';
 import { toProductType, isValidExchangeType, isValidProductType } from '@/utils/exchange';
 import { symbolService } from '@/services/symbol';

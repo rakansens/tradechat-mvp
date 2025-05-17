@@ -10,7 +10,7 @@
  */
 
 import { IS_BROWSER } from '@/config/environment';
-import { logger } from '../../../utils/logger';
+import { logger } from '@/utils/common';
 
 /**
  * 先物取引で利用できない可能性が高い銘柄のパターン

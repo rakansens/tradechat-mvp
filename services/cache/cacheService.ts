@@ -6,7 +6,7 @@
  */
 
 import { ICacheService, CacheStats, CacheEntry } from './cacheTypes';
-import { logger } from '../../utils/logger';
+import { logger } from '@/utils/common';
 
 export class CacheService implements ICacheService {
   private cache = new Map<string, CacheEntry<any>>();

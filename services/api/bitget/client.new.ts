@@ -15,7 +15,7 @@ import { OrderBookData } from '@/types/market';
 import { IRestApiClient, IWebSocketClient } from '../interfaces';
 import { BitgetApiClientOptions, IBitgetApiClient } from './interfaces';
 import { getApiConfig, IS_DEV } from '@/config/environment';
-import { logger } from '../../../utils/logger';
+import { logger } from '@/utils/common';
 import { formatSymbol } from './utils';
 import { BitgetRestClient } from './rest-client';
 import { BitgetWebSocketClient } from './ws-client.new';

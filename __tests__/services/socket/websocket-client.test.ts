@@ -9,7 +9,7 @@
 import { Socket } from 'socket.io-client';
 import { WebSocketClient } from '../../../services/socket/websocket-client';
 import { SocketCore } from '../../../services/socket/core';
-import { logger } from '../../../utils/logger';
+import { logger } from '@/utils/common';
 
 // モックの設定
 jest.mock('../../../services/socket/core', () => {
@@ -22,7 +22,7 @@ jest.mock('../../../services/socket/core', () => {
   };
 });
 
-jest.mock('../../../utils/logger', () => {
+jest.mock('@/utils/common', () => {
   return {
     logger: {
       info: jest.fn(),

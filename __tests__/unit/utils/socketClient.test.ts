@@ -4,7 +4,7 @@ import { Timeframe } from '../../../types/chart';
 import type { Socket } from 'socket.io-client'; // Socket 型をインポート (DisconnectReason を削除)
 
 // logger のモック
-jest.mock('../../../utils/logger', () => ({
+jest.mock('@/utils/common', () => ({
   logger: {
     info: jest.fn(),
     warn: jest.fn(),
@@ -150,7 +150,7 @@ describe('socketClient', () => {
     // jest.clearAllMocks(); // これも追加してみる
 
     // Logger のモックとスパイの設定
-    const loggerModule = require('../../../utils/logger');
+    const loggerModule = require('@/utils/common');
     logger = loggerModule.logger; // describe スコープの logger に代入
     jest.spyOn(loggerModule.logger, 'info').mockImplementation(jest.fn());
     jest.spyOn(loggerModule.logger, 'warn').mockImplementation(jest.fn());
