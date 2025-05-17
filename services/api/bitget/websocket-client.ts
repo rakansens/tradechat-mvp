@@ -11,7 +11,7 @@
 import { EventEmitter } from 'events';
 import { Timeframe } from '../../../types/chart';
 import { IWebSocketClient } from '../interfaces';
-import { logger } from '../../../utils/logger';
+import { logger } from '../../../utils/common';
 
 // 環境検出
 const isNodeJS = typeof window === 'undefined';

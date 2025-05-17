@@ -12,7 +12,7 @@
 import WebSocket from 'ws';
 import { EventEmitter } from 'events';
 import { ExchangeType, ExchangeProductType } from '@/types/constants/enums';
-import { logger } from '@/utils/logger';
+import { logger } from '@/utils/common';
 import { getApiConfig } from '../services/api/common/environment';
 import { toBitget, fromBitget } from '../utils/timeframe';
 import { toProductType, safeExchangeType, safeProductType } from '@/utils/exchangeTypeUtils';

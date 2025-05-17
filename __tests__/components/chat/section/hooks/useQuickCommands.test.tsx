@@ -19,7 +19,7 @@ jest.mock('lucide-react', () => ({
 }));
 
 // ロガーをモック
-jest.mock('@/utils/logger', () => ({
+jest.mock('@/utils/common/logger', () => ({
   logger: {
     info: jest.fn(),
   },

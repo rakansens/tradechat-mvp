@@ -14,7 +14,7 @@ import { getBitgetIntegration } from './bitget-integration';
 import { MockSocketService, getMockSocketService } from './mock-service';
 // 相対パスでインポート
 import { SocketService } from './socket-service';
-import { logger } from '../../utils/logger';
+import { logger } from '../../utils/common';
 import { SocketCore } from './core';
 
 // シングルトンインスタンス

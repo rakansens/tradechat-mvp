@@ -32,7 +32,7 @@ jest.mock('@/store/chart/data', () => ({
 }));
 
 // ロガーをモック
-jest.mock('@/utils/logger', () => ({
+jest.mock('@/utils/common/logger', () => ({
   logger: {
     info: jest.fn(),
     error: jest.fn(),
@@ -158,6 +158,6 @@ describe('useChartSectionInit', () => {
     result.current.fetchData();
     
     // エラーログが出力されることを検証
-    expect(require('@/utils/logger').logger.error).toHaveBeenCalled();
+    expect(require('@/utils/common/logger').logger.error).toHaveBeenCalled();
   });
 }); 

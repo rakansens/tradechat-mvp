@@ -9,7 +9,7 @@
 
 import { BitgetRestClient } from '../api/bitget/rest-client';
 import { BitgetWebSocketClient as NewBitgetWebSocketClient } from '../api/bitget/websocket-client';
-import { logger } from '../../utils/logger';
+import { logger } from '../../utils/common';
 
 // BitgetApiClientのエクスポート
 import { BitgetApiClient } from '../bitgetApi';
