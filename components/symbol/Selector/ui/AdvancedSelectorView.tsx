@@ -69,7 +69,7 @@ export const AdvancedSelectorView = ({
       />
 
       {/* 検索フィールド */}
-      <SearchBar searchTerm={filterOptions.searchTerm} onSearch={onSearch} />
+      <SearchBar searchTerm={filterOptions.search} onSearch={onSearch} />
 
       {/* フィルターオプション */}
       <FilterBar

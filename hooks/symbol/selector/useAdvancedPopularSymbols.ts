@@ -23,7 +23,7 @@ export const useAdvancedPopularSymbols = ({
     const favorites = symbols.filter(s => s.favorite);
 
     // お気に入りのみ表示中は重複を避けるため空配列を返す
-    if (filterOptions.favoritesOnly) {
+    if (filterOptions.showFavoritesOnly) {
       return [];
     }
 
@@ -32,7 +32,7 @@ export const useAdvancedPopularSymbols = ({
       const popularByName = symbols.filter(s =>
         !s.favorite &&
         mainSymbols.some(name =>
-          s.baseCoin === name && (!filterOptions.quoteCoin || s.quoteCoin === filterOptions.quoteCoin)
+          s.baseCoin === name && (!filterOptions.quoteAsset || s.quoteCoin === filterOptions.quoteAsset)
         )
       );
       return [...favorites, ...popularByName].slice(0, 6);
