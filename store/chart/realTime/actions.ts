@@ -4,7 +4,7 @@
 
 import type { OHLCData } from "@/types/chart"
 import type { ExchangeType } from "@/types/constants/enums"
-import type { BitgetApiClient } from "@/services/api/bitget/client"
+import { BitgetApiClient } from "@/services/api/bitget/client.new"
 import { type RealTimeSliceActions, type RealTimeSlice, type RealTimeSliceState } from "./types"
 import { logger } from '@/utils/common'
 import { useRootStore } from "@/store/rootStore"
@@ -150,8 +150,11 @@ export const createRealTimeActions = (
     
     initializeApi: (exchangeType: ExchangeType) => {
       try {
+        // ExchangeTypeからProductTypeへの変換
+        const productType = exchangeType === 'demo' ? 'spot' : 'spot'; // デモの場合もspotとして扱う
+        
         set(state => {
-          state.bitgetApi = new BitgetApiClient({}, exchangeType);
+          state.bitgetApi = new BitgetApiClient({}, productType);
         });
 
         // リアルタイムデータが有効な場合は更新を開始

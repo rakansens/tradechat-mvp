@@ -18,7 +18,7 @@ import { getApiConfig, IS_DEV } from '../common/environment';
 import { logger } from '../../../utils/logger';
 import { formatSymbol } from './utils';
 import { BitgetRestClient } from './rest-client';
-import { BitgetWebSocketClient } from './ws-client';
+import { BitgetWebSocketClient } from './ws-client.new';
 import { BitgetDataTransformer } from './data-transformer';
 import { BitgetDemoGenerator } from './demo-generator';
 

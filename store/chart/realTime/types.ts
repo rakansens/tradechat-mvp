@@ -2,7 +2,7 @@
 // 作成: 2025-10-06 - RealTimeSliceのState, Actions, Slice型を定義
 
 import type { ExchangeType } from '@/types/constants/enums';
-import type { BitgetApiClient } from '@/services/api/bitget/client';
+import type { BitgetApiClient } from '@/services/api/bitget/client.new';
 import { type SliceCreator } from '@/types/store/core';
 
 /**

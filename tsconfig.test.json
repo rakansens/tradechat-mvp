@@ -1,9 +1,8 @@
 {
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "types": [
-      "node",
-      "jest"
+    "typeRoots": [
+      "./node_modules/@types"
     ],
     "allowJs": true,
     "noEmit": true,
@@ -41,4 +40,4 @@
   "exclude": [
     "node_modules"
   ]
-} 
+}

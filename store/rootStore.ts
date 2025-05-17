@@ -39,13 +39,11 @@ import { createDrawingToolSlice, type DrawingToolSlice } from './chart/drawingTo
 import type { DrawingToolSliceState } from './chart/drawingTool/state'
 import { createIndicatorSlice, type IndicatorSlice } from './chart/indicator'
 import type { IndicatorSliceState } from './chart/indicator/state'
-import { createRealTimeSlice, type RealTimeSlice } from './chart/realTime'
-import type { RealTimeSliceState } from './chart/realTime/state'
 import { createChartDataSlice, type ChartDataSlice } from './chart/data'
 import type { ChartDataSliceState } from './chart/data/state'
 import { createSymbolSlice, type SymbolSlice } from './symbol'
-import type { SymbolSliceState } from './symbol/state'
-import type { SymbolState } from '@/types/symbol/store'
+import type { SymbolState } from '@/types/symbol/store';
+import type { ExchangeType, ProductType } from '@/types/constants/enums';
 import { createSocketSlice } from './socket'
 import type { SocketSlice } from './socket'
 import type { SocketSliceState } from './socket/state'
@@ -89,7 +87,8 @@ export interface RootActions {
   // 2025-05-17: ProductType対応の新しいメソッドを追加
   setProductType: SymbolSlice['setProductType']
   // 後方互換性のために古いメソッドも保持
-  setExchangeType: SymbolSlice['setExchangeType']
+  // 更新: 2025-05-17 - ExchangeTypeとProductTypeの両方をサポートするように型定義を拡張
+  setExchangeType: (type: ExchangeType | ProductType) => void
   fetchSymbols: SymbolSlice['fetchSymbols']
   setFilterOptions: SymbolSlice['setFilterOptions']
   toggleFavorite: SymbolSlice['toggleFavorite']

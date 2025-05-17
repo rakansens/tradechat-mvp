@@ -7,7 +7,7 @@
  */
 
 import { EventEmitter } from 'events';
-import { BitgetApiClient } from '../api/bitget/client';
+import { BitgetApiClient } from '../api/bitget/client.new';
 import { IChartDataService } from './interfaces';
 import { OHLCData, Timeframe } from '../../types/chart';
 import { ExchangeType } from '@/types/api';
@@ -93,7 +93,9 @@ class ChartDataService extends EventEmitter implements IChartDataService {
       // BitgetApiClientを使用してデータを取得
       // 現時点ではspotとfuturesで同じAPIを使用
       const bitgetClient = this.getBitgetApiClient();
-      data = await bitgetClient.fetchCandles(normalizedSymbol, timeFrame, 100, exchangeType);
+      // ExchangeTypeからProductTypeへの変換
+      const productType = exchangeType === 'demo' ? 'spot' : 'spot'; // デモの場合もspotとして扱う
+      data = await bitgetClient.fetchCandles(normalizedSymbol, timeFrame, 100, productType);
       
       // キャッシュに保存
       if (data.length > 0 && useCache) {
