@@ -5,7 +5,7 @@
  * 作成: データフェッチサービスのインターフェースと型定義
  */
 
-import { ExchangeType } from '@/types/api';
+import { ExchangeType, ProductType } from '@/types/api';
 import { OHLCData, Timeframe } from '../../types/chart';
 
 export interface IDataFetchService {
@@ -15,7 +15,7 @@ export interface IDataFetchService {
    * チャートデータ取得
    * @param symbol シンボル
    * @param timeFrame タイムフレーム
-   * @param exchangeType 取引タイプ
+   * @param productType 取引タイプ
    * @param signal AbortSignal
    * @param useCache キャッシュを使用するかどうか
    * @returns チャートデータの配列
@@ -42,7 +42,7 @@ export interface IDataFetchService {
     symbol: string,
     timeFrame: Timeframe,
     callback: (data: OHLCData) => void,
-    exchangeType?: ExchangeType
+    productType?: ProductType
   ): () => void;
   
   /**
