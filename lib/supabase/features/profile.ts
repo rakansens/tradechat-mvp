@@ -12,6 +12,22 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import { Database } from '@/types/network/supabase';
 
 /**
+ * Send error information to a monitoring endpoint.
+ */
+async function sendToMonitoring(payload: Record<string, any>): Promise<void> {
+  try {
+    await fetch('/api/monitoring/logs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+  } catch (e) {
+    // Avoid recursive logging
+    console.error('Failed to send log to monitoring system', e);
+  }
+}
+
+/**
  * エラーログを出力（後で監視システムに接続できるよう拡張）
  * @param message エラーメッセージ
  * @param error エラーオブジェクト
@@ -19,7 +35,7 @@ import { Database } from '@/types/network/supabase';
  */
 function logError(message: string, error: any, metadata?: Record<string, any>) {
   console.error(`[ProfileError] ${message}:`, error, metadata || {});
-  // TODO: 本番環境では監視システムに送信する処理を追加
+  sendToMonitoring({ message, error: String(error), metadata });
 }
 
 /**
