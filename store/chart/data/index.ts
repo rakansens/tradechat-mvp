@@ -8,35 +8,29 @@ import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
 import { ChartDataSlice, ChartDataSliceState, ChartDataSliceActions } from './types'
 import { type SliceCreator } from '@/types/store/core'
-import { createImmerSetter } from '@/store/core/immerSet'
+import { createSlice } from '@/store/core/createSlice'
 
 /**
  * ChartDataSliceを作成する関数
  * 状態とアクションを統合してスライスを作成します
  */
-export const createChartDataSlice: SliceCreator<ChartDataSlice, ChartDataSliceState> = (
-  set,
-  get,
-  api
-) => {
-  // immerSetラッパーを作成
-  const immerSet = createImmerSetter<ChartDataSliceState>(set);
-  
-  // 型安全なゲッター関数
-  const getState = () => get() as ChartDataSlice;
-  
-  // アクションの作成
-  const actions = createChartDataActions(set, getState);
-  
-  // 状態とアクションを結合して返す
-  return {
-    // 初期状態
-    ...initialChartDataState,
-    
-    // アクション
-    ...actions
-  };
-};
+export const createChartDataSlice: SliceCreator<ChartDataSlice, ChartDataSliceState> =
+  createSlice((set, get, api) => {
+    const setPartial = (partial: Partial<ChartDataSliceState>) => {
+      set(state => {
+        Object.assign(state, partial)
+      })
+    }
+
+    const getState = () => get() as ChartDataSlice
+
+    const actions = createChartDataActions(setPartial, getState)
+
+    return {
+      ...initialChartDataState,
+      ...actions
+    }
+  })
 
 /**
  * ChartDataSliceを使用したスタンドアロンストア
