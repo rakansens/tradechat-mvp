@@ -38,7 +38,7 @@ export const useChartStores = () => {
   const currentSymbol = useRootStore(selectCurrentSymbol);
   const exchangeType = useRootStore(selectExchangeType);
   const setCurrentSymbol = useRootStore(state => state.setCurrentSymbol);
-  const setExchangeType = useRootStore(state => state.setExchangeType);
+  const setProductType = useRootStore(state => state.setProductType);
   
   // rootStoreから直接取得
   const timeframe = useRootStore(selectTimeframe);
@@ -67,7 +67,7 @@ export const useChartStores = () => {
     currentSymbol,
     exchangeType,
     setCurrentSymbol,
-    setExchangeType,
+    setProductType,
     
     // チャートデータ関連
     chartData: ohlcData,

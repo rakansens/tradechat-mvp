@@ -6,7 +6,7 @@
 // 主な機能:
 // - instrumentTypeChangedイベントリスナーのテスト
 // - 先物から現物への切り替え時の銘柄再設定のテスト
-// - setExchangeType関数の呼び出しのテスト
+// - setProductType関数の呼び出しのテスト
 
 import React from 'react';
 import { render, act } from '@testing-library/react';
@@ -70,7 +70,7 @@ describe('ChartContainer', () => {
         currentSymbol: 'BTCUSDT',
         exchangeType: 'futures',
         setCurrentSymbol: mockSetCurrentSymbol,
-        setExchangeType: mockSetExchangeType
+        setProductType: mockSetExchangeType
       };
       
       return selector(state);
@@ -80,7 +80,7 @@ describe('ChartContainer', () => {
     (useSymbolStore as any).getState = jest.fn(() => ({
       currentSymbol: 'BTCUSDT',
       setCurrentSymbol: mockSetCurrentSymbol,
-      setExchangeType: mockSetExchangeType
+      setProductType: mockSetExchangeType
     }));
   });
   
@@ -102,8 +102,8 @@ describe('ChartContainer', () => {
         window.dispatchEvent(event);
       });
       
-      // setExchangeTypeが呼ばれたことを確認
-      expect(useSymbolStore.getState().setExchangeType).toHaveBeenCalledWith('spot');
+      // setProductTypeが呼ばれたことを確認
+      expect(useSymbolStore.getState().setProductType).toHaveBeenCalledWith('spot');
       
       // ログが出力されたことを確認
       expect(logger.info).toHaveBeenCalledWith(
@@ -132,7 +132,7 @@ describe('ChartContainer', () => {
           currentSymbol: 'ETHUSDT',
           exchangeType: 'spot',
           setCurrentSymbol: jest.fn(),
-          setExchangeType: jest.fn()
+          setProductType: jest.fn()
         };
         
         return selector(state);
@@ -154,8 +154,8 @@ describe('ChartContainer', () => {
         window.dispatchEvent(event);
       });
       
-      // setExchangeTypeが呼ばれたことを確認
-      expect(useSymbolStore.getState().setExchangeType).toHaveBeenCalledWith('futures');
+      // setProductTypeが呼ばれたことを確認
+      expect(useSymbolStore.getState().setProductType).toHaveBeenCalledWith('futures');
       
       // ログが出力されたことを確認
       expect(logger.info).toHaveBeenCalledWith(
@@ -190,8 +190,8 @@ describe('ChartContainer', () => {
         });
       }
       
-      // setExchangeTypeが呼ばれたことを確認
-      expect(useSymbolStore.getState().setExchangeType).toHaveBeenCalledWith('spot');
+      // setProductTypeが呼ばれたことを確認
+      expect(useSymbolStore.getState().setProductType).toHaveBeenCalledWith('spot');
     });
   });
 });

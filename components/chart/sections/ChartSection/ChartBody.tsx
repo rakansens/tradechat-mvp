@@ -21,9 +21,9 @@ interface ChartBodyProps {
   error: string | null;
   currentSymbol: string;
   currentTimeFrame: Timeframe;
-  
+
   // アクション
-  setExchangeType: (type: ExchangeType) => void;
+  setProductType: (type: ExchangeType) => void;
   onRetry: () => void;
 }
 
@@ -38,7 +38,7 @@ export const ChartBody: React.FC<ChartBodyProps> = ({
   error,
   currentSymbol,
   currentTimeFrame,
-  setExchangeType,
+  setProductType,
   onRetry
 }) => {
   return (
@@ -59,7 +59,7 @@ export const ChartBody: React.FC<ChartBodyProps> = ({
                     {
                       label: 'Bitgetに切り替える',
                       action: () => {
-                        setExchangeType('bitget');
+                        setProductType('bitget');
                       }
                     }
                   ]

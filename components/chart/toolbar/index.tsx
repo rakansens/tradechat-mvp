@@ -90,7 +90,7 @@ const ChartToolbar = memo(function ChartToolbar({
           currentSymbol={symbolStore.currentSymbol}
           exchangeType={symbolStore.exchangeType as ExchangeProductType}
           onSymbolChange={symbolStore.handleSymbolChange}
-          onExchangeTypeChange={symbolStore.setExchangeType}
+          onExchangeTypeChange={symbolStore.setProductType}
           currentPrice={currentPrice}
           priceChangePercent={priceChangePercent}
           mounted={mounted}
@@ -151,7 +151,7 @@ const ChartToolbar = memo(function ChartToolbar({
           {/* 取引種別切り替えボタン */}
           <TradeTypeSwitch
             productType={symbolStore.exchangeType as ExchangeProductType}
-            onProductTypeChange={(type) => symbolStore.setExchangeType(type as ExchangeProductType)}
+            onProductTypeChange={(type) => symbolStore.setProductType(type as ExchangeProductType)}
           />
         </div>
       </div>

@@ -44,7 +44,8 @@ export default function ChartContainer() {
     currentSymbol,
     exchangeType,
     setCurrentSymbol,
-    setExchangeType, // リファクタリング中は一時的に古いメソッドを使用
+    // 新しいProductTypeメソッドを使用
+    setProductType,
     
     // チャートデータ関連
     chartData,
@@ -82,7 +83,7 @@ export default function ChartContainer() {
     currentSymbol: currentSymbol as string,
     exchangeType: exchangeType as ExchangeType,
     setCurrentSymbol,
-    setExchangeType, // リファクタリング中は一時的に古いメソッドを使用
+    setProductType,
     currentTimeFrame: currentTimeFrame as Timeframe,
     fetchData
   });
@@ -97,9 +98,9 @@ export default function ChartContainer() {
   }, [setCurrentSymbol]);
   
   const handleExchangeTypeChange = useCallback((newType: ProductType) => {
-    // 内部では型変換が行われるので、そのまま使用できる
-    setExchangeType(newType as unknown as ExchangeType);
-  }, [setExchangeType]);
+    // 内部で型変換が行われるのでそのまま使用
+    setProductType(newType);
+  }, [setProductType]);
   
   const handleChartTypeChange = useCallback((newType: ChartType) => {
     setChartType(newType);

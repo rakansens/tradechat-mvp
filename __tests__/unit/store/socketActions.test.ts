@@ -14,7 +14,7 @@ jest.mock('../../../store/useSymbolStore', () => ({
   useSymbolStore: {
     getState: jest.fn().mockReturnValue({
       setCurrentSymbol: mockSetCurrentSymbol,
-      setExchangeType: mockSetExchangeType,
+      setProductType: mockSetExchangeType,
       currentSymbol: 'BTCUSDT',
       exchangeType: 'spot',
     }),
@@ -113,12 +113,12 @@ describe('socketStoreActions', () => {
     });
   });
 
-  describe('setExchangeType', () => {
+  describe('setProductType', () => {
     it('正常に取引タイプを更新できること', () => {
       // テスト実行
-      socketActions.setExchangeType('futures', 'BTCUSDT', 'test-source');
+      socketActions.setProductType('futures', 'BTCUSDT', 'test-source');
       
-      // AppStore.setExchangeType が正しく呼ばれたか検証
+      // AppStore.setProductType が正しく呼ばれたか検証
       expect(mockSetExchangeType).toHaveBeenCalledWith(
         'futures'
       );
@@ -136,21 +136,21 @@ describe('socketStoreActions', () => {
     });
 
     it('エラー時に適切にログを出力すること', () => {
-      // setExchangeType でエラーが発生するようにモック
+      // setProductType でエラーが発生するようにモック
       const error = new Error('テストエラー');
       mockSetExchangeType.mockImplementation(() => {
         throw error;
       });
       
       // テスト実行
-      socketActions.setExchangeType('futures', 'BTCUSDT', 'test-source');
+      socketActions.setProductType('futures', 'BTCUSDT', 'test-source');
       
       // エラーログが出力されたか検証
       expect(logger.error).toHaveBeenCalledWith(
         expect.stringContaining('取引タイプ更新エラー'),
         expect.objectContaining({
           component: 'socketActions',
-          action: 'setExchangeType',
+          action: 'setProductType',
           errorMessage: expect.any(String),
           errorStack: expect.any(String),
           type: 'futures',

@@ -41,11 +41,11 @@ fetchData('BTC/USDT', '1d');
 import { useChartConfigStore } from '@/store';
 
 // 使用例
-const { 
+const {
   chartType,           // チャートタイプ（ローソク足、ライン、エリア）
   exchangeType,        // 取引種別（スポット、先物）
   setChartType,        // チャートタイプ設定関数
-  setExchangeType      // 取引種別設定関数
+  setProductType      // 取引種別設定関数
 } = useChartConfigStore();
 
 // チャートタイプの変更

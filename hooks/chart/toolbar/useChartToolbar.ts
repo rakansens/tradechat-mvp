@@ -52,7 +52,7 @@ export function useChartToolbar() {
   const chartType = useRootStore((state) => selectChartType(state as any));
   const exchangeType = useRootStore((state) => selectExchangeType(state as any));
   const setChartType = useRootStore((state) => state.setChartType);
-  const setExchangeType = useRootStore((state) => state.setExchangeType);
+  const setProductType = useRootStore((state) => state.setProductType);
 
   // リアルタイム更新の状態とアクションをrootStoreから取得
   const useRealTimeData = useRootStore((state) => state.useRealTimeData);
@@ -86,9 +86,9 @@ export function useChartToolbar() {
 
   // 取引種別変更ハンドラー
   const handleExchangeTypeChange = useCallback((type: ExchangeType) => {
-    setExchangeType(type);
+    setProductType(type);
     fetchData(currentSymbol, currentTimeFrame);
-  }, [setExchangeType, fetchData, currentSymbol, currentTimeFrame]);
+  }, [setProductType, fetchData, currentSymbol, currentTimeFrame]);
 
   // 型安全性を確保するためのヘルパー関数
   const isValidTimeframe = (timeframe: string): timeframe is Timeframe => {

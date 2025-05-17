@@ -19,7 +19,7 @@ interface ChartEventProps {
   exchangeType: ExchangeType;
   setCurrentSymbol: (symbol: string, reason?: string) => void;
   // 更新: ProductType対応 (2025-05-17)
-  setExchangeType: (type: ExchangeType | ProductType) => void;
+  setProductType: (type: ExchangeType | ProductType) => void;
   // 将来的に追加予定
   // setProductType?: (type: ProductType) => void;
   
@@ -38,7 +38,7 @@ export const useChartEvents = ({
   currentSymbol,
   exchangeType,
   setCurrentSymbol,
-  setExchangeType,
+  setProductType,
   currentTimeFrame,
   fetchData
 }: ChartEventProps) => {
@@ -95,7 +95,7 @@ export const useChartEvents = ({
         });
         
         // 取引タイプを更新
-        setExchangeType(type);
+        setProductType(type);
         
         // 現物から先物への切り替えの場合、または銘柄が変更された場合は、取引タイプ変更後に銘柄を再設定
         if ((type === 'futures' && fromType === 'spot') || targetSymbol !== currentSymbol) {
@@ -120,7 +120,7 @@ export const useChartEvents = ({
     return () => {
       window.removeEventListener('instrumentTypeChanged', handleInstrumentTypeChange as EventListener);
     };
-  }, [exchangeType, currentSymbol, setExchangeType, setCurrentSymbol]);
+  }, [exchangeType, currentSymbol, setProductType, setCurrentSymbol]);
   
   // 銘柄変更イベントのリスナー
   useEffect(() => {

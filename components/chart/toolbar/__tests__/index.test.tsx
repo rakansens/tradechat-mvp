@@ -23,7 +23,7 @@ jest.mock('@/hooks/chart', () => ({
       currentSymbol: 'BTC-USD',
       exchangeType: 'spot',
       handleSymbolChange: jest.fn(),
-      setExchangeType: jest.fn()
+      setProductType: jest.fn()
     },
     chartDataStore: {
       chartData: [],

@@ -84,7 +84,7 @@ export default function ChartSection() {
         error={chartDataStore.error}
         currentSymbol={symbolStore.currentSymbol}
         currentTimeFrame={chartDataStore.currentTimeFrame}
-        setExchangeType={symbolStore.setExchangeType}
+        setProductType={symbolStore.setProductType}
         onRetry={handleRetry}
       />
     </div>

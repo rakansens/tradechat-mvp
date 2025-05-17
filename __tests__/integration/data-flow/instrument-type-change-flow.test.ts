@@ -16,7 +16,7 @@ jest.mock('../../../src/mastra/tools/instrument-type-tools', () => ({
 
 jest.mock('../../../store/socketActions', () => ({
   socketStoreActions: {
-    setExchangeType: jest.fn(),
+    setProductType: jest.fn(),
   },
 }));
 
@@ -93,7 +93,7 @@ const mockedSocketClient = {
     socketEventHandlers['instrument-type-change'] = jest.fn((data) => {
       const { type, symbol = 'BTCUSDT' } = data;
       // 実際にテストしたい処理をモックとして実行
-      socketStoreActions.setExchangeType(type, symbol, 'socket-instrument-type-change');
+      socketStoreActions.setProductType(type, symbol, 'socket-instrument-type-change');
       
       // CustomEventもイベントとして発行
       const event = new CustomEvent('instrumentTypeChanged', { 
@@ -173,7 +173,7 @@ describe('取引タイプ変更フロー', () => {
       });
       
       // 実装に合わせて引数を修正
-      expect(socketStoreActions.setExchangeType).toHaveBeenCalledWith(
+      expect(socketStoreActions.setProductType).toHaveBeenCalledWith(
         'futures',
         'BTCUSDT',
         'socket-instrument-type-change'
@@ -233,7 +233,7 @@ describe('取引タイプ変更フロー', () => {
       });
       
       // 実装に合わせて引数を修正
-      expect(socketStoreActions.setExchangeType).toHaveBeenCalledWith(
+      expect(socketStoreActions.setProductType).toHaveBeenCalledWith(
         'spot',
         'BTCUSDT',
         'socket-instrument-type-change'

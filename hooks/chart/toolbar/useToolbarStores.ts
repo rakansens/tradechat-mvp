@@ -74,7 +74,7 @@ export function useToolbarStores() {
   // 型不一致を解決するためにセレクターをキャスト
   const exchangeType = useRootStore(selectExchangeType as any);
   const setCurrentSymbol = useRootStore(state => state.setCurrentSymbol);
-  const setExchangeType = useRootStore(state => state.setExchangeType);
+  const setProductType = useRootStore(state => state.setProductType);
   
   // ChartDataSliceから状態とアクションを取得（RootStoreを使用）
   const chartData = useRootStore(selectChartData);
@@ -146,7 +146,7 @@ export function useToolbarStores() {
       currentSymbol,
       exchangeType,
       setCurrentSymbol,
-      setExchangeType,
+      setProductType,
       handleSymbolChange
     },
     
