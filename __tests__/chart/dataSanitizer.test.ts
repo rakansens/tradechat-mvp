@@ -19,7 +19,7 @@ import { OHLCData } from '@/types/chart';
 import { jest } from '@jest/globals';
 
 // loggerをモック
-jest.mock('../../utils/logger', () => ({
+jest.mock('@/utils/common', () => ({
   logger: {
     warn: jest.fn(),
     error: jest.fn(),

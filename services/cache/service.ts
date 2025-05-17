@@ -7,7 +7,7 @@
  * キャッシュエントリには有効期限とソース情報を付加できます。
  */
 
-import { logger } from '../../utils/logger';
+import { logger } from '@/utils/common';
 
 // キャッシュエントリの型定義
 interface CacheEntry<T> {

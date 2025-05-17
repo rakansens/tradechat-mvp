@@ -11,7 +11,7 @@
 import { IDataSourceFactory, IRestApiClient, IWebSocketClient } from './interfaces';
 import { BitgetWebSocketClient } from './bitget/ws-client.new';
 import { BitgetRestClient } from './bitget/rest-client';
-import { logger } from '../../utils/logger';
+import { logger } from '@/utils/common';
 
 /**
  * データソースファクトリー

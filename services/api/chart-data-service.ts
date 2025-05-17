@@ -14,7 +14,7 @@ import { ExchangeType } from '@/types/api';
 import { OHLCData, OrderBookData, Timeframe } from '@/types/chart';
 import { IChartDataService } from './interfaces';
 import { dataSourceFactory } from './data-source-factory';
-import { logger } from '../../utils/logger';
+import { logger } from '@/utils/common';
 import { normalizeSymbol } from '../../utils/formatters';
 
 // キャッシュサービスのインポート

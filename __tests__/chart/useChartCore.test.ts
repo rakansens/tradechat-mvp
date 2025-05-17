@@ -54,7 +54,7 @@ jest.mock('lightweight-charts', () => ({
 }));
 
 // ロガーをモック
-jest.mock('../../utils/logger', () => ({
+jest.mock('@/utils/common', () => ({
   logger: {
     warn: jest.fn(),
     error: jest.fn(),

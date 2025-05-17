@@ -20,7 +20,7 @@ import { OHLCData, Timeframe } from '@/types/chart';
 import { ExchangeType, ProductType } from '@/types/api';
 import { useRootStore } from '../../store/rootStore';
 import { toExchangeType } from '@/utils/exchangeTypeUtils';
-import { logger } from '../../utils/logger';
+import { logger } from '@/utils/common';
 import { normalizeSymbol } from '../../utils/formatters';
 import { getSocketService } from '../socket/service';
 import { cacheService } from '../cache/service';
