@@ -6,6 +6,7 @@
 
 import { Agent } from "@mastra/core/agent";
 import { openai } from "@ai-sdk/openai";
+import { logger } from "@/utils/common";
 import { Memory } from '@mastra/memory';
 import { createClient } from '@libsql/client';  // 直接createClientをインポート
 import { 
@@ -135,7 +136,7 @@ export function createChatAgent(memory?: Memory): Agent {
  * メモリなしでエージェントを直接作成（Next.js API Routes 用）
  */
 export function createDirectAgent(): Agent {
-  console.log("Inside createDirectAgent - Checking OPENAI_API_KEY:", process.env.OPENAI_API_KEY ? 'Exists' : 'MISSING'); // Debug log
+  logger.debug("Inside createDirectAgent - Checking OPENAI_API_KEY:", process.env.OPENAI_API_KEY ? 'Exists' : 'MISSING'); // Debug log
   
   // Explicitly configure Memory 
   const memory = new Memory(memoryOptions);
