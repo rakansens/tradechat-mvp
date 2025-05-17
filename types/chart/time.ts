@@ -34,7 +34,7 @@ export interface BusinessDay {
  * Time 型（lightweight-charts の型定義から）
  * チャートの時間軸で使用される型
  */
-export type Time = UTCTimestamp | BusinessDay | string;
+export type Time = UTCTimestamp | BusinessDay;
 
 /**
  * ChartTimeCompatible 型

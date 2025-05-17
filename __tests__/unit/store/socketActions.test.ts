@@ -5,16 +5,16 @@
 import { logger } from '../../../utils/logger';
 
 // 各ドメインストアをモック化
-const mockSetCurrentSymbol = jest.fn();
-const mockSetExchangeType = jest.fn();
-const mockUpdateTimeFrame = jest.fn();
+const MockSetCurrentSymbol = jest.fn();
+const MockSetExchangeType = jest.fn();
+const MockUpdateTimeFrame = jest.fn();
 
 // useSymbolStoreのモック
 jest.mock('../../../store/useSymbolStore', () => ({
   useSymbolStore: {
     getState: jest.fn().mockReturnValue({
-      setCurrentSymbol: mockSetCurrentSymbol,
-      setProductType: mockSetExchangeType,
+      setCurrentSymbol: MockSetCurrentSymbol,
+      setProductType: MockSetExchangeType,
       currentSymbol: 'BTCUSDT',
       exchangeType: 'spot',
     }),
@@ -25,7 +25,7 @@ jest.mock('../../../store/useSymbolStore', () => ({
 jest.mock('../../../store/chart', () => ({
   useChartDataStore: {
     getState: jest.fn().mockReturnValue({
-      updateTimeFrame: mockUpdateTimeFrame,
+      updateTimeFrame: MockUpdateTimeFrame,
       currentTimeFrame: '1d',
     }),
   },
@@ -64,7 +64,7 @@ describe('socketStoreActions', () => {
       socketActions.setSymbol('ETHUSDT', 'test-source');
       
       // AppStore.setCurrentSymbol が正しく呼ばれたか検証
-      expect(mockSetCurrentSymbol).toHaveBeenCalledWith(
+      expect(MockSetCurrentSymbol).toHaveBeenCalledWith(
         'ETHUSDT',
         'test-source'
       );
@@ -92,7 +92,7 @@ describe('socketStoreActions', () => {
     it('エラー時に適切にログを出力すること', () => {
       // setCurrentSymbol でエラーが発生するようにモック
       const error = new Error('テストエラー');
-      mockSetCurrentSymbol.mockImplementation(() => {
+      MockSetCurrentSymbol.mockImplementation(() => {
         throw error;
       });
       
@@ -119,7 +119,7 @@ describe('socketStoreActions', () => {
       socketActions.setProductType('futures', 'BTCUSDT', 'test-source');
       
       // AppStore.setProductType が正しく呼ばれたか検証
-      expect(mockSetExchangeType).toHaveBeenCalledWith(
+      expect(MockSetExchangeType).toHaveBeenCalledWith(
         'futures'
       );
       
@@ -138,7 +138,7 @@ describe('socketStoreActions', () => {
     it('エラー時に適切にログを出力すること', () => {
       // setProductType でエラーが発生するようにモック
       const error = new Error('テストエラー');
-      mockSetExchangeType.mockImplementation(() => {
+      MockSetExchangeType.mockImplementation(() => {
         throw error;
       });
       
@@ -166,7 +166,7 @@ describe('socketStoreActions', () => {
       socketActions.setTimeframe('4h', 'test-source');
       
       // AppStore.updateTimeFrame が正しく呼ばれたか検証
-      expect(mockUpdateTimeFrame).toHaveBeenCalledWith(
+      expect(MockUpdateTimeFrame).toHaveBeenCalledWith(
         '4h'
       );
       
@@ -193,7 +193,7 @@ describe('socketStoreActions', () => {
     it('エラー時に適切にログを出力すること', () => {
       // updateTimeFrame でエラーが発生するようにモック
       const error = new Error('テストエラー');
-      mockUpdateTimeFrame.mockImplementation(() => {
+      MockUpdateTimeFrame.mockImplementation(() => {
         throw error;
       });
       

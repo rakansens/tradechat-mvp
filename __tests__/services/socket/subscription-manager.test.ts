@@ -32,7 +32,7 @@ jest.mock('../../../utils/logger', () => ({
 const { logger } = require('../../../utils/logger');
 
 // モック
-const mockSocket = {
+const MockSocket = {
   on: jest.fn(),
   off: jest.fn(),
   emit: jest.fn(),
@@ -40,9 +40,9 @@ const mockSocket = {
 };
 
 // WebSocketClientモック
-const mockWebSocketClient: IWebSocketClient = {
+const MockWebSocketClient: IWebSocketClient = {
   initialize: jest.fn(),
-  getSocket: jest.fn().mockReturnValue(mockSocket),
+  getSocket: jest.fn().mockReturnValue(MockSocket),
   isConnected: jest.fn().mockReturnValue(true),
   disconnect: jest.fn(),
   scheduleReconnect: jest.fn()
@@ -64,13 +64,13 @@ describe('SubscriptionManager', () => {
     jest.clearAllMocks();
     
     // SubscriptionManagerインスタンスを作成
-    subscriptionManager = new SubscriptionManager(mockWebSocketClient);
+    subscriptionManager = new SubscriptionManager(MockWebSocketClient);
   });
   
   describe('subscribeOrderBook', () => {
     it('ソケットが初期化されていない場合は空の関数を返すこと', () => {
       // getSocketの戻り値をnullに設定
-      (mockWebSocketClient.getSocket as jest.Mock).mockReturnValueOnce(null);
+      (MockWebSocketClient.getSocket as jest.Mock).mockReturnValueOnce(null);
       
       // subscribeOrderBookを実行
       const unsubscribe = subscriptionManager.subscribeOrderBook('BTC/USDT', jest.fn());
@@ -110,21 +110,21 @@ describe('SubscriptionManager', () => {
       };
       
       // ハンドラを実行
-      const subManager = new SubscriptionManager(mockWebSocketClient);
+      const subManager = new SubscriptionManager(MockWebSocketClient);
       const unsubscribe = subManager.subscribeOrderBook(symbol, callback, exchangeType);
       
       // emitが正しく呼ばれたことを確認
-      expect(mockSocket.emit).toHaveBeenCalledWith('subscribe', {
+      expect(MockSocket.emit).toHaveBeenCalledWith('subscribe', {
         symbol: 'BTCUSDT',
         type: 'orderbook',
         exchangeType: 'spot'
       });
       
       // 適切なイベントリスナが登録されたことを確認
-      expect(mockSocket.on).toHaveBeenCalledWith('orderbook', expect.any(Function));
+      expect(MockSocket.on).toHaveBeenCalledWith('orderbook', expect.any(Function));
       
       // イベントハンドラを取得
-      const handler = mockSocket.on.mock.calls.find(
+      const handler = MockSocket.on.mock.calls.find(
         (call) => call[0] === 'orderbook'
       )[1];
       
@@ -143,7 +143,7 @@ describe('SubscriptionManager', () => {
       unsubscribe();
       
       // emitが正しく呼ばれたことを確認
-      expect(mockSocket.emit).toHaveBeenCalledWith('unsubscribe', {
+      expect(MockSocket.emit).toHaveBeenCalledWith('unsubscribe', {
         symbol: 'BTCUSDT',
         type: 'orderbook',
         exchangeType: 'spot'
@@ -151,8 +151,8 @@ describe('SubscriptionManager', () => {
     });
     
     it('購読中にエラーが発生した場合はログを出力すること', () => {
-      // mockSocket.emitでエラーを発生させる
-      mockSocket.emit.mockImplementationOnce(() => {
+      // MockSocket.emitでエラーを発生させる
+      MockSocket.emit.mockImplementationOnce(() => {
         throw new Error('購読エラー');
       });
       
@@ -178,7 +178,7 @@ describe('SubscriptionManager', () => {
   describe('subscribeKline', () => {
     it('ソケットが初期化されていない場合は空の関数を返すこと', () => {
       // getSocketの戻り値をnullに設定
-      (mockWebSocketClient.getSocket as jest.Mock).mockReturnValueOnce(null);
+      (MockWebSocketClient.getSocket as jest.Mock).mockReturnValueOnce(null);
       
       // subscribeKlineを実行
       const unsubscribe = subscriptionManager.subscribeKline('BTC/USDT', '1m', jest.fn());
@@ -217,11 +217,11 @@ describe('SubscriptionManager', () => {
       };
       
       // ハンドラを実行
-      const subManager = new SubscriptionManager(mockWebSocketClient);
+      const subManager = new SubscriptionManager(MockWebSocketClient);
       const unsubscribe = subManager.subscribeKline(symbol, timeframe, callback, exchangeType);
       
       // emitが正しく呼ばれたことを確認
-      expect(mockSocket.emit).toHaveBeenCalledWith('subscribe', {
+      expect(MockSocket.emit).toHaveBeenCalledWith('subscribe', {
         symbol: 'BTCUSDT',
         type: 'kline',
         timeframe: '1m',
@@ -229,10 +229,10 @@ describe('SubscriptionManager', () => {
       });
       
       // 適切なイベントリスナが登録されたことを確認
-      expect(mockSocket.on).toHaveBeenCalledWith('kline', expect.any(Function));
+      expect(MockSocket.on).toHaveBeenCalledWith('kline', expect.any(Function));
       
       // イベントハンドラを取得
-      const handler = mockSocket.on.mock.calls.find(
+      const handler = MockSocket.on.mock.calls.find(
         (call) => call[0] === 'kline'
       )[1];
       
@@ -253,7 +253,7 @@ describe('SubscriptionManager', () => {
       unsubscribe();
       
       // emitが正しく呼ばれたことを確認
-      expect(mockSocket.emit).toHaveBeenCalledWith('unsubscribe', {
+      expect(MockSocket.emit).toHaveBeenCalledWith('unsubscribe', {
         symbol: 'BTCUSDT',
         type: 'kline',
         timeframe: '1m',
@@ -269,15 +269,15 @@ describe('SubscriptionManager', () => {
       subscriptionManager.subscribeKline('BTC/USDT', '1m', jest.fn());
       
       // モックをリセット
-      mockSocket.off.mockClear();
-      mockSocket.emit.mockClear();
+      MockSocket.off.mockClear();
+      MockSocket.emit.mockClear();
       
       // unsubscribeAllを実行
       subscriptionManager.unsubscribeAll();
       
       // 結果を検証
-      expect(mockSocket.off).toHaveBeenCalledTimes(2);
-      expect(mockSocket.emit).toHaveBeenCalledTimes(2);
+      expect(MockSocket.off).toHaveBeenCalledTimes(2);
+      expect(MockSocket.emit).toHaveBeenCalledTimes(2);
       expect(logger.info).toHaveBeenCalledWith(
         'すべての購読を解除しました',
         expect.objectContaining({
@@ -289,7 +289,7 @@ describe('SubscriptionManager', () => {
     
     it('ソケットが初期化されていない場合はログを出力すること', () => {
       // getSocketの戻り値をnullに設定
-      (mockWebSocketClient.getSocket as jest.Mock).mockReturnValueOnce(null);
+      (MockWebSocketClient.getSocket as jest.Mock).mockReturnValueOnce(null);
       
       // unsubscribeAllを実行
       subscriptionManager.unsubscribeAll();
@@ -312,15 +312,15 @@ describe('SubscriptionManager', () => {
       subscriptionManager.subscribeKline('BTC/USDT', '1m', jest.fn());
       
       // モックをリセット
-      mockSocket.on.mockClear();
-      mockSocket.emit.mockClear();
+      MockSocket.on.mockClear();
+      MockSocket.emit.mockClear();
       
       // resubscribeAllを実行
       subscriptionManager.resubscribeAll();
       
       // 結果を検証
-      expect(mockSocket.on).toHaveBeenCalledTimes(2);
-      expect(mockSocket.emit).toHaveBeenCalledTimes(4); // unsubscribe + subscribe
+      expect(MockSocket.on).toHaveBeenCalledTimes(2);
+      expect(MockSocket.emit).toHaveBeenCalledTimes(4); // unsubscribe + subscribe
       expect(logger.info).toHaveBeenCalledWith(
         'すべての購読を再購読しました',
         expect.objectContaining({
@@ -333,7 +333,7 @@ describe('SubscriptionManager', () => {
     
     it('ソケットが初期化されていない場合はログを出力すること', () => {
       // getSocketの戻り値をnullに設定
-      (mockWebSocketClient.getSocket as jest.Mock).mockReturnValueOnce(null);
+      (MockWebSocketClient.getSocket as jest.Mock).mockReturnValueOnce(null);
       
       // resubscribeAllを実行
       subscriptionManager.resubscribeAll();

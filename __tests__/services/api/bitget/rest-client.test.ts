@@ -12,7 +12,7 @@ import { BitgetRestClient } from '../../../../services/api/bitget/rest-client';
 import { logger } from '../../../../utils/logger';
 
 // モックの設定
-const mock = new MockAdapter(axios);
+const AxiosMock = new MockAdapter(axios);
 jest.mock('../../../../utils/logger', () => ({
   logger: {
     debug: jest.fn(),
@@ -23,12 +23,12 @@ jest.mock('../../../../utils/logger', () => ({
 
 describe('BitgetRestClient', () => {
   beforeEach(() => {
-    mock.reset();
+    AxiosMock.reset();
     jest.clearAllMocks();
   });
 
   afterAll(() => {
-    mock.restore();
+    AxiosMock.restore();
   });
 
   describe('fetchCandles', () => {
@@ -44,7 +44,7 @@ describe('BitgetRestClient', () => {
       };
       
       // モックの設定
-      mock.onGet().reply(200, mockResponse);
+      AxiosMock.onGet().reply(200, mockResponse);
       
       // インスタンス作成
       const client = new BitgetRestClient();
@@ -74,7 +74,7 @@ describe('BitgetRestClient', () => {
       };
       
       // モックの設定
-      mock.onGet().reply(200, mockResponse);
+      AxiosMock.onGet().reply(200, mockResponse);
       
       // インスタンス作成
       const client = new BitgetRestClient();
@@ -92,8 +92,8 @@ describe('BitgetRestClient', () => {
       expect(result[0]).toHaveProperty('volume', 100);
       
       // 適切なエンドポイントとパラメータが使用されたか確認
-      expect(mock.history.get[0].url).toContain('/api/v2/mix/market/candles');
-      expect(mock.history.get[0].params).toHaveProperty('productType', 'usdt-futures');
+      expect(AxiosMock.history.get[0].url).toContain('/api/v2/mix/market/candles');
+      expect(AxiosMock.history.get[0].params).toHaveProperty('productType', 'usdt-futures');
     });
 
     it('endTimeパラメータが正しく送信されること', async () => {
@@ -107,7 +107,7 @@ describe('BitgetRestClient', () => {
       };
       
       // モックの設定
-      mock.onGet().reply(200, mockResponse);
+      AxiosMock.onGet().reply(200, mockResponse);
       
       // インスタンス作成
       const client = new BitgetRestClient();
@@ -117,7 +117,7 @@ describe('BitgetRestClient', () => {
       await client.fetchCandles('BTC/USDT', '1d', 1, 'spot', endTime);
       
       // リクエストパラメータにendTimeが含まれているか確認
-      expect(mock.history.get[0].params).toHaveProperty('endTime', endTime.toString());
+      expect(AxiosMock.history.get[0].params).toHaveProperty('endTime', endTime.toString());
     });
 
     it('APIエラー時に適切にエラーがスローされること', async () => {
@@ -128,7 +128,7 @@ describe('BitgetRestClient', () => {
       };
       
       // モックの設定
-      mock.onGet().reply(200, mockResponse);
+      AxiosMock.onGet().reply(200, mockResponse);
       
       // インスタンス作成
       const client = new BitgetRestClient();
@@ -142,7 +142,7 @@ describe('BitgetRestClient', () => {
 
     it('ネットワークエラー時に適切にエラーがスローされること', async () => {
       // ネットワークエラーの設定
-      mock.onGet().networkError();
+      AxiosMock.onGet().networkError();
       
       // インスタンス作成
       const client = new BitgetRestClient();
@@ -160,13 +160,13 @@ describe('BitgetRestClient', () => {
         msg: 'success'
       };
       
-      mock.onGet().reply(200, mockResponse);
+      AxiosMock.onGet().reply(200, mockResponse);
       
       const client = new BitgetRestClient();
       await client.fetchCandles('BTC/USDT', '1d', 1);
       
       // パラメータでシンボルが正規化されているか確認
-      expect(mock.history.get[0].params.symbol).toBe('BTCUSDT');
+      expect(AxiosMock.history.get[0].params.symbol).toBe('BTCUSDT');
     });
 
     it('タイムフレームが正しく変換されること', async () => {
@@ -176,19 +176,19 @@ describe('BitgetRestClient', () => {
         msg: 'success'
       };
       
-      mock.onGet().reply(200, mockResponse);
+      AxiosMock.onGet().reply(200, mockResponse);
       
       const client = new BitgetRestClient();
       
       // 先物取引で時間足形式が大文字になることを確認 (1h -> 1H)
       await client.fetchCandles('BTC/USDT', '1h', 1, 'futures');
-      expect(mock.history.get[0].params.granularity).toBe('1H');
+      expect(AxiosMock.history.get[0].params.granularity).toBe('1H');
       
       // スポット取引で時間足形式が適切に変換されることを確認
-      mock.resetHistory();
-      mock.onGet().reply(200, mockResponse);
+      AxiosMock.resetHistory();
+      AxiosMock.onGet().reply(200, mockResponse);
       await client.fetchCandles('BTC/USDT', '1h', 1, 'spot');
-      expect(mock.history.get[0].params.granularity).toBe('1h');
+      expect(AxiosMock.history.get[0].params.granularity).toBe('1h');
     });
   });
 
@@ -212,7 +212,7 @@ describe('BitgetRestClient', () => {
       };
       
       // モックの設定
-      mock.onGet().reply(200, mockResponse);
+      AxiosMock.onGet().reply(200, mockResponse);
       
       // インスタンス作成
       const client = new BitgetRestClient();
@@ -250,7 +250,7 @@ describe('BitgetRestClient', () => {
       };
       
       // モックの設定
-      mock.onGet().reply(200, mockResponse);
+      AxiosMock.onGet().reply(200, mockResponse);
       
       // インスタンス作成
       const client = new BitgetRestClient();
@@ -265,8 +265,8 @@ describe('BitgetRestClient', () => {
       expect(result.bids.length).toBe(2);
       
       // 適切なエンドポイントとパラメータが使用されたか確認
-      expect(mock.history.get[0].url).toContain('/api/v2/mix/market/orderbook');
-      expect(mock.history.get[0].params).toHaveProperty('productType', 'usdt-futures');
+      expect(AxiosMock.history.get[0].url).toContain('/api/v2/mix/market/orderbook');
+      expect(AxiosMock.history.get[0].params).toHaveProperty('productType', 'usdt-futures');
     });
 
     it('APIエラー時に適切にエラーがスローされること', async () => {
@@ -277,7 +277,7 @@ describe('BitgetRestClient', () => {
       };
       
       // モックの設定
-      mock.onGet().reply(200, mockResponse);
+      AxiosMock.onGet().reply(200, mockResponse);
       
       // インスタンス作成
       const client = new BitgetRestClient();
@@ -291,7 +291,7 @@ describe('BitgetRestClient', () => {
 
     it('ネットワークエラー時に適切にエラーがスローされること', async () => {
       // ネットワークエラーの設定
-      mock.onGet().networkError();
+      AxiosMock.onGet().networkError();
       
       // インスタンス作成
       const client = new BitgetRestClient();
@@ -313,13 +313,13 @@ describe('BitgetRestClient', () => {
         msg: 'success'
       };
       
-      mock.onGet().reply(200, mockResponse);
+      AxiosMock.onGet().reply(200, mockResponse);
       
       const client = new BitgetRestClient();
       await client.fetchOrderBook('ETH/BTC', 1);
       
       // パラメータでシンボルが正規化されているか確認
-      expect(mock.history.get[0].params.symbol).toBe('ETHBTC');
+      expect(AxiosMock.history.get[0].params.symbol).toBe('ETHBTC');
     });
   });
 
@@ -336,7 +336,7 @@ describe('BitgetRestClient', () => {
       };
       
       // モックの設定
-      mock.onGet().reply(200, mockResponse);
+      AxiosMock.onGet().reply(200, mockResponse);
       
       // インスタンス作成
       const client = new BitgetRestClient();
@@ -370,7 +370,7 @@ describe('BitgetRestClient', () => {
       };
       
       // モックの設定
-      mock.onGet().reply(200, mockResponse);
+      AxiosMock.onGet().reply(200, mockResponse);
       
       // インスタンス作成
       const client = new BitgetRestClient();

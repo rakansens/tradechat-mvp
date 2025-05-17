@@ -9,7 +9,7 @@ import { logger } from '@/utils/common';
 const DummyIcon = 'dummy-icon';
 
 // useQuickCommandsフックのモックを作成
-const mockQuickCommands = [
+const MockQuickCommands = [
   {
     label: "Entry Point",
     value: "Entry Point",
@@ -41,7 +41,7 @@ jest.mock('@/utils/logger', () => ({
 jest.mock('@/components/chat/section/hooks/useQuickCommands', () => {
   return {
     __esModule: true,
-    default: () => mockQuickCommands,
+    default: () => MockQuickCommands,
   };
 });
 
@@ -53,7 +53,7 @@ describe('useQuickCommands', () => {
 
   test('クイックコマンドの配列が正しい構造を持つこと', () => {
     // 各コマンドが正しいプロパティを持つことを確認
-    mockQuickCommands.forEach(command => {
+    MockQuickCommands.forEach(command => {
       expect(command).toHaveProperty('label');
       expect(command).toHaveProperty('value');
       expect(command).toHaveProperty('icon');
@@ -62,12 +62,12 @@ describe('useQuickCommands', () => {
     });
     
     // コマンド数が3つであることを確認
-    expect(mockQuickCommands.length).toBe(3);
+    expect(MockQuickCommands.length).toBe(3);
   });
   
   test('Entry Pointコマンドのアクションが正しく動作すること', () => {
     // Entry Pointコマンドを見つける
-    const entryPointCommand = mockQuickCommands.find(cmd => cmd.label === 'Entry Point');
+    const entryPointCommand = MockQuickCommands.find(cmd => cmd.label === 'Entry Point');
     expect(entryPointCommand).toBeDefined();
     
     // アクションを実行
@@ -79,7 +79,7 @@ describe('useQuickCommands', () => {
   
   test('Market Newsコマンドのアクションが正しく動作すること', () => {
     // Market Newsコマンドを見つける
-    const marketNewsCommand = mockQuickCommands.find(cmd => cmd.label === 'Market News');
+    const marketNewsCommand = MockQuickCommands.find(cmd => cmd.label === 'Market News');
     expect(marketNewsCommand).toBeDefined();
     
     // アクションを実行
@@ -91,7 +91,7 @@ describe('useQuickCommands', () => {
   
   test('AI Signalコマンドのアクションが正しく動作すること', () => {
     // AI Signalコマンドを見つける
-    const aiSignalCommand = mockQuickCommands.find(cmd => cmd.label === 'AI Signal');
+    const aiSignalCommand = MockQuickCommands.find(cmd => cmd.label === 'AI Signal');
     expect(aiSignalCommand).toBeDefined();
     
     // アクションを実行
