@@ -19,7 +19,7 @@ jest.mock('../../../store/socketActions', () => ({
   setSocketId: jest.fn(),
   setSymbol: jest.fn(),
   setTimeframe: jest.fn(),
-  setExchangeType: jest.fn(),
+  setProductType: jest.fn(),
 }));
 
 // socket.io-client のモック定義
@@ -286,7 +286,7 @@ describe('socketClient', () => {
         // timestamp: expect.any(Number)
       });
       expect(logger.info).toHaveBeenCalledWith('取引タイプ変更イベント受信:', expectedLog);
-      expect(socketActions.setExchangeType).toHaveBeenCalledWith(eventData.type, expect.any(String), expect.any(String));
+      expect(socketActions.setProductType).toHaveBeenCalledWith(eventData.type, expect.any(String), expect.any(String));
       expect(localStorageMock.setItem).toHaveBeenCalledWith('lastUsedExchangeType', eventData.type);
       expect(localStorageMock.setItem).toHaveBeenCalledWith('selectedInstrumentType', eventData.type);
       expect(dispatchEventSpy).toHaveBeenCalledWith(expect.any(CustomEvent));

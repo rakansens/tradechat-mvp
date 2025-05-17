@@ -39,10 +39,8 @@ export const useChartStores = () => {
   const exchangeType = useRootStore(selectExchangeType as any);
   const setCurrentSymbol = useRootStore(state => state.setCurrentSymbol);
   
-  // 注: 今後のフェーズでsetProductTypeを追加予定
-  
   // 取引種別を設定するメソッド
-  const setExchangeType = useRootStore(state => state.setExchangeType);
+  const setProductType = useRootStore(state => state.setProductType);
   
   // rootStoreから直接取得 (型不一致を回避するために型アサーションを使用)
   const timeframe = useRootStore(selectTimeframe as any);
@@ -71,7 +69,7 @@ export const useChartStores = () => {
     currentSymbol,
     exchangeType,
     setCurrentSymbol,
-    setExchangeType,
+    setProductType,
     
     // チャートデータ関連
     chartData: ohlcData,

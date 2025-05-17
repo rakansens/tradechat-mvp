@@ -181,18 +181,18 @@ const useSelectorStores = (options: {
   // ストアからアクションを取得
   const toggleFavorite = useRootStore(state => state.toggleFavorite);
   const fetchSymbols = useRootStore(state => state.fetchSymbols);
-  const setExchangeType = useRootStore(state => state.setExchangeType);
+  const setProductType = useRootStore(state => state.setProductType);
   const currentExchangeType = useRootStore(state => state.exchangeType);
   
   // 取引タイプの変更ハンドラー
   const handleExchangeTypeChange = useCallback((type: ExchangeType) => {
-    setExchangeType(type);
+    setProductType(type);
     
     // コールバックが提供されている場合、外部に変更を通知
     if (options.onExchangeTypeChange) {
       options.onExchangeTypeChange(type);
     }
-  }, [setExchangeType, options.onExchangeTypeChange]);
+  }, [setProductType, options.onExchangeTypeChange]);
   
   // 再試行ハンドラー
   const retryFetch = useCallback(() => {
@@ -202,9 +202,9 @@ const useSelectorStores = (options: {
   // デフォルトの取引タイプが指定されていれば設定
   useEffect(() => {
     if (options.defaultExchangeType && options.defaultExchangeType !== currentExchangeType) {
-      setExchangeType(options.defaultExchangeType);
+        setProductType(options.defaultExchangeType);
     }
-  }, [options.defaultExchangeType, currentExchangeType, setExchangeType]);
+  }, [options.defaultExchangeType, currentExchangeType, setProductType]);
   
   return {
     symbols: { filteredSymbols: symbols, isLoading, error },

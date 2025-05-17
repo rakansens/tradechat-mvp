@@ -15,7 +15,7 @@ jest.mock('../../../src/mastra/tools/symbol-tools', () => ({
 jest.mock('../../../store/socketActions', () => ({
   socketStoreActions: {
     setSymbol: jest.fn(),
-    setExchangeType: jest.fn(),
+    setProductType: jest.fn(),
   },
 }));
 
@@ -66,7 +66,7 @@ const mockedSocketClient = {
       
       // 実際にテストしたい処理をモックとして実行
       if (exchangeType) {
-        socketStoreActions.setExchangeType(exchangeType, symbol, 'socket-changeSymbol');
+        socketStoreActions.setProductType(exchangeType, symbol, 'socket-changeSymbol');
       }
       
       socketStoreActions.setSymbol(symbol, 'socket-changeSymbol');
@@ -175,7 +175,7 @@ describe('銘柄変更フロー', () => {
         'socket-changeSymbol'
       );
       
-      expect(socketStoreActions.setExchangeType).toHaveBeenCalledWith(
+      expect(socketStoreActions.setProductType).toHaveBeenCalledWith(
         'spot',
         'ETHUSDT',
         'socket-changeSymbol'
@@ -220,7 +220,7 @@ describe('銘柄変更フロー', () => {
       );
       
       // 取引タイプは更新されないことを確認
-      expect(socketStoreActions.setExchangeType).not.toHaveBeenCalled();
+      expect(socketStoreActions.setProductType).not.toHaveBeenCalled();
     }
   });
 

@@ -62,7 +62,7 @@ export function useToolbarStores() {
   const currentSymbol = useRootStore(selectCurrentSymbol);
   const exchangeType = useRootStore(selectExchangeType);
   const setCurrentSymbol = useRootStore(state => state.setCurrentSymbol);
-  const setExchangeType = useRootStore(state => state.setExchangeType);
+  const setProductType = useRootStore(state => state.setProductType);
   
   // ChartDataSliceから状態とアクションを取得（RootStoreを使用）
   const chartData = useRootStore(selectChartData);
@@ -115,7 +115,7 @@ export function useToolbarStores() {
       currentSymbol,
       exchangeType,
       setCurrentSymbol,
-      setExchangeType,
+      setProductType,
       handleSymbolChange
     },
     

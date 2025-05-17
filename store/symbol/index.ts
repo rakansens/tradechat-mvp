@@ -67,6 +67,9 @@ export const createSymbolSlice = (
     
     // SymbolActions のメソッド
     setCurrentSymbol: actions.setCurrentSymbol,
+    // 新しいProductTypeメソッドを公開
+    setProductType: actions.setProductType,
+    // 後方互換性のため旧メソッドも保持
     setExchangeType: actions.setExchangeType,
     setSymbols: (symbols: SymbolInfo[]) => {
       // 必要に応じて実装

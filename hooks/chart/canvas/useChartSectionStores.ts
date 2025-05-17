@@ -48,7 +48,7 @@ export const useChartSectionStores = () => {
   const currentSymbol = useRootStore(selectCurrentSymbol);
   const exchangeType = useRootStore((state) => selectExchangeType(state as any));
   const setCurrentSymbol = useRootStore(state => state.setCurrentSymbol);
-  const setExchangeType = useRootStore(state => state.setExchangeType);
+  const setProductType = useRootStore(state => state.setProductType);
   
   // ChartDataStore (RootStoreから取得)
   const chartData = useRootStore((state) => selectChartData(state as any));
@@ -129,7 +129,7 @@ export const useChartSectionStores = () => {
       currentSymbol,
       exchangeType,
       setCurrentSymbol,
-      setExchangeType
+      setProductType
     },
     chartDataStore: {
       chartData,
