@@ -557,7 +557,7 @@ beforeEach(() => {
 ```typescript
 // services/dataFetchService.ts
 import { socketService } from './socket';
-import { BitgetApiClient } from './api/bitget/client';
+import { BitgetApiClient } from './api/bitget/client.new';
 const bitgetApi = new BitgetApiClient();
 import type { OrderBookData, OHLCData, ExchangeType, Timeframe } from '@/types';
 

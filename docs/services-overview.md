@@ -18,7 +18,7 @@ Key files and methods:
   `getEnvironment` and `getApiConfig`.
 - `services/api/client-factory.ts` – exposes `getApiClient` for creating a
   cached `BitgetApiClient` instance.
-- `services/api/bitget/client.ts` – `BitgetApiClient` class providing methods
+- `services/api/bitget/client.new.ts` – `BitgetApiClient` class providing methods
   like `fetchCandles` and `fetchOrderBook`.
 
 ## 2. Socket Service
