@@ -24,7 +24,7 @@ describe('MessageListWrapper', () => {
   const mockPendingEntry: Partial<OpenEntry> = {
     id: 'entry1',
     symbol: 'BTC-USD',
-    entryPrice: 50000,
+    price: 50000,
     side: 'buy'
   };
   
