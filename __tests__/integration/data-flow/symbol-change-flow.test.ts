@@ -3,7 +3,7 @@
 
 import { changeSymbolTool } from '../../../src/mastra/tools/symbol-tools';
 import { useRootStore } from '../../../store/rootStore';
-import { logger } from '../../../utils/logger';
+import { logger } from '../../../utils/common';
 
 // モジュールをモック化
 jest.mock('../../../src/mastra/tools/symbol-tools', () => ({
@@ -24,7 +24,7 @@ jest.mock('../../../store/rootStore', () => ({
   },
 }));
 
-jest.mock('../../../utils/logger', () => ({
+jest.mock('../../../utils/common', () => ({
   logger: {
     info: jest.fn(),
     error: jest.fn(),

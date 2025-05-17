@@ -9,11 +9,11 @@
 import axios from 'axios';
 import MockAdapter from 'axios-mock-adapter';
 import { BitgetRestClient } from '../../../../services/api/bitget/rest-client';
-import { logger } from '../../../../utils/logger';
+import { logger } from '../../../../utils/common';
 
 // モックの設定
 const mock = new MockAdapter(axios);
-jest.mock('../../../../utils/logger', () => ({
+jest.mock('../../../../utils/common', () => ({
   logger: {
     debug: jest.fn(),
     error: jest.fn(),

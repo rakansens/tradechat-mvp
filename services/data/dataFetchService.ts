@@ -18,7 +18,7 @@ import { BitgetApiClient } from '../api/bitget/client.new';
 import { IDataFetchService } from './dataFetchTypes';
 import { OHLCData, Timeframe } from '../../types/chart';
 import { ExchangeType } from '@/types/api';
-import { logger } from '../../utils/logger';
+import { logger } from '../../utils/common';
 import { normalizeSymbol } from '../../utils/formatters';
 import { getSocketService } from '../socket/service';
 import { cacheService } from '../cache/service';

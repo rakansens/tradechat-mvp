@@ -11,7 +11,7 @@ const { v4: uuidv4 } = require('uuid');
 const fs = require('fs');
 const path = require('path');
 // EventEmitterをインポート
-const logger = require("./utils/serverLogger");
+const logger = require("./utils/common/logger");
 const { EventEmitter } = require('events');
 
 // WebSocketマネージャーとSocketDataブロードキャスターの代わりにモック実装を使用
