@@ -244,8 +244,8 @@ describe('Market Validations', () => {
     it('有効な銘柄情報を検証できる', () => {
       const validSymbol = {
         symbol: 'BTCUSDT',
-        baseCoin: 'BTC', // baseAsset → baseCoin に修正
-        quoteCoin: 'USDT', // quoteCoin → quoteCoin に修正
+        baseCoin: 'BTC', // baseCoin に修正
+        quoteCoin: 'USDT', // quoteCoin に修正
         minOrderSize: 0.001, // minNotional → minOrderSize に修正
         pricePrecision: 2,
         quantityPrecision: 6,
@@ -260,8 +260,8 @@ describe('Market Validations', () => {
     it('validateSymbolInfo関数が正しく動作する', () => {
       const validSymbol = {
         symbol: 'BTCUSDT',
-        baseCoin: 'BTC', // baseAsset → baseCoin に修正
-        quoteCoin: 'USDT', // quoteCoin → quoteCoin に修正
+        baseCoin: 'BTC', // baseCoin に修正
+        quoteCoin: 'USDT', // quoteCoin に修正
         minOrderSize: 0.001, // minNotional → minOrderSize に修正
         pricePrecision: 2,
         quantityPrecision: 6,

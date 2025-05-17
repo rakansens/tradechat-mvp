@@ -9,11 +9,11 @@ import type { FilterOptions, SymbolInfo } from '@/store/useSymbolStore';
 
 // モックシンボルデータ
 const mockSymbols: SymbolInfo[] = [
-  { symbol: 'BTCUSDT', baseAsset: 'BTC', quoteCoin: 'USDT', favorite: false },
-  { symbol: 'ETHUSDT', baseAsset: 'ETH', quoteCoin: 'USDT', favorite: true },
-  { symbol: 'BNBBTC', baseAsset: 'BNB', quoteCoin: 'BTC', favorite: false },
-  { symbol: 'SOLUSDT', baseAsset: 'SOL', quoteCoin: 'USDT', favorite: false },
-  { symbol: 'MATICUSDT', baseAsset: 'MATIC', quoteCoin: 'USDT', favorite: false },
+  { symbol: 'BTCUSDT', baseCoin: 'BTC', quoteCoin: 'USDT', favorite: false },
+  { symbol: 'ETHUSDT', baseCoin: 'ETH', quoteCoin: 'USDT', favorite: true },
+  { symbol: 'BNBBTC', baseCoin: 'BNB', quoteCoin: 'BTC', favorite: false },
+  { symbol: 'SOLUSDT', baseCoin: 'SOL', quoteCoin: 'USDT', favorite: false },
+  { symbol: 'MATICUSDT', baseCoin: 'MATIC', quoteCoin: 'USDT', favorite: false },
 ];
 
 // デフォルトフィルターオプション
@@ -89,8 +89,8 @@ describe('usePopularSymbols', () => {
   test('シンボルリストがPOPULAR_SYMBOLSに含まれない場合、空配列を返す', () => {
     // POPULAR_SYMBOLSに含まれないシンボルのみのリスト
     const nonPopularSymbols: SymbolInfo[] = [
-      { symbol: 'XRPBTC', baseAsset: 'XRP', quoteCoin: 'BTC', favorite: false },
-      { symbol: 'LRCETH', baseAsset: 'LRC', quoteCoin: 'ETH', favorite: false },
+      { symbol: 'XRPBTC', baseCoin: 'XRP', quoteCoin: 'BTC', favorite: false },
+      { symbol: 'LRCETH', baseCoin: 'LRC', quoteCoin: 'ETH', favorite: false },
     ];
     
     const { result } = renderHook(() => 
