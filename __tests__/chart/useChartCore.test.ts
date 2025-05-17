@@ -27,9 +27,9 @@ type SimpleSeriesDefinition = Pick<SeriesDefinition<keyof SeriesOptionsMap>, 'ty
 
 // lightweight-charts用の定数定義
 const SERIES_TYPES: Record<string, SimpleSeriesDefinition> = {
-  CANDLESTICK: { type: 'candlestick' },
-  LINE: { type: 'line' },
-  AREA: { type: 'area' }
+  CANDLESTICK: { type: 'Candlestick' },
+  LINE: { type: 'Line' },
+  AREA: { type: 'Area' }
 };
 
 // モックを設定
@@ -45,9 +45,9 @@ jest.mock('lightweight-charts', () => ({
     removeSeries: jest.fn(),
     remove: jest.fn(),
   }),
-  CandlestickSeries: { type: 'candlestick' },
-  LineSeries: { type: 'line' },
-  AreaSeries: { type: 'area' },
+  CandlestickSeries: { type: 'Candlestick' },
+  LineSeries: { type: 'Line' },
+  AreaSeries: { type: 'Area' },
   ColorType: {
     Solid: 'solid',
   },
