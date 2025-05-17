@@ -7,7 +7,7 @@
 
 import { BitgetIntegration } from '../../../services/socket/bitget-integration';
 import { BitgetApiClient } from '../../../services/api/bitget/client';
-import { ExchangeType } from '../../../types/api';
+import { ProductType } from '../../../types/api';
 import { logger } from '../../../utils/logger';
 
 // BitgetApiClientのモック
@@ -45,7 +45,7 @@ describe('BitgetIntegration', () => {
   describe('initializeApiClient', () => {
     it('新しいBitgetApiClientを初期化できること', () => {
       // initializeApiClientを実行
-      const apiClient = bitgetIntegration.initializeApiClient('spot');
+      const apiClient = bitgetIntegration.initializeApiClient('spot' as ProductType);
       
       // 結果を検証
       expect(BitgetApiClient).toHaveBeenCalledWith({}, 'spot');
@@ -62,13 +62,13 @@ describe('BitgetIntegration', () => {
     
     it('既存のAPIクライアントがある場合は切断してから新しいクライアントを作成すること', () => {
       // 1回目の初期化
-      const firstClient = bitgetIntegration.initializeApiClient('spot');
+      const firstClient = bitgetIntegration.initializeApiClient('spot' as ProductType);
       
       // モックをリセット
       jest.clearAllMocks();
       
       // 2回目の初期化
-      const secondClient = bitgetIntegration.initializeApiClient('futures');
+      const secondClient = bitgetIntegration.initializeApiClient('futures' as ProductType);
       
       // 結果を検証
       expect(firstClient.disconnectWebSocket).toHaveBeenCalled();
@@ -83,7 +83,7 @@ describe('BitgetIntegration', () => {
       });
       
       // initializeApiClientを実行
-      const apiClient = bitgetIntegration.initializeApiClient('spot');
+      const apiClient = bitgetIntegration.initializeApiClient('spot' as ProductType);
       
       // 結果を検証
       expect(logger.error).toHaveBeenCalledWith(
@@ -103,7 +103,7 @@ describe('BitgetIntegration', () => {
   describe('getCurrentApiClient', () => {
     it('現在のAPIクライアントを取得できること', () => {
       // APIクライアントを初期化
-      const apiClient = bitgetIntegration.initializeApiClient('spot');
+      const apiClient = bitgetIntegration.initializeApiClient('spot' as ProductType);
       
       // getCurrentApiClientを実行
       const currentClient = bitgetIntegration.getCurrentApiClient();
@@ -124,7 +124,7 @@ describe('BitgetIntegration', () => {
   describe('disconnectApiClient', () => {
     it('APIクライアントを切断できること', () => {
       // APIクライアントを初期化
-      const apiClient = bitgetIntegration.initializeApiClient('spot');
+      const apiClient = bitgetIntegration.initializeApiClient('spot' as ProductType);
       
       // disconnectApiClientを実行
       bitgetIntegration.disconnectApiClient();
@@ -150,7 +150,7 @@ describe('BitgetIntegration', () => {
     
     it('切断中にエラーが発生した場合はログを出力すること', () => {
       // APIクライアントを初期化
-      const apiClient = bitgetIntegration.initializeApiClient('spot');
+      const apiClient = bitgetIntegration.initializeApiClient('spot' as ProductType);
       
       // disconnectWebSocketでエラーを発生させる
       (apiClient.disconnectWebSocket as jest.Mock).mockImplementation(() => {

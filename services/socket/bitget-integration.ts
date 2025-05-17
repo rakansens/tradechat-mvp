@@ -6,7 +6,7 @@
  * 変更: index.tsからBitgetAPI統合機能を分離
  */
 
-import { ExchangeType } from '../../types/api';
+import { ProductType } from '../../types/api';
 import { BitgetApiClient } from '../api/bitget/client';
 import { logger } from '../../utils/logger';
 import { IBitgetIntegration } from './interfaces';
@@ -20,11 +20,11 @@ export class BitgetIntegration implements IBitgetIntegration {
 
   /**
    * BitgetAPIクライアントを初期化
-   * @param exchangeType 取引タイプ（'spot'または'futures'）
+   * @param exchangeType 取引種別（'spot'または'futures'）
    * @param config 追加の設定オプション
    * @returns BitgetAPIクライアントインスタンス
    */
-  initializeApiClient(exchangeType: ExchangeType, config: Record<string, any> = {}): BitgetApiClient {
+  initializeApiClient(productType: ProductType, config: Record<string, any> = {}): BitgetApiClient {
     try {
       // 既存のAPIクライアントがあれば切断
       if (this.bitgetApi) {
@@ -32,12 +32,12 @@ export class BitgetIntegration implements IBitgetIntegration {
       }
       
       // 新しいAPIクライアントを作成
-      this.bitgetApi = new BitgetApiClient(config, exchangeType);
+      this.bitgetApi = new BitgetApiClient(config, productType);
       
       logger.info('BitgetApiClient初期化成功', {
         component: 'BitgetIntegration',
         action: 'initializeApiClient',
-        exchangeType
+        productType
       });
       
       return this.bitgetApi;
@@ -45,12 +45,12 @@ export class BitgetIntegration implements IBitgetIntegration {
       logger.error('BitgetApiClient初期化エラー:', error, {
         component: 'BitgetIntegration',
         action: 'initializeApiClient',
-        exchangeType,
+        productType,
         error
       });
       
       // エラーが発生した場合でもクライアントを返す（エラーハンドリングは呼び出し側で行う）
-      this.bitgetApi = new BitgetApiClient(config, exchangeType);
+      this.bitgetApi = new BitgetApiClient(config, productType);
       return this.bitgetApi;
     }
   }

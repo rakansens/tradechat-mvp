@@ -10,7 +10,7 @@ import { SocketService } from '../../../services/socket/socket-service';
 import { IWebSocketClient, ISubscriptionManager, IBitgetIntegration } from '../../../services/socket/interfaces';
 import { OrderBookData } from '../../../types/market';
 import { OHLCData } from '../../../types/chart';
-import { ExchangeType } from '../../../types/api';
+import { ProductType } from '../../../types/api';
 import { BitgetApiClient } from '../../../services/api/bitget/client';
 import { logger } from '../../../utils/logger';
 
@@ -106,7 +106,7 @@ describe('SocketService', () => {
   describe('initializeApiClient', () => {
     it('BitgetIntegrationのinitializeApiClientを呼び出すこと', () => {
       // initializeApiClientを実行
-      const result = socketService.initializeApiClient('spot');
+      const result = socketService.initializeApiClient('spot' as ProductType);
       
       // 結果を検証
       expect(mockBitgetIntegration.initializeApiClient).toHaveBeenCalledWith('spot', {});
@@ -118,7 +118,7 @@ describe('SocketService', () => {
       const config = { demo: true, reconnect: false };
       
       // initializeApiClientを実行
-      socketService.initializeApiClient('futures', config);
+      socketService.initializeApiClient('futures' as ProductType, config);
       
       // 結果を検証
       expect(mockBitgetIntegration.initializeApiClient).toHaveBeenCalledWith('futures', config);
@@ -158,7 +158,7 @@ describe('SocketService', () => {
       const callback = jest.fn();
       
       // subscribeOrderBookを実行
-      socketService.subscribeOrderBook('BTC/USDT', callback, 'futures');
+      socketService.subscribeOrderBook('BTC/USDT', callback, 'futures' as ProductType);
       
       // 結果を検証
       expect(mockSubscriptionManager.subscribeOrderBook).toHaveBeenCalledWith(
@@ -192,7 +192,7 @@ describe('SocketService', () => {
       const callback = jest.fn();
       
       // subscribeKlineを実行
-      socketService.subscribeKline('BTC/USDT', '1m', callback, 'futures');
+      socketService.subscribeKline('BTC/USDT', '1m', callback, 'futures' as ProductType);
       
       // 結果を検証
       expect(mockSubscriptionManager.subscribeKline).toHaveBeenCalledWith(

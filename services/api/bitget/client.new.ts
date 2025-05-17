@@ -9,7 +9,7 @@
  * 既存の実装との互換性を保ちながら、段階的なリファクタリングを可能にします。
  */
 
-import { ExchangeType, ProductType, BitgetCredentials } from '../../../types/api';
+import { ProductType, BitgetCredentials } from '../../../types/api';
 import { OHLCData } from '../../../types/chart';
 import { OrderBookData } from '../../../types/market';
 import { IRestApiClient, IWebSocketClient } from '../interfaces';
@@ -39,7 +39,6 @@ export class BitgetApiClient implements IBitgetApiClient {
   private wsUrl: string;
   private enableDemoMode: boolean;
   private productType: ProductType = 'spot';
-  private exchangeType: ExchangeType;
   private isInDemoMode: boolean = false;
   
   // コンポーネント
@@ -52,9 +51,8 @@ export class BitgetApiClient implements IBitgetApiClient {
    * BitgetApiClientのコンストラクタ
    * @param options クライアントオプション
    * @param productType 取引種別（'spot'または'futures'、デフォルト: 'spot'）
-   * @param exchangeType 取引所タイプ（デフォルト: 'bitget'）
    */
-  constructor(options: BitgetApiClientOptions = {}, productType: ProductType = 'spot', exchangeType: ExchangeType = 'bitget') {
+  constructor(options: BitgetApiClientOptions = {}, productType: ProductType = 'spot') {
     // API設定を環境設定から取得
     const apiConfig = getApiConfig('bitget');
     
@@ -63,15 +61,13 @@ export class BitgetApiClient implements IBitgetApiClient {
     this.wsUrl = options.wsUrl || apiConfig.wsUrl;
     this.enableDemoMode = options.enableDemoMode !== undefined ? options.enableDemoMode : apiConfig.enableDemoMode;
     this.productType = productType;
-    this.exchangeType = exchangeType;
     
     // コンポーネントの初期化
     this.restClient = new BitgetRestClient();
     this.wsClient = new BitgetWebSocketClient({
       wsUrl: this.wsUrl,
       credentials: this.credentials,
-      productType: this.productType,
-      exchangeType: this.exchangeType
+      productType: this.productType
     });
     this.dataTransformer = new BitgetDataTransformer();
     this.demoGenerator = new BitgetDemoGenerator();
@@ -79,7 +75,7 @@ export class BitgetApiClient implements IBitgetApiClient {
     logger.info('BitgetApiClient initialized', {
       component: 'BitgetApiClient',
       action: 'constructor',
-      exchangeType: this.exchangeType,
+      productType: this.productType,
       baseUrl: this.baseUrl
     });
   }
@@ -159,7 +155,7 @@ export class BitgetApiClient implements IBitgetApiClient {
     symbol: string,
     timeframe: string,
     limit: number = 100,
-    type: ExchangeType = 'bitget'
+    productType: ProductType = this.productType
   ): Promise<OHLCData[]> {
     try {
       logger.info(`Fetching candles for ${symbol} with timeframe ${timeframe}`, {
@@ -168,11 +164,11 @@ export class BitgetApiClient implements IBitgetApiClient {
         symbol,
         timeframe,
         limit,
-        type
+        productType
       });
       
       // REST APIクライアントを使用してデータを取得
-      return await this.restClient.fetchCandles(symbol, timeframe, limit);
+      return await this.restClient.fetchCandles(symbol, timeframe, limit, productType);
     } catch (error) {
       logger.error(`Failed to fetch candles: ${error}`, {
         component: 'BitgetApiClient',
@@ -207,7 +203,7 @@ export class BitgetApiClient implements IBitgetApiClient {
   async fetchOrderBook(
     symbol: string,
     limit: number = 20,
-    type: ExchangeType = 'bitget'
+    productType: ProductType = this.productType
   ): Promise<OrderBookData> {
     try {
       logger.info(`Fetching order book for ${symbol}`, {
@@ -215,11 +211,11 @@ export class BitgetApiClient implements IBitgetApiClient {
         action: 'fetchOrderBook',
         symbol,
         limit,
-        type
+        productType
       });
       
       // REST APIクライアントを使用してデータを取得
-      return await this.restClient.fetchOrderBook(symbol, limit, type);
+      return await this.restClient.fetchOrderBook(symbol, limit, productType);
     } catch (error) {
       logger.error(`Failed to fetch order book: ${error}`, {
         component: 'BitgetApiClient',

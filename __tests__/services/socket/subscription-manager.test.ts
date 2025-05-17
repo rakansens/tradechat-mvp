@@ -11,7 +11,7 @@ import { SubscriptionManager, CHANNEL } from '../../../services/socket/subscript
 import { IWebSocketClient } from '../../../services/socket/interfaces';
 import { OrderBookData } from '../../../types/market';
 import { OHLCData } from '../../../types/chart';
-import { ExchangeType } from '../../../types/api';
+import { ProductType } from '../../../types/api';
 
 // WebSocketClientとloggerのモジュールをモック
 jest.mock('../../../services/socket/websocket-client', () => ({

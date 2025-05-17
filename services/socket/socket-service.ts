@@ -9,7 +9,7 @@
 import { Socket } from 'socket.io-client';
 import { OrderBookData } from '../../types/market';
 import { OHLCData, Timeframe } from '../../types/chart';
-import { ExchangeType } from '../../types/api';
+import { ProductType } from '../../types/api';
 import { BitgetApiClient } from '../api/bitget/client';
 import { logger } from '../../utils/logger';
 import { 
@@ -71,7 +71,7 @@ export class SocketService implements ISocketService {
    * @param config 追加の設定オプション
    * @returns BitgetAPIクライアントインスタンス
    */
-  initializeApiClient(exchangeType: ExchangeType, config: Record<string, any> = {}): BitgetApiClient {
+  initializeApiClient(exchangeType: ProductType, config: Record<string, any> = {}): BitgetApiClient {
     return this.bitgetIntegration.initializeApiClient(exchangeType, config);
   }
 
@@ -93,7 +93,7 @@ export class SocketService implements ISocketService {
   subscribeOrderBook(
     symbol: string,
     callback: (data: OrderBookData) => void,
-    exchangeType: ExchangeType = 'bitget'
+    exchangeType: ProductType = 'spot'
   ): () => void {
     return this.subscriptionManager.subscribeOrderBook(symbol, callback, exchangeType);
   }
@@ -110,7 +110,7 @@ export class SocketService implements ISocketService {
     symbol: string,
     timeframe: Timeframe,
     callback: (data: OHLCData) => void,
-    exchangeType: ExchangeType = 'bitget'
+    exchangeType: ProductType = 'spot'
   ): () => void {
     return this.subscriptionManager.subscribeKline(symbol, timeframe, callback, exchangeType);
   }
