@@ -8,6 +8,7 @@ import {
   ApiResponse,
   ApiRequestConfig,
   AdaptiveApiRequestConfig,
+  ApiRequestOptions,
   CancellableRequest
 } from '@/types/api';
 import { IS_DEV, IS_BROWSER, getApiConfig } from './environment';
@@ -91,13 +92,13 @@ export async function apiRequest<T = any>(config: ApiRequestConfig): Promise<T> 
 export async function browserApiRequest<T = any>(
   endpoint: string,
   params: Record<string, any> = {},
-  options: Omit<Parameters<typeof apiRequest>[0], 'url' | 'params'> = {}
+  options: ApiRequestOptions = {}
 ): Promise<T> {
   // 修正: クエリパラメータをURLに埋め込むのではなく、axiosのparamsとして渡す
   return apiRequest<T>({
     url: endpoint,
     params: params,  // paramsをそのまま渡す
-    ...options as any // 型互換性のために一時的に any を使用
+    ...options
   });
 }
 
@@ -113,14 +114,14 @@ export async function serverApiRequest<T = any>(
   baseUrl: string,
   endpoint: string,
   params: Record<string, any> = {},
-  options: Omit<Parameters<typeof apiRequest>[0], 'url' | 'params'> = {}
+  options: ApiRequestOptions = {}
 ): Promise<T> {
   const url = `${baseUrl}${endpoint}`;
-  
+
   return apiRequest<T>({
     url,
     params,
-    ...options as any // 型互換性のために一時的に any を使用
+    ...options
   });
 }
 
