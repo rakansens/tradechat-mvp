@@ -414,7 +414,7 @@ export class CCXWSClient {
     };
     
     // トレードデータを購読
-    return this.subscribeTrades(symbol, handleTrade, exchangeType, exchange);
+    return this.subscribeTrades(symbol, handleTrade, exchangeProductType, exchange);
   }
 
   /**
