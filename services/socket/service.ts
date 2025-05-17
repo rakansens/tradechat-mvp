@@ -7,7 +7,7 @@ import { EventEmitter } from 'events';
 import { Socket } from 'socket.io-client';
 import { OrderBookData } from '../../types/market';
 import { OHLCData, Timeframe } from '../../types/chart';
-import { ExchangeType } from '@/types/api';
+import { ProductType } from '@/types/api';
 import { logger } from '../../utils/logger';
 import { ISocketService } from './interfaces';
 
@@ -29,11 +29,11 @@ class SocketService extends EventEmitter implements ISocketService {
   
   /**
    * BitgetAPIクライアントを初期化
-   * @param exchangeType 取引タイプ（'spot'または'futures'）
+   * @param productType 取引タイプ（'spot'または'futures'）
    * @param config 追加の設定オプション
    * @returns BitgetAPIクライアントインスタンス
    */
-  initializeApiClient(exchangeType: ExchangeType = 'bitget', config: Record<string, any> = {}): any {
+  initializeApiClient(productType: ProductType = 'spot', config: Record<string, any> = {}): any {
     // 実際の実装では適切なAPIクライアントを返す
     return {};
   }
@@ -139,14 +139,14 @@ class SocketService extends EventEmitter implements ISocketService {
   subscribeOrderBook(
     symbol: string,
     callback: (data: OrderBookData) => void,
-    exchangeType: ExchangeType = 'bitget'
+    productType: ProductType = 'spot'
   ): () => void {
     if (!this.connected) {
       logger.warn(`WebSocketが接続されていないため、オーダーブックの購読ができません: ${symbol}`, {
         component: 'SocketService',
         action: 'subscribeOrderBook',
         symbol,
-        exchangeType
+        productType
       });
       return () => {};
     }
@@ -163,7 +163,7 @@ class SocketService extends EventEmitter implements ISocketService {
       component: 'SocketService',
       action: 'subscribeOrderBook',
       symbol,
-      exchangeType
+      productType
     });
     
     return () => {
@@ -172,7 +172,7 @@ class SocketService extends EventEmitter implements ISocketService {
         component: 'SocketService',
         action: 'unsubscribeOrderBook',
         symbol,
-        exchangeType
+        productType
       });
     };
   }
@@ -184,7 +184,7 @@ class SocketService extends EventEmitter implements ISocketService {
     symbol: string,
     timeframe: Timeframe,
     callback: (data: OHLCData) => void,
-    exchangeType: ExchangeType = 'bitget'
+    productType: ProductType = 'spot'
   ): () => void {
     if (!this.connected) {
       logger.warn(`WebSocketが接続されていないため、ローソク足データの購読ができません: ${symbol} ${timeframe}`, {
@@ -192,7 +192,7 @@ class SocketService extends EventEmitter implements ISocketService {
         action: 'subscribeKline',
         symbol,
         timeframe,
-        exchangeType
+        productType
       });
       return () => {};
     }
@@ -210,7 +210,7 @@ class SocketService extends EventEmitter implements ISocketService {
       action: 'subscribeKline',
       symbol,
       timeframe,
-      exchangeType
+      productType
     });
     
     return () => {
@@ -220,7 +220,7 @@ class SocketService extends EventEmitter implements ISocketService {
         action: 'unsubscribeKline',
         symbol,
         timeframe,
-        exchangeType
+        productType
       });
     };
   }
