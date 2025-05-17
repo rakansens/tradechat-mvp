@@ -35,10 +35,10 @@ export const useSymbolSelectorLogic = ({
   const toggleFavorite = useRootStore(state => state.toggleFavorite);
   const fetchSymbols = useRootStore(state => state.fetchSymbols);
   const setProductType = useRootStore(state => state.setProductType);
-  const currentExchangeType = useRootStore(state => state.exchangeType);
+  const currentProductType = useRootStore(state => state.exchangeType);
 
   // 取引タイプの変更ハンドラー
-  const handleExchangeTypeChange = useCallback(
+  const handleProductTypeChange = useCallback(
     (type: ExchangeType) => {
       setProductType(type);
       if (onExchangeTypeChange) {
@@ -50,20 +50,20 @@ export const useSymbolSelectorLogic = ({
 
   // 再試行ハンドラー
   const retryFetch = useCallback(() => {
-    fetchSymbols(currentExchangeType);
-  }, [fetchSymbols, currentExchangeType]);
+    fetchSymbols(currentProductType);
+  }, [fetchSymbols, currentProductType]);
 
   // デフォルトの取引タイプが指定されていれば設定
   useEffect(() => {
-    if (defaultExchangeType && defaultExchangeType !== currentExchangeType) {
+    if (defaultExchangeType && defaultExchangeType !== currentProductType) {
       setProductType(defaultExchangeType);
     }
-  }, [defaultExchangeType, currentExchangeType, setProductType]);
+  }, [defaultExchangeType, currentProductType, setProductType]);
 
   return {
     symbols: { filteredSymbols: symbols, isLoading, error },
     actions: { toggleFavorite, retryFetch },
-    exchangeType: { current: currentExchangeType, handleChange: handleExchangeTypeChange }
+    productType: { current: currentProductType, handleChange: handleProductTypeChange }
   };
 };
 

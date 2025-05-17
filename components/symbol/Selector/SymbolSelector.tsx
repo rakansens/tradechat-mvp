@@ -149,7 +149,7 @@ export default function AdvancedSymbolSelector({
   const {
     symbols: { filteredSymbols, isLoading, error },
     actions: { toggleFavorite, retryFetch },
-    exchangeType: { current: exchangeType, handleChange: handleExchangeTypeChange }
+    productType: { current: productType, handleChange: handleProductTypeChange }
   } = useSymbolSelectorLogic({
     defaultExchangeType,
     onExchangeTypeChange
@@ -224,9 +224,9 @@ export default function AdvancedSymbolSelector({
   }, [selectedSymbol, toggleFavorite]);
 
   return (
-    <AdvancedSelectorView
-      exchangeType={exchangeType}
-      onExchangeTypeChange={handleExchangeTypeChange}
+      <AdvancedSelectorView
+        productType={productType}
+        onProductTypeChange={handleProductTypeChange}
       filterOptions={filterOptions}
       commonQuoteAssets={commonQuoteAssets}
       onSearch={handleSearch}

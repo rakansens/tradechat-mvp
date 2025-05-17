@@ -12,11 +12,11 @@ import { PopularList } from './PopularList';
 import { SymbolList } from './SymbolList';
 import type { FilterOptions } from '@/services/symbol';
 import type { SymbolInfo } from '@/types/common/symbol';
-import type { ExchangeType } from '@/types/constants/enums';
+import type { ProductType } from '@/types/constants/enums';
 
 interface AdvancedSelectorViewProps {
-  exchangeType: ExchangeType;
-  onExchangeTypeChange: (type: ExchangeType) => void;
+  productType: ProductType;
+  onProductTypeChange: (type: ProductType) => void;
 
   filterOptions: FilterOptions;
   commonQuoteAssets: string[];
@@ -40,8 +40,8 @@ interface AdvancedSelectorViewProps {
 }
 
 export const AdvancedSelectorView = ({
-  exchangeType,
-  onExchangeTypeChange,
+  productType,
+  onProductTypeChange,
   filterOptions,
   commonQuoteAssets,
   onSearch,
@@ -64,8 +64,8 @@ export const AdvancedSelectorView = ({
     <div className="w-full space-y-4">
       {/* 取引タイプの選択 */}
       <ExchangeTabs
-        currentExchangeType={exchangeType}
-        onExchangeTypeChange={onExchangeTypeChange}
+        currentProductType={productType}
+        onProductTypeChange={onProductTypeChange}
       />
 
       {/* 検索フィールド */}
