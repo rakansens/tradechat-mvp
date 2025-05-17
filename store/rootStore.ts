@@ -85,6 +85,9 @@ export interface RootActions {
   getWebSocketStatus: SocketSlice['getWebSocketStatus']
   // SymbolSliceActions
   setCurrentSymbol: SymbolSlice['setCurrentSymbol']
+  // 2025-05-17: ProductType対応の新しいメソッドを追加
+  setProductType: SymbolSlice['setProductType']
+  // 後方互換性のために古いメソッドも保持
   setExchangeType: SymbolSlice['setExchangeType']
   fetchSymbols: SymbolSlice['fetchSymbols']
   setFilterOptions: SymbolSlice['setFilterOptions']

@@ -10,12 +10,12 @@
 // 更新: 2025-05-31 - useChartDataStoreの参照を削除し、rootStoreを直接使用
 // WebSocket接続監視と副作用の管理
 
-import { ExchangeType, Timeframe, ExchangeProductType } from '@/types/constants/enums';
+import { ExchangeType, Timeframe, ProductType } from '@/types/constants/enums';
 import { logger } from '@/utils/common';
 import { getSocketService } from '@/services/socket';
 import { useRootStore } from '@/store/rootStore';
 import type { RootStore } from '@/store/rootStore';
-import { toExchangeProductType } from '@/utils/exchange';
+import { toProductType } from '@/utils/exchange';
 
 // 循環参照を避けるための前方参照型
 // @deprecated - ChartDataStoreTypeはrootStoreに統合済み
@@ -93,9 +93,17 @@ export const storeEmit = <T extends SocketEvent>(event: T, payload: SocketPayloa
       case 'exchangeType':
         // 取引タイプ変更イベント
         const exchangeType = payload as ExchangeType;
-        // ExchangeType を ExchangeProductType に変換
-        const productType = toExchangeProductType(exchangeType);
-        rootStore.setExchangeType(productType);
+        // ExchangeType を ProductType に変換
+        // 更新: 2025-05-17 - toExchangeProductTypeからtoProductTypeに変更
+        const productType = toProductType(exchangeType);
+        
+        // 新しいメソッドを使用
+        if (rootStore.setProductType) {
+          rootStore.setProductType(productType);
+        } else {
+          // 後方互換性のために古いメソッドも使用可能にしておく
+          rootStore.setExchangeType(productType);
+        }
         break;
         
       case 'timeframe':

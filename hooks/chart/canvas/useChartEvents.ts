@@ -9,7 +9,8 @@
 
 import { useEffect } from 'react';
 import { logger } from '@/utils/common';
-import type { ExchangeType } from '@/types/constants/enums';
+import type { ExchangeType, ProductType } from '@/types/constants/enums';
+import { isValidProductType, toProductType } from '@/utils/exchange';
 import type { Timeframe } from '@/types/chart';
 
 interface ChartEventProps {
@@ -17,7 +18,10 @@ interface ChartEventProps {
   currentSymbol: string;
   exchangeType: ExchangeType;
   setCurrentSymbol: (symbol: string, reason?: string) => void;
-  setExchangeType: (type: ExchangeType) => void;
+  // 更新: ProductType対応 (2025-05-17)
+  setExchangeType: (type: ExchangeType | ProductType) => void;
+  // 将来的に追加予定
+  // setProductType?: (type: ProductType) => void;
   
   // チャートデータ関連
   currentTimeFrame: Timeframe;
@@ -52,7 +56,8 @@ export const useChartEvents = ({
         timestamp: Date.now(),
         currentExchangeType: exchangeType,
         currentSymbol: symbol,
-        fromFuturesToSpot: type === 'spot' && (fromType === 'futures' || exchangeType === 'futures') ? '先物→現物の切り替え検出' : '他の切り替えパターン'
+        // exchangeTypeをProductTypeに変換して比較
+        fromFuturesToSpot: type === 'spot' && (fromType === 'futures' || toProductType(exchangeType) === 'futures') ? '先物→現物の切り替え検出' : '他の切り替えパターン'
       });
       
       if (type === 'spot' || type === 'futures') {
@@ -68,7 +73,8 @@ export const useChartEvents = ({
         });
         
         // 先物から現物への切り替えの場合、明示的に銘柄を先に設定
-        if (type === 'spot' && (fromType === 'futures' || exchangeType === 'futures')) {
+        // exchangeTypeをProductTypeに変換して比較
+        if (type === 'spot' && (fromType === 'futures' || toProductType(exchangeType) === 'futures')) {
           logger.info(`先物から現物への切り替えを検出、銘柄を先に設定: ${targetSymbol}`, {
             component: 'useChartEvents',
             action: 'handleInstrumentTypeChange',

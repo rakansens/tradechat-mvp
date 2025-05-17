@@ -17,7 +17,8 @@ interface ChartHeaderProps {
   currentSymbol: string;
   currentTimeFrame: Timeframe;
   chartType: ChartType;
-  exchangeType: ExchangeType;
+  exchangeType: ExchangeType; // 取引所タイプ
+  productType?: ProductType; // 取引種別(現物/先物)
   useRealTimeData: boolean;
   
   // イベントハンドラ
@@ -37,6 +38,7 @@ export const ChartHeader: React.FC<ChartHeaderProps> = ({
   currentTimeFrame,
   chartType,
   exchangeType,
+  productType = 'spot', // デフォルト値を設定
   useRealTimeData,
   handleTimeFrameChange,
   handleChartTypeChange,
@@ -117,15 +119,15 @@ export const ChartHeader: React.FC<ChartHeaderProps> = ({
         </div>
         
         {/* 取引種別選択 */}
-        <div className="exchange-type-selector">
+        <div className="product-type-selector">
           <button 
-            className={exchangeType === 'spot' ? 'active' : ''} 
+            className={(productType || 'spot') === 'spot' ? 'active' : ''} 
             onClick={() => handleExchangeTypeChange('spot' as ProductType)}
           >
             Spot
           </button>
           <button 
-            className={exchangeType === 'futures' ? 'active' : ''} 
+            className={(productType || 'spot') === 'futures' ? 'active' : ''} 
             onClick={() => handleExchangeTypeChange('futures' as ProductType)}
           >
             Futures

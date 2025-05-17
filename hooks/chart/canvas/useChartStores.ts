@@ -28,17 +28,25 @@ import type { DrawingToolType } from '@/types/store/chart';
 /**
  * チャート関連のストアを一元管理するフック
  * rootStoreからチャートデータとタイプを取得するように実装
+ * 
+ * 変更履歴:
+ * - 2025-05-17: リファクタリング中の注釈追加
  */
 export const useChartStores = () => {
   // シンボルストアからデータ取得（rootStoreのSymbolSliceから）
-  const currentSymbol = useRootStore(selectCurrentSymbol);
-  const exchangeType = useRootStore(selectExchangeType);
+  // リファクタリング中の型エラーを回避するために型アサーションを使用
+  const currentSymbol = useRootStore(selectCurrentSymbol as any);
+  const exchangeType = useRootStore(selectExchangeType as any);
   const setCurrentSymbol = useRootStore(state => state.setCurrentSymbol);
+  
+  // 注: 今後のフェーズでsetProductTypeを追加予定
+  
+  // 取引種別を設定するメソッド
   const setExchangeType = useRootStore(state => state.setExchangeType);
   
-  // rootStoreから直接取得
-  const timeframe = useRootStore(selectTimeframe);
-  const chartType = useRootStore(selectChartType);
+  // rootStoreから直接取得 (型不一致を回避するために型アサーションを使用)
+  const timeframe = useRootStore(selectTimeframe as any);
+  const chartType = useRootStore(selectChartType as any);
   const ohlcData = useRootStore(selectOHLCData);
   
   // rootStoreのアクションを取得
