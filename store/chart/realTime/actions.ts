@@ -4,7 +4,7 @@
 
 import type { OHLCData } from "@/types/chart"
 import type { ExchangeType } from "@/types/constants/enums"
-import type { BitgetApiClient } from "@/services/api/bitget/client"
+import type { BitgetApiClient } from "@/services/api/bitget/client.new"
 import { type RealTimeSliceActions, type RealTimeSlice, type RealTimeSliceState } from "./types"
 import { logger } from '@/utils/common'
 import { useRootStore } from "@/store/rootStore"

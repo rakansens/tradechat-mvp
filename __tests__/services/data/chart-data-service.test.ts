@@ -6,7 +6,7 @@
  * 更新: 2025-10-09: S-10.2フェーズ: ExchangeType型の一貫性を確保
  */
 
-import { BitgetApiClient } from '../../../services/api/bitget/client';
+import { BitgetApiClient } from '../../../services/api/bitget/client.new';
 import { chartDataService, getChartDataService, resetChartDataServiceForTesting } from '../../../services/data/chart-data-service';
 import { cacheService } from '../../../services/cache/service';
 import { getSocketService } from '../../../services/socket/index';
@@ -27,7 +27,7 @@ const PRODUCT_TYPES = {
 };
 
 // モック
-jest.mock('../../../services/api/bitget/client');
+jest.mock('../../../services/api/bitget/client.new');
 jest.mock('../../../services/cache/service');
 jest.mock('../../../services/socket/index');
 jest.mock('../../../utils/logger');

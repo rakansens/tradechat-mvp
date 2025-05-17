@@ -7,7 +7,7 @@
  */
 
 import { EventEmitter } from 'events';
-import { BitgetApiClient } from '../api/bitget/client';
+import { BitgetApiClient } from '../api/bitget/client.new';
 import { IOrderBookService } from '../api/interfaces';
 import { OrderBookData } from '../../types/chart';
 import { ExchangeType } from '@/types/api';

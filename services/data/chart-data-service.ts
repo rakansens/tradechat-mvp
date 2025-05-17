@@ -7,7 +7,7 @@
  */
 
 import { EventEmitter } from 'events';
-import { BitgetApiClient } from '../api/bitget/client';
+import { BitgetApiClient } from '../api/bitget/client.new';
 import { IChartDataService } from './interfaces';
 import { OHLCData, Timeframe } from '../../types/chart';
 import { ExchangeType } from '@/types/api';

@@ -10,10 +10,10 @@
 export * from './socket';
 
 // Bitget APIクライアント
-export * from './api/bitget/client';
+export * from './api/bitget/client.new';
 export * from './api/bitget/interfaces';
 export * from './api/bitget/rest-client';
-export * from './api/bitget/websocket-client';
+export * from './api/bitget/ws-client.new';
 export * from './api/bitget/data-transformer';
 
 // 新しいAPIサービスパス

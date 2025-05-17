@@ -5,7 +5,7 @@
  * ts-node test-bitget-api.ts
  */
 
-import { BitgetApiClient } from '../../services/api/bitget/client';
+import { BitgetApiClient } from '../../services/api/bitget/client.new';
 import { ProductType } from '@/types/api';
 import { OHLCData } from '../../types/chart';
 

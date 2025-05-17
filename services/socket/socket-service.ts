@@ -10,7 +10,7 @@ import { Socket } from 'socket.io-client';
 import { OrderBookData } from '../../types/market';
 import { OHLCData, Timeframe } from '../../types/chart';
 import { ProductType } from '@/types/api';
-import { BitgetApiClient } from '../api/bitget/client';
+import { BitgetApiClient } from '../api/bitget/client.new';
 import { logger } from '../../utils/logger';
 import { 
   ISocketService, 

@@ -20,7 +20,7 @@ import { SymbolInfo } from '../types/symbol';
 import { logger } from '@/utils/common';
 
 // 新しいBitgetApiClientをインポート
-import { BitgetApiClient as NewBitgetApiClient } from './api/bitget/client';
+import { BitgetApiClient as NewBitgetApiClient } from './api/bitget/client.new';
 
 // 先物取引で利用できない可能性が高い銘柄のパターン
 const UNSUPPORTED_FUTURES_PATTERNS = [

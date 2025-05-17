@@ -6,7 +6,7 @@
  */
 
 import { orderBookService } from '../../services/data/order-book-service';
-import { BitgetApiClient } from '../../services/api/bitget/client';
+import { BitgetApiClient } from '../../services/api/bitget/client.new';
 import { getSocketService } from '../../services/socket/service';
 import { OrderBookData } from '../../types/chart';
 
@@ -17,7 +17,7 @@ Object.defineProperty(global, 'window', {
 });
 
 // モック
-jest.mock('../../services/api/bitget/client');
+jest.mock('../../services/api/bitget/client.new');
 jest.mock('../../services/socket/service');
 
 describe('OrderBookService - ユニットテスト', () => {
