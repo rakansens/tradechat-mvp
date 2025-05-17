@@ -5,6 +5,8 @@ const { createServer } = require('http');
 const { parse } = require('url');
 const next = require('next');
 const { Server } = require('socket.io');
+// Import socket utilities written in TypeScript
+const { initSocketServer, emitSocketEvent } = require('./utils/serverSocket');
 const { v4: uuidv4 } = require('uuid');
 const fs = require('fs');
 const path = require('path');
@@ -139,34 +141,6 @@ const SocketDataBroadcaster = MockSocketDataBroadcaster;
  * @param {any} data 送信データ
  * @returns {Promise<{success: boolean, error?: string, clientCount?: number}>} 成功したかどうかと追加情報
  */
-global.emitSocketEvent = async (eventName, data) => {
-  try {
-    if (!global.io) {
-      console.warn(`Socket.IOサーバーが初期化されていません。イベント ${eventName} を送信できません。`);
-      return { success: false, error: 'Socket.IOサーバーが初期化されていません' };
-    }
-
-    const connectedClients = global.io.sockets.sockets.size;
-    
-    if (connectedClients === 0) {
-      console.warn(`接続中のクライアントがありません。イベント ${eventName} を送信できません。`);
-      return { success: false, error: '接続中のクライアントがありません', clientCount: 0 };
-    }
-
-    // 全クライアントにイベントを送信
-    global.io.emit(eventName, data);
-
-    logger.info(`イベント ${eventName} を ${connectedClients} クライアントに送信しました`);
-
-    return { success: true, clientCount: connectedClients };
-  } catch (error) {
-    console.error(`イベント ${eventName} の送信中にエラーが発生しました:`, error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : '不明なエラー'
-    };
-  }
-};
 
 // 環境変数の設定
 const dev = process.env.NODE_ENV !== 'production';
@@ -287,9 +261,13 @@ app.prepare().then(() => {
   });
   
   logger.info('Socket.IOサーバーを初期化中...');
-  
+
   // グローバル変数としてioを設定（APIエンドポイントからアクセスできるように）
   global.io = io;
+  // initialise socket utils with the created io instance
+  initSocketServer(server, io);
+  // expose helper for existing routes
+  global.emitSocketEvent = emitSocketEvent;
   
   logger.info('Socket.IOサーバーが正常に初期化されました');
   logger.info(`現在の接続数: ${io.engine.clientsCount}`);
