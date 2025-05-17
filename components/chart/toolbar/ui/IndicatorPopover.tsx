@@ -31,9 +31,9 @@ interface IndicatorPopoverProps {
   // インジケーター関連
   isIndicatorActive: (indicator: IndicatorType) => boolean;
   toggleIndicator: (indicator: IndicatorType) => void;
-  
+
   // 描画ツール関連
-  activeDrawingTools: DrawingToolType[];
+  activeDrawingTool: DrawingToolType | null;
   toggleDrawingTool: (tool: DrawingToolType) => void;
   clearAllDrawingTools: () => void;
 }
@@ -44,7 +44,7 @@ interface IndicatorPopoverProps {
 const IndicatorPopover = memo(function IndicatorPopover({
   isIndicatorActive,
   toggleIndicator,
-  activeDrawingTools,
+  activeDrawingTool,
   toggleDrawingTool,
   clearAllDrawingTools
 }: IndicatorPopoverProps) {
@@ -83,7 +83,7 @@ const IndicatorPopover = memo(function IndicatorPopover({
             <div key={tool.id} className="flex items-center space-x-2">
               <Checkbox
                 id={`tool-${tool.id}`}
-                checked={activeDrawingTools.includes(tool.id as DrawingToolType)}
+                checked={activeDrawingTool === (tool.id as DrawingToolType)}
                 onCheckedChange={() => toggleDrawingTool(tool.id as DrawingToolType)}
               />
               <Label

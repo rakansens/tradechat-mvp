@@ -54,7 +54,7 @@ export const useChartStores = () => {
   
   // モックデータとダミー関数（実際のアプリケーションでは実装が必要）
   const activeIndicators: IndicatorType[] = [];
-  const activeDrawingTools: DrawingToolType[] = [];
+  const activeDrawingTool: DrawingToolType | null = null;
   const toggleIndicator = (indicator: IndicatorType) => {};
   const toggleDrawingTool = (tool: DrawingToolType) => {};
   const clearAllIndicators = () => {};
@@ -91,7 +91,7 @@ export const useChartStores = () => {
     clearAllIndicators,
     
     // 描画ツール関連
-    activeDrawingTools,
+    activeDrawingTool,
     toggleDrawingTool,
     clearAllDrawingTools,
     

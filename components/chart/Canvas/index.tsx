@@ -69,7 +69,7 @@ export default function ChartCanvas() {
   // 型の互換性を確保するために拡張型定義を使用
   const chartType = useRootStore(selectChartType as any) as ExtendedChartType;
   const activeIndicators = useRootStore(selectActiveIndicators);
-  const activeDrawingTools = useRootStore(selectActiveDrawingTool);
+  const activeDrawingTool = useRootStore(selectActiveDrawingTool);
   
   // チャートタイプが変更されたときにシリーズを切り替え
   useEffect(() => {
@@ -203,9 +203,9 @@ export default function ChartCanvas() {
     logger.debug('描画ツールを更新しました', {
       component: 'ChartCanvas',
       action: 'updateDrawings',
-      activeDrawingTools
+      activeDrawingTool
     });
-  }, [data, activeDrawingTools, chartInstanceRef, seriesRefs, updateDrawings]);
+  }, [data, activeDrawingTool, chartInstanceRef, seriesRefs, updateDrawings]);
 
   return (
     <div

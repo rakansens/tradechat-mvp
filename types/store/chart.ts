@@ -101,7 +101,7 @@ export interface IndicatorState {
  */
 export interface DrawingToolState {
   // 状態
-  activeDrawingTools: DrawingToolType[];
+  activeDrawingTool: DrawingToolType | null;
   
   // アクション
   toggleDrawingTool: (tool: DrawingToolType) => void;

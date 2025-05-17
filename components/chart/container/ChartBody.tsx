@@ -23,7 +23,7 @@ interface ChartBodyProps {
   exchangeType: ExchangeType;
   chartData: OHLCData[] | null;
   activeIndicators: ActiveIndicator[];
-  activeDrawingTools: string[];
+  activeDrawingTool: string | null;
 }
 
 /**
@@ -39,7 +39,7 @@ export const ChartBody: React.FC<ChartBodyProps> = ({
   exchangeType,
   chartData,
   activeIndicators,
-  activeDrawingTools
+  activeDrawingTool
 }) => {
   return (
     <div className="chart-body">
@@ -57,11 +57,8 @@ export const ChartBody: React.FC<ChartBodyProps> = ({
           }
         </p>
         <p>
-          Active Drawing Tools: 
-          {activeDrawingTools.length === 0 
-            ? ' None' 
-            : ` ${activeDrawingTools.join(', ')}`
-          }
+          Active Drawing Tool:
+          {activeDrawingTool ? ` ${activeDrawingTool}` : ' None'}
         </p>
       </div>
     </div>

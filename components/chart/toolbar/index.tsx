@@ -136,8 +136,8 @@ const ChartToolbar = memo(function ChartToolbar({
           <IndicatorPopover
             isIndicatorActive={indicatorStore.isIndicatorActive}
             toggleIndicator={indicatorStore.toggleIndicator}
-            activeDrawingTools={
-              drawingToolStore.activeDrawingTools as DrawingToolState['activeDrawingTools']
+            activeDrawingTool={
+              drawingToolStore.activeDrawingTool as DrawingToolState['activeDrawingTool']
             }
             toggleDrawingTool={drawingToolStore.toggleDrawingTool}
             clearAllDrawingTools={drawingToolStore.clearAllDrawingTools}

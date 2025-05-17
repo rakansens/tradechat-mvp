@@ -42,7 +42,7 @@ export function useDrawingTools(): UseDrawingToolsReturn {
   const [fibonacciLines, setFibonacciLines] = useState<FibonacciLineHandles>({});
   
   // 描画ツールストアから状態を取得
-  const activeDrawingTools = useRootStore(selectActiveDrawingTool);
+  const activeDrawingTool = useRootStore(selectActiveDrawingTool);
   
   // 描画ツールの更新
   const updateDrawings = useCallback((
@@ -53,7 +53,7 @@ export function useDrawingTools(): UseDrawingToolsReturn {
     if (!chartInstance || !mainSeries || !data || data.length === 0) return;
     
     // フィボナッチリトレースメントの表示切替
-    if (activeDrawingTools?.includes('fibonacci')) {
+    if (activeDrawingTool === 'fibonacci') {
       // データから高値と安値を取得
       const sortedData = [...data].sort((a, b) => a.time - b.time);
       const last30Data = sortedData.slice(-30); // 直近30本のデータを使用
@@ -101,7 +101,7 @@ export function useDrawingTools(): UseDrawingToolsReturn {
         });
       }
     }
-  }, [activeDrawingTools, fibonacciLines]);
+  }, [activeDrawingTool, fibonacciLines]);
   
   // すべての描画ツールをクリア
   const clearAllDrawings = useCallback((mainSeries: ISeriesApi<any>) => {
@@ -123,10 +123,10 @@ export function useDrawingTools(): UseDrawingToolsReturn {
     // 外部からupdateDrawingsを呼び出す必要がある
     logger.debug('描画ツールの状態が変更されました', {
       component: 'useDrawingTools',
-      action: 'activeDrawingToolsChanged',
-      activeTools: activeDrawingTools
+      action: 'activeDrawingToolChanged',
+      activeTool: activeDrawingTool
     });
-  }, [activeDrawingTools]);
+  }, [activeDrawingTool]);
   
   return {
     drawingHandles: {

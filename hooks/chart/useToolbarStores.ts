@@ -92,7 +92,7 @@ export function useToolbarStores() {
   };
 
   // DrawingToolStoreから状態とアクションを取得（RootStoreを使用）
-  const activeDrawingTools = useRootStore(selectActiveDrawingTool);
+  const activeDrawingTool = useRootStore(selectActiveDrawingTool);
   const toggleDrawingTool = useRootStore(state => state.toggleDrawingTool);
   const clearAllDrawingTools = useRootStore(state => state.clearAllDrawingTools);
 
@@ -144,7 +144,7 @@ export function useToolbarStores() {
     
     // 描画ツール関連
     drawingToolStore: {
-      activeDrawingTools,
+      activeDrawingTool,
       toggleDrawingTool,
       clearAllDrawingTools
     },
