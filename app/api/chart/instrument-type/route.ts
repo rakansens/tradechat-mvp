@@ -5,11 +5,9 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { logger } from '@/utils/common';
+import { validateRequest, emitEventAndRespond } from '../helpers';
 
 // server.jsで定義されたグローバル関数の型定義
-declare global {
-  var emitSocketEvent: (eventName: string, data: any) => Promise<{ success: boolean; error?: string; clientCount?: number }>;
-}
 
 // リクエストボディのバリデーションスキーマ
 const instrumentTypeSchema = z.object({
@@ -35,33 +33,12 @@ export async function POST(request: Request) {
       headers: Object.fromEntries(request.headers)
     });
     
-    const body = await request.json();
-    
-    // リクエストボディをログに記録
-    logger.info(`取引タイプ変更APIリクエストボディ:`, {
-      component: 'api/chart/instrument-type',
-      action: 'POST',
-      body
-    });
-    
-    // バリデーション
-    const result = instrumentTypeSchema.safeParse(body);
-    if (!result.success) {
-      logger.warn('取引タイプ変更リクエストのバリデーションエラー', {
-        component: 'api/chart/instrument-type',
-        action: 'POST',
-        errors: result.error.format()
-      });
-      return NextResponse.json(
-        {
-          success: false,
-          error: '無効な取引タイプです。"spot"または"futures"を指定してください'
-        },
-        { status: 400 }
-      );
+    const validation = await validateRequest(request, instrumentTypeSchema, '無効な取引タイプです。"spot"または"futures"を指定してください');
+    if (!validation.success) {
+      return validation.response;
     }
-    
-    const { type, symbol } = result.data;
+
+    const { type, symbol } = validation.data;
     const fromType = type === 'spot' ? 'futures' : 'spot'; // 元の取引タイプを明示的に指定
 
     logger.info(`取引タイプ変更APIが呼び出されました: ${type} (from: ${fromType}, symbol: ${symbol || '指定なし'})`, {
@@ -72,38 +49,17 @@ export async function POST(request: Request) {
       symbol
     });
 
-    // server.jsで定義されたグローバル関数を使用してイベントを送信
-    // 元の取引タイプと銘柄も含めて送信
-    const socketResult = await global.emitSocketEvent('instrument-type-change', { type, fromType, symbol });
-
-    if (socketResult.success) {
-      logger.info(`取引タイプ変更イベントを送信しました: ${type}`, {
-        component: 'api/chart/instrument-type',
-        action: 'POST',
-        clientCount: socketResult.clientCount,
-        data: { type, fromType }
-      });
-      return NextResponse.json({
-        success: true,
+    return await emitEventAndRespond(
+      'instrument-type-change',
+      { type, fromType, symbol },
+      {
         message: `取引タイプを${type === 'spot' ? '現物' : '先物'}に変更しました`,
         type,
         fromType,
         symbol
-      });
-    } else {
-      logger.warn(`取引タイプ変更イベントの送信に失敗しました: ${type}`, {
-        component: 'api/chart/instrument-type',
-        action: 'POST',
-        error: socketResult.error
-      });
-      return NextResponse.json(
-        {
-          success: false,
-          error: socketResult.error || '取引タイプ変更イベントの送信に失敗しました'
-        },
-        { status: 500 }
-      );
-    }
+      },
+      '取引タイプ変更イベントの送信に失敗しました'
+    );
   } catch (error) {
     logger.error('取引タイプ変更APIエラー:', error, {
       component: 'api/chart/instrument-type',
