@@ -221,7 +221,7 @@ describe('取引タイプ変更フロー', () => {
     });
     
     // 動的にモジュールを再ロードしてイベントリスナーを確保
-    await import('../../../utils/socketClient');
+    await import('../../../utils/socketClient.js');
     
     const instrumentTypeChangeHandler = socketEventHandlers['instrument-type-change'];
     expect(instrumentTypeChangeHandler).toBeDefined(); // Ensure handler is defined before calling
