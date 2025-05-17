@@ -27,7 +27,17 @@ export interface SymbolInfo {
   id: string;            // 一意のID
   symbol: string;        // 銘柄シンボル（例: "BTC/USDT"）
   baseCoin: string;      // 基軸通貨（例: "BTC"）
+  /**
+   * @deprecated baseCoin を使用してください
+   * レガシー互換のために保持
+   */
+  baseAsset?: string;    // 基軸通貨のエイリアス
   quoteCoin: string;     // 取引通貨（例: "USDT"）
+  /**
+   * @deprecated quoteCoin を使用してください
+   * レガシー互換のために保持
+   */
+  quoteAsset?: string;   // 取引通貨のエイリアス
   minOrderSize: number;  // 最小注文量
   pricePrecision: number; // 価格精度
   quantityPrecision: number; // 数量精度
