@@ -6,6 +6,7 @@
   "config": {
     "onnxruntime_skip_download": "true"
   },
+  "packageManager": "pnpm@8.15.6",
   "scripts": {
     "dev": "node server.js",
     "dev:full": "concurrently \"node server.js\" \"MASTRA_PORT=4112 mastra dev\"",
@@ -16,9 +17,9 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit --skipLibCheck",
     "typecheck:test": "tsc -p tsconfig.test.json --noEmit --skipLibCheck",
-    "typecheck:all": "npm run typecheck && npm run typecheck:test",
+    "typecheck:all": "pnpm typecheck && pnpm typecheck:test",
     "test": "jest",
-    "pretest": "npm run typecheck:test",
+    "pretest": "pnpm typecheck:test",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "circular": "madge --circular store",
@@ -26,7 +27,7 @@
     "supabase:push": "supabase db push",
     "supabase:lint": "supabase db lint --level=warning",
     "supabase:types": "supabase gen types typescript --local > types/generated/supabase.ts",
-    "test:db": "npm run test -- --runInBand",
+    "test:db": "pnpm test -- --runInBand",
     "codemod": "jscodeshift -t tools/codemods/replace-deprecated-imports.ts --parser=tsx --extensions=ts,tsx"
   },
   "dependencies": {
