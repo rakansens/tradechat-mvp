@@ -57,10 +57,10 @@ describe('OrderBookService - ユニットテスト', () => {
     (BitgetApiClient as jest.Mock).mockImplementation(() => mockInstance);
     
     // オーダーブックデータを取得
-    const result = await orderBookService.getOrderBook('BTC/USDT', 'spot');
+    const result = await orderBookService.getOrderBook('BTC/USDT', 'bitget');
     
     // 検証 - 新しいAPIのメソッド名に合わせて修正
-    expect(mockFetchOrderBook).toHaveBeenCalledWith('BTC/USDT', expect.any(Number), 'spot');
+    expect(mockFetchOrderBook).toHaveBeenCalledWith('BTC/USDT', expect.any(Number), 'bitget');
     expect(result).toEqual(mockOrderBookData);
   });
   
@@ -130,13 +130,13 @@ describe('OrderBookService - ユニットテスト', () => {
     });
     
     // モック関数を呼び出す
-    mockSubscribeOrderBookRealtime('BTC/USDT', callbackMock, 'spot');
+    mockSubscribeOrderBookRealtime('BTC/USDT', callbackMock, 'bitget');
     
     // 検証
     expect(mockSocketService.subscribeOrderBook).toHaveBeenCalledWith(
       'BTC/USDT',
       callbackMock,
-      'spot'
+      'bitget'
     );
   });
   
@@ -150,9 +150,9 @@ describe('OrderBookService - ユニットテスト', () => {
     // @ts-ignore - プライベートプロパティにアクセスするため
     orderBookService.subscriptions = new Map();
     // @ts-ignore - プライベートプロパティにアクセスするため
-    orderBookService.subscriptions.set('orderbook-BTC/USDT-spot', unsubscribeMock1);
+    orderBookService.subscriptions.set('orderbook-BTC/USDT-bitget', unsubscribeMock1);
     // @ts-ignore - プライベートプロパティにアクセスするため
-    orderBookService.subscriptions.set('orderbook-ETH/USDT-spot', unsubscribeMock2);
+    orderBookService.subscriptions.set('orderbook-ETH/USDT-bitget', unsubscribeMock2);
     
     // すべての購読を解除
     orderBookService.unsubscribeAll();
@@ -168,7 +168,7 @@ describe('OrderBookService - ユニットテスト', () => {
 describe('OrderBookService - 統合テスト', () => {
   // このテストはスキップされます（CIでは実行されません）
   it.skip('orderBookServiceがオーダーブックデータを取得できる', async () => {
-    const result = await orderBookService.getOrderBook('BTC/USDT', 'spot');
+    const result = await orderBookService.getOrderBook('BTC/USDT', 'bitget');
     
     // 検証
     expect(result).toBeDefined();

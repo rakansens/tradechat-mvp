@@ -377,10 +377,10 @@ describe('BitgetRestClient', () => {
       const spy = jest.spyOn(client, 'fetchOrderBook');
       
       // getOrderBookの実行
-      await client.getOrderBook('BTC/USDT', 'spot');
+      await client.getOrderBook('BTC/USDT', 'bitget');
       
       // fetchOrderBookが正しく呼び出されたか確認
-      expect(spy).toHaveBeenCalledWith('BTC/USDT', 100, 'spot');
+      expect(spy).toHaveBeenCalledWith('BTC/USDT', 100, 'bitget');
     });
   });
 
