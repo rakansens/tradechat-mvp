@@ -6,9 +6,12 @@
       "esnext"
     ],
     "types": [
-      "node",
-      "jest"
-    ],
+        "node",
+        "jest"
+      ],
+      "typeRoots": [
+        "./types"
+      ],
     "allowJs": true,
     "target": "ES6",
     "skipLibCheck": true,
@@ -38,7 +41,8 @@
     "**/*.tsx",
     ".next/types/**/*.ts"
   ],
-  "exclude": [
-    "node_modules"
-  ]
-}
+    "exclude": [
+      "node_modules",
+      "__tests__"
+    ]
+  }
