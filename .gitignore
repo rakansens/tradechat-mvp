@@ -33,3 +33,9 @@ next-env.d.ts
 /public/hybrid-analysis/
 /public/*-analysis/
 coverage/
+
+# sqlite database
+memory.db*
+
+# log files
+*.log
