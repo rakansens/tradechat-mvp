@@ -19,6 +19,13 @@ import { logger } from '../../utils/common'
 import { subscribeToConversationMessages } from '../../lib/supabase/features/conversations'
 import { useToast } from '../../components/ui/use-toast'
 import { createEmptyConversation } from './utils'
+import type { OpenEntry } from '../../types/entry'
+
+// ルートストアから注入される依存関係
+export interface ChatActionDeps {
+  getOhlcData: () => any[]
+  setPendingEntry: (entry: OpenEntry) => void
+}
 
 // チャットスライスのアクション定義
 export interface ChatSliceActions {
@@ -55,14 +62,10 @@ export interface ChatSliceActions {
   setConversationConnectionStatus: (conversationId: string, status: ConnectionStatus, error?: string | null) => void
 }
 
-// チャートとエントリーストアからのデータ参照のためのヘルパー関数
-const getChartData = () => {
+// チャートデータを取得するヘルパー関数
+const getChartData = (deps: ChatActionDeps) => {
   try {
-    // 動的にrootStoreをインポート
-    const rootStore = require('../rootStore');
-    // ルートストアからチャートデータを取得
-    const { ohlcData } = rootStore.useRootStore.getState();
-    return ohlcData;
+    return deps.getOhlcData();
   } catch (error) {
     logger.error('チャートデータの取得に失敗しました', {
       component: 'ChatActions',
@@ -79,7 +82,8 @@ const DEFAULT_CONVERSATION_ID = 'default';
 // チャットスライスのアクション作成関数
 export const createChatActions = (
   set: (fn: (state: ChatSliceState) => void) => void,
-  get: () => ChatSliceState
+  get: () => ChatSliceState,
+  deps: ChatActionDeps
 ): ChatSliceActions => ({
   // 基本アクション - 後方互換性のために残す
   setMessages: (messages) => {
@@ -440,8 +444,7 @@ export const createChatActions = (
     // 会話が切り替わったら、自動的に新しい会話のメッセージ購読を開始
     // 循環参照を避けるため、setTimeout で非同期に実行
     setTimeout(() => {
-      const rootStore = require('../rootStore');
-      const actions = rootStore.useRootStore.getState();
+      const actions = get() as unknown as ChatSliceActions;
       actions.startMessageSubscription(conversationId);
     }, 0);
   },
@@ -554,7 +557,7 @@ export const createChatActions = (
     const conversationId: string = activeConversationId || DEFAULT_CONVERSATION_ID;
     
     // OHLCデータを取得
-    const { ohlcData } = getChartData() || { ohlcData: [] }
+    const { ohlcData } = getChartData(deps) || { ohlcData: [] }
     
     // チャートデータが必要
     if (!ohlcData || ohlcData.length === 0) {
@@ -630,15 +633,14 @@ export const createChatActions = (
     
     // エントリー情報を設定
     try {
-      const rootStore = require('../rootStore')
-      rootStore.useRootStore.getState().setPendingEntry({
+      deps.setPendingEntry({
         id: Date.now().toString(),
-        userId: 'currentUser',  // userIdフィールドを追加
-        side: "buy",
-        symbol: "BTC/USD",
+        userId: 'currentUser',
+        side: 'buy',
+        symbol: 'BTC/USD',
         price: 60500,
         time: new Date().toISOString(),
-        status: "open",
+        status: 'open',
         takeProfit: 62000,
         stopLoss: 59000,
       })

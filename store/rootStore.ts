@@ -27,7 +27,9 @@ import { ChartSlice, createChartSlice } from './chart'
 import type { ChartSliceState } from './chart/state'
 import { EntrySlice, createEntrySlice } from './entry'
 import type { EntrySliceState } from './entry/state'
+import type { EntrySliceActions } from './entry/actions'
 import { ChatSlice, createChatSlice } from './chat'
+import type { ChatActionDeps } from './chat/actions'
 import type { ChatSliceState } from './chat/state'
 import { UISlice, createUISlice } from './ui'
 import type { UISliceState } from './ui/state'
@@ -288,7 +290,12 @@ export const useRootStore = create<RootStore>()(
           
           const chatSlice = createChatSlice(
             (fn) => immerSet<ChatSliceState>(fn),
-            () => getState<ChatSliceState>()
+            () => getState<ChatSliceState>(),
+            {
+              getOhlcData: () => getState<ChartSliceState>().ohlcData,
+              setPendingEntry: (entry) =>
+                getState<EntrySlice & EntrySliceActions>().setPendingEntry(entry),
+            }
           );
           
           const uiSlice = createUISlice(

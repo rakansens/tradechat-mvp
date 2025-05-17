@@ -64,16 +64,17 @@ export interface OrderBookState {
 // ポーリング間隔（ミリ秒）
 const POLLING_INTERVAL = 30000; // 30秒
 
+export interface OrderBookStoreDeps {
+  getRootState: () => { currentSymbol: string; exchangeType: ExchangeType };
+  subscribeRootStore: (listener: (state: any) => void) => () => void;
+}
+
 // Zustandストア作成
-export const useOrderBookStore = create<OrderBookState>()(
-  devtools(
-    (set, get) => {
-      // useRootStoreを関数内で取得（循環参照を避けるため）
-      const getRootStore = () => {
-        // 必要な時にだけインポート
-        const { useRootStore } = require('../rootStore');
-        return useRootStore;
-      };
+export const createUseOrderBookStore = (
+  deps: OrderBookStoreDeps
+) =>
+  create<OrderBookState>()(
+    devtools((set, get) => {
 
       return {
       // 初期状態 - オーダーブック関連
@@ -98,9 +99,9 @@ export const useOrderBookStore = create<OrderBookState>()(
       // オーダーブックデータを取得
       fetchOrderBook: async (symbol?: string, exchangeType?: ExchangeType) => {
         // 最新の状態を取得
-          const rootStore = getRootStore().getState();
-          const finalSymbol = symbol || rootStore.currentSymbol;
-          const finalExchangeType = exchangeType || rootStore.exchangeType;
+          const root = deps.getRootState();
+          const finalSymbol = symbol || root.currentSymbol;
+          const finalExchangeType = exchangeType || root.exchangeType;
         
         // シンボルが空の場合は何もしない
         if (!finalSymbol) {
@@ -152,9 +153,9 @@ export const useOrderBookStore = create<OrderBookState>()(
         get().stopOrderBookPolling();
         
         // シンボルストアから現在のシンボルを取得
-          const rootStore = getRootStore().getState();
-          const symbol = rootStore.currentSymbol;
-          const exchangeType = rootStore.exchangeType;
+          const root = deps.getRootState();
+          const symbol = root.currentSymbol;
+          const exchangeType = root.exchangeType;
         
         // シンボルが空の場合はポーリングを開始しない
         if (!symbol) {
@@ -192,9 +193,9 @@ export const useOrderBookStore = create<OrderBookState>()(
           }
           
           // 最新の状態を取得
-            const rootStore = getRootStore().getState();
-            const currentSymbol = rootStore.currentSymbol;
-            const currentExchangeType = rootStore.exchangeType;
+            const root = deps.getRootState();
+            const currentSymbol = root.currentSymbol;
+            const currentExchangeType = root.exchangeType;
           
           // シンボルが変更されている場合はポーリングを停止
           if (symbol !== currentSymbol) {
@@ -286,9 +287,9 @@ export const useOrderBookStore = create<OrderBookState>()(
         get().unsubscribeOrderBookWebSocket();
         
         // シンボルストアから現在のシンボルを取得
-          const rootStore = getRootStore().getState();
-          const symbol = rootStore.currentSymbol;
-          const exchangeType = rootStore.exchangeType;
+          const root = deps.getRootState();
+          const symbol = root.currentSymbol;
+          const exchangeType = root.exchangeType;
         
         // シンボルが空の場合は購読しない
         if (!symbol) {
@@ -359,7 +360,10 @@ export const useOrderBookStore = create<OrderBookState>()(
 
 // シンボルストアの変更を監視して自動的に更新する
 // コンポーネントのマウント時に一度だけ実行される初期化コード
-export const initializeSymbolStoreSubscription = () => {
+export const initializeSymbolStoreSubscription = (
+  deps: OrderBookStoreDeps,
+  store: ReturnType<typeof createUseOrderBookStore>
+) => {
   // サーバーサイドレンダリング中は実行しない
   if (typeof window === 'undefined') {
     logger.info('SSRモードでは購読を初期化しません', {
@@ -370,15 +374,9 @@ export const initializeSymbolStoreSubscription = () => {
   }
   
   try {
-    // useRootStoreを遅延インポート（importを非同期で使用）
-    // 循環参照を避けるため、setTimeout内で実行
     setTimeout(() => {
-      // 必要な時だけ動的にインポート
-      const rootStore = require('../rootStore');
-      
-    // シンボルストアを購読
-      const unsubscribe = rootStore.useRootStore.subscribe((state: any) => {
-      const orderBookStore = useOrderBookStore.getState();
+      const unsubscribe = deps.subscribeRootStore((state: any) => {
+        const orderBookStore = store.getState();
       
       // シンボルが変更された場合はオーダーブックを更新
       if (state.currentSymbol) {
@@ -395,7 +393,7 @@ export const initializeSymbolStoreSubscription = () => {
         // オーダーブックを取得
         orderBookStore.fetchOrderBook(state.currentSymbol, state.exchangeType);
       }
-    });
+      });
     }, 0);
     
     // 購読解除関数は返さない（アプリケーションのライフサイクル全体で有効）
@@ -415,5 +413,4 @@ export const initializeSymbolStoreSubscription = () => {
 // 直接初期化せず、エクスポートした関数をクライアントコンポーネントから呼び出す
 // initializeSymbolStoreSubscription();
 
-// デフォルトエクスポート
-export default useOrderBookStore;
+// デフォルトエクスポートは使用側で生成してください
