@@ -288,7 +288,8 @@ export const useRootStore = create<RootStore>()(
           
           const chatSlice = createChatSlice(
             (fn) => immerSet<ChatSliceState>(fn),
-            () => getState<ChatSliceState>()
+            () => getState<ChatSliceState>(),
+            api
           );
           
           const uiSlice = createUISlice(
