@@ -7,20 +7,20 @@ import { BitgetApiClient } from '../../../../services/api/bitget/client';
 import { OHLCData } from '../../../../types/chart';
 
 // モック設定
-const mock = new MockAdapter(axios);
-const mockConsoleLog = jest.spyOn(console, 'log').mockImplementation();
-const mockConsoleError = jest.spyOn(console, 'error').mockImplementation();
+const AxiosMock = new MockAdapter(axios);
+const MockConsoleLog = jest.spyOn(console, 'log').mockImplementation();
+const MockConsoleError = jest.spyOn(console, 'error').mockImplementation();
 
 describe('BitgetApiClient', () => {
   beforeEach(() => {
-    mock.reset();
+    AxiosMock.reset();
     jest.clearAllMocks();
   });
 
   afterAll(() => {
-    mock.restore();
-    mockConsoleLog.mockRestore();
-    mockConsoleError.mockRestore();
+    AxiosMock.restore();
+    MockConsoleLog.mockRestore();
+    MockConsoleError.mockRestore();
   });
 
   describe('fetchCandles', () => {
@@ -32,7 +32,7 @@ describe('BitgetApiClient', () => {
       ];
       
       // モックの設定
-      mock.onGet().reply(200, mockResponse);
+      AxiosMock.onGet().reply(200, mockResponse);
       
       // BitgetApiClientのインスタンス作成
       const client = new BitgetApiClient({}, 'spot');
@@ -59,7 +59,7 @@ describe('BitgetApiClient', () => {
       ];
       
       // モックの設定
-      mock.onGet().reply(200, mockResponse);
+      AxiosMock.onGet().reply(200, mockResponse);
       
       // BitgetApiClientのインスタンス作成
       const client = new BitgetApiClient({}, 'futures');
@@ -80,7 +80,7 @@ describe('BitgetApiClient', () => {
     
     it('エラー時にデモモードが有効な場合はデモデータを返すこと', async () => {
       // モックの設定（エラーを返す）
-      mock.onGet().reply(500);
+      AxiosMock.onGet().reply(500);
       
       // BitgetApiClientのインスタンス作成（デモモード有効）
       const client = new BitgetApiClient({
@@ -104,7 +104,7 @@ describe('BitgetApiClient', () => {
     
     it('エラー時にデモモードが無効な場合はエラーを投げること', async () => {
       // モックの設定（エラーを返す）
-      mock.onGet().reply(500);
+      AxiosMock.onGet().reply(500);
       
       // BitgetApiClientのインスタンス作成（デモモード無効）
       const client = new BitgetApiClient({
@@ -133,7 +133,7 @@ describe('BitgetApiClient', () => {
       };
       
       // モックの設定
-      mock.onGet().reply(200, mockResponse);
+      AxiosMock.onGet().reply(200, mockResponse);
       
       // BitgetApiClientのインスタンス作成
       const client = new BitgetApiClient({}, 'spot');
@@ -186,7 +186,7 @@ describe('BitgetApiClient', () => {
       };
       
       // モックの設定
-      mock.onGet().reply(200, mockResponse);
+      AxiosMock.onGet().reply(200, mockResponse);
       
       // BitgetApiClientのインスタンス作成
       const client = new BitgetApiClient({}, 'futures');
@@ -221,7 +221,7 @@ describe('BitgetApiClient', () => {
     
     it('エラー時にデモモードが有効な場合はデモデータを返すこと', async () => {
       // モックの設定（エラーを返す）
-      mock.onGet().reply(500);
+      AxiosMock.onGet().reply(500);
       
       // BitgetApiClientのインスタンス作成（デモモード有効）
       const client = new BitgetApiClient({
@@ -240,7 +240,7 @@ describe('BitgetApiClient', () => {
     
     it('エラー時にデモモードが無効な場合はエラーを投げること', async () => {
       // モックの設定（エラーを返す）
-      mock.onGet().reply(500);
+      AxiosMock.onGet().reply(500);
       
       // BitgetApiClientのインスタンス作成（デモモード無効）
       const client = new BitgetApiClient({

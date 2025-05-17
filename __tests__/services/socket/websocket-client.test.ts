@@ -34,7 +34,7 @@ jest.mock('../../../utils/logger', () => {
 });
 
 // モックソケットインスタンス
-const mockSocket = {
+const MockSocket = {
   connected: true,
   id: 'mock-socket-id',
   on: jest.fn(),
@@ -50,7 +50,7 @@ describe('WebSocketClient', () => {
     jest.clearAllMocks();
     
     // SocketCoreのモック設定
-    (SocketCore.getSocket as jest.Mock).mockReturnValue(mockSocket);
+    (SocketCore.getSocket as jest.Mock).mockReturnValue(MockSocket);
     (SocketCore.getConnectionStatus as jest.Mock).mockReturnValue({ 
       connected: true, 
       id: 'mock-socket-id' 
@@ -93,15 +93,15 @@ describe('WebSocketClient', () => {
       const result = webSocketClient.initialize();
       
       // 結果を検証
-      expect(result).toBe(mockSocket);
+      expect(result).toBe(MockSocket);
       expect(SocketCore.getSocket).toHaveBeenCalledWith(true);
       expect(logger.info).toHaveBeenCalledWith(
         'WebSocketClient: Socket.IO接続を初期化しました',
         expect.objectContaining({
           component: 'WebSocketClient',
           action: 'initialize',
-          connected: mockSocket.connected,
-          id: mockSocket.id
+          connected: MockSocket.connected,
+          id: MockSocket.id
         })
       );
     });
@@ -118,7 +118,7 @@ describe('WebSocketClient', () => {
       expect(result).toBeNull();
       
       // 元のモックに戻す
-      (SocketCore.getSocket as jest.Mock).mockReturnValue(mockSocket);
+      (SocketCore.getSocket as jest.Mock).mockReturnValue(MockSocket);
     });
   });
   
@@ -128,7 +128,7 @@ describe('WebSocketClient', () => {
       const result = webSocketClient.getSocket();
       
       // 結果を検証
-      expect(result).toBe(mockSocket);
+      expect(result).toBe(MockSocket);
       expect(SocketCore.getSocket).toHaveBeenCalledWith(false);
     });
   });

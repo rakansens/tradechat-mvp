@@ -15,7 +15,7 @@ import { BitgetApiClient } from '../../../services/api/bitget/client';
 import { logger } from '../../../utils/logger';
 
 // モック
-const mockSocket = {
+const MockSocket = {
   on: jest.fn(),
   off: jest.fn(),
   emit: jest.fn(),
@@ -23,16 +23,16 @@ const mockSocket = {
 };
 
 // WebSocketClientモック
-const mockWebSocketClient: IWebSocketClient = {
-  initialize: jest.fn().mockReturnValue(mockSocket),
-  getSocket: jest.fn().mockReturnValue(mockSocket),
+const MockWebSocketClient: IWebSocketClient = {
+  initialize: jest.fn().mockReturnValue(MockSocket),
+  getSocket: jest.fn().mockReturnValue(MockSocket),
   isConnected: jest.fn().mockReturnValue(true),
   disconnect: jest.fn(),
   scheduleReconnect: jest.fn()
 };
 
 // SubscriptionManagerモック
-const mockSubscriptionManager: ISubscriptionManager = {
+const MockSubscriptionManager: ISubscriptionManager = {
   subscribeOrderBook: jest.fn().mockReturnValue(() => {}),
   subscribeKline: jest.fn().mockReturnValue(() => {}),
   subscribeTrades: jest.fn().mockReturnValue(() => {}),
@@ -41,7 +41,7 @@ const mockSubscriptionManager: ISubscriptionManager = {
 };
 
 // BitgetApiClientモック
-const mockBitgetApiClient = {
+const MockBitgetApiClient = {
   disconnectWebSocket: jest.fn(),
   fetchCandles: jest.fn(),
   fetchOrderBook: jest.fn(),
@@ -50,9 +50,9 @@ const mockBitgetApiClient = {
 };
 
 // BitgetIntegrationモック
-const mockBitgetIntegration: IBitgetIntegration = {
-  initializeApiClient: jest.fn().mockReturnValue(mockBitgetApiClient),
-  getCurrentApiClient: jest.fn().mockReturnValue(mockBitgetApiClient),
+const MockBitgetIntegration: IBitgetIntegration = {
+  initializeApiClient: jest.fn().mockReturnValue(MockBitgetApiClient),
+  getCurrentApiClient: jest.fn().mockReturnValue(MockBitgetApiClient),
   disconnectApiClient: jest.fn()
 };
 
@@ -73,9 +73,9 @@ describe('SocketService', () => {
     
     // SocketServiceインスタンスを作成
     socketService = new SocketService(
-      mockWebSocketClient,
-      mockSubscriptionManager,
-      mockBitgetIntegration
+      MockWebSocketClient,
+      MockSubscriptionManager,
+      MockBitgetIntegration
     );
   });
   
@@ -98,8 +98,8 @@ describe('SocketService', () => {
       const result = socketService.initializeMarketSocket();
       
       // 結果を検証
-      expect(mockWebSocketClient.initialize).toHaveBeenCalled();
-      expect(result).toBe(mockSocket);
+      expect(MockWebSocketClient.initialize).toHaveBeenCalled();
+      expect(result).toBe(MockSocket);
     });
   });
   
@@ -109,8 +109,8 @@ describe('SocketService', () => {
       const result = socketService.initializeApiClient('spot' as ProductType);
       
       // 結果を検証
-      expect(mockBitgetIntegration.initializeApiClient).toHaveBeenCalledWith('spot', {});
-      expect(result).toBe(mockBitgetApiClient);
+      expect(MockBitgetIntegration.initializeApiClient).toHaveBeenCalledWith('spot', {});
+      expect(result).toBe(MockBitgetApiClient);
     });
     
     it('設定オプションを正しく渡すこと', () => {
@@ -121,7 +121,7 @@ describe('SocketService', () => {
       socketService.initializeApiClient('futures' as ProductType, config);
       
       // 結果を検証
-      expect(mockBitgetIntegration.initializeApiClient).toHaveBeenCalledWith('futures', config);
+      expect(MockBitgetIntegration.initializeApiClient).toHaveBeenCalledWith('futures', config);
     });
   });
   
@@ -131,8 +131,8 @@ describe('SocketService', () => {
       const result = socketService.getCurrentApiClient();
       
       // 結果を検証
-      expect(mockBitgetIntegration.getCurrentApiClient).toHaveBeenCalled();
-      expect(result).toBe(mockBitgetApiClient);
+      expect(MockBitgetIntegration.getCurrentApiClient).toHaveBeenCalled();
+      expect(result).toBe(MockBitgetApiClient);
     });
   });
   
@@ -145,7 +145,7 @@ describe('SocketService', () => {
       const unsubscribe = socketService.subscribeOrderBook('BTC/USDT', callback);
       
       // 結果を検証
-      expect(mockSubscriptionManager.subscribeOrderBook).toHaveBeenCalledWith(
+      expect(MockSubscriptionManager.subscribeOrderBook).toHaveBeenCalledWith(
         'BTC/USDT',
         callback,
         'spot'
@@ -161,7 +161,7 @@ describe('SocketService', () => {
       socketService.subscribeOrderBook('BTC/USDT', callback, 'futures' as ProductType);
       
       // 結果を検証
-      expect(mockSubscriptionManager.subscribeOrderBook).toHaveBeenCalledWith(
+      expect(MockSubscriptionManager.subscribeOrderBook).toHaveBeenCalledWith(
         'BTC/USDT',
         callback,
         'futures'
@@ -178,7 +178,7 @@ describe('SocketService', () => {
       const unsubscribe = socketService.subscribeKline('BTC/USDT', '1m', callback);
       
       // 結果を検証
-      expect(mockSubscriptionManager.subscribeKline).toHaveBeenCalledWith(
+      expect(MockSubscriptionManager.subscribeKline).toHaveBeenCalledWith(
         'BTC/USDT',
         '1m',
         callback,
@@ -195,7 +195,7 @@ describe('SocketService', () => {
       socketService.subscribeKline('BTC/USDT', '1m', callback, 'futures' as ProductType);
       
       // 結果を検証
-      expect(mockSubscriptionManager.subscribeKline).toHaveBeenCalledWith(
+      expect(MockSubscriptionManager.subscribeKline).toHaveBeenCalledWith(
         'BTC/USDT',
         '1m',
         callback,
@@ -210,8 +210,8 @@ describe('SocketService', () => {
       socketService.disconnectAll();
       
       // 結果を検証
-      expect(mockWebSocketClient.disconnect).toHaveBeenCalled();
-      expect(mockBitgetIntegration.disconnectApiClient).toHaveBeenCalled();
+      expect(MockWebSocketClient.disconnect).toHaveBeenCalled();
+      expect(MockBitgetIntegration.disconnectApiClient).toHaveBeenCalled();
       expect(logger.info).toHaveBeenCalledWith(
         'すべての接続を切断しました',
         expect.objectContaining({
@@ -223,7 +223,7 @@ describe('SocketService', () => {
     
     it('切断中にエラーが発生した場合はログを出力すること', () => {
       // disconnectでエラーを発生させる
-      (mockWebSocketClient.disconnect as jest.Mock).mockImplementation(() => {
+      (MockWebSocketClient.disconnect as jest.Mock).mockImplementation(() => {
         throw new Error('切断エラー');
       });
       
@@ -249,7 +249,7 @@ describe('SocketService', () => {
       socketService.scheduleReconnect();
       
       // 結果を検証
-      expect(mockWebSocketClient.scheduleReconnect).toHaveBeenCalled();
+      expect(MockWebSocketClient.scheduleReconnect).toHaveBeenCalled();
     });
   });
   
@@ -259,7 +259,7 @@ describe('SocketService', () => {
       socketService.resubscribeAll();
       
       // 結果を検証
-      expect(mockSubscriptionManager.resubscribeAll).toHaveBeenCalled();
+      expect(MockSubscriptionManager.resubscribeAll).toHaveBeenCalled();
     });
   });
 });

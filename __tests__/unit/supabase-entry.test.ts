@@ -8,7 +8,7 @@ import { Tables } from '@/types/network/supabase';
 
 // Supabaseのモジュールをモック
 jest.mock('@/lib/supabase/supabase', () => {
-  const mockChannel = {
+  const MockChannel = {
     on: jest.fn().mockReturnThis(),
     subscribe: jest.fn().mockImplementation((callback) => {
       if (callback) callback('SUBSCRIBED');
@@ -16,7 +16,7 @@ jest.mock('@/lib/supabase/supabase', () => {
     }),
   };
 
-  const mockSelect = {
+  const MockSelect = {
     eq: jest.fn().mockReturnThis(),
     order: jest.fn().mockReturnThis(),
     range: jest.fn().mockReturnThis(),
@@ -26,30 +26,30 @@ jest.mock('@/lib/supabase/supabase', () => {
     in: jest.fn().mockReturnThis(),
   };
 
-  const mockInsert = {
+  const MockInsert = {
     select: jest.fn().mockReturnThis(),
     single: jest.fn().mockReturnThis(),
   };
 
-  const mockUpdate = {
+  const MockUpdate = {
     eq: jest.fn().mockReturnThis(),
     select: jest.fn().mockReturnThis(),
     single: jest.fn().mockReturnThis(),
   };
 
-  const mockDelete = {
+  const MockDelete = {
     eq: jest.fn().mockReturnThis(),
   };
 
   return {
     supabase: {
       from: jest.fn().mockImplementation(() => ({
-        select: jest.fn().mockReturnValue(mockSelect),
-        insert: jest.fn().mockReturnValue(mockInsert),
-        update: jest.fn().mockReturnValue(mockUpdate),
-        delete: jest.fn().mockReturnValue(mockDelete),
+        select: jest.fn().mockReturnValue(MockSelect),
+        insert: jest.fn().mockReturnValue(MockInsert),
+        update: jest.fn().mockReturnValue(MockUpdate),
+        delete: jest.fn().mockReturnValue(MockDelete),
       })),
-      channel: jest.fn().mockReturnValue(mockChannel),
+      channel: jest.fn().mockReturnValue(MockChannel),
       removeChannel: jest.fn(),
     }
   };

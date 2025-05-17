@@ -33,7 +33,7 @@ jest.mock('../../../services/socket/index');
 jest.mock('../../../utils/logger');
 
 // テスト用のモックデータ
-const mockOHLCData: OHLCData[] = [
+const MockOHLCData: OHLCData[] = [
   {
     time: 1620000000000,
     open: 50000.00,
@@ -62,7 +62,7 @@ describe('ChartDataService', () => {
     
     // BitgetApiClientのモックを設定
     mockBitgetApiClient = new BitgetApiClient() as jest.Mocked<BitgetApiClient>;
-    mockBitgetApiClient.fetchCandles = jest.fn().mockResolvedValue(mockOHLCData);
+    mockBitgetApiClient.fetchCandles = jest.fn().mockResolvedValue(MockOHLCData);
     
     // ChartDataServiceのシングルトンインスタンスをリセット
     resetChartDataServiceForTesting();
@@ -80,7 +80,7 @@ describe('ChartDataService', () => {
       const result = await testChartDataService.fetchChartData('BTC/USDT', '1m', EXCHANGE_TYPES.SPOT);
       
       // 検証
-      expect(result).toEqual(mockOHLCData);
+      expect(result).toEqual(MockOHLCData);
       expect(mockBitgetApiClient.fetchCandles).toHaveBeenCalledWith('BTC/USDT', '1m', 100, PRODUCT_TYPES.SPOT);
       expect(cacheService.set).toHaveBeenCalled();
       expect(logger.info).toHaveBeenCalled();
@@ -91,7 +91,7 @@ describe('ChartDataService', () => {
       const result = await testChartDataService.fetchChartData('BTC/USDT', '1m', EXCHANGE_TYPES.FUTURES);
       
       // 検証
-      expect(result).toEqual(mockOHLCData);
+      expect(result).toEqual(MockOHLCData);
       expect(mockBitgetApiClient.fetchCandles).toHaveBeenCalledWith('BTC/USDT', '1m', 100, PRODUCT_TYPES.FUTURES);
       expect(cacheService.set).toHaveBeenCalled();
       expect(logger.info).toHaveBeenCalled();
@@ -99,13 +99,13 @@ describe('ChartDataService', () => {
     
     it('キャッシュからデータを取得できること', async () => {
       // キャッシュのモックを設定
-      (cacheService.get as jest.Mock).mockReturnValueOnce(mockOHLCData);
+      (cacheService.get as jest.Mock).mockReturnValueOnce(MockOHLCData);
       
       // テスト実行
       const result = await testChartDataService.fetchChartData('BTC/USDT', '1m', EXCHANGE_TYPES.SPOT, undefined, true);
       
       // 検証
-      expect(result).toEqual(mockOHLCData);
+      expect(result).toEqual(MockOHLCData);
       expect(cacheService.get).toHaveBeenCalled();
       expect(mockBitgetApiClient.fetchCandles).not.toHaveBeenCalled();
       expect(logger.debug).toHaveBeenCalled();
