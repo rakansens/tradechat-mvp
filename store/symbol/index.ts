@@ -71,76 +71,27 @@ export const createSymbolSlice = (
     setProductType: actions.setProductType,
     // 後方互換性のため旧メソッドも保持
     setExchangeType: actions.setExchangeType,
-    setSymbols: (symbols: SymbolInfo[]) => {
-      // 必要に応じて実装
-      console.log('setSymbols called', symbols);
-    },
-    addSymbol: (symbol: SymbolInfo) => {
-      // 必要に応じて実装
-      console.log('addSymbol called', symbol);
-    },
-    updateSymbol: (symbol: Partial<SymbolInfo> & { id: string }) => {
-      // 必要に応じて実装
-      console.log('updateSymbol called', symbol);
-    },
-    removeSymbol: (symbolId: string) => {
-      // 必要に応じて実装
-      console.log('removeSymbol called', symbolId);
-    },
-    setFilterOptions: (options: Partial<SymbolFilterOptions>) => {
-      // 必要に応じて実装
-      console.log('setFilterOptions called', options);
-    },
-    applyFilters: (options: SymbolFilterOptions) => {
-      // 必要に応じて実装
-      console.log('applyFilters called', options);
-    },
-    resetFilters: () => {
-      // 必要に応じて実装
-      console.log('resetFilters called');
-    },
-    fetchSymbols: (exchangeType?: ExchangeProductType) => {
-      // 必要に応じて実装
-      console.log('fetchSymbols called', exchangeType);
-      return Promise.resolve();
-    },
-    saveSymbol: (symbol: SymbolInfo) => {
-      // 必要に応じて実装
-      console.log('saveSymbol called', symbol);
-      return Promise.resolve();
-    },
-    deleteSymbol: (symbolId: string) => {
-      // 必要に応じて実装
-      console.log('deleteSymbol called', symbolId);
-      return Promise.resolve();
-    },
-    addToHistory: (entry: Omit<SymbolChangeHistoryEntry, 'id' | 'timestamp'>) => {
-      // 必要に応じて実装
-      console.log('addToHistory called', entry);
-    },
-    clearHistory: () => {
-      // 必要に応じて実装
-      console.log('clearHistory called');
-    },
+    setSymbols: actions.setSymbols,
+    addSymbol: actions.addSymbol,
+    updateSymbol: actions.updateSymbol,
+    removeSymbol: actions.removeSymbol,
+    setFilterOptions: actions.setFilterOptions,
+    applyFilters: actions.applyFilters,
+    resetFilters: actions.resetFilters,
+    fetchSymbols: actions.fetchSymbols,
+    saveSymbol: actions.saveSymbol,
+    deleteSymbol: actions.deleteSymbol,
+    addToHistory: actions.addToHistory,
+    clearHistory: actions.clearHistory,
     
     // お気に入りのトグル
-    toggleFavorite: (symbolId: string) => {
-      // 必要に応じて実装
-      console.log('toggleFavorite called', symbolId);
-    },
+    toggleFavorite: actions.toggleFavorite,
     
     // フィルターをクリア
-    clearFilters: () => {
-      // 必要に応じて実装
-      console.log('clearFilters called');
-    },
+    clearFilters: actions.clearFilters,
     
     // シンボル変更履歴を取得
-    getSymbolChangeHistory: () => {
-      // 必要に応じて実装
-      console.log('getSymbolChangeHistory called');
-      return [];
-    }
+    getSymbolChangeHistory: actions.getSymbolChangeHistory
   };
 };
 
