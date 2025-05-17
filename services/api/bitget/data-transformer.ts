@@ -12,7 +12,7 @@ import { ExchangeType } from '@/types/api';
 import { OHLCData, Timeframe } from '../../../types/chart';
 import { OrderBookData } from '../../../types/market';
 import { logger } from '@/utils/common';
-import { IS_DEV } from '../common/environment';
+import { IS_DEV } from '@/config/environment';
 
 // マップ関数で返す中間型を定義
 interface CandleDataRaw {

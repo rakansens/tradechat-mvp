@@ -9,7 +9,7 @@
  * シンボル変換、WebSocket作成、データ変換などの共通機能を含みます。
  */
 
-import { IS_BROWSER } from '../common/environment';
+import { IS_BROWSER } from '@/config/environment';
 import { logger } from '../../../utils/logger';
 
 /**
