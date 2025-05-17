@@ -45,6 +45,7 @@ import { createChartDataSlice, type ChartDataSlice } from './chart/data'
 import type { ChartDataSliceState } from './chart/data/state'
 import { createSymbolSlice, type SymbolSlice } from './symbol'
 import type { SymbolSliceState } from './symbol/state'
+import type { SymbolState } from '@/types/symbol/store'
 import { createSocketSlice } from './socket'
 import type { SocketSlice } from './socket'
 import type { SocketSliceState } from './socket/state'
@@ -246,33 +247,33 @@ export const useRootStore = create<RootStore>()(
           );
           
           const symbolSlice = createSymbolSlice(
-            (fn) => immerSet<SymbolSliceState>(fn),
-            () => getState<SymbolSliceState>()
+            (fn) => immerSet<SymbolState>(fn),
+            () => getState<SymbolSlice>()
           );
 
           const chartDataSlice = createChartDataSlice(
             (fn) => immerSet<ChartDataSliceState>(fn),
-            () => getState<ChartDataSliceState>()
+            () => getState<ChartDataSlice>()
           );
 
           const realTimeSlice = createRealTimeSlice(
             (fn) => immerSet<RealTimeSliceState>(fn),
-            () => getState<RealTimeSliceState>()
+            () => getState<RealTimeSlice>()
           );
           
           const indicatorSlice = createIndicatorSlice(
             (fn) => immerSet<IndicatorSliceState>(fn),
-            () => getState<IndicatorSliceState>()
+            () => getState<IndicatorSlice>()
           );
           
           const drawingToolSlice = createDrawingToolSlice(
             (fn) => immerSet<DrawingToolSliceState>(fn),
-            () => getState<DrawingToolSliceState>()
+            () => getState<DrawingToolSlice>()
           );
           
           const chartConfigSlice = createChartConfigSlice(
             (fn) => immerSet<ChartConfigSliceState>(fn),
-            () => getState<ChartConfigSliceState>()
+            () => getState<ChartConfigSlice>()
           );
           
           const chartSlice = createChartSlice(
