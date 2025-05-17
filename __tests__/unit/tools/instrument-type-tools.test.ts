@@ -38,13 +38,13 @@ const createMockNodeFetchResponse = (body: any, options: { ok: boolean; status: 
   return response;
 };
 
-const mockApiResponse = (type: 'spot' | 'futures', success = true) => 
+const mockApiResponse = (type: ProductType, success = true) =>
   createMockNodeFetchResponse(
     { success, type }, 
     { ok: success, status: success ? 200 : 500, statusText: success ? 'OK' : 'Internal Server Error' }
   );
 
-const mockApiErrorResponseText = (errorMessage: string, type: 'spot' | 'futures') =>
+const mockApiErrorResponseText = (errorMessage: string, type: ProductType) =>
   createMockNodeFetchResponse(
     { success: false, error: errorMessage, type },
     { ok: false, status: 500, statusText: 'Internal Server Error' }

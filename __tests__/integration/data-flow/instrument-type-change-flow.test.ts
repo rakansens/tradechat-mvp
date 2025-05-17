@@ -6,6 +6,7 @@
 import { changeInstrumentTypeTool } from '../../../src/mastra/tools/instrument-type-tools';
 import { useRootStore } from '../../../store/rootStore';
 import { logger } from '../../../utils/common';
+import { ProductType } from '../../../types/api';
 
 // モジュールをモック化
 jest.mock('../../../src/mastra/tools/instrument-type-tools', () => ({
@@ -41,7 +42,7 @@ const mockRuntimeContext: any = {
   userId: 'test-user-id',
 };
 
-const mockApiResponse = (type: 'spot' | 'futures', success = true): Response => ({
+const mockApiResponse = (type: ProductType, success = true): Response => ({
   ok: success,
   json: jest.fn().mockResolvedValue({ success, type }),
   status: success ? 200 : 500,
