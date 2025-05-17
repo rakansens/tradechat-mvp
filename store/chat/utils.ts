@@ -3,7 +3,7 @@
 // 作成: 2025/6/30 - ConversationState初期化の一貫性を確保するためのヘルパー関数
 
 import type { ConversationState, ConnectionStatus } from './state';
-import type { ExtendedMessage } from '../../types/chat/base';
+import type { ExtendedMessage } from '@/types/chat';
 
 /**
  * 空の会話状態を作成するヘルパー関数

@@ -4,7 +4,7 @@
 
 import { createTool } from "@mastra/core/tools";
 import { z } from "zod";
-import { logger } from "../../../utils/common";
+import { logger } from "@/utils/common";
 import fetch, { Response } from "node-fetch";
 // 取引タイプを表す型（現物/先物）
 type TradeType = 'spot' | 'futures';
