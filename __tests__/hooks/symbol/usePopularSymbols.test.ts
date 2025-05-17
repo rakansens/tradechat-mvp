@@ -5,7 +5,7 @@
 
 import { renderHook } from '@testing-library/react';
 import { usePopularSymbols, POPULAR_SYMBOLS } from '@/hooks/symbol';
-import type { FilterOptions, SymbolInfo } from '@/store/useSymbolStore';
+import type { FilterOptions, SymbolInfo } from '@/types/symbol';
 
 // モックシンボルデータ
 const mockSymbols: SymbolInfo[] = [

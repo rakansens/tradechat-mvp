@@ -10,17 +10,17 @@
 
 import React from 'react';
 import { render, act } from '@testing-library/react';
-import { ChartContainer } from '../../components/chart/ChartContainer';
-import { useSymbolStore } from '../../store/symbol';
-import { useChartDataStore } from '../../store/chart/data';
-import { logger } from '../../utils/common';
+import { ChartContainer } from '@/components/chart/ChartContainer';
+import { useSymbolStore } from '@/store/symbol';
+import { useChartDataStore } from '@/store/chart/data';
+import { logger } from '@/utils/common';
 
 // モック
-jest.mock('../../store/symbol', () => ({
+jest.mock('@/store/symbol', () => ({
   useSymbolStore: jest.fn()
 }));
 
-jest.mock('../../store/chart', () => ({
+jest.mock('@/store/chart', () => ({
   useChartDataStore: jest.fn(() => ({
     currentTimeFrame: '1h',
     fetchData: jest.fn(),
@@ -47,7 +47,7 @@ jest.mock('../../store/chart', () => ({
   }))
 }));
 
-jest.mock('../../utils/common', () => ({
+jest.mock('@/utils/common', () => ({
   logger: {
     info: jest.fn(),
     warn: jest.fn(),
