@@ -18,8 +18,6 @@ export const initialRealTimeState: RealTimeSliceState = {
   // イベントハンドラー
   eventHandlers: {},
   
-  // チャートAPI
-  chartApi: null,
   
   // 接続状態
   connected: false,

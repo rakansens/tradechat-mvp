@@ -2,8 +2,9 @@
 // 作成: RealTimeSliceのアクション定義
 // 更新: 2025-10-06 - 型定義をtypes.tsに移動し、immerSetを使用するように更新
 
-import type { IChartApi } from "lightweight-charts"
 import type { OHLCData } from "@/types/chart"
+import type { ExchangeType } from "@/types/constants/enums"
+import type { BitgetApiClient } from "@/services/api/bitget/client"
 import { type RealTimeSliceActions, type RealTimeSlice, type RealTimeSliceState } from "./types"
 import { logger } from '@/utils/common'
 import { useRootStore } from "@/store/rootStore"
@@ -147,23 +148,24 @@ export const createRealTimeActions = (
       }
     },
     
-    initializeApi: (api: IChartApi) => {
+    initializeApi: (exchangeType: ExchangeType) => {
       try {
         set(state => {
-          state.chartApi = api;
+          state.bitgetApi = new BitgetApiClient({}, exchangeType);
         });
-        
+
         // リアルタイムデータが有効な場合は更新を開始
         if (get().useRealTimeData) {
           get().startRealTimeUpdates();
         }
-        
-        logger.info('チャートAPIを初期化しました', {
+
+        logger.info('Bitget APIクライアントを初期化しました', {
           component: 'RealTimeSlice',
-          action: 'initializeApi'
+          action: 'initializeApi',
+          exchangeType
         });
       } catch (error) {
-        logger.error('チャートAPI初期化エラー:', {
+        logger.error('Bitget APIクライアント初期化エラー:', {
           component: 'RealTimeSlice',
           action: 'initializeApi',
           error
@@ -171,4 +173,4 @@ export const createRealTimeActions = (
       }
     }
   };
-}; 
+};

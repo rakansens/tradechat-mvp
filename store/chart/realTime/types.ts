@@ -1,7 +1,8 @@
 // store/chart/realTime/types.ts
 // 作成: 2025-10-06 - RealTimeSliceのState, Actions, Slice型を定義
 
-import { type IChartApi } from "lightweight-charts";
+import type { ExchangeType } from '@/types/constants/enums';
+import type { BitgetApiClient } from '@/services/api/bitget/client';
 import { type SliceCreator } from '@/types/store/core';
 
 /**
@@ -17,14 +18,11 @@ export interface RealTimeSliceState {
   // カスタムイベントハンドラーの登録リスト
   eventHandlers: Record<string, Function[]>;
   
-  // チャートAPIのインスタンス
-  chartApi: IChartApi | null;
-  
   // WebSocketの接続状態
   connected: boolean;
   
   // Bitget API クライアント
-  bitgetApi: any | null;
+  bitgetApi: BitgetApiClient | null;
   
   // 最後に購読したキー
   lastSubscriptionKey: string | null;
@@ -43,8 +41,8 @@ export interface RealTimeSliceActions {
   // リアルタイム更新の有効/無効を切り替えるアクション
   toggleRealTimeData: () => void;
   
-  // チャートAPIを初期化するアクション
-  initializeApi: (api: IChartApi) => void;
+  // Bitget APIクライアントを初期化するアクション
+  initializeApi: (exchangeType: ExchangeType) => void;
 }
 
 /**
