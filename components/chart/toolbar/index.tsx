@@ -25,6 +25,7 @@ import IndicatorPopover from './ui/IndicatorPopover';
 import ChartTypeSelector from './ui/ChartTypeSelector';
 import RealtimeToggle from './ui/RealtimeToggle';
 import TradeTypeSwitch from './ui/TradeTypeSwitch';
+import type { DrawingToolState } from '@/types/store/chart';
 
 // 利用可能な時間足とチャートタイプ
 import { CHART_TYPES, type ChartType, type Timeframe } from '@/types/constants/enums';
@@ -135,7 +136,9 @@ const ChartToolbar = memo(function ChartToolbar({
           <IndicatorPopover
             isIndicatorActive={indicatorStore.isIndicatorActive}
             toggleIndicator={indicatorStore.toggleIndicator}
-            activeDrawingTools={drawingToolStore.activeDrawingTools as any} // TODO: Fix type
+            activeDrawingTools={
+              drawingToolStore.activeDrawingTools as DrawingToolState['activeDrawingTools']
+            }
             toggleDrawingTool={drawingToolStore.toggleDrawingTool}
             clearAllDrawingTools={drawingToolStore.clearAllDrawingTools}
           />
