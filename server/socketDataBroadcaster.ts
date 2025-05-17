@@ -251,46 +251,12 @@ export class SocketDataBroadcaster {
    */
   public broadcastOrderBook(symbol: string, data: any, exchangeType?: ExchangeType | ExchangeProductType): void {
     try {
-      // 取引所タイプに変換
-      const safeExchangeTypeValue = safeExchangeType(exchangeType || 'bitget');
-      
-      // データの検証
-      const validation = validateWebSocketMessage({
-        type: 'orderbook',
+      this.processBroadcast({
+        type: ChannelName.ORDERBOOK,
+        action: 'broadcastOrderBook',
         symbol,
-        exchangeType: safeExchangeTypeValue,
         data,
-        timestamp: Date.now()
-      });
-      
-      if (!validation.success) {
-        logger.warn('Invalid orderbook data', {
-          component: 'SocketDataBroadcaster',
-          action: 'broadcastOrderBook',
-          error: validation.error
-        });
-      }
-      
-      // チャンネルコンポーネントの作成
-      const channelComponents = createChannelKeyComponents(
-        ChannelName.ORDERBOOK, 
-        symbol, 
-        undefined, 
-        safeExchangeTypeValue
-      );
-      
-      // チャンネル名の生成
-      const channelName = utilGetChannelName(channelComponents);
-      
-      // データをキャッシュ
-      this.cache.orderBook.set(utilGetCacheKey(channelComponents), data);
-      
-      // データをブロードキャスト
-      this.broadcastToChannel(channelName, 'orderbook', {
-        symbol,
-        exchangeType: safeExchangeTypeValue,
-        data,
-        timestamp: Date.now()
+        exchangeType
       });
     } catch (error) {
       logger.error(`Error broadcasting orderbook for ${symbol}`, error, {
@@ -312,48 +278,13 @@ export class SocketDataBroadcaster {
    */
   public broadcastKline(symbol: string, timeframe: string, data: any, exchangeType?: ExchangeType | ExchangeProductType): void {
     try {
-      // 取引所タイプに変換
-      const safeExchangeTypeValue = safeExchangeType(exchangeType || 'bitget');
-      
-      // データの検証
-      const validation = validateWebSocketMessage({
-        type: 'kline',
+      this.processBroadcast({
+        type: ChannelName.KLINE,
+        action: 'broadcastKline',
         symbol,
         timeframe,
-        exchangeType: safeExchangeTypeValue,
         data,
-        timestamp: Date.now()
-      });
-      
-      if (!validation.success) {
-        logger.warn('Invalid kline data', {
-          component: 'SocketDataBroadcaster',
-          action: 'broadcastKline',
-          error: validation.error
-        });
-      }
-      
-      // チャンネルコンポーネントの作成
-      const channelComponents = createChannelKeyComponents(
-        ChannelName.KLINE, 
-        symbol, 
-        timeframe, 
-        safeExchangeTypeValue
-      );
-      
-      // チャンネル名の生成
-      const channelName = utilGetChannelName(channelComponents);
-      
-      // データをキャッシュ
-      this.cache.kline.set(utilGetCacheKey(channelComponents), data);
-      
-      // データをブロードキャスト
-      this.broadcastToChannel(channelName, 'kline', {
-        symbol,
-        timeframe,
-        exchangeType: safeExchangeTypeValue,
-        data,
-        timestamp: Date.now()
+        exchangeType
       });
     } catch (error) {
       logger.error(`Error broadcasting kline for ${symbol} (${timeframe})`, error, {
@@ -375,46 +306,12 @@ export class SocketDataBroadcaster {
    */
   public broadcastTrade(symbol: string, data: any, exchangeType?: ExchangeType | ExchangeProductType): void {
     try {
-      // 取引所タイプに変換
-      const safeExchangeTypeValue = safeExchangeType(exchangeType || 'bitget');
-      
-      // データの検証
-      const validation = validateWebSocketMessage({
-        type: 'trade',
+      this.processBroadcast({
+        type: ChannelName.TRADE,
+        action: 'broadcastTrade',
         symbol,
-        exchangeType: safeExchangeTypeValue,
         data,
-        timestamp: Date.now()
-      });
-      
-      if (!validation.success) {
-        logger.warn('Invalid trade data', {
-          component: 'SocketDataBroadcaster',
-          action: 'broadcastTrade',
-          error: validation.error
-        });
-      }
-      
-      // チャンネルコンポーネントの作成
-      const channelComponents = createChannelKeyComponents(
-        ChannelName.TRADE, 
-        symbol, 
-        undefined, 
-        safeExchangeTypeValue
-      );
-      
-      // チャンネル名の生成
-      const channelName = utilGetChannelName(channelComponents);
-      
-      // データをキャッシュ
-      this.cache.trade.set(utilGetCacheKey(channelComponents), data);
-      
-      // データをブロードキャスト
-      this.broadcastToChannel(channelName, 'trade', {
-        symbol,
-        exchangeType: safeExchangeTypeValue,
-        data,
-        timestamp: Date.now()
+        exchangeType
       });
     } catch (error) {
       logger.error(`Error broadcasting trade for ${symbol}`, error, {
@@ -424,6 +321,77 @@ export class SocketDataBroadcaster {
         exchangeType
       });
     }
+  }
+
+  /**
+   * 共通のバリデーション、キャッシュ、ブロードキャスト処理
+   *
+   * @param params ブロードキャストパラメータ
+   */
+  private processBroadcast(params: {
+    type: ChannelName;
+    action: string;
+    symbol: string;
+    data: any;
+    timeframe?: string;
+    exchangeType?: ExchangeType | ExchangeProductType;
+  }): void {
+    const { type, action, symbol, data, timeframe, exchangeType } = params;
+
+    // 取引所タイプに変換
+    const safeExchangeTypeValue = safeExchangeType(exchangeType || 'bitget');
+
+    // バリデーションデータの構築
+    const validationPayload: Record<string, any> = {
+      type,
+      symbol,
+      exchangeType: safeExchangeTypeValue,
+      data,
+      timestamp: Date.now()
+    };
+
+    if (timeframe) {
+      validationPayload.timeframe = timeframe;
+    }
+
+    // データの検証
+    const validation = validateWebSocketMessage(validationPayload);
+
+    if (!validation.success) {
+      logger.warn(`Invalid ${type} data`, {
+        component: 'SocketDataBroadcaster',
+        action,
+        error: validation.error
+      });
+    }
+
+    // チャンネルコンポーネントの作成
+    const channelComponents = createChannelKeyComponents(
+      type,
+      symbol,
+      timeframe,
+      safeExchangeTypeValue
+    );
+
+    // チャンネル名とキャッシュキー
+    const channelName = utilGetChannelName(channelComponents);
+    const cacheKey = utilGetCacheKey(channelComponents);
+
+    // データをキャッシュ
+    switch (type) {
+      case ChannelName.ORDERBOOK:
+        this.cache.orderBook.set(cacheKey, data);
+        break;
+      case ChannelName.KLINE:
+        this.cache.kline.set(cacheKey, data);
+        break;
+      case ChannelName.TRADE:
+        this.cache.trade.set(cacheKey, data);
+        break;
+    }
+
+    // データをブロードキャスト
+    this.broadcastToChannel(channelName, type, validationPayload);
   }
 
   /**
