@@ -10,7 +10,7 @@ import { Copy, Check, Download } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { ExtendedMessage } from "@/types/chat/base"
 import { useConversation } from "@/contexts/ConversationContext"
-import { useLongPress } from "@/hooks/ui/useLongPress"
+import { useLongPress } from "@/hooks/ui"
 
 interface MessageActionsProps {
   message: ExtendedMessage

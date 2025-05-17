@@ -40,7 +40,7 @@ import {
   useSymbolFilterState,
   useSymbolSelectorLogic,
   useAdvancedPopularSymbols
-} from '@/hooks/symbol/selector';
+} from '@/hooks/symbol';
 
 interface SymbolSelectorProps {
   onSelect?: (symbol: string) => void;

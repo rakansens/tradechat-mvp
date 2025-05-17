@@ -9,7 +9,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { redirect, useRouter } from 'next/navigation';
-import { useAuth } from '@/hooks/auth/useAuth';
+import { useAuth } from '@/hooks/auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
