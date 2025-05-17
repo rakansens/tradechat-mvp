@@ -108,7 +108,7 @@ export function addOrUpdateBollingerSeries(
 
   if (!seriesRefs.upper.current) {
     if (typeof chart.addSeries === 'function') {
-      seriesRefs.upper.current = chart.addSeries(LineSeries, { ...upperOptions, overlay: false }, params.paneIndex) as ISeriesApi<'Line'>;
+      seriesRefs.upper.current = chart.addSeries(LineSeries, upperOptions, params.paneIndex) as ISeriesApi<'Line'>;
     } else {
       seriesRefs.upper.current = createCompatibleSeries(chart, LineSeries, upperOptions);
     }
@@ -118,7 +118,7 @@ export function addOrUpdateBollingerSeries(
 
   if (!seriesRefs.middle.current) {
     if (typeof chart.addSeries === 'function') {
-      seriesRefs.middle.current = chart.addSeries(LineSeries, { ...middleOptions, overlay: false }, params.paneIndex) as ISeriesApi<'Line'>;
+      seriesRefs.middle.current = chart.addSeries(LineSeries, middleOptions, params.paneIndex) as ISeriesApi<'Line'>;
     } else {
       seriesRefs.middle.current = createCompatibleSeries(chart, LineSeries, middleOptions);
     }
@@ -128,7 +128,7 @@ export function addOrUpdateBollingerSeries(
 
   if (!seriesRefs.lower.current) {
     if (typeof chart.addSeries === 'function') {
-      seriesRefs.lower.current = chart.addSeries(LineSeries, { ...lowerOptions, overlay: false }, params.paneIndex) as ISeriesApi<'Line'>;
+      seriesRefs.lower.current = chart.addSeries(LineSeries, lowerOptions, params.paneIndex) as ISeriesApi<'Line'>;
     } else {
       seriesRefs.lower.current = createCompatibleSeries(chart, LineSeries, lowerOptions);
     }
