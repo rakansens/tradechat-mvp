@@ -2,7 +2,7 @@
 // 更新: 複数時間足分析ワークフローを型安全で堅牢な実装に変更
 
 import { multiTimeframeAnalysisTool } from "../tools/multi-timeframe-tools";
-import { logger } from "../../../utils/common";
+import { logger } from "@/utils/common";
 
 // 入力パラメータの型定義
 export interface MultiTimeframeAnalysisParams {

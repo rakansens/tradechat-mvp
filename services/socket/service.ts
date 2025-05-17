@@ -5,8 +5,8 @@
 
 import { EventEmitter } from 'events';
 import { Socket } from 'socket.io-client';
-import { OrderBookData } from '../../types/market';
-import { OHLCData, Timeframe } from '../../types/chart';
+import { OrderBookData } from '@/types/market';
+import { OHLCData, Timeframe } from '@/types/chart';
 import { ProductType } from '@/types/api';
 import { logger } from '../../utils/logger';
 import { ISocketService } from './interfaces';

@@ -13,9 +13,9 @@
 
 // 循環参照を避けるため、直接インポートせずに動的にインポートする
 // import { useRootStore } from '../rootStore'
-import type { ExtendedMessage, ProposalType } from '../../types/chat/base'
+import type { ExtendedMessage, ProposalType } from '@/types/chat'
 import type { ChatSliceState, ConversationState, ConnectionStatus } from './state'
-import { logger } from '../../utils/common'
+import { logger } from '@/utils/common'
 import { subscribeToConversationMessages } from '../../lib/supabase/features/conversations'
 import { useToast } from '../../components/ui/use-toast'
 import { createEmptyConversation } from './utils'

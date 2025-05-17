@@ -9,7 +9,7 @@
 import { EventEmitter } from 'events';
 import { BitgetApiClient } from '../api/bitget/client.new';
 import { IChartDataService } from './interfaces';
-import { OHLCData, Timeframe } from '../../types/chart';
+import { OHLCData, Timeframe } from '@/types/chart';
 import { ExchangeType, ProductType } from '@/types/api';
 import { useRootStore } from '../../store/rootStore';
 import { logger } from '../../utils/logger';

@@ -8,12 +8,12 @@
  * このファイルは、テストやフォールバック用のデモデータ生成を担当します。
  */
 
-import { OHLCData } from '../../../types/chart';
-import { OrderBookData } from '../../../types/market';
-import { ExchangeType, ProductType } from '../../../types/network/api';
+import { OHLCData } from '@/types/chart';
+import { OrderBookData } from '@/types/market';
+import { ExchangeType, ProductType } from '@/types/network/api';
 import { toProductType } from '../../../utils/exchange';
-import { SymbolInfo } from '../../../types/common/symbol';
-import { LegacySymbolInfo, toCommonSymbol } from '../../../types/symbol/base';
+import { SymbolInfo } from '@/types/common/symbol';
+import { LegacySymbolInfo, toCommonSymbol } from '@/types/symbol/base';
 import { logger } from '@/utils/common';
 
 /**

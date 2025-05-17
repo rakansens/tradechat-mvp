@@ -6,7 +6,7 @@
  */
 
 import { ExchangeType, ProductType } from '@/types/api';
-import { OHLCData, Timeframe } from '../../types/chart';
+import { OHLCData, Timeframe } from '@/types/chart';
 
 export interface IDataFetchService {
   // オーダーブック関連のメソッドはIOrderBookServiceに移行しました

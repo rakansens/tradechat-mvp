@@ -9,8 +9,8 @@
  * 単一責任の原則（SRP）に基づき、各インターフェースは明確に分離された責任を持ちます。
  */
 
-import { ExchangeType, ProductType } from '../../types/exchange';
-import { OHLCData, OrderBookData, Timeframe } from '../../types/chart';
+import { ExchangeType, ProductType } from '@/types/exchange';
+import { OHLCData, OrderBookData, Timeframe } from '@/types/chart';
 
 /**
  * WebSocketクライアントインターフェース

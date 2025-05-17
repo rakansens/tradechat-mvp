@@ -10,8 +10,8 @@
  */
 
 import { ProductType, BitgetCredentials } from '@/types/api';
-import { OHLCData } from '../../../types/chart';
-import { OrderBookData } from '../../../types/market';
+import { OHLCData } from '@/types/chart';
+import { OrderBookData } from '@/types/market';
 import { IRestApiClient, IWebSocketClient } from '../interfaces';
 import { BitgetApiClientOptions, IBitgetApiClient } from './interfaces';
 import { getApiConfig, IS_DEV } from '@/config/environment';
