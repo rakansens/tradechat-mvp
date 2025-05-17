@@ -10,9 +10,8 @@
 
 import { useEffect } from 'react';
 import { logger } from '@/utils/common';
-import type { ProductType } from '@/types/constants/enums';
-import type { Timeframe } from '@/types/chart';
-import { toProductType } from '@/utils/exchangeTypeUtils';
+import { toProductType, isValidExchangeType } from '@/utils/exchange';
+import type { ProductType, ExchangeType, Timeframe } from '@/types/constants/enums';
 
 interface ChartEventProps {
   // 銘柄関連
@@ -47,9 +46,11 @@ export const useChartEvents = ({
   useEffect(() => {
     const handleInstrumentTypeChange = (event: CustomEvent) => {
       const { type, fromType, symbol } = event.detail;
-      const normalizedType = toProductType(type);
-      const normalizedFromType = toProductType(fromType);
-      const currentProductType = toProductType(productType);
+      // 型変換を安全に行う
+      const normalizedType = isValidExchangeType(type) ? toProductType(type as ExchangeType) : (type as ProductType);
+      const normalizedFromType = isValidExchangeType(fromType) ? toProductType(fromType as ExchangeType) : (fromType as ProductType);
+      // productTypeはすでにProductType型なので、型安全な扱いに変更
+      const currentProductType = productType;
       logger.info(`WebSocketから取引タイプ変更イベントを受信: ${type}`, {
         component: 'useChartEvents',
         action: 'handleInstrumentTypeChange',

@@ -45,7 +45,7 @@ export interface SymbolFilterOptions {
  */
 export interface SymbolActions {
   // シンボル関連
-  setCurrentSymbol: (symbol: string) => void;
+  setCurrentSymbol: (symbol: string, reason?: string) => void;
   
   /**
    * 取引種別を設定

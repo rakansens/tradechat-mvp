@@ -4,7 +4,7 @@
 
 import { changeSymbolTool } from '../../../src/mastra/tools/symbol-tools';
 import { logger } from '@/utils/common';
-import fetch from 'node-fetch'; // Import to mock
+import fetch from '@/mocks/node-fetch'; // モックの使用
 import { ExchangeType, ProductType } from '@/types/api';
 
 // Mock logger
@@ -27,27 +27,25 @@ const mockRuntimeContext: any = {
 
 // Helper to create a mock Response object
 const createMockResponse = (body: any, options: { ok: boolean; status: number; statusText: string; headers?: Record<string, string> }) => {
-  const response = new Response(JSON.stringify(body), {
+  return {
+    ok: options.ok,
     status: options.status,
     statusText: options.statusText,
-    headers: { 'Content-Type': 'application/json', ...options.headers },
-  });
-  Object.defineProperty(response, 'ok', { value: options.ok });
-  return response;
+    headers: new Headers(options.headers || {}),
+    json: async () => body,
+    text: async () => JSON.stringify(body)
+  } as any as Response;
 };
 
-const mockSymbolApiResponse = (symbol: string, success = true, exchangeType?: ProductType) =>
-  createMockResponse(
-    { success, symbol, exchangeType }, 
-    { ok: success, status: success ? 200 : 500, statusText: success ? 'OK' : 'Internal Server Error' }
-  );
+// Mock successful API response
+const mockSymbolApiResponse = (symbol: string, success = true, exchangeType?: ProductType) => {
+  return createMockResponse({ success, symbol, exchangeType }, { ok: true, status: 200, statusText: 'OK' });
+};
 
-const mockSymbolApiErrorResponse = (symbol: string, errorMessage: string, exchangeType?: ProductType) =>
-  createMockResponse(
-    { success: false, symbol, error: errorMessage, exchangeType },
-    { ok: false, status: 500, statusText: 'Internal Server Error' }
-  );
-
+// Mock error API response
+const mockSymbolApiErrorResponse = (symbol: string, errorMessage: string, exchangeType?: ProductType) => {
+  return createMockResponse({ success: false, error: errorMessage, symbol, exchangeType }, { ok: false, status: 400, statusText: 'Bad Request' });
+};
 
 describe('changeSymbolTool', () => {
   beforeEach(() => {
@@ -73,8 +71,15 @@ describe('changeSymbolTool', () => {
   it('取引タイプを指定して銘柄変更ができること', async () => {
     const inputSymbol = 'SOLUSDT';
     const inputExchangeType = 'futures' as ProductType;
-    (fetch as jest.MockedFunction<typeof fetch>).mockResolvedValue(mockSymbolApiResponse(inputSymbol, true, inputExchangeType));
-    
+    jest.spyOn(global, 'fetch').mockResolvedValue({
+      ok: true,
+      status: 200,
+      statusText: 'OK',
+      headers: new Headers(),
+      json: async () => ({ message: 'Symbol changed successfully' }),
+      text: async () => ''
+    } as any as Response);
+
     const input = { 
       context: { symbol: inputSymbol, exchangeType: inputExchangeType }, 
       runtimeContext: mockRuntimeContext 

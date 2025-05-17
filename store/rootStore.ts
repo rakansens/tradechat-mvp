@@ -20,8 +20,9 @@
 import { create, StateCreator, StoreApi, useStore } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
-import { produce, type Draft } from 'immer';
+import { produce, Draft, WritableDraft } from 'immer';
 import { devtools } from 'zustand/middleware';
+import { isValidProductType, isValidExchangeType, toProductType } from '@/utils/exchange';
 import { logger as loggerFn } from '@/utils/common'
 import { ChartSlice, createChartSlice } from './chart'
 import type { ChartSliceState } from './chart/state'
@@ -91,8 +92,8 @@ export interface RootActions {
   setProductType: SymbolSlice['setProductType']
   // 後方互換性のために古いメソッドも保持
   // 更新: 2025-05-17 - ExchangeTypeとProductTypeの両方をサポートするように型定義を拡張
-  setExchangeType: SymbolSlice['setExchangeType']
-  fetchSymbols: SymbolSlice['fetchSymbols']
+  setExchangeType: (type: ExchangeType | ProductType) => ProductType
+  fetchSymbols: (exchangeType?: ProductType) => Promise<void>
   setFilterOptions: SymbolSlice['setFilterOptions']
   toggleFavorite: SymbolSlice['toggleFavorite']
   clearFilters: SymbolSlice['clearFilters']
@@ -226,65 +227,66 @@ export const useRootStore = create<RootStore>()(
       persist(
         immer((set, get, api) => {
           // immerSetラッパー - ジェネリックな型パラメータを持つヘルパー関数
-          const immerSet = <TState>(fn: (draft: Draft<TState>) => void) => {
-            return set((state: RootState) =>
-              produce(state, draft => {
-                fn(draft as Draft<TState>);
-              })
-            );
+          const immerSet = <TState,>(fnOrState: ((draft: Draft<TState>) => void) | Partial<TState> | TState) => {
+            if (typeof fnOrState === 'function') {
+              set(produce<RootState>(fnOrState as any));
+            } else {
+              set((state: RootState) => ({ ...state, ...fnOrState as any }));
+            }
           };
 
           // 型安全なGetState関数
-          const getState = <TState>() => get() as TState;
+          const getState = <TSlice,>() => get() as unknown as TSlice;
 
           // スライスの作成 - 全て同じパターンを使用
           const dataFetchSlice = createDataFetchSlice(
-            (fn: (draft: Draft<DataFetchSliceState>) => void) =>
-              immerSet<DataFetchSliceState>(fn),
+            immerSet<DataFetchSliceState>,
             () => getState<DataFetchSliceState>(),
             api
           );
           
           const socketSlice = createSocketSlice(
-            (fn: (draft: Draft<SocketSliceState>) => void) =>
-              immerSet<SocketSliceState>(fn),
+            immerSet<SocketSliceState>,
             () => getState<SocketSliceState>(),
             api
           );
           
           const symbolSlice = createSymbolSlice(
-            (fn: (draft: Draft<SymbolState>) => void) =>
-              immerSet<SymbolState>(fn),
+            immerSet<SymbolState>,
             () => getState<SymbolSlice>()
           );
 
           const chartDataSlice = createChartDataSlice(
-            (fn: (draft: Draft<ChartDataSliceState>) => void) =>
-              immerSet<ChartDataSliceState>(fn),
+            immerSet<ChartDataSliceState>,
             () => getState<ChartDataSlice>()
           );
 
           const realTimeSlice = createRealTimeSlice(
-            (fn: (draft: Draft<RealTimeSliceState>) => void) =>
-              immerSet<RealTimeSliceState>(fn),
-            () => getState<RealTimeSlice>()
+            (partial: Partial<RealTimeSliceState> | ((state: RealTimeSliceState) => void | RealTimeSliceState | Partial<RealTimeSliceState>)) => {
+              if (typeof partial === 'function') {
+                immerSet<RealTimeSliceState>((draft: Draft<RealTimeSliceState>) => {
+                  // @ts-ignore - 型の互換性を強制
+                  partial(draft);
+                });
+              } else {
+                immerSet<RealTimeSliceState>(partial);
+              }
+            },
+            () => getState<RealTimeSliceState>()
           );
           
           const indicatorSlice = createIndicatorSlice(
-            (fn: (draft: Draft<IndicatorSliceState>) => void) =>
-              immerSet<IndicatorSliceState>(fn),
+            immerSet<IndicatorSliceState>,
             () => getState<IndicatorSlice>()
           );
           
           const drawingToolSlice = createDrawingToolSlice(
-            (fn: (draft: Draft<DrawingToolSliceState>) => void) =>
-              immerSet<DrawingToolSliceState>(fn),
+            immerSet<DrawingToolSliceState>,
             () => getState<DrawingToolSlice>()
           );
           
           const chartConfigSlice = createChartConfigSlice(
-            (fn: (draft: Draft<ChartConfigSliceState>) => void) =>
-              immerSet<ChartConfigSliceState>(fn),
+            immerSet<ChartConfigSliceState>,
             () => getState<ChartConfigSlice>()
           );
           
@@ -331,6 +333,22 @@ export const useRootStore = create<RootStore>()(
             () => getState<SettingsState>()
           );
 
+          // カスタム関数：型互換性を保つためのエイリアス関数
+          // setProductTypeをsetExchangeTypeとしてそのままパススルーする
+          const setExchangeType = (type: ExchangeType | ProductType): ProductType => {
+            // ProductTypeを返す必要があるため、正規化した値を取得
+            const result = symbolSlice.setProductType(type);
+            
+            // isValidProductTypeとtoProductTypeを使って安全に変換
+            if (isValidProductType(type)) {
+              return type as ProductType;
+            } else if (isValidExchangeType(type)) {
+              return toProductType(type as ExchangeType);
+            } else {
+              return 'spot'; // デフォルト値
+            }
+          };
+
           // すべてのスライスを合成して返す
           const combined = {
             ...dataFetchSlice,
@@ -348,6 +366,8 @@ export const useRootStore = create<RootStore>()(
             ...marketSlice,
             ...debugSlice,
             ...settingsSlice,
+            // カスタム関数を追加
+            setExchangeType,
           } satisfies RootStore;
           return combined;
         }),

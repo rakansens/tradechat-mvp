@@ -8,6 +8,7 @@ import { BitgetApiClient } from "@/services/api/bitget/client.new"
 import { type RealTimeSliceActions, type RealTimeSlice, type RealTimeSliceState } from "./types"
 import { logger } from '@/utils/common'
 import { useRootStore } from "@/store/rootStore"
+import { Draft, WritableDraft } from 'immer'
 
 // デバウンス関数の実装
 function debounce<T extends (...args: any[]) => any>(func: T, wait: number): (...args: Parameters<T>) => void {
@@ -29,7 +30,7 @@ function debounce<T extends (...args: any[]) => any>(func: T, wait: number): (..
  * リアルタイム更新スライスのアクションを作成する関数
  */
 export const createRealTimeActions = (
-  set: (fn: (state: RealTimeSliceState) => void) => void,
+  set: (partial: Partial<RealTimeSliceState> | ((state: RealTimeSliceState) => void | RealTimeSliceState | Partial<RealTimeSliceState>)) => void,
   get: () => RealTimeSlice
 ): RealTimeSliceActions => {
   // リアルタイム更新の実装（デバウンスされたバージョン）
@@ -73,9 +74,9 @@ export const createRealTimeActions = (
       }, 10000); // 10秒ごとに更新
       
       // タイマーを保存
-      set(state => { 
-        state.timer = newTimer;
-        state.connected = true;
+      set((draft: Draft<RealTimeSliceState>) => { 
+        draft.timer = newTimer;
+        draft.connected = true;
       });
       
       logger.info('リアルタイム更新を開始しました', {
@@ -114,9 +115,9 @@ export const createRealTimeActions = (
         const timer = get().timer;
         if (timer) {
           clearInterval(timer);
-          set(state => { 
-            state.timer = null;
-            state.connected = false;
+          set((draft: Draft<RealTimeSliceState>) => { 
+            draft.timer = null;
+            draft.connected = false;
           });
           
           logger.info('リアルタイム更新を停止しました', {
@@ -135,8 +136,8 @@ export const createRealTimeActions = (
     
     toggleRealTimeData: () => {
       const newValue = !get().useRealTimeData;
-      set(state => { 
-        state.useRealTimeData = newValue;
+      set((draft: Draft<RealTimeSliceState>) => { 
+        draft.useRealTimeData = newValue;
       });
       
       if (newValue) {

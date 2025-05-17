@@ -96,7 +96,7 @@ export const createSymbolActions = (
   getState: () => SymbolState
 ): SymbolActions => ({
   // 現在選択中のシンボルを設定
-  setCurrentSymbol: (symbol: string, reason?: string) => {
+  setCurrentSymbol: (symbol: string, reason: string = 'user-action') => {
     mutateDraft((draft) => {
       // シンボル変更イベントを記録
       const oldSymbol = draft.currentSymbol;

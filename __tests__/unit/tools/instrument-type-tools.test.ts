@@ -4,7 +4,7 @@
 
 import { changeInstrumentTypeTool } from '../../../src/mastra/tools/instrument-type-tools';
 import { logger } from '@/utils/common';
-import fetch from 'node-fetch'; // Import to mock
+import fetch from '@/mocks/node-fetch'; // モックの使用
 import { ExchangeType, ProductType } from '@/types/api';
 
 // Mock logger
@@ -25,14 +25,15 @@ const mockRuntimeContext: any = {
 };
 
 // Helper to create a mock Response object
-const createMockResponse = (body: any, options: { ok: boolean; status: number; statusText: string; }) => {
-  const response = new Response(JSON.stringify(body), {
+const createMockResponse = (body: any, options: { ok: boolean; status: number; statusText: string; headers?: Record<string, string> }) => {
+  return {
+    ok: options.ok,
     status: options.status,
     statusText: options.statusText,
-    headers: { 'Content-Type': 'application/json' },
-  });
-  Object.defineProperty(response, 'ok', { value: options.ok });
-  return response;
+    headers: new Headers(options.headers || {}),
+    json: async () => body,
+    text: async () => JSON.stringify(body)
+  } as any as Response;
 };
 
 const mockApiResponse = (type: ProductType, success = true) =>
@@ -47,19 +48,18 @@ const mockApiErrorResponseText = (errorMessage: string, type: ProductType) =>
     { ok: false, status: 500, statusText: 'Internal Server Error' }
   );
 
-
 describe('changeInstrumentTypeTool', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    // Default successful response for most tests
-    (fetch as jest.MockedFunction<typeof fetch>).mockResolvedValue(mockApiResponse('spot'));
+    // Default successful response
+    jest.spyOn(global, 'fetch').mockResolvedValue(mockApiResponse('spot'));
   });
 
   it('取引タイプ変更ツールが正しくAPIを呼び出すこと (spot)', async () => {
     const input = { context: { type: 'spot' as ProductType }, runtimeContext: mockRuntimeContext };
     await changeInstrumentTypeTool.execute(input);
 
-    expect(fetch).toHaveBeenCalledWith(
+    expect(global.fetch).toHaveBeenCalledWith(
       expect.stringContaining('/api/chart/instrument-type'),
       expect.objectContaining({
         method: 'POST',
