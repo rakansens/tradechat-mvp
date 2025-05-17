@@ -17,7 +17,7 @@ export const createIndicatorActions = (
 ): IndicatorSliceActions => {
   return {
     // インジケーターを追加
-    addIndicator: (indicator) => {
+    addIndicator: (indicator: IndicatorConfig) => {
       set((state) => {
         // 既存のインジケーターリストをチェック
         const exists = state.indicators.some(ind => ind.id === indicator.id);
@@ -35,7 +35,7 @@ export const createIndicatorActions = (
     },
     
     // インジケーターを削除
-    removeIndicator: (id) => {
+    removeIndicator: (id: string) => {
       set((state) => {
         // 削除するインジケーターを見つける
         const indicatorToRemove = state.indicators.find(ind => ind.id === id);
@@ -59,7 +59,7 @@ export const createIndicatorActions = (
     },
     
     // インジケーターの有効/無効を切り替え
-    toggleIndicator: (type) => {
+    toggleIndicator: (type: IndicatorType) => {
       set((state) => {
         // インジケーターの有効/無効状態を確認
         const isActive = state.activeIndicators.includes(type);
@@ -103,7 +103,7 @@ export const createIndicatorActions = (
     },
     
     // インジケーター設定を更新
-    updateIndicatorSettings: (id, settings) => {
+    updateIndicatorSettings: (id: string, settings: Partial<IndicatorConfig>) => {
       set((state) => {
         const indicatorIndex = state.indicators.findIndex(ind => ind.id === id);
         

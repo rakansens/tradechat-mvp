@@ -50,7 +50,7 @@ export const createEntryActions = (
 ): EntrySliceActions => ({
   
   // 保留中のエントリーを設定するアクション
-  setPendingEntry: (pendingEntry) => {
+  setPendingEntry: (pendingEntry: OpenEntry | null) => {
     set((state) => {
       state.pendingEntry = pendingEntry
     })

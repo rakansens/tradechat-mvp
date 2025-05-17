@@ -172,7 +172,7 @@ export const createSettingsActions = (
     },
     
     // ユーザー設定を更新するアクション
-    updateUserSettings: async (settings) => {
+    updateUserSettings: async (settings: UserSettings) => {
       set((state) => {
         state.isLoading = true;
         state.error = null;
@@ -216,7 +216,7 @@ export const createSettingsActions = (
     },
     
     // チャート設定を更新するアクション
-    updateChartSettings: async (settings) => {
+    updateChartSettings: async (settings: ChartSettings) => {
       set((state) => {
         state.isLoading = true;
         state.error = null;
@@ -265,7 +265,7 @@ export const createSettingsActions = (
     },
     
     // シンボル設定を更新するアクション
-    updateSymbolSettings: async (settings) => {
+    updateSymbolSettings: async (settings: SymbolSettings) => {
       set((state) => {
         state.isLoading = true;
         state.error = null;
@@ -326,7 +326,7 @@ export const createSettingsActions = (
     },
     
     // チャート設定を作成するアクション
-    createChartSettings: async (settings) => {
+    createChartSettings: async (settings: Omit<ChartSettings, 'id'>) => {
       set((state) => {
         state.isLoading = true;
         state.error = null;
@@ -382,7 +382,7 @@ export const createSettingsActions = (
     },
     
     // シンボル設定を作成するアクション
-    createSymbolSettings: async (settings) => {
+    createSymbolSettings: async (settings: Omit<SymbolSettings, 'id'>) => {
       set((state) => {
         state.isLoading = true;
         state.error = null;

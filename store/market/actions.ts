@@ -92,7 +92,7 @@ export const createMarketActions = (
   
   return {
     // シンボル管理
-    setCurrentSymbol: (symbol) => {
+    setCurrentSymbol: (symbol: string) => {
       set((state) => {
         state.currentSymbol = symbol
         
@@ -103,14 +103,14 @@ export const createMarketActions = (
       })
     },
     
-    setExchangeType: (type) => {
+    setExchangeType: (type: ExchangeType) => {
       set((state) => {
         state.exchangeType = type
       })
     },
     
     // データ取得アクション
-    fetchOrderBook: async (symbolOverride) => {
+    fetchOrderBook: async (symbolOverride?: string) => {
       const state = get()
       const symbol = symbolOverride || state.currentSymbol
       const exchangeType = state.exchangeType
@@ -165,7 +165,7 @@ export const createMarketActions = (
       }
     },
     
-    fetchTrades: async (symbolOverride) => {
+    fetchTrades: async (symbolOverride?: string) => {
       const state = get()
       const symbol = symbolOverride || state.currentSymbol
       const exchangeType = state.exchangeType
@@ -350,7 +350,7 @@ export const createMarketActions = (
       })
     },
     
-    setPollingInterval: (interval) => {
+    setPollingInterval: (interval: number) => {
       set((state) => {
         state.pollingInterval = interval
         state.pollingInfo = {

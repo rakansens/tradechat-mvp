@@ -32,7 +32,7 @@ export const createUIActions = (
 ): UISliceActions => ({
   
   // タブ管理
-  setActiveTab: (tab) => {
+  setActiveTab: (tab: TabType) => {
     set((state) => {
       state.activeTab = tab
     })
@@ -45,7 +45,7 @@ export const createUIActions = (
     })
   },
   
-  setDarkMode: (isDark) => {
+  setDarkMode: (isDark: boolean) => {
     set((state) => {
       state.isDarkMode = isDark
     })
@@ -58,7 +58,7 @@ export const createUIActions = (
     })
   },
   
-  setSidebarOpen: (isOpen) => {
+  setSidebarOpen: (isOpen: boolean) => {
     set((state) => {
       state.isSidebarOpen = isOpen
     })
@@ -70,14 +70,14 @@ export const createUIActions = (
     })
   },
   
-  setSettingsOpen: (isOpen) => {
+  setSettingsOpen: (isOpen: boolean) => {
     set((state) => {
       state.isSettingsOpen = isOpen
     })
   },
   
   // モーダル管理
-  openModal: (modalType, modalData = null) => {
+  openModal: (modalType: string, modalData: any = null) => {
     set((state) => {
       state.isModalOpen = true
       state.modalType = modalType
