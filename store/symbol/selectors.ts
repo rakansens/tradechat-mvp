@@ -19,7 +19,7 @@ import type { SymbolSliceState } from './state';
 /**
  * シンボルスライス全体を取得する基本セレクター
  */
-export const selectSymbolState = (state: RootState): SymbolSliceState => state as unknown as SymbolSliceState;
+export const selectSymbolState = (state: RootState): SymbolSliceState => state as SymbolSliceState;
 
 /**
  * 現在のシンボルを選択するセレクター

@@ -53,8 +53,7 @@ export const setProperty = <TState, K extends keyof TState>(
   value: TState[K]
 ): MutateDraft<TState> => {
   return (draft) => {
-    // ここでキャストを行い、Draft<TState>のインデックスアクセスを可能にする
-    (draft as unknown as Record<K, TState[K]>)[key] = value
+    (draft as Record<K, TState[K]>)[key] = value
   }
 }
 
