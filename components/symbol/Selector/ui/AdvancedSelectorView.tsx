@@ -10,7 +10,7 @@ import { SearchBar } from './SearchBar';
 import { FilterBar } from './FilterBar';
 import { PopularList } from './PopularList';
 import { SymbolList } from './SymbolList';
-import type { FilterOptions } from '@/services/symbol';
+import type { SymbolFilterOptions } from '@/types/symbol/store';
 import type { SymbolInfo } from '@/types/common/symbol';
 import type { ProductType } from '@/types/constants/enums';
 
@@ -18,7 +18,7 @@ interface AdvancedSelectorViewProps {
   productType: ProductType;
   onProductTypeChange: (type: ProductType) => void;
 
-  filterOptions: FilterOptions;
+  filterOptions: SymbolFilterOptions;
   commonQuoteAssets: string[];
   onSearch: (term: string) => void;
   onFavoritesToggle: () => void;
