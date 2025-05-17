@@ -16,10 +16,7 @@ module.exports = {
     
     // 旧ストア参照の新ストアへのリダイレクト
     '^@/store/useSymbolStore$': '<rootDir>/store/symbol',
-    '^@/store/socketActions$': '<rootDir>/store/socket',
-    '^../.*/store/socketActions$': '<rootDir>/store/socket',
     '^../../store/useSymbolStore$': '<rootDir>/store/symbol',
-    '^../../../store/socketActions$': '<rootDir>/store/socket',
     '^../../../store/useSymbolStore$': '<rootDir>/store/symbol',
     
     // hooksディレクトリのリファクタリングによる変更

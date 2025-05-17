@@ -6,7 +6,6 @@
 import type { DebugSliceState } from './state';
 import { useSocketStatus } from '@/store/socket/selectors';
 import { useRootStore } from '@/store/rootStore';
-import { useOrderBookStore } from '@/store/market/useOrderBookStore';
 
 /**
  * デバッグスライスのアクション定義
@@ -51,8 +50,8 @@ export const createDebugActions = (
   // ポーリング状態を取得
   getPollingStatus: () => {
     try {
-      // OrderBookStoreからポーリング情報を取得
-      return useOrderBookStore.getState().pollingInfo || {};
+      // RootStoreからポーリング情報を取得
+      return useRootStore.getState().pollingInfo || {};
     } catch (error) {
       console.error('Failed to get polling status:', error);
       return {};

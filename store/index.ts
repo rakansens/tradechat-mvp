@@ -67,7 +67,6 @@ export { createSettingsSlice } from './settings'
 
 // Backward compatibility exports
 export { useSymbolStore } from './symbol'
-export { socketStoreActions } from './socketActions'
 
 // セレクター
 export * from './selectors'
