@@ -5,7 +5,7 @@
 // 作成日: 2025/6/X - ストアからのトースト通知をサポート
 
 import React, { useEffect } from 'react';
-import { useToast } from '@/hooks/core/useToast';
+import { useToast } from '@/hooks/core';
 
 // トースト通知イベントの型定義
 interface ToastEvent {

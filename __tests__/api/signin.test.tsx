@@ -7,11 +7,11 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import SignInPage from '@/app/(auth)/signin/page';
-import { useAuth } from '@/hooks/auth/useAuth';
+import { useAuth } from '@/hooks/auth';
 import { toast } from '@/components/ui/use-toast';
 
 // モック
-jest.mock('@/hooks/auth/useAuth', () => ({
+jest.mock('@/hooks/auth', () => ({
   useAuth: jest.fn()
 }));
 

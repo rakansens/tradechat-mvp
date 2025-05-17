@@ -5,7 +5,7 @@
  */
 
 import { renderHook, act } from '@testing-library/react';
-import { useAuth } from '@/hooks/auth/useAuth';
+import { useAuth } from '@/hooks/auth';
 import { createClient } from '@/lib/supabase/client';
 import { getProfile, updateProfile } from '@/lib/supabase/features/auth';
 

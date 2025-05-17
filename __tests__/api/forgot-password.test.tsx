@@ -6,10 +6,10 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { act } from 'react-dom/test-utils';
 import ForgotPasswordPage from '@/app/forgot-password/page';
-import { useAuth } from '@/hooks/auth/useAuth';
+import { useAuth } from '@/hooks/auth';
 
 // モック
-jest.mock('@/hooks/auth/useAuth', () => ({
+jest.mock('@/hooks/auth', () => ({
   useAuth: jest.fn(),
 }));
 

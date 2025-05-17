@@ -6,7 +6,7 @@
  */
 
 import { renderHook, act } from '@testing-library/react';
-import { useFilterState } from '@/hooks/symbol/filter/useFilterState';
+import { useFilterState } from '@/hooks/symbol';
 import { useSymbolStore } from '@/store/symbol';
 import { validateFilterOptions } from '@/types/validations/symbol';
 

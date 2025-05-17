@@ -10,9 +10,11 @@
 "use client"
 
 import React, { useState, useEffect } from 'react';
-import { useChartSectionStores } from '@/hooks/chart/canvas';
-import { useChartSectionInit } from '@/hooks/chart/canvas';
-import { useChartSectionCleanup } from '@/hooks/chart/init';
+import {
+  useChartSectionStores,
+  useChartSectionInit,
+  useChartSectionCleanup,
+} from '@/hooks/chart';
 import { ChartHeader } from './ChartHeader';
 import { ChartBody } from './ChartBody';
 import { logger } from '@/utils/common';

@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils'
 import NewThreadModal from './NewThreadModal'
 import { Input } from '@/components/ui/input'
 import { SettingsModal } from './ui/SettingsModal'
-import { useAuth } from '@/hooks/auth/useAuth'
+import { useAuth } from '@/hooks/auth'
 
 type Conversation = {
   id: string

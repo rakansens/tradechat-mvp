@@ -17,7 +17,7 @@ import type { ConnectionInfo } from "@/types/chat/base";
 
 // カスタムフック
 import useChatWindowStores from "./hooks/useChatWindowStores";
-import useAutoScroll from "@/hooks/ui/useAutoScroll";
+import useAutoScroll from "@/hooks/ui";
 import { useChatInteraction } from "@/hooks/chat";
 import { useConversation } from "@/contexts/ConversationContext";
 

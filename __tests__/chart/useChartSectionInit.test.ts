@@ -8,7 +8,7 @@
  */
 
 import { renderHook } from '@testing-library/react';
-import { useChartSectionInit } from '@/hooks/chart/useChartSectionInit';
+import { useChartSectionInit } from '@/hooks/chart';
 import { useSymbolStore } from '@/store/symbol';
 import { useChartDataStore } from '@/store/chart/data';
 import { type ExchangeType } from '@/types/constants/enums';
