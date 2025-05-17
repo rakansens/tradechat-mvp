@@ -6,12 +6,12 @@ import type { DrawingToolType } from '@/types/store/chart';
 // simple helpers
 const noop = () => {};
 
-describe('ChartFooter null activeDrawingTools', () => {
-  it('renders without active class when activeDrawingTools is null', () => {
+describe('ChartFooter null activeDrawingTool', () => {
+  it('renders without active class when activeDrawingTool is null', () => {
     render(
       <ChartFooter
         activeIndicators={[]}
-        activeDrawingTools={null as unknown as DrawingToolType[]}
+        activeDrawingTool={null as unknown as DrawingToolType}
         handleToggleIndicator={noop}
         handleToggleDrawingTool={noop}
         clearAllIndicators={noop}

@@ -43,7 +43,7 @@ jest.mock('@/hooks/chart', () => ({
       isIndicatorActive: jest.fn(() => false)
     },
     drawingToolStore: {
-      activeDrawingTools: [],
+      activeDrawingTool: null,
       toggleDrawingTool: jest.fn(),
       clearAllDrawingTools: jest.fn()
     },

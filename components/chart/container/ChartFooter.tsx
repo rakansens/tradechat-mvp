@@ -15,7 +15,7 @@ import type { ActiveIndicator, IndicatorType, DrawingToolType } from '@/types/st
 interface ChartFooterProps {
   // 表示データ
   activeIndicators: ActiveIndicator[];
-  activeDrawingTools: DrawingToolType[];
+  activeDrawingTool: DrawingToolType | null;
   
   // 操作関数
   handleToggleIndicator: (indicator: IndicatorType) => void;
@@ -31,7 +31,7 @@ interface ChartFooterProps {
  */
 export const ChartFooter: React.FC<ChartFooterProps> = ({
   activeIndicators,
-  activeDrawingTools,
+  activeDrawingTool,
   handleToggleIndicator,
   handleToggleDrawingTool,
   clearAllIndicators,
@@ -66,14 +66,14 @@ export const ChartFooter: React.FC<ChartFooterProps> = ({
       
       <div className="drawing-tool-controls">
         <h4>Drawing Tools</h4>
-        <button 
-          className={activeDrawingTools?.includes('fibonacci') ? 'active' : ''}
+        <button
+          className={activeDrawingTool === 'fibonacci' ? 'active' : ''}
           onClick={() => handleToggleDrawingTool('fibonacci')}
         >
           Fibonacci
         </button>
-        <button 
-          className={activeDrawingTools.includes('rectangle') ? 'active' : ''} 
+        <button
+          className={activeDrawingTool === 'rectangle' ? 'active' : ''}
           onClick={() => handleToggleDrawingTool('rectangle')}
         >
           Rectangle

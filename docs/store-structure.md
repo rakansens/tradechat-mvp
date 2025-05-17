@@ -78,8 +78,8 @@ toggleIndicator('rsi');
 import { useDrawingToolStore } from '@/store';
 
 // 使用例
-const { 
-  activeDrawingTools,   // アクティブな描画ツール
+const {
+  activeDrawingTool,   // アクティブな描画ツール
   toggleDrawingTool,    // 描画ツール切替関数
   clearAllDrawingTools  // すべての描画ツールをクリア
 } = useDrawingToolStore();

@@ -65,7 +65,7 @@ export default function ChartContainer() {
     clearAllIndicators,
     
     // 描画ツール関連
-    activeDrawingTools,
+    activeDrawingTool,
     toggleDrawingTool,
     clearAllDrawingTools,
     
@@ -158,12 +158,12 @@ export default function ChartContainer() {
         exchangeType={exchangeType as ExchangeType}
         chartData={chartData}
         activeIndicators={convertToActiveIndicators(activeIndicators)}
-        activeDrawingTools={activeDrawingTools}
+        activeDrawingTool={activeDrawingTool}
       />
-      
+
       <ChartFooter
         activeIndicators={convertToActiveIndicators(activeIndicators)}
-        activeDrawingTools={activeDrawingTools}
+        activeDrawingTool={activeDrawingTool}
         handleToggleIndicator={handleToggleIndicator}
         handleToggleDrawingTool={handleToggleDrawingTool}
         clearAllIndicators={clearAllIndicators}

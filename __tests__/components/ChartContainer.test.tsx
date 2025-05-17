@@ -36,7 +36,7 @@ jest.mock('@/store/chart', () => ({
     clearAllIndicators: jest.fn()
   })),
   useDrawingToolStore: jest.fn(() => ({
-    activeDrawingTools: [],
+    activeDrawingTool: null,
     toggleDrawingTool: jest.fn(),
     clearAllDrawingTools: jest.fn()
   })),
