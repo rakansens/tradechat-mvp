@@ -67,7 +67,7 @@ export const ChartFooter: React.FC<ChartFooterProps> = ({
       <div className="drawing-tool-controls">
         <h4>Drawing Tools</h4>
         <button 
-          className={activeDrawingTools.includes('fibonacci') ? 'active' : ''} 
+          className={activeDrawingTools?.includes('fibonacci') ? 'active' : ''}
           onClick={() => handleToggleDrawingTool('fibonacci')}
         >
           Fibonacci
