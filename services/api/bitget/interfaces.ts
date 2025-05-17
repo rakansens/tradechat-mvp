@@ -8,7 +8,7 @@
  * 既存の実装との互換性を保ちながら、段階的なリファクタリングを可能にします。
  */
 
-import { ExchangeType, BitgetCredentials } from '../../../types/api';
+import { ProductType, BitgetCredentials } from '../../../types/api';
 import { OHLCData } from '../../../types/chart';
 import { OrderBookData } from '../../../types/market';
 import { IRestApiClient, IWebSocketClient } from '../interfaces';
@@ -65,7 +65,7 @@ export interface IBitgetApiClient {
     symbol: string,
     timeframe: string,
     limit?: number,
-    type?: ExchangeType
+    type?: ProductType
   ): Promise<OHLCData[]>;
   
   /**
@@ -78,7 +78,7 @@ export interface IBitgetApiClient {
   fetchOrderBook(
     symbol: string,
     limit?: number,
-    type?: ExchangeType
+    type?: ProductType
   ): Promise<OrderBookData>;
   
   /**

@@ -9,7 +9,7 @@
 import { EventEmitter } from 'events';
 import { OrderBookData, OrderBookEntry } from '@/types/common/orderbook';
 import { OHLCData, Timeframe } from '../../types/chart';
-import { ExchangeType } from '../../types/api';
+import { ProductType } from '../../types/api';
 import { logger } from '../../utils/logger';
 import { ISocketService } from './interfaces';
 
@@ -143,7 +143,7 @@ export class MockSocketService extends EventEmitter implements ISocketService {
   subscribeOrderBook(
     symbol: string,
     callback: (data: OrderBookData) => void,
-    exchangeType: ExchangeType = 'bitget'
+    exchangeType: ProductType = 'spot'
   ): () => void {
     const subKey = `orderbook:${symbol}:${exchangeType}`;
     this.mockSubscriptions.set(subKey, callback);
@@ -178,7 +178,7 @@ export class MockSocketService extends EventEmitter implements ISocketService {
     symbol: string,
     timeframe: Timeframe,
     callback: (data: OHLCData) => void,
-    exchangeType: ExchangeType = 'bitget'
+    exchangeType: ProductType = 'spot'
   ): () => void {
     const subKey = `kline:${symbol}:${timeframe}:${exchangeType}`;
     this.mockSubscriptions.set(subKey, callback);

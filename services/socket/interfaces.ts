@@ -9,7 +9,7 @@
 import { Socket } from 'socket.io-client';
 import { OrderBookData } from '../../types/market';
 import { OHLCData, Timeframe } from '../../types/chart';
-import { ExchangeType } from '../../types/api';
+import { ProductType } from '../../types/api';
 
 /**
  * WebSocket接続管理インターフェース
@@ -60,7 +60,7 @@ export interface ISubscriptionManager {
   subscribeOrderBook(
     symbol: string,
     callback: (data: OrderBookData) => void,
-    exchangeType?: ExchangeType
+    exchangeType?: ProductType
   ): () => void;
   
   /**
@@ -75,7 +75,7 @@ export interface ISubscriptionManager {
     symbol: string,
     timeframe: Timeframe,
     callback: (data: OHLCData) => void,
-    exchangeType?: ExchangeType
+    exchangeType?: ProductType
   ): () => void;
   
   /**
@@ -88,7 +88,7 @@ export interface ISubscriptionManager {
   subscribeTrades(
     symbol: string,
     callback: (data: any) => void,
-    exchangeType?: ExchangeType
+    exchangeType?: ProductType
   ): () => void;
   
   /**
@@ -114,7 +114,7 @@ export interface IBitgetIntegration {
    * @returns BitgetAPIクライアントインスタンス
    */
   initializeApiClient(
-    exchangeType: ExchangeType,
+    exchangeType: ProductType,
     config?: Record<string, any>
   ): any;
   
@@ -148,7 +148,7 @@ export interface ISocketService {
    * @returns BitgetAPIクライアントインスタンス
    */
   initializeApiClient(
-    exchangeType: ExchangeType,
+    exchangeType: ProductType,
     config?: Record<string, any>
   ): any;
   
@@ -168,7 +168,7 @@ export interface ISocketService {
   subscribeOrderBook(
     symbol: string,
     callback: (data: OrderBookData) => void,
-    exchangeType?: ExchangeType
+    exchangeType?: ProductType
   ): () => void;
   
   /**
@@ -183,7 +183,7 @@ export interface ISocketService {
     symbol: string,
     timeframe: Timeframe,
     callback: (data: OHLCData) => void,
-    exchangeType?: ExchangeType
+    exchangeType?: ProductType
   ): () => void;
   
   /**

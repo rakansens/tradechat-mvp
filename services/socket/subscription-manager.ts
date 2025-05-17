@@ -9,7 +9,7 @@
 import { Socket } from 'socket.io-client';
 import { OrderBookData } from '../../types/market';
 import { OHLCData, Timeframe } from '../../types/chart';
-import { ExchangeType } from '../../types/api';
+import { ProductType } from '../../types/api';
 import { normalizeSymbol } from '../../lib/utils';
 import { logger } from '../../utils/logger';
 import { ISubscriptionManager, IWebSocketClient } from './interfaces';
@@ -30,7 +30,7 @@ export const CHANNEL = {
 interface SubscriptionInfo {
   symbol: string;
   type: string;
-  exchangeType: ExchangeType;
+  exchangeType: ProductType;
   timeframe?: Timeframe;
   callback: Function;
   handler: Function;
@@ -65,7 +65,7 @@ export class SubscriptionManager implements ISubscriptionManager {
   subscribeOrderBook(
     symbol: string,
     callback: (data: OrderBookData) => void,
-    exchangeType: ExchangeType = 'bitget'
+    exchangeType: ProductType = 'spot'
   ): () => void {
     try {
       const socket = this.webSocketClient.getSocket();
@@ -176,7 +176,7 @@ export class SubscriptionManager implements ISubscriptionManager {
     symbol: string,
     timeframe: Timeframe,
     callback: (data: OHLCData) => void,
-    exchangeType: ExchangeType = 'bitget'
+    exchangeType: ProductType = 'spot'
   ): () => void {
     try {
       const socket = this.webSocketClient.getSocket();
@@ -275,7 +275,7 @@ export class SubscriptionManager implements ISubscriptionManager {
   subscribeTrades(
     symbol: string,
     callback: (data: any) => void,
-    exchangeType: ExchangeType = 'bitget'
+    exchangeType: ProductType = 'spot'
   ): () => void {
     try {
       const socket = this.webSocketClient.getSocket();

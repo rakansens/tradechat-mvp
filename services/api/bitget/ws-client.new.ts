@@ -8,7 +8,7 @@
  * 接続管理、メッセージ送受信、Ping/Pong処理、再接続ロジックを実装します。
  */
 
-import { ExchangeType, BitgetCredentials } from '../../../types/api';
+import { ProductType, BitgetCredentials } from '../../../types/api';
 import { OHLCData, Timeframe } from '../../../types/chart';
 import { OrderBookData } from '../../../types/market';
 import { logger } from '@/utils/common';
@@ -34,9 +34,9 @@ export interface WebSocketClientOptions {
   credentials?: BitgetCredentials;
   
   /**
-   * 取引タイプ
+   * 取引種別
    */
-  exchangeType?: ExchangeType;
+  productType?: ProductType;
 }
 
 /**
@@ -46,7 +46,7 @@ export interface WebSocketClientOptions {
 export class BitgetWebSocketClient extends EventEmitter {
   private wsUrl: string;
   private credentials: BitgetCredentials;
-  private exchangeType: ExchangeType;
+  private productType: ProductType;
   private ws: WebSocket | null = null;
   private pingInterval: ReturnType<typeof setInterval> | null = null;
   private reconnectInterval: ReturnType<typeof setTimeout> | null = null;
@@ -69,13 +69,13 @@ export class BitgetWebSocketClient extends EventEmitter {
     
     this.wsUrl = options.wsUrl || apiConfig.wsUrl;
     this.credentials = options.credentials || {};
-    this.exchangeType = options.exchangeType || 'spot';
+    this.productType = options.productType || 'spot';
     this.dataTransformer = new BitgetDataTransformer();
     
     logger.info('BitgetWebSocketClient initialized', {
       component: 'BitgetWebSocketClient',
       action: 'constructor',
-      exchangeType: this.exchangeType,
+      productType: this.productType,
       wsUrl: this.wsUrl
     });
   }
@@ -218,13 +218,13 @@ export class BitgetWebSocketClient extends EventEmitter {
     this.onOrderBookUpdateCallbacks.set(symbol, callbacks);
     
     // 購読情報を作成
-    const instId = this.exchangeType === 'spot' ? 
-      `${formattedSymbol}_SPBL` : 
+    const instId = this.productType === 'spot' ?
+      `${formattedSymbol}_SPBL` :
       `${formattedSymbol}_UMCBL`;
     
     // 購読リクエストを送信
     const subscription = {
-      instType: this.exchangeType.toUpperCase(),
+      instType: this.productType.toUpperCase(),
       channel: 'books',
       instId
     };
@@ -270,13 +270,13 @@ export class BitgetWebSocketClient extends EventEmitter {
     this.onKlineUpdateCallbacks.set(key, callbacks);
     
     // 購読情報を作成
-    const instId = this.exchangeType === 'spot' ? 
-      `${formattedSymbol}_SPBL` : 
+    const instId = this.productType === 'spot' ?
+      `${formattedSymbol}_SPBL` :
       `${formattedSymbol}_UMCBL`;
     
     // 購読リクエストを送信
     const subscription = {
-      instType: this.exchangeType.toUpperCase(),
+      instType: this.productType.toUpperCase(),
       channel: `candle${timeframe}`,
       instId
     };
