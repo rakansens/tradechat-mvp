@@ -4,6 +4,10 @@
     "typeRoots": [
       "./node_modules/@types"
     ],
+    "types": [
+      "jest",
+      "node"
+    ],
     "allowJs": true,
     "noEmit": true,
     "module": "esnext",
