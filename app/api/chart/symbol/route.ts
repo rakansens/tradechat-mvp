@@ -4,13 +4,17 @@
 // 更新: 2025-05-07 - server.jsで定義されたグローバル関数を使用するように変更
 
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
 import { logger } from '@/utils/common';
-import { ExchangeType } from '@/types/constants/enums';
+import { ExchangeType, EXCHANGE_TYPES } from '@/types/constants/enums';
+import { validateRequest, emitEventAndRespond } from '../helpers';
+
+const symbolSchema = z.object({
+  symbol: z.string({ required_error: '銘柄パラメータが必要です' }),
+  exchangeType: z.enum(EXCHANGE_TYPES).optional()
+});
 
 // server.jsで定義されたグローバル関数の型定義
-declare global {
-  var emitSocketEvent: (eventName: string, data: any) => Promise<{ success: boolean; error?: string; clientCount?: number }>;
-}
 
 /**
  * 銘柄変更リクエストを処理するPOSTハンドラ
@@ -18,19 +22,12 @@ declare global {
  */
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    let { symbol, exchangeType } = body;
-
-    if (!symbol) {
-      logger.warn('銘柄変更リクエストに必要なパラメータがありません', {
-        component: 'api/chart/symbol',
-        action: 'POST'
-      });
-      return NextResponse.json(
-        { success: false, error: '銘柄パラメータが必要です' },
-        { status: 400 }
-      );
+    const validation = await validateRequest(request, symbolSchema, '銘柄パラメータが必要です');
+    if (!validation.success) {
+      return validation.response;
     }
+
+    let { symbol, exchangeType } = validation.data;
     
     // 銘柄名の形式をチェックして必要に応じて変換
     if (!symbol.includes('/') && !symbol.includes('USDT') && !symbol.includes('usdt')) {
@@ -52,26 +49,12 @@ export async function POST(request: Request) {
       symbol
     });
 
-    // server.jsで定義されたグローバル関数を使用してイベントを送信
-    const result = await global.emitSocketEvent('changeSymbol', { symbol, exchangeType });
-
-    if (result.success) {
-      logger.info(`銘柄変更イベントを送信しました: ${symbol}`, {
-        component: 'api/chart/symbol',
-        action: 'POST'
-      });
-      return NextResponse.json({ success: true, symbol });
-    } else {
-      logger.warn(`銘柄変更イベントの送信に失敗しました: ${symbol}`, {
-        component: 'api/chart/symbol',
-        action: 'POST',
-        error: result.error
-      });
-      return NextResponse.json(
-        { success: false, error: result.error || '銘柄変更イベントの送信に失敗しました' },
-        { status: 500 }
-      );
-    }
+    return await emitEventAndRespond(
+      'changeSymbol',
+      { symbol, exchangeType },
+      { symbol },
+      '銘柄変更イベントの送信に失敗しました'
+    );
   } catch (error) {
     logger.error('銘柄変更APIエラー:', error, {
       component: 'api/chart/symbol',
