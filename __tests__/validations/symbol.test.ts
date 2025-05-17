@@ -17,7 +17,7 @@ describe('Symbol Validations', () => {
     it('有効なシンボル情報を検証できる', () => {
       const validSymbol = {
         symbol: 'BTCUSDT',
-        baseAsset: 'BTC',
+        baseCoin: 'BTC',
         quoteCoin: 'USDT',
         pricePrecision: 2,
         quantityPrecision: 6,
@@ -33,7 +33,7 @@ describe('Symbol Validations', () => {
     it('無効なシンボル情報を検出できる', () => {
       const invalidSymbol = {
         symbol: '', // 空文字列は無効
-        baseAsset: 'BTC',
+        baseCoin: 'BTC',
         quoteCoin: 'USDT',
         pricePrecision: 2,
         quantityPrecision: 6,
@@ -48,7 +48,7 @@ describe('Symbol Validations', () => {
     it('validateSymbolInfo関数が正しく動作する', () => {
       const validSymbol = {
         symbol: 'BTCUSDT',
-        baseAsset: 'BTC',
+        baseCoin: 'BTC',
         quoteCoin: 'USDT',
         pricePrecision: 2,
         quantityPrecision: 6,
