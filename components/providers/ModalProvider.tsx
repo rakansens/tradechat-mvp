@@ -4,7 +4,7 @@
 // モーダル管理プロバイダーコンポーネント
 // 作成日: 2025/6/15
 
-import { useRouter } from 'next/navigation'
+import { useRouter } from 'next/router'
 import { createContext, useContext, useEffect, useState } from 'react'
 
 // モーダルコンテキストの型定義
@@ -54,16 +54,15 @@ export function ModalProvider({ children }: { children: React.ReactNode }) {
   // ルート変更時にモーダルを閉じる
   useEffect(() => {
     const handleRouteChange = () => {
-      if (isOpen) {
-        closeModal()
-      }
+      closeModal()
     }
 
-    // イベントリスナーをクリーンアップする
+    router.events.on('routeChangeComplete', handleRouteChange)
+
     return () => {
-      handleRouteChange()
+      router.events.off('routeChangeComplete', handleRouteChange)
     }
-  }, [isOpen, router])
+  }, [router])
 
   // コンテキスト値
   const contextValue = {
