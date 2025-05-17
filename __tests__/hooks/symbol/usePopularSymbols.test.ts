@@ -9,11 +9,66 @@ import type { FilterOptions, SymbolInfo } from '@/types/symbol';
 
 // モックシンボルデータ
 const mockSymbols: SymbolInfo[] = [
-  { symbol: 'BTCUSDT', baseCoin: 'BTC', quoteCoin: 'USDT', favorite: false },
-  { symbol: 'ETHUSDT', baseCoin: 'ETH', quoteCoin: 'USDT', favorite: true },
-  { symbol: 'BNBBTC', baseCoin: 'BNB', quoteCoin: 'BTC', favorite: false },
-  { symbol: 'SOLUSDT', baseCoin: 'SOL', quoteCoin: 'USDT', favorite: false },
-  { symbol: 'MATICUSDT', baseCoin: 'MATIC', quoteCoin: 'USDT', favorite: false },
+  {
+    id: '1',
+    symbol: 'BTCUSDT',
+    baseCoin: 'BTC',
+    quoteCoin: 'USDT',
+    minOrderSize: 0.0001,
+    pricePrecision: 2,
+    quantityPrecision: 6,
+    status: 'TRADING',
+    exchangeType: 'spot',
+    favorite: false,
+  },
+  {
+    id: '2',
+    symbol: 'ETHUSDT',
+    baseCoin: 'ETH',
+    quoteCoin: 'USDT',
+    minOrderSize: 0.001,
+    pricePrecision: 2,
+    quantityPrecision: 6,
+    status: 'TRADING',
+    exchangeType: 'spot',
+    favorite: true,
+  },
+  {
+    id: '3',
+    symbol: 'BNBBTC',
+    baseCoin: 'BNB',
+    quoteCoin: 'BTC',
+    minOrderSize: 0.01,
+    pricePrecision: 2,
+    quantityPrecision: 6,
+    status: 'TRADING',
+    exchangeType: 'spot',
+    favorite: false,
+  },
+  {
+    id: '4',
+    symbol: 'SOLUSDT',
+    baseCoin: 'SOL',
+    quoteCoin: 'USDT',
+    minOrderSize: 0.1,
+    pricePrecision: 2,
+    quantityPrecision: 6,
+    status: 'TRADING',
+    exchangeType: 'spot',
+    favorite: false,
+  },
+  {
+    id: '5',
+    symbol: 'MATICUSDT',
+    baseCoin: 'MATIC',
+    quoteCoin: 'USDT',
+    minOrderSize: 1,
+    pricePrecision: 2,
+    quantityPrecision: 6,
+    status: 'TRADING',
+    exchangeType: 'spot',
+    favorite: false,
+  },
 ];
 
 // デフォルトフィルターオプション
@@ -89,8 +144,30 @@ describe('usePopularSymbols', () => {
   test('シンボルリストがPOPULAR_SYMBOLSに含まれない場合、空配列を返す', () => {
     // POPULAR_SYMBOLSに含まれないシンボルのみのリスト
     const nonPopularSymbols: SymbolInfo[] = [
-      { symbol: 'XRPBTC', baseCoin: 'XRP', quoteCoin: 'BTC', favorite: false },
-      { symbol: 'LRCETH', baseCoin: 'LRC', quoteCoin: 'ETH', favorite: false },
+      {
+        id: '6',
+        symbol: 'XRPBTC',
+        baseCoin: 'XRP',
+        quoteCoin: 'BTC',
+        minOrderSize: 10,
+        pricePrecision: 2,
+        quantityPrecision: 6,
+        status: 'TRADING',
+        exchangeType: 'spot',
+        favorite: false,
+      },
+      {
+        id: '7',
+        symbol: 'LRCETH',
+        baseCoin: 'LRC',
+        quoteCoin: 'ETH',
+        minOrderSize: 1,
+        pricePrecision: 2,
+        quantityPrecision: 6,
+        status: 'TRADING',
+        exchangeType: 'spot',
+        favorite: false,
+      },
     ];
     
     const { result } = renderHook(() => 
