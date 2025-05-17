@@ -46,7 +46,7 @@ export const usePopularSymbols = ({
 }: UsePopularSymbolsProps) => {
   return useMemo(() => {
     // フィルターが適用されている場合は空配列を返す
-    if (filterOptions.searchTerm || filterOptions.quoteCoin || filterOptions.favoritesOnly) {
+    if (filterOptions.search || filterOptions.quoteAsset || filterOptions.showFavoritesOnly) {
       return [];
     }
     

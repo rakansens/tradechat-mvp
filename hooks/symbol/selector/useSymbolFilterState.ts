@@ -12,9 +12,9 @@ import type { FilterOptions } from '@/services/symbol';
  */
 export const useSymbolFilterState = () => {
   const [filterOptions, setFilterOptions] = useState<FilterOptions>({
-    searchTerm: '',
-    quoteCoin: '',
-    favoritesOnly: false
+    search: '',
+    quoteAsset: '',
+    showFavoritesOnly: false
   });
 
   // よく使われる基軸通貨のリスト
@@ -22,25 +22,25 @@ export const useSymbolFilterState = () => {
 
   // 検索語句のハンドラー
   const handleSearch = useCallback((term: string) => {
-    setFilterOptions(prev => ({ ...prev, searchTerm: term }));
+    setFilterOptions(prev => ({ ...prev, search: term }));
   }, []);
 
   // 基軸通貨フィルターのハンドラー
   const handleQuoteAssetFilter = useCallback((asset: string) => {
-    setFilterOptions(prev => ({ ...prev, quoteCoin: asset }));
+    setFilterOptions(prev => ({ ...prev, quoteAsset: asset }));
   }, []);
 
   // お気に入りフィルターのトグルハンドラー
   const handleFavoritesToggle = useCallback(() => {
-    setFilterOptions(prev => ({ ...prev, favoritesOnly: !prev.favoritesOnly }));
+    setFilterOptions(prev => ({ ...prev, showFavoritesOnly: !prev.showFavoritesOnly }));
   }, []);
 
   // フィルターリセットハンドラー
   const resetFilters = useCallback(() => {
     setFilterOptions({
-      searchTerm: '',
-      quoteCoin: '',
-      favoritesOnly: false
+      search: '',
+      quoteAsset: '',
+      showFavoritesOnly: false
     });
   }, []);
 

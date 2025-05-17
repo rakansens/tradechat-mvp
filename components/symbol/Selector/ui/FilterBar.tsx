@@ -12,10 +12,10 @@
 
 import { Button } from '@/components/ui/button';
 import { Star, StarOff } from 'lucide-react';
-import type { FilterOptions } from '@/types/symbol/store';
+import type { StoreFilterOptions } from '@/types/store/symbol';
 
 interface FilterBarProps {
-  filterOptions: FilterOptions;
+  filterOptions: StoreFilterOptions;
   commonQuoteAssets: string[];
   onFavoritesToggle: () => void;
   onQuoteAssetFilter: (asset: string) => void;
@@ -34,19 +34,19 @@ export const FilterBar = ({
   onQuoteAssetFilter,
   onResetFilters
 }: FilterBarProps) => {
-  const isFiltersActive = filterOptions.searchTerm || filterOptions.quoteCoin || filterOptions.favoritesOnly;
+  const isFiltersActive = filterOptions.search || filterOptions.quoteAsset || filterOptions.showFavoritesOnly;
   
   return (
     <>
       {/* お気に入りフィルター */}
       <div className="flex flex-wrap gap-2">
         <Button 
-          variant={filterOptions.favoritesOnly ? "default" : "outline"} 
+          variant={filterOptions.showFavoritesOnly ? "default" : "outline"}
           size="sm" 
           onClick={onFavoritesToggle}
           className="flex gap-1"
         >
-          {filterOptions.favoritesOnly ? <Star className="h-4 w-4" /> : <StarOff className="h-4 w-4" />}
+          {filterOptions.showFavoritesOnly ? <Star className="h-4 w-4" /> : <StarOff className="h-4 w-4" />}
           お気に入り
         </Button>
         
@@ -64,7 +64,7 @@ export const FilterBar = ({
       {/* 基軸通貨フィルター */}
       <div className="flex gap-2 overflow-x-auto pb-2">
         <Button 
-          variant={!filterOptions.quoteCoin ? "default" : "outline"} 
+          variant={!filterOptions.quoteAsset ? "default" : "outline"}
           size="sm" 
           onClick={() => onQuoteAssetFilter('')}
         >
@@ -74,7 +74,7 @@ export const FilterBar = ({
         {commonQuoteAssets.map(asset => (
           <Button
             key={asset}
-            variant={filterOptions.quoteCoin === asset ? "default" : "outline"}
+            variant={filterOptions.quoteAsset === asset ? "default" : "outline"}
             size="sm"
             onClick={() => onQuoteAssetFilter(asset)}
           >

@@ -18,9 +18,9 @@ import { validateFilterOptions } from '@/lib/validations/symbol';
 /**
  * シンボルセレクタのフィルター状態を管理するフック
  * 
- * - searchTerm: 検索語
- * - quoteCoin: 基軸通貨フィルター
- * - favoritesOnly: お気に入りのみ表示するかどうか
+ * - search: 検索語
+ * - quoteAsset: 基軸通貨フィルター
+ * - showFavoritesOnly: お気に入りのみ表示するかどうか
  * 
  * @returns フィルター状態とハンドラー関数
  */
@@ -45,19 +45,19 @@ export const useFilterState = () => {
   const handleSearch = (term: string) => {
     // 検索語のバリデーション
     const searchTerm = term.trim();
-    setFilterOptions({ searchTerm });
+    setFilterOptions({ search: searchTerm });
   };
   
   // 基軸通貨フィルター処理
   const handleQuoteAssetFilter = (asset: string) => {
     // 基軸通貨のバリデーション
     const quoteCoin = asset.trim();
-    setFilterOptions({ quoteCoin });
+    setFilterOptions({ quoteAsset: quoteCoin });
   };
   
   // お気に入りフィルター処理
   const handleFavoritesToggle = () => {
-    setFilterOptions({ favoritesOnly: !filterOptions.favoritesOnly });
+    setFilterOptions({ showFavoritesOnly: !filterOptions.showFavoritesOnly });
   };
   
   // フィルターリセット
