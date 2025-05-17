@@ -15,7 +15,7 @@ import { type ExchangeType } from '@/types/constants/enums';
 import { safeExchangeType } from '@/utils/exchangeTypeUtils';
 
 // ストアをモック
-jest.mock('@/store/useSymbolStore', () => ({
+jest.mock('@/store/symbol', () => ({
   useSymbolStore: {
     getState: jest.fn().mockReturnValue({
       currentSymbol: 'BTCUSDT'
@@ -23,7 +23,7 @@ jest.mock('@/store/useSymbolStore', () => ({
   }
 }));
 
-jest.mock('@/store/chart', () => ({
+jest.mock('@/store/chart/data', () => ({
   useChartDataStore: {
     getState: jest.fn().mockReturnValue({
       currentTimeFrame: '1h'

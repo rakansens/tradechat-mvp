@@ -65,6 +65,10 @@ export { createDebugSlice } from './debug'
 export { createDataFetchSlice } from './dataFetch'
 export { createSettingsSlice } from './settings'
 
+// Backward compatibility exports
+export { useSymbolStore } from './symbol'
+export { socketStoreActions } from './socketActions'
+
 // セレクター
 export * from './selectors'
 
