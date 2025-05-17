@@ -42,6 +42,7 @@ import type { IndicatorSliceState } from './chart/indicator/state'
 import { createChartDataSlice, type ChartDataSlice } from './chart/data'
 import type { ChartDataSliceState } from './chart/data/state'
 import { createSymbolSlice, type SymbolSlice } from './symbol'
+import type { SymbolSliceState } from './symbol/state'
 import type { SymbolState } from '@/types/symbol/store';
 import type { ExchangeType, ProductType } from '@/types/constants/enums';
 import { createSocketSlice } from './socket'
@@ -54,6 +55,7 @@ import { createDataFetchSlice, type DataFetchSlice } from './dataFetch'
 import type { DataFetchSliceState } from './dataFetch/state'
 import { createSettingsSlice, type SettingsSlice } from './settings'
 import type { SettingsState } from './settings/types'
+import { createRealTimeSlice, type RealTimeSlice, type RealTimeSliceState } from './chart/realTime'
 
 // RootStore型定義 - 各スライスの状態を統合
 export interface RootState extends
