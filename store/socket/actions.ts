@@ -49,7 +49,9 @@ export const createSocketSliceActions = <T extends SocketSliceState>(
       source
     });
     try {
-      set({ connected });
+      set((state) => {
+        state.connected = connected
+      })
       logger.info(`SocketSlice: 接続状態を${connected}に更新しました`, {
         component: 'SocketSlice',
         action: 'setConnected',
@@ -75,7 +77,9 @@ export const createSocketSliceActions = <T extends SocketSliceState>(
       source
     });
     try {
-      set({ socketId });
+      set((state) => {
+        state.socketId = socketId
+      })
       logger.info(`SocketSlice: Socket ID ${socketId} を設定しました`, {
         component: 'SocketSlice',
         action: 'setSocketId',
@@ -98,21 +102,21 @@ export const createSocketSliceActions = <T extends SocketSliceState>(
    */
   setSubscription: (type: 'orderbook' | 'chart', on: boolean, fn?: () => void) => {
     // 購読状態を更新
-    set(state => ({
-      subscriptions: {
+    set((state) => {
+      state.subscriptions = {
         ...state.subscriptions,
         [type]: on
       }
-    }));
+    })
     
     // 購読解除関数を保存または削除
     if (on && fn) {
-      set(state => ({
-        _unsubscribeFns: {
+      set((state) => {
+        state._unsubscribeFns = {
           ...state._unsubscribeFns,
           [type]: fn
         }
-      }));
+      })
       
       logger.info(`${type}の購読を開始しました`, {
         component: 'SocketSlice',
@@ -139,14 +143,11 @@ export const createSocketSliceActions = <T extends SocketSliceState>(
       }
       
       // 購読解除関数を削除
-      set(state => {
-        const newUnsubscribeFns = { ...state._unsubscribeFns };
-        delete newUnsubscribeFns[type];
-        
-        return {
-          _unsubscribeFns: newUnsubscribeFns
-        };
-      });
+      set((state) => {
+        const newUnsubscribeFns = { ...state._unsubscribeFns }
+        delete newUnsubscribeFns[type]
+        state._unsubscribeFns = newUnsubscribeFns
+      })
       
       logger.info(`${type}の購読を解除しました`, {
         component: 'SocketSlice',
@@ -173,13 +174,13 @@ export const createSocketSliceActions = <T extends SocketSliceState>(
       });
       
       // 購読解除関数をクリア
-      set({
-        _unsubscribeFns: {},
-        subscriptions: {
+      set((state) => {
+        state._unsubscribeFns = {}
+        state.subscriptions = {
           orderbook: false,
           chart: false
         }
-      });
+      })
       
       logger.info('すべてのWebSocket購読を解除しました', {
         component: 'SocketSlice',
@@ -193,13 +194,13 @@ export const createSocketSliceActions = <T extends SocketSliceState>(
         unsubscribeFns: _unsubscribeFns
       });
       
-      set({
-        _unsubscribeFns: {},
-        subscriptions: {
+      set((state) => {
+        state._unsubscribeFns = {}
+        state.subscriptions = {
           orderbook: false,
           chart: false
         }
-      });
+      })
     }
   },
   
