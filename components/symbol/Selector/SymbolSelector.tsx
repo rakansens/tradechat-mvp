@@ -18,33 +18,29 @@
 
 "use client";
 
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useCallback, useMemo } from 'react';
 import { useRootStore } from '@/store';
-import { 
-  selectCurrentSymbol, 
-  selectExchangeType,
+import {
+  selectCurrentSymbol,
   selectFilteredSymbols,
   selectIsLoadingSymbols,
   selectSymbolError,
-  selectQuoteAssets,
-  selectSymbolFilterOptions,
   selectSymbolList
 } from '@/store/barrel';
 import type { SymbolInfo } from '@/types/common/symbol';
 import type { FilterOptions } from '@/services/symbol';
 import { logger } from '@/utils/common';
 
-import { ExchangeTabs } from './ui/ExchangeTabs';
-import { SearchBar } from './ui/SearchBar';
-import { SymbolList } from './ui/SymbolList';
-import { FilterBar } from './ui/FilterBar';
-import { PopularList } from './ui/PopularList';
+import { AdvancedSelectorView } from './ui/AdvancedSelectorView';
 // アイコンは子コンポーネントで使用されるため、ここでのインポートは不要
 import { type ExchangeType } from '@/types/constants/enums';
 import { validateSymbolSelectorProps } from '@/lib/validations/symbol';
 import type { SymbolSelectorPropsSchema } from '@/lib/validations/symbol';
-import { symbolService } from '@/services/symbol';
-import { safeExchangeType } from '@/utils/exchangeTypeUtils';
+import {
+  useSymbolFilterState,
+  useSymbolSelectorLogic,
+  useAdvancedPopularSymbols
+} from '@/hooks/symbol/selector';
 
 interface SymbolSelectorProps {
   onSelect?: (symbol: string) => void;
@@ -117,143 +113,6 @@ export const SymbolSelector: React.FC<SymbolSelectorProps> = ({
   );
 };
 
-/**
- * フィルター状態を管理するフック
- * 内部で使用するためのフック (外部のuseFilterStateとは別)
- */
-const useSymbolFilterState = () => {
-  const [filterOptions, setFilterOptions] = useState<FilterOptions>({
-    searchTerm: '',
-    quoteCoin: '',
-    favoritesOnly: false
-  });
-  
-  // よく使われる基軸通貨のリスト
-  const commonQuoteAssets = ['USDT', 'BTC', 'ETH', 'USD', 'BUSD'];
-  
-  // 検索語句のハンドラー
-  const handleSearch = useCallback((term: string) => {
-    setFilterOptions((prev: FilterOptions) => ({ ...prev, searchTerm: term }));
-  }, []);
-  
-  // 基軸通貨フィルターのハンドラー
-  const handleQuoteAssetFilter = useCallback((asset: string) => {
-    setFilterOptions((prev: FilterOptions) => ({ ...prev, quoteCoin: asset }));
-  }, []);
-  
-  // お気に入りフィルターのトグルハンドラー
-  const handleFavoritesToggle = useCallback(() => {
-    setFilterOptions((prev: FilterOptions) => ({ ...prev, favoritesOnly: !prev.favoritesOnly }));
-  }, []);
-  
-  // フィルターリセットハンドラー
-  const resetFilters = useCallback(() => {
-    setFilterOptions({
-      searchTerm: '',
-      quoteCoin: '',
-      favoritesOnly: false
-    });
-  }, []);
-  
-  return {
-    filterOptions,
-    commonQuoteAssets,
-    handleSearch,
-    handleQuoteAssetFilter,
-    handleFavoritesToggle,
-    resetFilters
-  };
-};
-
-/**
- * セレクターで使用するストアのロジックを管理するフック
- */
-const useSelectorStores = (options: {
-  defaultExchangeType?: ExchangeType;
-  onExchangeTypeChange?: (type: ExchangeType) => void;
-}) => {
-  // RootStoreから状態を取得
-  const symbols = useRootStore(selectFilteredSymbols);
-  const allSymbols = useRootStore(selectSymbolList);
-  const isLoading = useRootStore(selectIsLoadingSymbols);
-  const error = useRootStore(selectSymbolError);
-  
-  // ストアからアクションを取得
-  const toggleFavorite = useRootStore(state => state.toggleFavorite);
-  const fetchSymbols = useRootStore(state => state.fetchSymbols);
-  const setProductType = useRootStore(state => state.setProductType);
-  const currentExchangeType = useRootStore(state => state.exchangeType);
-  
-  // 取引タイプの変更ハンドラー
-  const handleExchangeTypeChange = useCallback((type: ExchangeType) => {
-    setProductType(type);
-    
-    // コールバックが提供されている場合、外部に変更を通知
-    if (options.onExchangeTypeChange) {
-      options.onExchangeTypeChange(type);
-    }
-  }, [setProductType, options.onExchangeTypeChange]);
-  
-  // 再試行ハンドラー
-  const retryFetch = useCallback(() => {
-    fetchSymbols(currentExchangeType);
-  }, [fetchSymbols, currentExchangeType]);
-  
-  // デフォルトの取引タイプが指定されていれば設定
-  useEffect(() => {
-    if (options.defaultExchangeType && options.defaultExchangeType !== currentExchangeType) {
-        setProductType(options.defaultExchangeType);
-    }
-  }, [options.defaultExchangeType, currentExchangeType, setProductType]);
-  
-  return {
-    symbols: { filteredSymbols: symbols, isLoading, error },
-    actions: { toggleFavorite, retryFetch },
-    exchangeType: { current: currentExchangeType, handleChange: handleExchangeTypeChange }
-  };
-};
-
-/**
- * 人気銘柄を取得するフック
- */
-const usePopularSymbols = (options: {
-  symbols: SymbolInfo[];
-  filterOptions: FilterOptions;
-}) => {
-  const { symbols, filterOptions } = options;
-  
-  // 人気銘柄の基準：お気に入りかつ取引量が多い、または最近追加された上位銘柄
-  const popularSymbols = useMemo(() => {
-    // お気に入りの銘柄を優先的に取得
-    const favorites = symbols.filter(s => s.favorite);
-    
-    // もし現在のフィルターがお気に入りのみの場合は、空の配列を返す
-    // (PopularListとSymbolListが重複してしまうため)
-    if (filterOptions.favoritesOnly) {
-      return [];
-    }
-    
-    // お気に入りが3つ以下なら主要な銘柄を追加
-    if (favorites.length <= 3) {
-      const mainSymbols = ['BTC', 'ETH', 'BNB', 'SOL', 'XRP'];
-      const popularByName = symbols.filter(s => 
-        !s.favorite && mainSymbols.some(name => 
-          s.baseCoin === name && (
-            !filterOptions.quoteCoin || s.quoteCoin === filterOptions.quoteCoin
-          )
-        )
-      );
-      
-      // 重複を除去して返す
-      return [...favorites, ...popularByName].slice(0, 6);
-    }
-    
-    // お気に入りが十分あれば、それらのみを返す（最大6つ）
-    return favorites.slice(0, 6);
-  }, [symbols, filterOptions]);
-  
-  return popularSymbols;
-};
 
 /**
  * シンボルセレクターのメインコンポーネント
@@ -291,7 +150,7 @@ export default function AdvancedSymbolSelector({
     symbols: { filteredSymbols, isLoading, error },
     actions: { toggleFavorite, retryFetch },
     exchangeType: { current: exchangeType, handleChange: handleExchangeTypeChange }
-  } = useSelectorStores({
+  } = useSymbolSelectorLogic({
     defaultExchangeType,
     onExchangeTypeChange
   });
@@ -308,7 +167,7 @@ export default function AdvancedSymbolSelector({
   } = filterState;
   
   // 人気銘柄を取得
-  const popularSymbols = usePopularSymbols({
+  const popularSymbols = useAdvancedPopularSymbols({
     symbols: filteredSymbols,
     filterOptions
   });
@@ -365,68 +224,26 @@ export default function AdvancedSymbolSelector({
   }, [selectedSymbol, toggleFavorite]);
 
   return (
-    <div className="w-full space-y-4">
-      {/* 取引タイプの選択 */}
-      <ExchangeTabs
-        currentExchangeType={exchangeType}
-        onExchangeTypeChange={handleExchangeTypeChange}
-      />
-      
-      {/* 検索フィールド */}
-      <SearchBar
-        searchTerm={filterOptions.searchTerm}
-        onSearch={handleSearch}
-      />
-      
-      {/* フィルターオプション */}
-      <FilterBar
-        filterOptions={filterOptions}
-        commonQuoteAssets={commonQuoteAssets}
-        onFavoritesToggle={handleFavoritesToggle}
-        onQuoteAssetFilter={handleQuoteAssetFilter}
-        onResetFilters={resetFilters}
-      />
-      
-      {/* 人気銘柄セクション */}
-      {!isLoading && popularSymbols.length > 0 && (
-        <PopularList
-          symbols={popularSymbols}
-          currentSymbol={currentSymbol}
-          onSelect={handleSymbolSelect}
-          onToggleFavorite={toggleFavorite}
-        />
-      )}
-      
-      {/* 銘柄リスト */}
-      <SymbolList
-        symbols={filteredSymbols}
-        isLoading={isLoading}
-        error={error}
-        currentSymbol={currentSymbol}
-        onSelect={handleSymbolSelect}
-        onToggleFavorite={toggleFavorite}
-        onRetry={retryFetch}
-      />
-
-      {/* 現在選択中の銘柄表示 */}
-      {selectedSymbol && (
-        <div className="flex items-center">
-          <button
-            className="mr-2 text-text-secondary hover:text-accent"
-            onClick={handleToggleFavorite}
-            aria-label="お気に入りに追加/削除"
-          >
-            {selectedSymbol.favorite ? 
-              "★" : 
-              "☆"
-            }
-          </button>
-          <div className="text-base font-medium">
-            <span className="text-text-primary">{splitSymbol.base}</span>
-            <span className="text-text-secondary">/{splitSymbol.quote}</span>
-          </div>
-        </div>
-      )}
-    </div>
+    <AdvancedSelectorView
+      exchangeType={exchangeType}
+      onExchangeTypeChange={handleExchangeTypeChange}
+      filterOptions={filterOptions}
+      commonQuoteAssets={commonQuoteAssets}
+      onSearch={handleSearch}
+      onFavoritesToggle={handleFavoritesToggle}
+      onQuoteAssetFilter={handleQuoteAssetFilter}
+      onResetFilters={resetFilters}
+      popularSymbols={popularSymbols}
+      filteredSymbols={filteredSymbols}
+      isLoading={isLoading}
+      error={error}
+      currentSymbol={currentSymbol}
+      onSelect={handleSymbolSelect}
+      onToggleFavorite={toggleFavorite}
+      onRetry={retryFetch}
+      selectedSymbol={selectedSymbol}
+      splitSymbol={splitSymbol}
+      onToggleCurrentFavorite={handleToggleFavorite}
+    />
   );
-} 
+}
