@@ -2,7 +2,7 @@
 // 移動: apiClientFactory.tsから移動
 // 更新: 2025-05-12 - インポートパスを新しいBitgetApiClientに更新
 
-import { BitgetApiClient } from './bitget/client';
+import { BitgetApiClient } from './bitget/client.new';
 import { ExchangeType, ProductType } from '@/types/exchange';
 import { safeExchangeType } from '@/utils/exchangeTypeUtils';
 
