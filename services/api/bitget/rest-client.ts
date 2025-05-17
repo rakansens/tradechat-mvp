@@ -11,7 +11,7 @@
  */
 
 import axios, { AxiosError } from 'axios';
-import { ExchangeType, ExchangeProductType } from '../../../types/api';
+import { ExchangeType, ExchangeProductType } from '@/types/api';
 import { OHLCData, Timeframe, OrderBookData } from '../../../types/chart';
 import { IRestApiClient } from '../interfaces';
 import { logger } from '../../../utils/logger';

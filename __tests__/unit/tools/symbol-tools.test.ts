@@ -5,7 +5,7 @@
 import { changeSymbolTool } from '../../../src/mastra/tools/symbol-tools';
 import { logger } from '../../../utils/logger';
 import fetch from 'node-fetch'; // Import to mock
-import { ExchangeType, ProductType } from '../../../types/api';
+import { ExchangeType, ProductType } from '@/types/api';
 
 // Mock logger
 jest.mock('../../../utils/logger', () => ({

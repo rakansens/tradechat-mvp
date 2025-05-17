@@ -6,20 +6,20 @@
  */
 
 import { BitgetApiClient } from '../../services/api/bitget/client';
-import { ExchangeType } from '../../types/api';
+import { ProductType } from '@/types/api';
 import { OHLCData } from '../../types/chart';
 
 // テスト設定
 const TEST_SYMBOLS = ['BTC/USDT', 'ETH/USDT'];
 const TEST_TIMEFRAMES = ['1m', '1h', '1d'];
-const EXCHANGE_TYPES: ExchangeType[] = ['spot', 'futures'];
+const PRODUCT_TYPES: ProductType[] = ['spot', 'futures'];
 
 async function testHistoricalData() {
   console.log('=== 過去のローソク足データ取得テスト ===');
   
-  for (const exchangeType of EXCHANGE_TYPES) {
-    console.log(`\n[${exchangeType.toUpperCase()}取引のテスト]`);
-    const api = new BitgetApiClient({}, exchangeType);
+  for (const productType of PRODUCT_TYPES) {
+    console.log(`\n[${productType.toUpperCase()}取引のテスト]`);
+    const api = new BitgetApiClient({}, productType);
     
     for (const symbol of TEST_SYMBOLS) {
       for (const timeframe of TEST_TIMEFRAMES) {
@@ -56,7 +56,7 @@ function testWebSocket() {
   const timeframe = '1m';
   
   console.log(`WebSocket接続をテスト中... (${symbol} ${timeframe})`);
-  const api = new BitgetApiClient({}, 'spot');
+  const api = new BitgetApiClient({}, 'spot' as ProductType);
   
   // WebSocket接続を確立
   api.connectWebSocket();

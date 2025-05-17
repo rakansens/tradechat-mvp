@@ -9,7 +9,7 @@
 import { EventEmitter } from 'events';
 import { OrderBookData, OrderBookEntry } from '@/types/common/orderbook';
 import { OHLCData, Timeframe } from '../../types/chart';
-import { ProductType } from '../../types/api';
+import { ProductType } from '@/types/api';
 import { logger } from '../../utils/logger';
 import { ISocketService } from './interfaces';
 

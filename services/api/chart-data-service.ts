@@ -10,7 +10,7 @@
  */
 
 import { EventEmitter } from 'events';
-import { ExchangeType } from '../../types/api';
+import { ExchangeType } from '@/types/api';
 import { OHLCData, OrderBookData, Timeframe } from '../../types/chart';
 import { IChartDataService } from './interfaces';
 import { dataSourceFactory } from './data-source-factory';

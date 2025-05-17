@@ -9,7 +9,7 @@ import {
   ApiRequestConfig,
   AdaptiveApiRequestConfig,
   CancellableRequest
-} from '../../../types/api';
+} from '@/types/api';
 import { IS_DEV, IS_BROWSER, getApiConfig } from './environment';
 
 /**
