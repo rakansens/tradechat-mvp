@@ -15,5 +15,6 @@ This directory contains technical documents and development guides for the Trade
 - **supabase-database-architecture.md** - Supabase schema overview
 - **supabase-database-security.md** - notes on database security and RLS policies
 - **supabase-di.md** - dependency injection pattern for the Supabase client
+- **services-overview.md** - summary of the API, socket, cache and data services
 
 Old planning documents have been removed to keep this folder concise.
