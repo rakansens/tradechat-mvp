@@ -1,5 +1,0 @@
-// services/apiClientFactory.ts
-// 更新: リファクタリングにより新しい構造にリダイレクト
-// このファイルは互換性のために残されています
-
-export * from './api/client-factory';
