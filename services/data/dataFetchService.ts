@@ -19,7 +19,7 @@ import { IDataFetchService } from './dataFetchTypes';
 import { OHLCData, Timeframe } from '../../types/chart';
 import { ExchangeType } from '@/types/api';
 import { logger } from '../../utils/logger';
-import { normalizeSymbol } from '../../utils/formatters';
+import { normalizeSymbol } from '../../utils/symbol';
 import { getSocketService } from '../socket/service';
 import { cacheService } from '../cache/service';
 
@@ -66,7 +66,7 @@ class DataFetchService extends EventEmitter implements IDataFetchService {
     useCache: boolean = true
   ): Promise<OHLCData[]> {
     // シンボルを正規化
-    const normalizedSymbol = normalizeSymbol(symbol);
+    const normalizedSymbol = normalizeSymbol(symbol, '/');
     
     // キャッシュキーを生成
     const cacheKey = `chart-${normalizedSymbol}-${timeFrame}-${exchangeType}`;
@@ -173,7 +173,7 @@ class DataFetchService extends EventEmitter implements IDataFetchService {
    */
   handleTimeframeChange(symbol: string, newTimeframe: Timeframe, exchangeType: ExchangeType = 'bitget'): void {
     // キャッシュから古い時間足のデータをクリア
-    const normalizedSymbol = normalizeSymbol(symbol);
+    const normalizedSymbol = normalizeSymbol(symbol, '/');
     cacheService.clearByPattern(new RegExp(`^chart-${normalizedSymbol}-.*-${exchangeType}$`));
     
     logger.info(`時間足変更によりキャッシュをクリア: ${normalizedSymbol} ${newTimeframe}`, {
@@ -202,7 +202,7 @@ class DataFetchService extends EventEmitter implements IDataFetchService {
     exchangeType: ExchangeType = 'bitget'
   ): () => void {
     // シンボルを正規化
-    const normalizedSymbol = normalizeSymbol(symbol);
+    const normalizedSymbol = normalizeSymbol(symbol, '/');
     
     // ブラウザ環境ではポーリングで対応
     if (isBrowser) {

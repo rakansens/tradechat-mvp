@@ -3,7 +3,7 @@
 // 更新: 2025/8/28 - maxDuration設定追加（Edge環境での長時間実行対応）
 import { NextRequest, NextResponse } from 'next/server';
 import axios from 'axios';
-import { normalizeSymbol } from '@/lib/utils';
+import { normalizeSymbol } from '@/utils/symbol';
 
 // Edge環境での最大実行時間を60秒に設定
 export const maxDuration = 60;

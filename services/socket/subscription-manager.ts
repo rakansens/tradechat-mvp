@@ -10,7 +10,7 @@ import { Socket } from 'socket.io-client';
 import { OrderBookData } from '../../types/market';
 import { OHLCData, Timeframe } from '../../types/chart';
 import { ProductType } from '@/types/api';
-import { normalizeSymbol } from '../../lib/utils';
+import { normalizeSymbol } from '@/utils/symbol';
 import { logger } from '../../utils/logger';
 import { ISubscriptionManager, IWebSocketClient } from './interfaces';
 import { getWebSocketClient } from './websocket-client';

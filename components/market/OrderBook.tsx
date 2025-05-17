@@ -28,7 +28,8 @@
 
 import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import { OrderBookEntry } from '@/types/orderbook';
-import { cn, normalizeSymbol } from '../../lib/utils';
+import { cn } from '../../lib/utils';
+import { normalizeSymbol } from '@/utils/symbol';
 import { orderBookPropsSchema, validateOrderBookProps } from '@/lib/validations/market';
 import { useRootStore } from '../../store/rootStore';
 import { 

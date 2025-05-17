@@ -13,7 +13,7 @@ import { ExchangeType, ExchangeProductType } from '@/types/constants/enums';
 import { OrderBookData } from '@/types/market';
 import { OHLCData, Timeframe } from '@/types/chart';
 import { logger } from '@/utils/common';
-import { normalizeSymbol } from '@/lib/utils';
+import { normalizeSymbol } from '@/utils/symbol';
 import EventEmitter from 'events';
 
 // サポートする取引所のマッピング

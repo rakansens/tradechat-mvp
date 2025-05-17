@@ -12,7 +12,7 @@ import { IChartDataService } from './interfaces';
 import { OHLCData, Timeframe } from '../../types/chart';
 import { ExchangeType } from '@/types/api';
 import { logger } from '../../utils/logger';
-import { normalizeSymbol } from '../../utils/formatters';
+import { normalizeSymbol } from '../../utils/symbol';
 import { getSocketService } from '../socket/index';
 import { cacheService } from '../cache/service';
 
@@ -60,7 +60,7 @@ class ChartDataService extends EventEmitter implements IChartDataService {
     useCache: boolean = true
   ): Promise<OHLCData[]> {
     try {
-      const normalizedSymbol = normalizeSymbol(symbol);
+      const normalizedSymbol = normalizeSymbol(symbol, '/');
       const cacheKey = `chart_${normalizedSymbol}_${timeFrame}_${exchangeType}`;
       
       // キャッシュチェック
@@ -129,7 +129,7 @@ class ChartDataService extends EventEmitter implements IChartDataService {
     exchangeType: ExchangeType = 'bitget'
   ): () => void {
     try {
-      const normalizedSymbol = normalizeSymbol(symbol);
+      const normalizedSymbol = normalizeSymbol(symbol, '/');
       const subscriptionKey = `kline_${normalizedSymbol}_${timeFrame}_${exchangeType}`;
       
       // 既存の購読があれば解除
@@ -214,7 +214,7 @@ class ChartDataService extends EventEmitter implements IChartDataService {
    * @param newSymbol 新しいシンボル
    */
   clearCacheOnSymbolChange(newSymbol: string): void {
-    const normalizedSymbol = normalizeSymbol(newSymbol);
+    const normalizedSymbol = normalizeSymbol(newSymbol, '/');
     
     logger.info('シンボル変更によりキャッシュをクリアします', {
       component: 'ChartDataService',

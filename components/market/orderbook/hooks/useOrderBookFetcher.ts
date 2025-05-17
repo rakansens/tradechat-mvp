@@ -4,7 +4,7 @@
  */
 
 import { useEffect, useRef, useCallback } from 'react';
-import { normalizeSymbol } from '@/lib/utils';
+import { normalizeSymbol } from '@/utils/symbol';
 
 interface OrderBookFetcherProps {
   // 現在のシンボル

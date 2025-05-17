@@ -8,7 +8,7 @@
 
 import { getApiClient } from '../api/client-factory';
 import { ExchangeProductType } from '@/types/constants/enums';
-import { normalizeSymbol } from '@/lib/utils';
+import { normalizeSymbol } from '@/utils/symbol';
 import { logger } from '@/utils/common';
 import type { SymbolInfo } from '@/types/symbol';
 import type { SymbolFilterOptions } from '@/types/common/symbol';

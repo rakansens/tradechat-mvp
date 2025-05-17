@@ -12,7 +12,7 @@ import { IOrderBookService } from '../api/interfaces';
 import { OrderBookData } from '../../types/chart';
 import { ExchangeType } from '@/types/api';
 import { logger } from '../../utils/logger';
-import { normalizeSymbol } from '../../utils/formatters';
+import { normalizeSymbol } from '../../utils/symbol';
 import { getSocketService } from '../socket/service';
 import { cacheService } from '../cache/service';
 
@@ -50,7 +50,7 @@ class OrderBookService extends EventEmitter implements IOrderBookService {
     signal?: AbortSignal
   ): Promise<OrderBookData> {
     // シンボルを正規化
-    const normalizedSymbol = normalizeSymbol(symbol);
+    const normalizedSymbol = normalizeSymbol(symbol, '/');
     
     // キャッシュキーを生成
     const cacheKey = `orderbook-${normalizedSymbol}-${exchangeType}`;
@@ -143,7 +143,7 @@ class OrderBookService extends EventEmitter implements IOrderBookService {
     exchangeType: ExchangeType = 'bitget'
   ): () => void {
     // シンボルを正規化
-    const normalizedSymbol = normalizeSymbol(symbol);
+    const normalizedSymbol = normalizeSymbol(symbol, '/');
     
     // 購読キーを生成
     const subscriptionKey = `orderbook-${normalizedSymbol}-${exchangeType}`;

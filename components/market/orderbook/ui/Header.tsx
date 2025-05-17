@@ -4,7 +4,8 @@
  */
 
 import React, { memo } from 'react';
-import { cn, normalizeSymbol } from '@/lib/utils';
+import { cn } from '@/lib/utils';
+import { normalizeSymbol } from '@/utils/symbol';
 
 interface HeaderProps {
   // タイトル

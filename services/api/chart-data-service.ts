@@ -15,7 +15,7 @@ import { OHLCData, OrderBookData, Timeframe } from '../../types/chart';
 import { IChartDataService } from './interfaces';
 import { dataSourceFactory } from './data-source-factory';
 import { logger } from '../../utils/logger';
-import { normalizeSymbol } from '../../utils/formatters';
+import { normalizeSymbol } from '../../utils/symbol';
 
 // キャッシュサービスのインポート
 import { cacheService } from '../cache/service';
@@ -77,7 +77,7 @@ export class ChartDataService extends EventEmitter implements IChartDataService 
     exchangeType: ExchangeType = 'bitget',
     limit: number = 100
   ): Promise<OHLCData[]> {
-    const normalizedSymbol = normalizeSymbol(symbol);
+    const normalizedSymbol = normalizeSymbol(symbol, '/');
     const requestKey = `${normalizedSymbol}-${timeframe}-${exchangeType}`;
     
     try {
@@ -122,7 +122,7 @@ export class ChartDataService extends EventEmitter implements IChartDataService 
     timeframe: Timeframe,
     callback: (data: OHLCData) => void
   ): () => void {
-    const normalizedSymbol = normalizeSymbol(symbol);
+    const normalizedSymbol = normalizeSymbol(symbol, '/');
     const subscriptionKey = `${normalizedSymbol}-${timeframe}`;
     
     // コールバック関数を登録
@@ -177,7 +177,7 @@ export class ChartDataService extends EventEmitter implements IChartDataService 
    */
   public async getOrderBook(symbol: string, exchangeType: ExchangeType): Promise<OrderBookData> {
     try {
-      const normalizedSymbol = normalizeSymbol(symbol);
+      const normalizedSymbol = normalizeSymbol(symbol, '/');
       
       // キャッシュキー
       const cacheKey = `orderbook-${normalizedSymbol}-${exchangeType}`;
