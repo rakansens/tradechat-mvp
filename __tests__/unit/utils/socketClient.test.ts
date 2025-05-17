@@ -1,7 +1,6 @@
 // 型のみをトップレベルでインポート
 import { ExchangeType, ProductType } from '@/types/api';
 import { Timeframe } from '../../../types/chart';
-import type { Socket } from 'socket.io-client'; // Socket 型をインポート (DisconnectReason を削除)
 
 // logger のモック
 jest.mock('@/utils/common', () => ({
@@ -34,11 +33,31 @@ jest.mock('../../../store/rootStore', () => ({
 
 // socket.io-client のモック定義
 // mockSocketInstance をモジュールスコープで一度だけ定義する
-// TODO: ts (ID: 611e411b-83d0-472f-8adb-b2d1a596964e) - 型互換性のLintエラー。現時点では主要なテスト失敗に集中するため、解決を保留。
-const mockSocketInstance: Socket & {
+interface MockSocket {
+  on: jest.Mock;
+  emit: jest.Mock;
+  connect: jest.Mock;
+  disconnect: jest.Mock;
+  connected: boolean;
+  io: any;
+  send: jest.Mock;
+  open: jest.Mock;
+  close: jest.Mock;
+  auth: any;
+  id: string | undefined;
   _eventHandlers?: Record<string, (...args: any[]) => void>;
   _emitBuffer?: Array<{ event: string; args: any[] }>;
-} = {
+  compress: jest.Mock;
+  listeners: jest.Mock;
+  off: jest.Mock;
+  once: jest.Mock;
+  removeAllListeners: jest.Mock;
+  removeListener: jest.Mock;
+  disconnecting: boolean;
+  recovered: boolean;
+}
+
+const mockSocketInstance: MockSocket = {
   on: jest.fn((event, handler) => {
     if (!mockSocketInstance._eventHandlers) {
       mockSocketInstance._eventHandlers = {};
@@ -58,9 +77,6 @@ const mockSocketInstance: Socket & {
   connected: false,
   // disconnected: true, // 読み取り専用なので直接代入しない。connected の逆として扱われるべき。
   io: undefined as any,
-  volatile: {} as any,
-  ids: 0, // idsプロパティ（通常は設定される）
-  json: {} as any, // json名前空間（通常は設定される）
   send: jest.fn((...args) => {
     mockSocketInstance.emit('message', ...args);
     return mockSocketInstance;
@@ -87,23 +103,10 @@ const mockSocketInstance: Socket & {
   removeListener: jest.fn(() => mockSocketInstance), // removeListenerメソッド
   disconnecting: false, // disconnectingプロパティ
   recovered: false, // recoveredプロパティ
-  pid: '', // pidプロパティ
-} as unknown as Socket & {
-  _eventHandlers?: Record<string, (...args: any[]) => void>;
-  _emitBuffer?: Array<{ event: string; args: any[] }>;
 };
 
 const getEventHandler = (eventName: string) => {
-  console.log(`[getEventHandler] Called for event: ${eventName}`);
-  console.log(`[getEventHandler] Current mockSocketInstance defined: ${!!mockSocketInstance}`);
-  if (mockSocketInstance) {
-    console.log(`[getEventHandler] mockSocketInstance._eventHandlers defined: ${!!mockSocketInstance._eventHandlers}`);
-    if (mockSocketInstance._eventHandlers) {
-      console.log(`[getEventHandler] Keys in _eventHandlers: ${JSON.stringify(Object.keys(mockSocketInstance._eventHandlers))}`);
-      console.log(`[getEventHandler] Handler for ${eventName} defined: ${!!mockSocketInstance._eventHandlers[eventName]}`);
-    }
-  }
-
+  // Utility helper for retrieving registered event handlers in tests
   if (!mockSocketInstance || !mockSocketInstance._eventHandlers) {
     return undefined;
   }

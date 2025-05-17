@@ -7,36 +7,12 @@
 
 import { renderHook } from '@testing-library/react-hooks';
 import { useToolbarEvents } from '../useToolbarEvents';
-<<<<<<< ours
-<<<<<<< ours
-import { useChartDataStore } from '@/store/chart/data';
-import { useSymbolStore } from '@/store/symbol';
-=======
-import { useChartDataStore } from '@/store/chart/data';
-import { useSymbolStore } from '@/store';
->>>>>>> theirs
-
-// モック
-jest.mock('@/store/chart/data', () => ({
-  useChartDataStore: {
-    setState: jest.fn()
-  }
-}));
-<<<<<<< ours
-jest.mock('@/store/symbol', () => ({
-=======
-
-jest.mock('@/store', () => ({
->>>>>>> theirs
-  useSymbolStore: {
-=======
 import { useRootStore } from '@/store';
 
 // モック
 jest.mock('@/store', () => ({
   useRootStore: {
     setState: jest.fn(),
->>>>>>> theirs
     getState: jest.fn(() => ({
       setCurrentSymbol: jest.fn()
     }))

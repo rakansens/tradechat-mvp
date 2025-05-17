@@ -52,47 +52,61 @@ export const multiTimeframeAnalysisTool = createTool({
     summary: z.string().describe("複数時間足の分析結果をまとめた総合的な見解"),
     overallRecommendation: z.string().describe("総合的な取引推奨"),
     overallConfidence: z.number().describe("総合的な確信度（0-100）"),
+    failed: z
+      .array(
+        z.object({
+          timeframe: z.string(),
+          error: z.string().optional(),
+        })
+      )
+      .optional()
+      .describe("分析に失敗した時間足"),
   }),
   
   execute: async ({ context }) => {
     try {
       const { timeframes = ['15m', '1h', '4h', '1d'], symbol, focusOn } = context;
-      const results = [];
-      
+      const failures: Array<{ timeframe: string; error?: string }> = [];
+
       console.log(`複数時間足分析を開始: ${timeframes.join(', ')}`);
-      
-      // 各時間足ごとに分析を実行
-      for (const timeframe of timeframes) {
+
+      // 各時間足の処理を並列で実行
+      const tasks = timeframes.map(async (timeframe) => {
         console.log(`時間足${timeframe}の分析を開始`);
-        
-        // 1. 時間足を変更
-        const timeframeResult = await changeTimeframeTool.execute({
-          context: { timeframe }
-        } as any);
-        
-        if (!timeframeResult.success) {
-          console.error(`時間足${timeframe}への変更に失敗しました`);
-          continue;
+        try {
+          const timeframeResult = await changeTimeframeTool.execute({
+            context: { timeframe },
+          } as any);
+
+          if (!timeframeResult.success) {
+            const err = timeframeResult.error || '時間足変更に失敗しました';
+            console.error(`時間足${timeframe}への変更に失敗: ${err}`);
+            failures.push({ timeframe, error: err });
+            return null;
+          }
+
+          const analysisResult = await chartCaptureAnalysisTool.execute({
+            context: { focusOn },
+          } as any);
+
+          console.log(`時間足${timeframe}の分析完了`);
+          return {
+            timeframe,
+            analysis: analysisResult.analysis,
+            recommendation: analysisResult.recommendation,
+            confidence: analysisResult.confidence,
+            imageId: analysisResult.imageId,
+          };
+        } catch (err: any) {
+          const message = err?.message || String(err);
+          console.error(`時間足${timeframe}の分析中にエラー: ${message}`);
+          failures.push({ timeframe, error: message });
+          return null;
         }
-        
-        // 少し待機して、チャートが更新されるのを待つ
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        // 2. チャートをキャプチャして分析
-        const analysisResult = await chartCaptureAnalysisTool.execute({
-          context: { focusOn }
-        } as any);
-        
-        results.push({
-          timeframe,
-          analysis: analysisResult.analysis,
-          recommendation: analysisResult.recommendation,
-          confidence: analysisResult.confidence,
-          imageId: analysisResult.imageId,
-        });
-        
-        console.log(`時間足${timeframe}の分析完了`);
-      }
+      });
+
+      const allResults = await Promise.all(tasks);
+      const results = allResults.filter((r): r is NonNullable<typeof r> => !!r);
       
       // 分析結果がない場合はエラーを返す
       if (results.length === 0) {
@@ -101,7 +115,8 @@ export const multiTimeframeAnalysisTool = createTool({
           analyses: [],
           summary: "分析中にエラーが発生しました。時間足の変更に失敗した可能性があります。",
           overallRecommendation: "エラーのため推奨できません。",
-          overallConfidence: 0
+          overallConfidence: 0,
+          failed: failures
         };
       }
       
@@ -116,7 +131,8 @@ export const multiTimeframeAnalysisTool = createTool({
         analyses: results,
         summary,
         overallRecommendation,
-        overallConfidence
+        overallConfidence,
+        failed: failures
       };
     } catch (error) {
       console.error("複数時間足分析エラー:", error);
@@ -124,7 +140,8 @@ export const multiTimeframeAnalysisTool = createTool({
         analyses: [],
         summary: "分析中にエラーが発生しました。",
         overallRecommendation: "エラーのため推奨できません。",
-        overallConfidence: 0
+        overallConfidence: 0,
+        failed: failures
       };
     }
   },

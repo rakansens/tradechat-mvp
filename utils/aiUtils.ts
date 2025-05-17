@@ -2,12 +2,40 @@
 // AI画像分析機能の実装
 
 import { OpenAI } from 'openai';
+import { createHash } from 'crypto';
 
 // OpenAIクライアントの初期化
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
   dangerouslyAllowBrowser: true // クライアントサイドでの使用を許可
 });
+
+// -------------------------
+// 簡易キャッシュ実装
+// -------------------------
+
+/** 分析結果の型 */
+export interface AnalysisResult {
+  analysis: string;
+  recommendation: string;
+  confidence: number;
+  imageData?: string;
+  imageCaption?: string;
+}
+
+const CACHE_TTL = 10 * 60 * 1000; // 10分
+const analysisCache = new Map<string, { result: AnalysisResult; timestamp: number }>();
+
+// 定期的に期限切れエントリを削除
+const PRUNE_INTERVAL = 5 * 60 * 1000; // 5分
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, entry] of analysisCache.entries()) {
+    if (now - entry.timestamp > CACHE_TTL) {
+      analysisCache.delete(key);
+    }
+  }
+}, PRUNE_INTERVAL);
 
 /**
  * OpenAI Vision APIを使用してチャート画像を分析する
@@ -26,6 +54,13 @@ export const analyzeChartWithAI = async (
   imageCaption?: string;
 }> => {
   try {
+    // ハッシュを計算してキャッシュを確認
+    const hash = createHash('sha256').update(imageBase64).digest('hex');
+    const cached = analysisCache.get(hash);
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+      return cached.result;
+    }
+
     // Base64文字列からURLプレフィックスを削除
     const base64Image = imageBase64.replace(/^data:image\/\w+;base64,/, '');
     
@@ -146,13 +181,17 @@ export const analyzeChartWithAI = async (
     console.log('\nチャットに表示される分析結果:');
     console.log(fullAnalysisText);
 
-    return {
+    const result: AnalysisResult = {
       analysis: fullAnalysisText, // 完全な分析結果を返す
       recommendation,
       confidence: Math.min(100, Math.max(0, confidence)), // 0-100の範囲に収める
       imageData: imageBase64, // 画像データを返す
       imageCaption: "チャート分析", // キャプション
     };
+
+    analysisCache.set(hash, { result, timestamp: Date.now() });
+
+    return result;
   } catch (error) {
     console.error("AI分析エラー:", error);
     return {

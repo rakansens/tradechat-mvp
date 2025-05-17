@@ -163,4 +163,45 @@ describe('useDebugPolling', () => {
     expect(refreshFn1).toHaveBeenCalledTimes(2);
     expect(refreshFn2).toHaveBeenCalledTimes(1);
   });
-}); 
+
+  test('前回の更新が終わっていない場合は次の実行をスキップする', async () => {
+    const refreshFn = jest.fn(
+      () => new Promise((resolve) => setTimeout(resolve, 3000))
+    );
+
+    const { result } = renderHook(() =>
+      useDebugPolling({
+        isDebugMode: true,
+        refreshFunctions: [refreshFn],
+        interval: 1000
+      })
+    );
+
+    // 1回目の実行
+    await act(async () => {
+      jest.advanceTimersByTime(1000);
+      await Promise.resolve();
+    });
+    expect(refreshFn).toHaveBeenCalledTimes(1);
+
+    // 次のティックまで進めても実行中のため呼び出されない
+    await act(async () => {
+      jest.advanceTimersByTime(1000);
+      await Promise.resolve();
+    });
+    expect(refreshFn).toHaveBeenCalledTimes(1);
+
+    // 最初の実行を完了させる
+    await act(async () => {
+      jest.advanceTimersByTime(3000);
+      await Promise.resolve();
+    });
+
+    // 次のインターバルで2回目が呼ばれる
+    await act(async () => {
+      jest.advanceTimersByTime(1000);
+      await Promise.resolve();
+    });
+    expect(refreshFn).toHaveBeenCalledTimes(2);
+  });
+});

@@ -97,11 +97,7 @@ export interface RootActions {
   toggleFavorite: SymbolSlice['toggleFavorite']
   clearFilters: SymbolSlice['clearFilters']
   applyFilters: SymbolSlice['applyFilters']
-<<<<<<< ours
-  addToHistory: SymbolSlice['addToHistory']
-=======
   addToHistory: SymbolSlice['addToHistory'],
->>>>>>> theirs
   clearHistory: SymbolSlice['clearHistory']
   getSymbolChangeHistory: SymbolSlice['getSymbolChangeHistory']
 

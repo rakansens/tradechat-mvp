@@ -48,6 +48,8 @@ The main implementation is `services/socket/socket-service.ts`, which implements
 - `size`
 - `getStats`
 
+Expired entries are automatically cleaned up every 60 seconds.
+
 ## 4. Data Services
 
 Chart and order book data access is organised under `services/data`.

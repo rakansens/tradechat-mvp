@@ -27,6 +27,20 @@ export type CacheSource = 'rest' | 'websocket' | 'memory';
 class CacheService {
   private cache: Map<string, CacheEntry<any>> = new Map();
   private defaultTTL: number = 60 * 1000; // デフォルトの有効期限: 60秒
+
+  // クリーンアップ間隔（ミリ秒）
+  private readonly cleanupIntervalMs = 60 * 1000;
+  private cleanupTimer: ReturnType<typeof setInterval> | null = null;
+
+  constructor() {
+    // 定期的に期限切れエントリを削除
+    this.cleanupTimer = setInterval(
+      () => this.cleanupExpiredEntries(),
+      this.cleanupIntervalMs
+    );
+    // テスト環境でプロセスをブロックしないようにする
+    this.cleanupTimer.unref?.();
+  }
   
   /**
    * キャッシュにデータを保存
@@ -165,6 +179,34 @@ class CacheService {
   reset(): void {
     this.clear();
   }
+
+  /**
+   * 期限切れエントリを削除
+   * setIntervalから呼び出される内部メソッド
+   */
+  private cleanupExpiredEntries(): void {
+    const now = Date.now();
+    for (const [key, entry] of this.cache.entries()) {
+      if (entry.expiresAt !== null && now > entry.expiresAt) {
+        this.cache.delete(key);
+        logger.debug(`期限切れエントリをクリーンアップ: ${key}`, {
+          component: 'CacheService',
+          action: 'cleanup',
+          key
+        });
+      }
+    }
+  }
+
+  /**
+   * クリーンアップタイマーを停止
+   */
+  stopCleanup(): void {
+    if (this.cleanupTimer) {
+      clearInterval(this.cleanupTimer);
+      this.cleanupTimer = null;
+    }
+  }
   
   /**
    * キャッシュのサイズを取得
@@ -202,12 +244,29 @@ class CacheService {
   }
 }
 
-// シングルトンインスタンスをエクスポート
-export const cacheService = new CacheService();
+// シングルトンインスタンス
+let cacheServiceInstance: CacheService | null = null;
+
+/**
+ * CacheServiceのシングルトンインスタンスを取得
+ */
+export function getCacheService(): CacheService {
+  if (!cacheServiceInstance) {
+    cacheServiceInstance = new CacheService();
+  }
+  return cacheServiceInstance;
+}
+
+// デフォルトインスタンスをエクスポート
+export const cacheService = getCacheService();
 
 /**
  * サービスインスタンスをリセット
  */
 export function resetCacheService(): void {
-  cacheService.reset();
+  if (cacheServiceInstance) {
+    cacheServiceInstance.stopCleanup();
+    cacheServiceInstance.reset();
+  }
+  cacheServiceInstance = null;
 }
