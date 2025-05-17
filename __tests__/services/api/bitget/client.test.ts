@@ -3,7 +3,7 @@
 
 import axios from 'axios';
 import MockAdapter from 'axios-mock-adapter';
-import { BitgetApiClient } from '../../../../services/api/bitget/client';
+import { BitgetApiClient } from '../../../../services/api/bitget/client.new';
 import { OHLCData } from '../../../../types/chart';
 
 // モック設定
