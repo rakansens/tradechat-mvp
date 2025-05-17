@@ -6,7 +6,7 @@ import dynamic from 'next/dynamic';
 import { Suspense } from 'react';
 
 // ssr:false で動的読み込み
-const ResetPasswordClient = dynamic(() => import('./ResetPasswordClient'), {
+const ResetPasswordClient = dynamic(() => import('./ResetPasswordClient.jsx'), {
   ssr: false,
 });
 

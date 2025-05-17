@@ -24,7 +24,7 @@ interface PositionsResponse {
 }
 
 // クライアントコンポーネントを動的にインポート（Hydration対応版）
-const PositionClientHistory = dynamic(() => import("./PositionClientHistory"), {
+const PositionClientHistory = dynamic(() => import("./PositionClientHistory.jsx"), {
   ssr: false
 });
 

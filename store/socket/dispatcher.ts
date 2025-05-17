@@ -55,9 +55,9 @@ const importStore = async <T>(storePath: string): Promise<T | null> => {
   try {
     // 明示的に各ストアへのパスを指定
     if (storePath === '@/services/data') {
-      return await import('@/services/data') as unknown as T;
+      return await import('@/services/data/index.js') as unknown as T;
     } else if (storePath === '@/store/socket/index') {
-      return (await import('@/store/rootStore')).useRootStore.getState() as T;
+      return (await import('@/store/rootStore.js')).useRootStore.getState() as T;
     }
     return null;
   } catch (e) {

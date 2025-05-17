@@ -14,7 +14,7 @@ import { EventEmitter } from 'events';
 const getSocketEventEmitter = async (): Promise<EventEmitter | null> => {
   try {
     // 循環参照を避けるため動的インポート
-    const { getSocketService } = await import('./index');
+    const { getSocketService } = await import('./index.js');
     const socketService = getSocketService();
     
     if (!socketService) {
