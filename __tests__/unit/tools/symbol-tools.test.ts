@@ -5,7 +5,7 @@
 import { changeSymbolTool } from '../../../src/mastra/tools/symbol-tools';
 import { logger } from '../../../utils/logger';
 import fetch from 'node-fetch'; // Import to mock
-import { ExchangeType } from '../../../types/api';
+import { ExchangeType, ProductType } from '../../../types/api';
 
 // Mock logger
 jest.mock('../../../utils/logger', () => ({
@@ -38,13 +38,13 @@ const createMockNodeFetchResponse = (body: any, options: { ok: boolean; status: 
   return response;
 };
 
-const mockSymbolApiResponse = (symbol: string, success = true, exchangeType?: ExchangeType) => 
+const mockSymbolApiResponse = (symbol: string, success = true, exchangeType?: ProductType) =>
   createMockNodeFetchResponse(
     { success, symbol, exchangeType }, 
     { ok: success, status: success ? 200 : 500, statusText: success ? 'OK' : 'Internal Server Error' }
   );
 
-const mockSymbolApiErrorResponse = (symbol: string, errorMessage: string, exchangeType?: ExchangeType) =>
+const mockSymbolApiErrorResponse = (symbol: string, errorMessage: string, exchangeType?: ProductType) =>
   createMockNodeFetchResponse(
     { success: false, symbol, error: errorMessage, exchangeType },
     { ok: false, status: 500, statusText: 'Internal Server Error' }
@@ -74,7 +74,7 @@ describe('changeSymbolTool', () => {
 
   it('取引タイプを指定して銘柄変更ができること', async () => {
     const inputSymbol = 'SOLUSDT';
-    const inputExchangeType = 'futures' as ExchangeType;
+    const inputExchangeType = 'futures' as ProductType;
     (fetch as jest.MockedFunction<typeof fetch>).mockResolvedValue(mockSymbolApiResponse(inputSymbol, true, inputExchangeType));
     
     const input = { 

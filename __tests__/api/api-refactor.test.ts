@@ -8,7 +8,7 @@ import MockAdapter from 'axios-mock-adapter';
 // API関連のインポート
 import * as Api from '../../services/api/common/request';
 import { getApiClient } from '@/services/api/client-factory';
-import { ExchangeProductType } from '@/types/constants/enums';
+import { ProductType } from '@/types/constants/enums';
 import { handleApiError, handleWebSocketError, handleChartError } from '../../services/errors/handler';
 import { getApiConfig, IS_DEV, IS_BROWSER } from '../../services/api/common/environment';
 
@@ -134,7 +134,7 @@ describe('APIリファクタリングテスト', () => {
 
   describe('APIクライアントファクトリー', () => {
     it('正しいタイプのクライアントを返すこと', () => {
-      const client = getApiClient('spot' as ExchangeProductType);
+      const client = getApiClient('spot' as ProductType);
       expect(client).toBeDefined();
       expect(client.constructor.name).toBe('BitgetApiClient');
     });

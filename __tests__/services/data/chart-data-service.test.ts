@@ -12,8 +12,7 @@ import { cacheService } from '../../../services/cache/service';
 import { getSocketService } from '../../../services/socket/index';
 import { logger } from '../../../utils/logger';
 import { OHLCData } from '../../../types/chart';
-import { type ExchangeType } from '@/types/constants/enums';
-import { type ExchangeProductType } from '@/types/constants/enums';
+import { type ExchangeType, type ProductType } from '@/types/constants/enums';
 
 // ExchangeType用の定数
 const EXCHANGE_TYPES = {
@@ -21,10 +20,10 @@ const EXCHANGE_TYPES = {
   FUTURES: 'demo' as ExchangeType
 };
 
-// ExchangeProductType用の定数（チャートデータサービスが内部で使用している場合）
+// ProductType用の定数（チャートデータサービスが内部で使用している場合）
 const PRODUCT_TYPES = {
-  SPOT: 'spot' as ExchangeProductType,
-  FUTURES: 'futures' as ExchangeProductType
+  SPOT: 'spot' as ProductType,
+  FUTURES: 'futures' as ProductType
 };
 
 // モック

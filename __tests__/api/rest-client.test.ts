@@ -6,7 +6,7 @@
  */
 
 import { OHLCData, OrderBookData } from '@/types/chart';
-import { ExchangeType, ExchangeProductType } from '@/types/constants/enums';
+import { ExchangeType, ProductType } from '@/types/constants/enums';
 import { BitgetRestClient } from '../../services/api/bitget/rest-client';
 import axios from 'axios';
 
@@ -41,7 +41,7 @@ describe('BitgetRestClient', () => {
     mockedAxios.get.mockResolvedValueOnce(mockResponse);
     
     // オーダーブックデータを取得
-    const result = await client.getOrderBook('BTC/USDT', 'spot' as ExchangeProductType);
+    const result = await client.getOrderBook('BTC/USDT', 'spot' as ProductType);
     
     // axiosが正しいエンドポイントとパラメータで呼び出されたことを確認
     expect(mockedAxios.get).toHaveBeenCalledWith(
@@ -67,7 +67,7 @@ describe('BitgetRestClient', () => {
     mockedAxios.get.mockRejectedValueOnce(new Error('Network error'));
     
     // オーダーブックデータを取得
-    const result = await client.getOrderBook('BTC/USDT', 'spot' as ExchangeProductType);
+    const result = await client.getOrderBook('BTC/USDT', 'spot' as ProductType);
     
     // デモデータが返されたことを確認
     expect(result).toEqual({
