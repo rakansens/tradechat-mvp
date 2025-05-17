@@ -10,8 +10,30 @@ import type { SymbolInfo } from '@/types/common/symbol';
 
 // モックシンボルデータ
 const mockSymbols: SymbolInfo[] = [
-  { symbol: 'BTCUSDT', baseCoin: 'BTC', quoteCoin: 'USDT', favorite: false },
-  { symbol: 'ETHUSDT', baseCoin: 'ETH', quoteCoin: 'USDT', favorite: true },
+  {
+    id: '1',
+    symbol: 'BTCUSDT',
+    baseCoin: 'BTC',
+    quoteCoin: 'USDT',
+    minOrderSize: 0.0001,
+    pricePrecision: 2,
+    quantityPrecision: 6,
+    status: 'TRADING',
+    exchangeType: 'spot',
+    favorite: false,
+  },
+  {
+    id: '2',
+    symbol: 'ETHUSDT',
+    baseCoin: 'ETH',
+    quoteCoin: 'USDT',
+    minOrderSize: 0.001,
+    pricePrecision: 2,
+    quantityPrecision: 6,
+    status: 'TRADING',
+    exchangeType: 'spot',
+    favorite: true,
+  },
 ];
 
 // validateSymbolInfoのモック
