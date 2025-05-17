@@ -12,7 +12,7 @@ import { OrderBookData } from '../../../types/market';
 import { OHLCData } from '../../../types/chart';
 import { ProductType } from '@/types/api';
 import { BitgetApiClient } from '../../../services/api/bitget/client.new';
-import { logger } from '../../../utils/logger';
+import { logger } from '@/utils/common';
 
 // モック
 const mockSocket = {
@@ -56,7 +56,7 @@ const mockBitgetIntegration: IBitgetIntegration = {
   disconnectApiClient: jest.fn()
 };
 
-jest.mock('../../../utils/logger', () => ({
+jest.mock('@/utils/common', () => ({
   logger: {
     info: jest.fn(),
     warn: jest.fn(),

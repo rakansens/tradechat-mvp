@@ -14,7 +14,7 @@
 
 import { Socket } from 'socket.io-client';
 import { SocketCore } from '@/services/socket/core';
-import { logger } from './logger';
+import { logger } from '@/utils/common';
 import { storeEmit } from '@/store/socket/dispatcher';
 import { Timeframe } from '@/types/chart';
 import { ExchangeType } from '@/types/constants/enums';

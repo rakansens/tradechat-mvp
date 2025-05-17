@@ -58,7 +58,7 @@ function update_imports {
   find src -type f -name "*.ts*" -exec sed -i '' "s|from ['\"]@/utils/format['\"]|from '@/utils/common'|g" {} \;
   
   echo -e "${BLUE}utils/logger.ts → utils/common${NC}"
-  find src -type f -name "*.ts*" -exec sed -i '' "s|from ['\"]@/utils/logger['\"]|from '@/utils/common'|g" {} \;
+  find src -type f -name "*.ts*" -exec sed -i '' "s|from ['\"]@/utils/common['\"]|from '@/utils/common'|g" {} \;
   
   # utils/chart/
   echo -e "${BLUE}utils/chartUtils.ts → utils/chart${NC}"

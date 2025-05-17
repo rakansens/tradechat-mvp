@@ -14,7 +14,7 @@ import axios, { AxiosError } from 'axios';
 import { ExchangeType, ExchangeProductType } from '@/types/api';
 import { OHLCData, Timeframe, OrderBookData } from '@/types/chart';
 import { IRestApiClient } from '../interfaces';
-import { logger } from '../../../utils/logger';
+import { logger } from '@/utils/common';
 import { safeExchangeType, safeProductType } from '../../../utils/exchangeTypeUtils';
 
 /* --- ① symbol を API 仕様に合わせて正規化 --- */

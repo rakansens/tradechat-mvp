@@ -8,7 +8,7 @@
 import { BitgetIntegration } from '../../../services/socket/bitget-integration';
 import { BitgetApiClient } from '../../../services/api/bitget/client.new';
 import { ProductType } from '@/types/api';
-import { logger } from '../../../utils/logger';
+import { logger } from '@/utils/common';
 
 // BitgetApiClientのモック
 jest.mock('../../../services/api/bitget/client.new', () => {
@@ -23,7 +23,7 @@ jest.mock('../../../services/api/bitget/client.new', () => {
   };
 });
 
-jest.mock('../../../utils/logger', () => ({
+jest.mock('@/utils/common', () => ({
   logger: {
     info: jest.fn(),
     warn: jest.fn(),

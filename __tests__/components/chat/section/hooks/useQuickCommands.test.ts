@@ -14,7 +14,7 @@ import { logger } from '@/utils/common';
 // lucide-reactモックは不要になったため削除
 
 // ロガーをモック
-jest.mock('@/utils/logger', () => ({
+jest.mock('@/utils/common', () => ({
   logger: {
     info: jest.fn(),
   },

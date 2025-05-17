@@ -38,7 +38,7 @@ jest.mock('@/components/chart/indicators', () => ({
 }));
 
 // ロガーをモック
-jest.mock('../../utils/logger', () => ({
+jest.mock('@/utils/common', () => ({
   logger: {
     warn: jest.fn(),
     error: jest.fn(),

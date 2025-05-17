@@ -4,7 +4,7 @@
 
 import { Server as SocketIOServer } from 'socket.io';
 import { Server as HTTPServer } from 'http';
-import { logger } from './logger';
+import { logger } from '@/utils/common';
 
 // シングルトンSocket.IOサーバーインスタンス
 let io: SocketIOServer | null = null;
