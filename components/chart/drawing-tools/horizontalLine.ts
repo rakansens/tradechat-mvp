@@ -6,6 +6,8 @@ import {
   LineStyle,
   IPriceLine,
 } from 'lightweight-charts';
+import { registerDrawingTool } from '../plugins/drawingToolRegistry';
+import type { DrawingToolPlugin } from '../plugins/types';
 
 /** Options for a horizontal line */
 export interface HorizontalLineOptions {
@@ -93,4 +95,16 @@ export function createHorizontalLineTool(
   return { start, cancel };
 }
 
-export {};
+const horizontalLinePlugin: DrawingToolPlugin<HorizontalLineOptions, HorizontalLine> = {
+  id: 'horizontalLine',
+  draw(_chart, series, options) {
+    return drawHorizontalLine(series, options.price, options);
+  },
+  remove(_chart, series, handle) {
+    removeHorizontalLine(series, handle);
+  },
+};
+
+registerDrawingTool(horizontalLinePlugin);
+
+export { horizontalLinePlugin as HorizontalLinePlugin };

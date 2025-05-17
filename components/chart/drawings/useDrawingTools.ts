@@ -13,11 +13,12 @@ import { OHLCData } from '@/types/chart';
 import { logger } from '@/utils/common';
 import { useRootStore } from '@/store';
 import { selectActiveDrawingTool } from '@/store/chart/drawingTool/selectors';
-import { 
-  FibonacciLineHandles, 
-  drawFibonacciRetracement, 
-  removeFibonacciRetracement 
+import {
+  FibonacciLineHandles,
+  FibonacciOptions
 } from '@/components/chart/drawing-tools/fibonacci';
+import { getDrawingTool } from '../plugins/drawingToolRegistry';
+import type { DrawingToolPlugin } from '../plugins/types';
 
 // 描画ツールのハンドル参照
 export interface DrawingToolHandles {
@@ -65,19 +66,27 @@ export function useDrawingTools(): UseDrawingToolsReturn {
         // 現在のトレンド方向を判断（簡易的な判断）
         const isDowntrend = sortedData[sortedData.length - 1].close < sortedData[Math.max(0, sortedData.length - 10)].close;
         
-        // 既存のフィボナッチラインを削除
-        if (Object.keys(fibonacciLines).length > 0) {
-          removeFibonacciRetracement(mainSeries, fibonacciLines);
+        const plugin = getDrawingTool<DrawingToolPlugin<FibonacciOptions, FibonacciLineHandles>>('fibonacci');
+        if (plugin) {
+          if (Object.keys(fibonacciLines).length > 0) {
+            plugin.remove(chartInstance, mainSeries, fibonacciLines);
+          }
+          const newLines = plugin.draw(chartInstance, mainSeries, {
+            startPrice: highPrice,
+            endPrice: lowPrice,
+            direction: isDowntrend ? 'down' : 'up'
+          } as FibonacciOptions);
+
+          logger.info('フィボナッチリトレースメントを描画しました', {
+            component: 'useDrawingTools',
+            action: 'drawFibonacci',
+            direction: isDowntrend ? 'down' : 'up',
+            highPrice,
+            lowPrice
+          });
+
+          setFibonacciLines(newLines);
         }
-        
-        // 新しいフィボナッチラインを描画
-        const newLines = drawFibonacciRetracement(
-          chartInstance,
-          mainSeries,
-          highPrice,
-          lowPrice,
-          isDowntrend ? 'down' : 'up'
-        );
         
         logger.info('フィボナッチリトレースメントを描画しました', {
           component: 'useDrawingTools',
@@ -91,10 +100,11 @@ export function useDrawingTools(): UseDrawingToolsReturn {
       }
     } else {
       // フィボナッチを非表示
-      if (Object.keys(fibonacciLines).length > 0) {
-        removeFibonacciRetracement(mainSeries, fibonacciLines);
+      const plugin = getDrawingTool<DrawingToolPlugin<FibonacciOptions, FibonacciLineHandles>>('fibonacci');
+      if (plugin && Object.keys(fibonacciLines).length > 0) {
+        plugin.remove(chartInstance, mainSeries, fibonacciLines);
         setFibonacciLines({});
-        
+
         logger.info('フィボナッチリトレースメントを削除しました', {
           component: 'useDrawingTools',
           action: 'removeFibonacci'
@@ -106,8 +116,9 @@ export function useDrawingTools(): UseDrawingToolsReturn {
   // すべての描画ツールをクリア
   const clearAllDrawings = useCallback((mainSeries: ISeriesApi<any>) => {
     // フィボナッチをクリア
-    if (Object.keys(fibonacciLines).length > 0) {
-      removeFibonacciRetracement(mainSeries, fibonacciLines);
+    const plugin = getDrawingTool<DrawingToolPlugin<FibonacciOptions, FibonacciLineHandles>>('fibonacci');
+    if (plugin && Object.keys(fibonacciLines).length > 0) {
+      plugin.remove(mainSeries.chart as unknown as IChartApi ?? chartInstance, mainSeries, fibonacciLines);
       setFibonacciLines({});
     }
     

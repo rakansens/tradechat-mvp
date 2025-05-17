@@ -107,7 +107,7 @@ const PATH_TRANSFORM_MAP: Record<string, string> = {
   '@/store/useDebugStore': '@/store/debug',
   '@/store/useChartDataStore': '@/store/chart/data',
   '@/styles/colors': '@/styles/theme',
-  '@/app/signin/page': '@/app/(auth)/signin/page',
+  '@/app/signin/page': '@/app/auth-client/signin/page',
   '@/lib/supabase/supabase': '@/lib/supabase',
   '../../store/useSymbolStore': '@/store/symbol',
   '../../store/chart': '@/store/chart/index',

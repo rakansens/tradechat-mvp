@@ -32,6 +32,8 @@ import type { OHLCData } from '@/types/chart';
 import { logger } from '@/utils/common';
 import type { MACDParams, ChartIndicator, IndicatorSeriesRefs } from '@/types/indicators';
 import { createIndicator, registerIndicator } from '@/utils/chart/indicatorFactory';
+import { registerIndicatorPlugin } from '../plugins/indicatorRegistry';
+import type { IndicatorPlugin } from '../plugins/types';
 import { MutableRefObject } from 'react';
 
 /**
@@ -489,6 +491,15 @@ const macdIndicator = createIndicator<MACDParams>(
 // レジストリに登録
 registerIndicator('macd', macdIndicator);
 
+const macdPlugin: IndicatorPlugin<MACDParams> = {
+  id: 'macd',
+  calculate: calculateMacdForIndicator,
+  addOrUpdate: addOrUpdateMacdForIndicator,
+  remove: removeMacdForIndicator,
+};
+
+registerIndicatorPlugin(macdPlugin);
+
 /**
  * 後方互換性のためのエクスポート
  * 当面は既存のインターフェースを維持
@@ -514,7 +525,9 @@ export const MACD = {
      * @param chart チャートインスタンス
      * @param seriesRefs シリーズ参照
      */
-    remove: (chart: IChartApi, seriesRefs: MacdSeriesRefs) => {
+  remove: (chart: IChartApi, seriesRefs: MacdSeriesRefs) => {
         removeMacdSeries(chart, seriesRefs);
     }
 };
+
+export { macdPlugin as MACDPlugin };

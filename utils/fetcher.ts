@@ -42,7 +42,7 @@ export async function fetchJSON<T = unknown>(
   if (res.status === 401) {
     if (typeof window !== 'undefined') {
       // SPA内でのリダイレクトに変更（フルリロードを避ける）
-      redirect('/signin');
+      redirect('/auth-client/signin');
     }
     throw new Error('Unauthorized');
   }

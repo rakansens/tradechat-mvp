@@ -65,7 +65,7 @@ export default function ForgotPasswordPage() {
             </div>
             
             <Button asChild className="mt-4">
-              <Link href="/signin">ログインページに戻る</Link>
+              <Link href="/auth-client/signin">ログインページに戻る</Link>
             </Button>
           </div>
         ) : (
@@ -91,7 +91,7 @@ export default function ForgotPasswordPage() {
             </Button>
             
             <div className="text-center text-sm mt-4">
-              <Link href="/signin" className="text-primary hover:underline">
+              <Link href="/auth-client/signin" className="text-primary hover:underline">
                 ログインページに戻る
               </Link>
             </div>

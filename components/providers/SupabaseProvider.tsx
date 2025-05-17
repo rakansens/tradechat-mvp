@@ -11,6 +11,7 @@
  */
 
 import { createContext, useContext, useEffect, useState } from 'react'
+import { env } from '@/config/environment'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { Session, User } from '@supabase/supabase-js'
@@ -70,10 +71,10 @@ export function SupabaseProvider({
   const signIn = async (email: string, password: string) => {
     try {
       // 環境変数チェック
-      if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      if (!env.supabase.url || !env.supabase.anonKey) {
         console.error('環境変数エラー: Supabase設定が不足しています', {
-          url: process.env.NEXT_PUBLIC_SUPABASE_URL ? '設定済み' : '未設定',
-          key: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? '設定済み' : '未設定'
+          url: env.supabase.url ? '設定済み' : '未設定',
+          key: env.supabase.anonKey ? '設定済み' : '未設定'
         });
         return { data: null, error: new Error('認証システムの設定エラー。管理者に連絡してください。') };
       }

@@ -25,14 +25,14 @@ export async function middleware(request: NextRequest) {
   )
 
   // 認証関連ページへのアクセスチェック
-  const authRoutes = ['/signin', '/signup', '/forgot-password', '/reset-password']
+  const authRoutes = ['/auth-client/signin', '/signup', '/forgot-password', '/reset-password']
   const isAuthRoute = authRoutes.some(route => 
     request.nextUrl.pathname.startsWith(route)
   )
 
   // 保護されたルートにアクセスしようとしていて、セッションがない場合はリダイレクト
   if (isProtectedRoute && !session) {
-    return NextResponse.redirect(new URL('/signin', request.url))
+    return NextResponse.redirect(new URL('/auth-client/signin', request.url))
   }
 
   // 既にログインしているのに認証ページにアクセスしようとしている場合はホームページにリダイレクト

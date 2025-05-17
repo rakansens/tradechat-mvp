@@ -4,11 +4,12 @@ import { Mastra } from '@mastra/core';
 import { LibSQLStore } from '@mastra/libsql';
 import { createChatAgent } from './agents'; // エージェント設定のためにインポート
 import path from 'path';
+import { env } from '@/config/environment';
 
 // LibSQLStoreの設定 (環境変数などから取得するのが望ましい)
 const libsqlConfig = {
-  url: process.env.LIBSQL_DB_URL || `file:${path.resolve(process.cwd(), 'mastra.db')}`, // 環境変数またはデフォルト値
-  authToken: process.env.LIBSQL_AUTH_TOKEN, // 環境変数から
+  url: env.libsqlDbUrl || `file:${path.resolve(process.cwd(), 'mastra.db')}`,
+  authToken: env.libsqlAuthToken,
 };
 
 // エージェントインスタンスを作成

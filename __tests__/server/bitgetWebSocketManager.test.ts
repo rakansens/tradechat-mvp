@@ -42,7 +42,7 @@ describe('BitgetWebSocketManager', () => {
       terminate: jest.fn(),
       readyState: WebSocket.OPEN
     };
-    (WebSocket as jest.Mock).mockImplementation(() => mockWs);
+    (WebSocket as unknown as jest.Mock).mockImplementation(() => mockWs);
     
     // BitgetWebSocketManagerのインスタンスを作成
     wsManager = new BitgetWebSocketManager('wss://test.example.com');
@@ -96,7 +96,7 @@ describe('BitgetWebSocketManager', () => {
     
     it('エラーが発生した場合は再接続をスケジュールすること', () => {
       // WebSocketのモックを設定
-      (WebSocket as jest.Mock).mockImplementation(() => {
+      (WebSocket as unknown as jest.Mock).mockImplementation(() => {
         throw new Error('接続エラー');
       });
       

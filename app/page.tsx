@@ -27,7 +27,7 @@ export default async function Dashboard() {
   
   // ユーザーがない場合はログインページにリダイレクト
   if (!user) {
-    redirect('/signin');
+    redirect('/auth-client/signin');
   }
   
   // セッション情報も取得（クライアントコンポーネントにユーザー情報を渡すため）

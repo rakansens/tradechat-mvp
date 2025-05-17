@@ -47,7 +47,7 @@ describe('SignUpPage', () => {
     expect(screen.getByLabelText('パスワード（確認）')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'アカウント作成' })).toBeInTheDocument();
     expect(screen.getByText(/既にアカウントをお持ちの場合は/)).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'ログイン' })).toHaveAttribute('href', '/signin');
+    expect(screen.getByRole('link', { name: 'ログイン' })).toHaveAttribute('href', '/auth-client/signin');
   });
   
   it('有効なフォーム送信でsignUp関数が呼ばれる', async () => {
@@ -78,7 +78,7 @@ describe('SignUpPage', () => {
     
     // 成功したらサインインページにリダイレクト
     await waitFor(() => {
-      expect(mockPush).toHaveBeenCalledWith('/signin');
+      expect(mockPush).toHaveBeenCalledWith('/auth-client/signin');
     });
   });
   

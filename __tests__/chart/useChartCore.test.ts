@@ -22,14 +22,11 @@ import type {
 } from 'lightweight-charts';
 import type { OHLCData } from '@/types/chart';
 
-// モック用のSimpleSeriesDefinition型
-type SimpleSeriesDefinition = Pick<SeriesDefinition<keyof SeriesOptionsMap>, 'type'>;
-
 // lightweight-charts用の定数定義
-const SERIES_TYPES: Record<string, SimpleSeriesDefinition> = {
-  CANDLESTICK: { type: 'Candlestick' },
-  LINE: { type: 'Line' },
-  AREA: { type: 'Area' }
+const SERIES_TYPES: Record<string, SeriesDefinition<keyof SeriesOptionsMap>> = {
+  CANDLESTICK: { type: 'Candlestick' } as unknown as SeriesDefinition<keyof SeriesOptionsMap>,
+  LINE: { type: 'Line' } as unknown as SeriesDefinition<keyof SeriesOptionsMap>,
+  AREA: { type: 'Area' } as unknown as SeriesDefinition<keyof SeriesOptionsMap>
 };
 
 // モックを設定

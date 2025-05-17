@@ -9,6 +9,8 @@ import {
   LineWidth,
   Time,
 } from 'lightweight-charts';
+import { registerDrawingTool } from '../plugins/drawingToolRegistry';
+import type { DrawingToolPlugin } from '../plugins/types';
 
 /** Point used for drawing */
 interface Point {
@@ -144,4 +146,19 @@ export function createTrendLineTool(
 
   return { start: startDraw, cancel };
 }
+
+const trendLinePlugin: DrawingToolPlugin<{ start: Point; end: Point; options?: TrendLineOptions }, TrendLine> = {
+  id: 'trendline',
+  draw(chart, _series, params) {
+    return drawTrendLine(chart, params.start, params.end, params.options || {});
+  },
+  remove(chart, _series, handle) {
+    removeTrendLine(chart, handle);
+  },
+};
+
+registerDrawingTool(trendLinePlugin);
+
+export { trendLinePlugin as TrendLinePlugin };
+
 

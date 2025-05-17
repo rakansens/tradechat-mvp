@@ -3,6 +3,8 @@
 
 import { IChartApi, ISeriesApi, LineData, Time, UTCTimestamp, LineStyle, LineWidth, DeepPartial, SeriesOptionsCommon, PriceScaleOptions, IPriceLine, CreatePriceLineOptions } from 'lightweight-charts';
 import React from 'react';
+import { registerDrawingTool } from '../plugins/drawingToolRegistry';
+import type { DrawingToolPlugin } from '../plugins/types';
 
 /**
  * フィボナッチリトレースメントの方向（上昇または下降）
@@ -178,4 +180,25 @@ export function applyFibonacciRetracement(
   } else {
     return drawFibonacciRetracement(chart, series, lowPrice, highPrice, direction, lineHandles);
   }
-} 
+}
+
+const fibonacciPlugin: DrawingToolPlugin<FibonacciOptions, FibonacciLineHandles> = {
+  id: 'fibonacci',
+  draw(chart, series, options) {
+    return drawFibonacciRetracement(
+      chart,
+      series,
+      options.startPrice,
+      options.endPrice,
+      options.direction,
+      {}
+    );
+  },
+  remove(chart, series, handles) {
+    removeFibonacciRetracement(series, handles);
+  },
+};
+
+registerDrawingTool(fibonacciPlugin);
+
+export { fibonacciPlugin as FibonacciPlugin };

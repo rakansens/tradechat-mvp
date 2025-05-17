@@ -119,7 +119,7 @@ export default function ResetPasswordClient() {
               </div>
               
               <Button asChild className="mt-4">
-                <Link href="/signin">ログインページへ</Link>
+                <Link href="/auth-client/signin">ログインページへ</Link>
               </Button>
             </div>
           ) : (
@@ -160,7 +160,7 @@ export default function ResetPasswordClient() {
               </Button>
               
               <div className="text-center text-sm mt-4">
-                <Link href="/signin" className="text-primary hover:underline">
+                <Link href="/auth-client/signin" className="text-primary hover:underline">
                   ログインページに戻る
                 </Link>
               </div>

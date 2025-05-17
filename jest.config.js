@@ -27,7 +27,7 @@ module.exports = {
     '^vitest$': 'jest',
     
     // アプリページの参照
-    '^@/app/signin/page$': '<rootDir>/__tests__/mocks/signin-page-mock.js'
+    '^@/app/auth-client/signin/page$': '<rootDir>/__tests__/mocks/signin-page-mock.js'
   },
   transform: {
     '^.+\\.(ts|tsx)$': ['babel-jest', {

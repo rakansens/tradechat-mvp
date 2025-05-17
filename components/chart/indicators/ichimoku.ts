@@ -23,6 +23,8 @@ import { filterValidData, createCompatibleSeries, safeRemoveSeries, sortAndPrepa
 import type { OHLCData } from '@/types/chart';
 import type { IchimokuParams, ChartIndicator, IndicatorSeriesRefs } from '@/types/indicators';
 import { createIndicator, registerIndicator } from '@/utils/chart/indicatorFactory';
+import { registerIndicatorPlugin } from '../plugins/indicatorRegistry';
+import type { IndicatorPlugin } from '../plugins/types';
 import React from 'react';
 import { dedupAndSort } from '@/utils/chart/chartUtils';
 
@@ -342,4 +344,15 @@ export function removeIchimokuSeries(
   
   safeRemoveSeries(chart, seriesRefs.cloud.current);
   seriesRefs.cloud.current = null;
-} 
+}
+
+const ichimokuPlugin: IndicatorPlugin<IchimokuParams> = {
+  id: 'ichimoku',
+  calculate: calculateIchimokuData,
+  addOrUpdate: addOrUpdateIchimokuSeries,
+  remove: removeIchimokuSeries,
+};
+
+registerIndicatorPlugin(ichimokuPlugin);
+
+export { ichimokuPlugin as IchimokuPlugin };

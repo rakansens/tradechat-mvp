@@ -20,6 +20,8 @@ import {
   convertLineData,
 } from '@/utils/chart/chartIndicatorUtils';
 import { createIndicator, registerIndicator } from '@/utils/chart/indicatorFactory';
+import { registerIndicatorPlugin } from '../plugins/indicatorRegistry';
+import type { IndicatorPlugin } from '../plugins/types';
 import { MutableRefObject } from 'react';
 
 /** Bollinger Bands data formatted for chart display */
@@ -197,6 +199,15 @@ const bollingerIndicator = createIndicator<BollingerParams>(
 
 registerIndicator('bollinger', bollingerIndicator);
 
+const bollingerPlugin: IndicatorPlugin<BollingerParams> = {
+  id: 'bollinger',
+  calculate: calculateForIndicator,
+  addOrUpdate: addOrUpdateForIndicator,
+  remove: removeForIndicator,
+};
+
+registerIndicatorPlugin(bollingerPlugin);
+
 /** Backward-compatible exports */
 export const BollingerBands = {
   addOrUpdate: (
@@ -213,4 +224,6 @@ export const BollingerBands = {
     removeBollingerSeries(chart, seriesRefs);
   },
 };
+
+export { bollingerPlugin as BollingerPlugin };
 

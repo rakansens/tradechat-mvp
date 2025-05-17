@@ -7,14 +7,26 @@
 
 import { renderHook } from '@testing-library/react-hooks';
 import { useToolbarEvents } from '../useToolbarEvents';
-import { useChartDataStore, useSymbolStore } from '@/store';
+<<<<<<< ours
+import { useChartDataStore } from '@/store/chart/data';
+import { useSymbolStore } from '@/store/symbol';
+
+// モック
+jest.mock('@/store/chart/data', () => ({
+  useChartDataStore: {
+    setState: jest.fn()
+  }
+}));
+jest.mock('@/store/symbol', () => ({
+  useSymbolStore: {
+=======
+import { useRootStore } from '@/store';
 
 // モック
 jest.mock('@/store', () => ({
-  useChartDataStore: {
-    setState: jest.fn()
-  },
-  useSymbolStore: {
+  useRootStore: {
+    setState: jest.fn(),
+>>>>>>> theirs
     getState: jest.fn(() => ({
       setCurrentSymbol: jest.fn()
     }))
@@ -71,7 +83,7 @@ describe('useToolbarEvents', () => {
     window.dispatchEvent(timeframeEvent);
     
     // ストアのsetStateが呼ばれたことを検証
-    expect(useChartDataStore.setState).toHaveBeenCalledWith({ currentTimeFrame: '1h' });
+    expect(useRootStore.setState).toHaveBeenCalledWith({ currentTimeFrame: '1h' });
   });
   
   it('銘柄変更イベントが発火するとシンボルが更新される', () => {
@@ -83,8 +95,8 @@ describe('useToolbarEvents', () => {
     });
     window.dispatchEvent(symbolEvent);
     
-    // SymbolStoreのsetCurrentSymbolが呼ばれたことを検証
-    expect(useSymbolStore.getState).toHaveBeenCalled();
-    expect(useSymbolStore.getState().setCurrentSymbol).toHaveBeenCalledWith('ETH-USD', 'ToolbarEvents.updateSymbol');
+    // RootStoreのsetCurrentSymbolが呼ばれたことを検証
+    expect(useRootStore.getState).toHaveBeenCalled();
+    expect(useRootStore.getState().setCurrentSymbol).toHaveBeenCalledWith('ETH-USD', 'ToolbarEvents.updateSymbol');
   });
-}); 
+});

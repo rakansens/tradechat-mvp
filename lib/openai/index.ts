@@ -4,6 +4,7 @@
 // 更新日: 2025/9/17 - セキュリティ強化（サーバーサイド専用チェック追加）
 
 import OpenAI from 'openai';
+import { env } from '@/config/environment';
 
 // クライアント環境での実行をブロックするガード関数
 const blockClientSideExecution = () => {
@@ -28,7 +29,7 @@ export function getOpenAI(): OpenAI {
   blockClientSideExecution();
 
   if (!openaiInstance) {
-    const apiKey = process.env.OPENAI_API_KEY;
+    const apiKey = env.openaiApiKey;
     
     if (!apiKey) {
       throw new Error('OPENAI_API_KEY環境変数が設定されていません');

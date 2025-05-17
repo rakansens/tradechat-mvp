@@ -6,26 +6,21 @@ import { z } from "zod";
 import { v4 as uuidv4 } from "uuid";
 import { analyzeChartWithAI } from "@/utils/aiUtils";
 
-// グローバル関数の型定義
-declare global {
-  var requestCapture: (timeoutMs?: number) => Promise<string | null>;
-  var storeChartImage: (imageData: string) => string; // 画像を保存して画像IDを返す関数
-  var chartImages: Map<string, string>; // 画像データを一時的に保存するマップ
-}
-
-// NodeJSの型定義を拡張
-declare namespace NodeJS {
-  interface Global {
-    chartImages: Map<string, string>;
-    requestCapture: (timeoutMs?: number) => Promise<string | null>;
-    storeChartImage: (imageData: string) => string;
-  }
+export interface ChartCaptureDependencies {
+  requestCapture: (timeoutMs?: number) => Promise<string | null>;
+  storeChartImage?: (imageData: string) => string;
+  cache?: Map<string, string>;
 }
 
 /**
  * 現在表示中のチャートをキャプチャし、AIに分析させるツール
  */
-export const chartCaptureAnalysisTool = createTool({
+export function createChartCaptureAnalysisTool({
+  requestCapture,
+  storeChartImage,
+  cache = new Map<string, string>()
+}: ChartCaptureDependencies) {
+  return createTool({
   id: "chart-capture-analysis",
   description: `現在表示されているチャートをキャプチャして分析します。トレンドやパターン、指標の状態などを読み取り、取引判断の材料として使用します。
   
@@ -69,7 +64,7 @@ export const chartCaptureAnalysisTool = createTool({
         imageCaption: "画像なし"
       };
       
-      if (typeof global.requestCapture === 'function') {
+      if (typeof requestCapture === 'function') {
         console.log("Socket.ioでキャプチャをリクエスト開始");
         
         // 最大5回リトライ（より多くのリトライ）
@@ -77,7 +72,7 @@ export const chartCaptureAnalysisTool = createTool({
           try {
             console.log(`キャプチャ試行 ${attempt}/5`);
             // タイムアウトを長めに設定（30秒）
-            imageData = await global.requestCapture(30000);
+            imageData = await requestCapture(30000);
             
             if (imageData) {
               console.log("キャプチャ成功、リトライ終了");
@@ -105,9 +100,9 @@ export const chartCaptureAnalysisTool = createTool({
         
         // 画像データを保存し、IDを取得（ログに画像データを出力しない）
         let imageId = "";
-        if (typeof global.storeChartImage === 'function') {
+        if (typeof storeChartImage === 'function') {
           // 画像を保存してIDを取得
-          imageId = global.storeChartImage(imageData);
+          imageId = storeChartImage(imageData);
           console.log(`画像を保存しました。ID: ${imageId}`);
           
           // 指定された形式でも画像を保存
@@ -140,11 +135,7 @@ export const chartCaptureAnalysisTool = createTool({
         } else {
           // フォールバック: UUIDを生成して一時的に使用
           imageId = `chart-${uuidv4()}`;
-          // グローバルオブジェクトに一時的に保存
-          if (!global.chartImages) {
-            global.chartImages = new Map<string, string>();
-          }
-          global.chartImages.set(imageId, imageData);
+          cache.set(imageId, imageData);
           console.log(`一時的な画像IDを生成: ${imageId}`);
         }
         
@@ -178,4 +169,11 @@ export const chartCaptureAnalysisTool = createTool({
       };
     }
   },
+  });
+}
+export const chartCaptureAnalysisTool = createChartCaptureAnalysisTool({
+  requestCapture: (timeoutMs?: number) => (global as any).requestCapture?.(timeoutMs) ?? Promise.resolve(null),
+  storeChartImage: (imageData: string) => (global as any).storeChartImage?.(imageData) ?? `chart-${uuidv4()}`,
+  cache: (global as any).chartImages ?? new Map<string, string>()
 });
+

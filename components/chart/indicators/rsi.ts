@@ -21,6 +21,8 @@ import {
 import type { OHLCData } from '@/types/chart';
 import type { RSIParams, ChartIndicator, IndicatorSeriesRefs } from '@/types/indicators';
 import { createIndicator, registerIndicator } from '@/utils/chart/indicatorFactory';
+import { registerIndicatorPlugin } from '../plugins/indicatorRegistry';
+import type { IndicatorPlugin } from '../plugins/types';
 import { RSI as RsiIndicator } from 'technicalindicators';
 import { MutableRefObject } from 'react';
 
@@ -207,6 +209,17 @@ const rsiIndicator = createIndicator<RSIParams>(
 // レジストリに登録
 registerIndicator('rsi', rsiIndicator);
 
+// Plugin object for dynamic registration
+const rsiPlugin: IndicatorPlugin<RSIParams> = {
+  id: 'rsi',
+  calculate: calculateRsiForIndicator,
+  addOrUpdate: addOrUpdateRsiForIndicator,
+  remove: removeRsiForIndicator,
+};
+
+// Register with new plugin registry
+registerIndicatorPlugin(rsiPlugin);
+
 /**
  * 後方互換性のためのエクスポート
  * 当面は既存のインターフェースを維持
@@ -238,3 +251,5 @@ export const RSI = {
     removeRsiSeries(chart, seriesRef);
   }
 };
+
+export { rsiPlugin as RSIPlugin };

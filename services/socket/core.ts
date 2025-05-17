@@ -2,6 +2,7 @@
 // 責務: Socket.IOの低レベル接続管理のみを担当
 import { Socket, io } from 'socket.io-client';
 import { logger } from '@/utils/common';
+import { env } from '@/config/environment';
 
 // プライベートモジュール変数
 let socket: Socket | null = null;
@@ -27,7 +28,7 @@ export class SocketCore {
       }
       
       // 新しい接続を作成
-      const baseUrl = process.env.API_BASE_URL || 'http://localhost:3000';
+      const baseUrl = env.apiBaseUrl;
       socket = io(baseUrl, {
         reconnectionAttempts: 5,
         reconnectionDelay: 1000,

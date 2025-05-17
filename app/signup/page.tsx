@@ -64,7 +64,7 @@ export default function SignUpPage() {
       });
       
       // 成功したらサインインページにリダイレクト
-      router.push('/signin');
+      router.push('/auth-client/signin');
       
     } catch (error: any) {
       console.error('サインアップエラー詳細:', error);
@@ -141,7 +141,7 @@ export default function SignUpPage() {
         <div className="text-center text-sm mt-4">
           <p className="text-muted-foreground">
             既にアカウントをお持ちの場合は、
-            <Link href="/signin" className="text-primary hover:underline">
+            <Link href="/auth-client/signin" className="text-primary hover:underline">
               ログイン
             </Link>
             してください

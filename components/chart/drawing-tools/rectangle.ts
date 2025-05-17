@@ -9,6 +9,8 @@ import {
   LineStyle,
   LineWidth
 } from 'lightweight-charts';
+import { registerDrawingTool } from '../plugins/drawingToolRegistry';
+import type { DrawingToolPlugin } from '../plugins/types';
 
 /**
  * 四角形の角を表すポイント
@@ -231,4 +233,23 @@ export function createRectangleDrawingTool(
     start,
     cancel
   };
-} 
+}
+
+const rectanglePlugin: DrawingToolPlugin<{
+  topLeft: Point;
+  bottomRight: Point;
+  options?: RectangleOptions;
+}, Rectangle> = {
+  id: 'rectangle',
+  draw(chart, _series, params) {
+    return drawRectangle(chart, params.topLeft, params.bottomRight, params.options || {});
+  },
+  remove(chart) {
+    // handle contains rectangle
+    return; // rectangles are drawn as series and removed via removeRectangle
+  },
+};
+
+registerDrawingTool(rectanglePlugin);
+
+export { rectanglePlugin as RectanglePlugin };

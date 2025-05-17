@@ -27,19 +27,24 @@ yarn install
 
 ### 1.4 環境変数の設定
 
-`.env.local`ファイルを作成し、必要な環境変数を設定します：
+`.env.local`ファイルを作成し、以下の環境変数を設定します：
 
 \`\`\`
-# 開発環境
 NODE_ENV=development
+NEXT_PUBLIC_BASE_URL=http://localhost:3000
+API_BASE_URL=http://localhost:3000
 
+# Bitget API
+NEXT_PUBLIC_BITGET_API_URL=https://api.bitget.com
+NEXT_PUBLIC_BITGET_WS_URL=wss://ws.bitget.com/v2/ws/public
+NEXT_PUBLIC_ENABLE_DEMO_MODE=false
 
-# SUPABASE (将来的に必要)
+# Supabase
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
 
-# AI SDK (将来的に必要)
+# OpenAI
 OPENAI_API_KEY=
 \`\`\`
 
