@@ -5,7 +5,7 @@
  * 作成: データフェッチサービスのインターフェースと型定義
  */
 
-import { ExchangeType } from '../../types/api';
+import { ExchangeType } from '@/types/api';
 import { OHLCData, Timeframe } from '../../types/chart';
 
 export interface IDataFetchService {

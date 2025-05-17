@@ -4,7 +4,7 @@
 
 import { toast } from 'sonner';
 import { AxiosError } from 'axios';
-import { ApiErrorHandlerOptions, WebSocketErrorHandlerOptions } from '../../types/api';
+import { ApiErrorHandlerOptions, WebSocketErrorHandlerOptions } from '@/types/api';
 import { IS_DEV, IS_BROWSER } from '../api/common/environment';
 
 // エラーの種類を区別するための型

@@ -7,7 +7,7 @@
 
 import { BitgetIntegration } from '../../../services/socket/bitget-integration';
 import { BitgetApiClient } from '../../../services/api/bitget/client';
-import { ProductType } from '../../../types/api';
+import { ProductType } from '@/types/api';
 import { logger } from '../../../utils/logger';
 
 // BitgetApiClientのモック

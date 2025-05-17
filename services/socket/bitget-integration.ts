@@ -6,7 +6,7 @@
  * 変更: index.tsからBitgetAPI統合機能を分離
  */
 
-import { ProductType } from '../../types/api';
+import { ProductType } from '@/types/api';
 import { BitgetApiClient } from '../api/bitget/client';
 import { logger } from '../../utils/logger';
 import { IBitgetIntegration } from './interfaces';

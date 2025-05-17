@@ -1,5 +1,5 @@
 // 型のみをトップレベルでインポート
-import { ExchangeType, ProductType } from '../../../types/api';
+import { ExchangeType, ProductType } from '@/types/api';
 import { Timeframe } from '../../../types/chart';
 import type { Socket } from 'socket.io-client'; // Socket 型をインポート (DisconnectReason を削除)
 

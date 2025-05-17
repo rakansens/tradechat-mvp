@@ -8,7 +8,7 @@
  * 接続管理、メッセージ送受信、Ping/Pong処理、再接続ロジックを実装します。
  */
 
-import { ProductType, BitgetCredentials } from '../../../types/api';
+import { ProductType, BitgetCredentials } from '@/types/api';
 import { OHLCData, Timeframe } from '../../../types/chart';
 import { OrderBookData } from '../../../types/market';
 import { logger } from '@/utils/common';

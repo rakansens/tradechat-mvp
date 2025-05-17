@@ -10,7 +10,7 @@ import { EventEmitter } from 'events';
 import { BitgetApiClient } from '../api/bitget/client';
 import { IChartDataService } from './interfaces';
 import { OHLCData, Timeframe } from '../../types/chart';
-import { ExchangeType } from '../../types/api';
+import { ExchangeType } from '@/types/api';
 import { logger } from '../../utils/logger';
 import { normalizeSymbol } from '../../utils/formatters';
 import { getSocketService } from '../socket/index';

@@ -8,7 +8,7 @@
  * このファイルは、APIレスポンスの正規化とWebSocketメッセージのパースを担当します。
  */
 
-import { ExchangeType } from '../../../types/api';
+import { ExchangeType } from '@/types/api';
 import { OHLCData, Timeframe } from '../../../types/chart';
 import { OrderBookData } from '../../../types/market';
 import { logger } from '@/utils/common';

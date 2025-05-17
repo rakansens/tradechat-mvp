@@ -6,7 +6,7 @@
 import { changeInstrumentTypeTool } from '../../../src/mastra/tools/instrument-type-tools';
 import { useRootStore } from '../../../store/rootStore';
 import { logger } from '../../../utils/common';
-import { ProductType } from '../../../types/api';
+import { ProductType } from '@/types/api';
 
 // モジュールをモック化
 jest.mock('../../../src/mastra/tools/instrument-type-tools', () => ({

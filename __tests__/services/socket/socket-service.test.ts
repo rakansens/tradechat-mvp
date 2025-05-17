@@ -10,7 +10,7 @@ import { SocketService } from '../../../services/socket/socket-service';
 import { IWebSocketClient, ISubscriptionManager, IBitgetIntegration } from '../../../services/socket/interfaces';
 import { OrderBookData } from '../../../types/market';
 import { OHLCData } from '../../../types/chart';
-import { ProductType } from '../../../types/api';
+import { ProductType } from '@/types/api';
 import { BitgetApiClient } from '../../../services/api/bitget/client';
 import { logger } from '../../../utils/logger';
 
