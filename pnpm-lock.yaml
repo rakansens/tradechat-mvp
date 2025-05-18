@@ -9,8 +9,6 @@ overrides:
   '@types/react-dom': ^19
   react: ^19
   react-dom: ^19
-  '@libsql/darwin-arm64': 0.5.8
-  '@libsql/darwin-x64': 0.5.8
   '@libsql/linux-arm64-gnu': 0.5.8
   '@libsql/linux-arm64-musl': 0.5.8
   '@libsql/linux-x64-gnu': 0.5.8
@@ -1624,9 +1622,19 @@ packages:
   '@libsql/core@0.15.4':
     resolution: {integrity: sha512-NMvh6xnn3vrcd7DNehj0HiJcRWB2a8hHhJUTkOBej3Pf3KB21HOmdOUjXxJ5pGbjWXh4ezQBmHtF5ozFhocXaA==}
 
+  '@libsql/darwin-arm64@0.4.7':
+    resolution: {integrity: sha512-yOL742IfWUlUevnI5PdnIT4fryY3LYTdLm56bnY0wXBw7dhFcnjuA7jrH3oSVz2mjZTHujxoITgAE7V6Z+eAbg==}
+    cpu: [arm64]
+    os: [darwin]
+
   '@libsql/darwin-arm64@0.5.8':
     resolution: {integrity: sha512-dJRfwCHAKOIgysMbB+PBo3ZmCVuGC02fH57kFEFlqbbUv6wnAZV5g7GErQIv4IlC4VPKAS4RL20fjLUgXE+0Xg==}
     cpu: [arm64]
+    os: [darwin]
+
+  '@libsql/darwin-x64@0.4.7':
+    resolution: {integrity: sha512-ezc7V75+eoyyH07BO9tIyJdqXXcRfZMbKcLCeF8+qWK5nP8wWuMcfOVywecsXGRbT99zc5eNra4NEx6z5PkSsA==}
+    cpu: [x64]
     os: [darwin]
 
   '@libsql/darwin-x64@0.5.8':
@@ -10355,7 +10363,13 @@ snapshots:
     dependencies:
       js-base64: 3.7.7
 
+  '@libsql/darwin-arm64@0.4.7':
+    optional: true
+
   '@libsql/darwin-arm64@0.5.8':
+    optional: true
+
+  '@libsql/darwin-x64@0.4.7':
     optional: true
 
   '@libsql/darwin-x64@0.5.8':
@@ -15976,8 +15990,8 @@ snapshots:
       '@neon-rs/load': 0.0.4
       detect-libc: 2.0.2
     optionalDependencies:
-      '@libsql/darwin-arm64': 0.5.8
-      '@libsql/darwin-x64': 0.5.8
+      '@libsql/darwin-arm64': 0.4.7
+      '@libsql/darwin-x64': 0.4.7
       '@libsql/linux-arm64-gnu': 0.5.8
       '@libsql/linux-arm64-musl': 0.5.8
       '@libsql/linux-x64-gnu': 0.5.8
