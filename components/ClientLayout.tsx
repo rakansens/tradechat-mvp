@@ -68,14 +68,13 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   }, []);
 
   return (
-    <ThemeProvider attribute="class" defaultTheme="dark" forcedTheme="dark" enableSystem disableTransitionOnChange>
-      <ErrorBoundary>
-        <ConversationProvider>
-          {children}
-        </ConversationProvider>
-        
-        {/* デバッグモードの場合のみデバッグボタンを表示 */}
-        {process.env.NODE_ENV === 'development' && (
+    <ErrorBoundary>
+      <ConversationProvider>
+        {children}
+      </ConversationProvider>
+      
+      {/* デバッグモードの場合のみデバッグボタンを表示 */}
+      {process.env.NODE_ENV === 'development' && (
           <>
             <div className="fixed bottom-4 right-4 z-50">
               <Button
@@ -111,6 +110,5 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
           </>
         )}
       </ErrorBoundary>
-    </ThemeProvider>
   );
 }

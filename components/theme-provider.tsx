@@ -26,26 +26,38 @@ export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
 // Zustandストアとnext-themesを同期させるコンポーネント
 const ThemeSynchronizer: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // next-themesのテーマ
-  const { theme, setTheme } = useTheme()
+  const { theme, setTheme, forcedTheme } = useTheme()
   
   // UIスライスのダークモード状態
   const isDarkMode = useRootStore(selectIsDarkMode)
   const layoutClass = useRootStore(selectLayoutClass)
   const setDarkMode = useRootStore((state) => state.setDarkMode)
   
-  // next-themesとZustandの状態を同期
+  // next-themesからZustandの状態に同期（一方向のみ）
   React.useEffect(() => {
+    // forcedThemeが設定されている場合は同期しない
+    if (forcedTheme) return;
+    
+    // テーマが変更された時だけ実行
     if (theme === 'dark' && !isDarkMode) {
       setDarkMode(true)
     } else if (theme === 'light' && isDarkMode) {
       setDarkMode(false)
     }
-  }, [theme, isDarkMode, setDarkMode])
+  }, [theme, isDarkMode, setDarkMode, forcedTheme])
   
-  // ZustandからNext.jsテーマに反映
+  // Zustandの状態が変更された場合のみテーマを反映（一方向のみ）
+  // この部分はforcedThemeが設定されている場合は実行しない
   React.useEffect(() => {
-    setTheme(isDarkMode ? 'dark' : 'light')
-  }, [isDarkMode, setTheme])
+    // forcedThemeが設定されている場合は同期しない
+    if (forcedTheme) return;
+    
+    // 現在のテーマと異なる場合のみ更新
+    const targetTheme = isDarkMode ? 'dark' : 'light';
+    if (theme !== targetTheme) {
+      setTheme(targetTheme);
+    }
+  }, [isDarkMode, setTheme, theme, forcedTheme])
   
   // レイアウトクラスの適用
   React.useEffect(() => {
