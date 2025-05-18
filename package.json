@@ -19,8 +19,21 @@
     "supabase:push": "supabase db push",
     "supabase:lint": "supabase db lint --level=warning",
     "supabase:types": "supabase gen types typescript --local > types/generated/supabase.ts",
-    "test:db": "npm run test -- --runInBand",
+    "test:db": "pnpm test -- --runInBand",
     "codemod": "jscodeshift -t tools/codemods/replace-deprecated-imports.ts --parser=tsx --extensions=ts,tsx"
+  },
+  "packageManager": "pnpm@10.11.0",
+  "engines": {
+    "node": ">=18",
+    "pnpm": ">=10"
+  },
+  "pnpm": {
+    "overrides": {
+      "@types/react": "^19",
+      "@types/react-dom": "^19",
+      "react": "^19",
+      "react-dom": "^19"
+    }
   },
   "dependencies": {
     "@ai-sdk/google": "^1.2.14",
