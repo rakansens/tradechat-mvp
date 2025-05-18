@@ -10366,13 +10366,7 @@ snapshots:
   '@libsql/darwin-arm64@0.4.7':
     optional: true
 
-  '@libsql/darwin-arm64@0.5.8':
-    optional: true
-
   '@libsql/darwin-x64@0.4.7':
-    optional: true
-
-  '@libsql/darwin-x64@0.5.8':
     optional: true
 
   '@libsql/hrana-client@0.7.0':
