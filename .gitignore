@@ -46,3 +46,9 @@ memory.db*
 *.log
 /tmp/
 **/.DS_Store
+
+# Duplicate project directories
+/tradechat-mvp-exchange/
+tradechat-mvp-exchange/
+/tradechat-mvp-indicator/
+tradechat-mvp-indicator/
